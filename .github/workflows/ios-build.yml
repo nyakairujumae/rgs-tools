@@ -31,11 +31,18 @@ jobs:
     - name: Build iOS app
       run: flutter build ios --release --no-codesign
         
+    - name: Create IPA file
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ../../../rgs-tools.ipa Payload/
+        
     - name: Upload iOS build artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
-        path: build/ios/iphoneos/Runner.app
+        path: rgs-tools.ipa
         
   build-android:
     runs-on: ubuntu-latest
