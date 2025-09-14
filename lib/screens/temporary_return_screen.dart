@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 
 class TemporaryReturnScreen extends StatefulWidget {
@@ -268,7 +268,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
         notes: 'Temporarily returned - ${_returnReason}. Expected return: ${_expectedReturnDate!.toIso8601String().split('T')[0]}',
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

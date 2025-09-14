@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../models/tool_template.dart';
 import '../theme/app_theme.dart';
@@ -461,7 +461,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
     });
 
     try {
-      final toolProvider = context.read<ToolProvider>();
+      final toolProvider = context.read<SupabaseToolProvider>();
       
       for (final data in _parsedData) {
         final tool = Tool(

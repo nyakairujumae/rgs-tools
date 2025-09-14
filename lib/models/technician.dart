@@ -1,5 +1,5 @@
 class Technician {
-  final int? id;
+  final String? id;
   final String name;
   final String? employeeId;
   final String? phone;
@@ -50,7 +50,7 @@ class Technician {
   }
 
   Technician copyWith({
-    int? id,
+    String? id,
     String? name,
     String? employeeId,
     String? phone,

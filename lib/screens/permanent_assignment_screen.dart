@@ -4,8 +4,8 @@ import '../models/tool.dart';
 import '../models/technician.dart';
 import '../models/location.dart';
 import '../models/permanent_assignment.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
@@ -38,15 +38,41 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         title: Text('Assign ${widget.tool.name}'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: const Color(0xFF000000),
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
+      body: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFF1A1A1A),
+            labelStyle: const TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+          ),
+          textTheme: const TextTheme(
+            bodyLarge: TextStyle(color: Colors.white),
+            bodyMedium: TextStyle(color: Colors.white),
+          ),
+        ),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,12 +106,14 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             ],
           ),
         ),
+        ),
       ),
     );
   }
 
   Widget _buildToolInfoCard() {
     return Card(
+      color: const Color(0xFF1A1A1A),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -95,14 +123,14 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
               children: [
                 const Icon(Icons.build, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
-                const Text(
-                  'Tool Information',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
+        const Text(
+          'Tool Information',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
               ],
             ),
             const SizedBox(height: 12),
@@ -126,18 +154,19 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 12),
         Card(
+          color: const Color(0xFF1A1A1A),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 RadioListTile<String>(
-                  title: const Text('Permanent Assignment'),
-                  subtitle: const Text('Tool assigned to technician long-term'),
+                  title: const Text('Permanent Assignment', style: TextStyle(color: Colors.white)),
+                  subtitle: const Text('Tool assigned to technician long-term', style: TextStyle(color: Colors.grey)),
                   value: 'Permanent',
                   groupValue: _assignmentType,
                   onChanged: (value) {
@@ -147,8 +176,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                   },
                 ),
                 RadioListTile<String>(
-                  title: const Text('Temporary Assignment'),
-                  subtitle: const Text('Tool assigned for specific project/duration'),
+                  title: const Text('Temporary Assignment', style: TextStyle(color: Colors.white)),
+                  subtitle: const Text('Tool assigned for specific project/duration', style: TextStyle(color: Colors.grey)),
                   value: 'Temporary',
                   groupValue: _assignmentType,
                   onChanged: (value) {
@@ -174,11 +203,11 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 12),
-        Consumer<TechnicianProvider>(
+        Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             final activeTechnicians = technicianProvider.technicians
                 .where((tech) => tech.status == 'Active')
@@ -237,7 +266,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 12),
@@ -320,7 +349,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 12),
@@ -486,7 +515,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         updatedAt: DateTime.now().toIso8601String(),
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       // TODO: Create permanent assignment record in database
       // This would typically be done through a service layer

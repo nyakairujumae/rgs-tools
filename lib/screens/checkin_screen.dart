@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/tool.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
@@ -35,10 +35,11 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         title: const Text('Checkin Tool'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: const Color(0xFF000000),
+        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
@@ -47,8 +48,34 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           ),
         ],
       ),
-      body: Column(
-        children: [
+      body: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFF1A1A1A),
+            labelStyle: const TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+          ),
+          textTheme: const TextTheme(
+            bodyLarge: TextStyle(color: Colors.white),
+            bodyMedium: TextStyle(color: Colors.white),
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
           // Scanner Section
           if (_isScanning) _buildScannerSection(),
           
@@ -63,7 +90,9 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           
           // Action Buttons
           _buildActionButtons(),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -92,6 +121,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   Widget _buildSearchSection() {
     return Container(
+      color: const Color(0xFF1A1A1A),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -110,7 +140,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             },
           ),
           const SizedBox(height: 16),
-          Consumer<ToolProvider>(
+          Consumer<SupabaseToolProvider>(
             builder: (context, toolProvider, child) {
               final inUseTools = toolProvider.tools
                   .where((tool) => tool.status == 'In Use')
@@ -145,17 +175,18 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                   itemBuilder: (context, index) {
                     final tool = inUseTools[index];
                     return Card(
+                      color: const Color(0xFF1A1A1A),
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppTheme.getStatusColor(tool.status),
                           child: const Icon(Icons.build, color: Colors.white),
                         ),
-                        title: Text(tool.name),
+                        title: Text(tool.name, style: const TextStyle(color: Colors.white)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${tool.category} • ${tool.brand ?? 'Unknown'}'),
+                            Text('${tool.category} • ${tool.brand ?? 'Unknown'}', style: const TextStyle(color: Colors.grey)),
                             if (tool.assignedTo != null)
                               Text('Assigned to: ${tool.assignedTo!}', 
                                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -184,6 +215,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        color: const Color(0xFF1A1A1A),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -198,7 +230,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -229,7 +261,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 16),
@@ -351,14 +383,14 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               label,
               style: const TextStyle(
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary,
+                color: Colors.grey,
               ),
             ),
           ),
           Expanded(
             child: statusWidget ?? Text(
               value,
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -379,7 +411,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   }
 
   void _searchByBarcode(String barcode) {
-    final tool = context.read<ToolProvider>().tools.firstWhere(
+    final tool = context.read<SupabaseToolProvider>().tools.firstWhere(
       (tool) => tool.serialNumber == barcode && tool.status == 'In Use',
       orElse: () => Tool(name: '', category: '', condition: ''),
     );
@@ -447,7 +479,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         updatedAt: DateTime.now().toIso8601String(),
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       // TODO: Create tool usage record in database
       // This would typically be done through a service layer

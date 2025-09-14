@@ -11,13 +11,13 @@ class AppTheme {
   static const Color warningColor = Colors.amber;
   static const Color successColor = Colors.green;
   
-  // Background colors (user preference: white backgrounds)
-  static const Color backgroundColor = Colors.white;
-  static const Color surfaceColor = Colors.white;
-  static const Color cardColor = Colors.white;
+  // Background colors (user preference: black backgrounds)
+  static const Color backgroundColor = Color(0xFF000000);
+  static const Color surfaceColor = Color(0xFF000000);
+  static const Color cardColor = Color(0xFF1A1A1A);
   
-  // Text colors (user preference: black text)
-  static const Color textPrimary = Colors.black;
+  // Text colors (user preference: white text)
+  static const Color textPrimary = Colors.white;
   static const Color textSecondary = Colors.grey;
   static const Color textHint = Colors.grey;
   
@@ -40,7 +40,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
-        brightness: Brightness.light,
+        brightness: Brightness.dark,
         primary: primaryColor,
         secondary: secondaryColor,
         surface: surfaceColor,
@@ -96,7 +96,7 @@ class AppTheme {
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Color(0xFF000000),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -169,7 +169,7 @@ class AppTheme {
       
       // Chip theme
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: Color(0xFF000000),
         labelStyle: const TextStyle(color: textPrimary),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -369,4 +369,32 @@ class AppTheme {
         return textSecondary;
     }
   }
+
+  // Static text styles for easy access
+  static const TextStyle heading1 = TextStyle(
+    color: textPrimary,
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle heading2 = TextStyle(
+    color: textPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+  );
+
+  static const TextStyle bodyLarge = TextStyle(
+    color: textPrimary,
+    fontSize: 16,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
+    color: textPrimary,
+    fontSize: 14,
+  );
+
+  static const TextStyle bodySmall = TextStyle(
+    color: textSecondary,
+    fontSize: 12,
+  );
 }

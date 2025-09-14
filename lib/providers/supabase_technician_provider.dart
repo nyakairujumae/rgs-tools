@@ -1,0 +1,104 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/technician.dart';
+import '../services/supabase_service.dart';
+
+class SupabaseTechnicianProvider with ChangeNotifier {
+  List<Technician> _technicians = [];
+  bool _isLoading = false;
+
+  List<Technician> get technicians => _technicians;
+  bool get isLoading => _isLoading;
+
+  Future<void> loadTechnicians() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await SupabaseService.client
+          .from('technicians')
+          .select()
+          .order('name');
+
+      _technicians = (response as List)
+          .map((data) => Technician.fromMap(data))
+          .toList();
+    } catch (e) {
+      debugPrint('Error loading technicians: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addTechnician(Technician technician) async {
+    try {
+      final response = await SupabaseService.client
+          .from('technicians')
+          .insert(technician.toMap())
+          .select()
+          .single();
+
+      _technicians.add(Technician.fromMap(response));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding technician: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateTechnician(Technician technician) async {
+    try {
+      await SupabaseService.client
+          .from('technicians')
+          .update(technician.toMap())
+          .eq('id', technician.id!);
+
+      final index = _technicians.indexWhere((t) => t.id == technician.id);
+      if (index != -1) {
+        _technicians[index] = technician;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating technician: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTechnician(String technicianId) async {
+    try {
+      await SupabaseService.client
+          .from('technicians')
+          .delete()
+          .eq('id', technicianId);
+
+      _technicians.removeWhere((technician) => technician.id == technicianId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting technician: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Technician>> getActiveTechnicians() async {
+    try {
+      final response = await SupabaseService.client
+          .from('technicians')
+          .select()
+          .eq('status', 'Active')
+          .order('name');
+
+      return (response as List)
+          .map((data) => Technician.fromMap(data))
+          .toList();
+    } catch (e) {
+      debugPrint('Error loading active technicians: $e');
+      return [];
+    }
+  }
+
+  // Synchronous version for UI use
+  List<Technician> getActiveTechniciansSync() {
+    return _technicians.where((technician) => technician.status == 'Active').toList();
+  }
+}

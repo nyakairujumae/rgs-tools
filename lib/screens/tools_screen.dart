@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import 'dart:io';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import 'tool_detail_screen.dart';
 import 'add_tool_screen.dart';
@@ -19,7 +20,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ToolProvider>(
+    return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
         final tools = toolProvider.tools;
         final categories = ['All', ...toolProvider.getCategories()];
@@ -37,12 +38,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
         }).toList();
 
         return Scaffold(
+          backgroundColor: const Color(0xFF000000),
           body: Column(
             children: [
               // Search and Filter Bar
               Container(
                 padding: const EdgeInsets.all(16.0),
-                color: Colors.white,
+                color: const Color(0xFF1A1A1A),
                 child: Column(
                   children: [
                     // Search Bar
@@ -168,10 +170,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: _getStatusColor(tool.status),
-          child: const Icon(
-            Icons.build,
-            color: Colors.white,
-          ),
+          backgroundImage: tool.imagePath != null 
+              ? FileImage(File(tool.imagePath!)) 
+              : null,
+          child: tool.imagePath == null 
+              ? const Icon(
+                  Icons.build,
+                  color: Colors.white,
+                )
+              : null,
         ),
         title: Text(
           tool.name,

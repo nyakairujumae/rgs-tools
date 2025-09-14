@@ -1,5 +1,5 @@
 class Tool {
-  final int? id;
+  final String? id;
   final String name;
   final String category;
   final String? brand;
@@ -82,7 +82,7 @@ class Tool {
   }
 
   Tool copyWith({
-    int? id,
+    String? id,
     String? name,
     String? category,
     String? brand,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
 import '../models/tool.dart';
 import '../models/technician.dart';
 
@@ -34,9 +34,9 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Consumer<TechnicianProvider>(
+      body: Consumer<SupabaseTechnicianProvider>(
         builder: (context, technicianProvider, child) {
-          final technicians = technicianProvider.getActiveTechnicians();
+          final technicians = technicianProvider.getActiveTechniciansSync();
           
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -243,7 +243,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
             : '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

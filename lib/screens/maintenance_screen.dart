@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../models/maintenance_schedule.dart';
 import '../theme/app_theme.dart';
@@ -89,7 +89,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   Widget _buildMaintenanceList() {
-    return Consumer<ToolProvider>(
+    return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
         final maintenanceItems = _getMockMaintenanceData();
         final filteredItems = _filterMaintenanceItems(maintenanceItems);

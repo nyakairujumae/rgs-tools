@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/tool.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../theme/app_theme.dart';
 import '../utils/error_handler.dart';
 
@@ -404,7 +404,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
         updatedAt: DateTime.now().toIso8601String(),
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

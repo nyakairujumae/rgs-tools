@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
+import '../services/image_upload_service.dart';
 
 class AddToolScreen extends StatefulWidget {
   const AddToolScreen({super.key});
@@ -26,6 +29,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
   String _status = 'Available';
   DateTime? _purchaseDate;
   bool _isLoading = false;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _categories = [
     'Hand Tools',
@@ -55,10 +60,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         title: const Text('Add New Tool'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           TextButton(
@@ -79,9 +85,34 @@ class _AddToolScreenState extends State<AddToolScreen> {
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
+      body: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: const Color(0xFF1A1A1A),
+            labelStyle: const TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: Colors.grey),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+          ),
+          textTheme: const TextTheme(
+            bodyLarge: TextStyle(color: Colors.white),
+            bodyMedium: TextStyle(color: Colors.white),
+          ),
+        ),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,10 +123,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Image Selection Section
+              _buildImageSelectionSection(),
+              const SizedBox(height: 24),
               
               TextFormField(
                 controller: _nameController,
@@ -180,7 +215,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
@@ -241,7 +276,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
@@ -342,6 +377,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -370,6 +406,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
     });
 
     try {
+      // Save image if selected (temporarily disabled for testing)
+      String? savedImagePath;
+      if (_selectedImage != null) {
+        // Temporarily skip image upload to test other functionality
+        savedImagePath = null; // await _saveImage(_selectedImage!);
+      }
+
       final tool = Tool(
         name: _nameController.text.trim(),
         category: _categoryController.text.trim(),
@@ -382,10 +425,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
         condition: _condition,
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         status: _status,
+        imagePath: savedImagePath,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
 
-      await context.read<ToolProvider>().addTool(tool);
+      await context.read<SupabaseToolProvider>().addTool(tool);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -411,6 +455,223 @@ class _AddToolScreenState extends State<AddToolScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Widget _buildImageSelectionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tool Image',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 200,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[700]!),
+          ),
+          child: _selectedImage != null
+              ? Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        _selectedImage!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () {
+                            setState(() {
+                              _selectedImage = null;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : InkWell(
+                  onTap: _showImagePickerOptions,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo,
+                        size: 48,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add Tool Image',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap to select from gallery or camera',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Select Image Source',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImagePickerOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildImagePickerOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF333333),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[700]!),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: Colors.white),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<String?> _saveImage(File imageFile) async {
+    try {
+      // Generate a temporary ID for the upload
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+      
+      // Upload image to Supabase Storage
+      final imageUrl = await ImageUploadService.uploadImage(imageFile, tempId);
+      
+      return imageUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
     }
   }
 }

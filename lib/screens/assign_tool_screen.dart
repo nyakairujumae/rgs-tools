@@ -1,228 +1,143 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import 'dart:io';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
 import '../models/tool.dart';
 import '../models/technician.dart';
+import 'permanent_assignment_screen.dart';
 
 class AssignToolScreen extends StatefulWidget {
-  final Tool tool;
-
-  const AssignToolScreen({super.key, required this.tool});
+  const AssignToolScreen({super.key});
 
   @override
   State<AssignToolScreen> createState() => _AssignToolScreenState();
 }
 
 class _AssignToolScreenState extends State<AssignToolScreen> {
-  Technician? _selectedTechnician;
-  final _notesController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+  String _selectedStatus = 'Available';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
-        title: Text('Assign: ${widget.tool.name}'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: const Text('Assign Tool'),
+        backgroundColor: const Color(0xFF000000),
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Consumer<TechnicianProvider>(
-        builder: (context, technicianProvider, child) {
-          final technicians = technicianProvider.getActiveTechnicians();
+      body: Consumer<SupabaseToolProvider>(
+        builder: (context, toolProvider, child) {
+          final tools = toolProvider.tools;
+          
+          // Filter tools based on search and status
+          final filteredTools = tools.where((tool) {
+            final matchesSearch = _searchQuery.isEmpty ||
+                tool.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                (tool.brand?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+            
+            final matchesCategory = _selectedCategory == 'All' || tool.category == _selectedCategory;
+            final matchesStatus = _selectedStatus == 'All' || tool.status == _selectedStatus;
+            
+            return matchesSearch && matchesCategory && matchesStatus;
+          }).toList();
           
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tool Info Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                // Search Bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[700]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey[400], size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Search tools...',
+                            hintStyle: TextStyle(color: Colors.grey[500]),
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All', _selectedCategory, (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Available', _selectedStatus, (value) {
+                        setState(() {
+                          _selectedStatus = value;
+                        });
+                      }),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('In Use', _selectedStatus, (value) {
+                        setState(() {
+                          _selectedStatus = value;
+                        });
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Tools Grid
+                filteredTools.isEmpty
+                    ? Center(
+                        child: Column(
                           children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.green,
-                              child: const Icon(
-                                Icons.build,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.tool.name,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
+                            Icon(Icons.build, size: 64, color: Colors.grey[600]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No tools found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Text(
-                            'Available for Assignment',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Assignment Info
-                const Text(
-                  'Permanent Assignment',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'This tool will be permanently assigned to the selected technician. They will keep it until reassigned or they leave the company.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Technician Selection
-                const Text(
-                  'Select Technician',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                if (technicians.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(
-                        child: Text(
-                          'No active technicians available',
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                      )
+                    : GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.75,
+                        children: filteredTools.map((tool) {
+                          return _buildToolCard(context, tool);
+                        }).toList(),
                       ),
-                    ),
-                  )
-                else
-                  Card(
-                    child: Column(
-                      children: technicians.map((technician) {
-                        return RadioListTile<Technician>(
-                          title: Text(
-                            technician.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${technician.department ?? 'No Department'} • ${technician.employeeId ?? 'No ID'}',
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                          value: technician,
-                          groupValue: _selectedTechnician,
-                          onChanged: (Technician? value) {
-                            setState(() {
-                              _selectedTechnician = value;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-
-                // Assignment Notes
-                const Text(
-                  'Assignment Notes (Optional)',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Add any notes about this assignment...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(16),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 32),
-
-                // Assign Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _selectedTechnician != null && !_isLoading
-                        ? _assignTool
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Assign Tool Permanently',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
               ],
             ),
           );
@@ -231,46 +146,180 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
     );
   }
 
-  Future<void> _assignTool() async {
-    if (_selectedTechnician == null) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Update tool status
-      final updatedTool = widget.tool.copyWith(
-        status: 'In Use',
-        assignedTo: _selectedTechnician!.name,
-      );
-
-      await context.read<ToolProvider>().updateTool(updatedTool);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.tool.name} assigned to ${_selectedTechnician!.name}'),
-            backgroundColor: Colors.green,
+  Widget _buildFilterChip(String label, String selectedValue, Function(String) onTap) {
+    final isSelected = label == selectedValue;
+    return GestureDetector(
+      onTap: () => onTap(label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey[700]!,
           ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error assigning tool: $e'),
-            backgroundColor: Colors.red,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolCard(BuildContext context, Tool tool) {
+    return GestureDetector(
+      onTap: () {
+        _showAssignDialog(context, tool);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tool Image Card
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[700]!, width: 1),
+            ),
+            child: Stack(
+              children: [
+                // Tool Image
+                Center(
+                  child: Container(
+                    height: 120,
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: tool.imagePath != null
+                          ? Image.file(
+                              File(tool.imagePath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.build,
+                                    size: 40,
+                                    color: Colors.grey[600],
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.build,
+                                size: 40,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                // Status Badge
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(tool.status),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      tool.status,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Tool Info
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tool.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${tool.category} • ${tool.brand ?? 'Unknown'}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                if (tool.purchasePrice != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Value: \$${tool.purchasePrice?.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'available':
+        return Colors.green;
+      case 'in use':
+        return Colors.blue;
+      case 'maintenance':
+        return Colors.orange;
+      case 'retired':
+        return Colors.grey;
+      default:
+        return Colors.grey;
     }
+  }
+
+  void _showAssignDialog(BuildContext context, Tool tool) {
+    // Navigate directly to the assignment form
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PermanentAssignmentScreen(tool: tool),
+      ),
+    );
   }
 }

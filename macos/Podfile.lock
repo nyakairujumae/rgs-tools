@@ -4,6 +4,9 @@ PODS:
   - FlutterMacOS (1.0.0)
   - mobile_scanner (3.5.6):
     - FlutterMacOS
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
@@ -12,6 +15,7 @@ DEPENDENCIES:
   - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - mobile_scanner (from `Flutter/ephemeral/.symlinks/plugins/mobile_scanner/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - sqflite_darwin (from `Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin`)
 
 EXTERNAL SOURCES:
@@ -21,6 +25,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   mobile_scanner:
     :path: Flutter/ephemeral/.symlinks/plugins/mobile_scanner/macos
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
   sqflite_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin
 
@@ -28,6 +34,7 @@ SPEC CHECKSUMS:
   file_selector_macos: 6280b52b459ae6c590af5d78fc35c7267a3c4b31
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   mobile_scanner: 2f0c13d5ef778c4e5121348d775dce17f18e79d0
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009

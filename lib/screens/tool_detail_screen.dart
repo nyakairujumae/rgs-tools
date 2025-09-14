@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/tool.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
@@ -102,20 +102,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         isLoading: _isLoading,
         loadingMessage: 'Loading tool details...',
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // Tool Image Section
               _buildImageSection(),
               const SizedBox(height: 24),
 
               // Quick Status Cards
               _buildQuickStatusCards(),
-              const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-              // Basic Information
-              _buildInfoSection('Basic Information', [
+            // Basic Information
+            _buildInfoSection('Basic Information', [
                 _buildInfoRow('Name', _currentTool.name),
                 _buildInfoRow('Category', _currentTool.category),
                 if (_currentTool.brand != null) _buildInfoRow('Brand', _currentTool.brand!),
@@ -131,27 +131,27 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 if (_currentTool.assignedTo != null) _buildInfoRow('Assigned To', _currentTool.assignedTo!),
                 if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
                 if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
-              ]),
+            ]),
 
-              // Financial Information
+            // Financial Information
               if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
-                _buildInfoSection('Financial Information', [
+              _buildInfoSection('Financial Information', [
                   if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', '\$${_currentTool.purchasePrice!.toStringAsFixed(2)}'),
                   if (_currentTool.currentValue != null) _buildInfoRow('Current Value', '\$${_currentTool.currentValue!.toStringAsFixed(2)}'),
                   if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
                   if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
                     _buildInfoRow('Depreciation', _calculateDepreciation()),
-                ]),
+              ]),
 
-              // Notes
+            // Notes
               if (_currentTool.notes != null && _currentTool.notes!.isNotEmpty)
-                _buildInfoSection('Notes', [
+              _buildInfoSection('Notes', [
                   _buildInfoRow('', _currentTool.notes!),
-                ]),
+              ]),
 
-              const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-              // Action Buttons
+            // Action Buttons
               _buildActionButtons(),
             ],
           ),
@@ -200,9 +200,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   onPressed: _addImage,
                   icon: const Icon(Icons.camera_alt, size: 16),
                   label: const Text('Add Photo'),
-                  style: ElevatedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
+                        foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                 ),
@@ -238,10 +238,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 ],
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
           child: Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -297,8 +297,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       fontSize: 14,
                     ),
                   ),
-                ],
-              ),
+              ],
+            ),
             ),
           ),
         ),
@@ -350,11 +350,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
           Expanded(
             child: statusWidget ?? Text(
-              value,
-              style: const TextStyle(
+                      value,
+                      style: const TextStyle(
                 color: AppTheme.textPrimary,
-              ),
-            ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -373,7 +373,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AssignToolScreen(tool: _currentTool),
+                    builder: (context) => const AssignToolScreen(),
                   ),
                 );
               },
@@ -539,7 +539,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         
         // Update tool with image path
         final updatedTool = _currentTool.copyWith(imagePath: image.path);
-        await context.read<ToolProvider>().updateTool(updatedTool);
+        await context.read<SupabaseToolProvider>().updateTool(updatedTool);
         
         setState(() {
           _currentTool = updatedTool;
@@ -605,7 +605,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               });
               
               try {
-                await context.read<ToolProvider>().deleteTool(_currentTool.id!);
+                await context.read<SupabaseToolProvider>().deleteTool(_currentTool.id!);
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import 'tools_screen.dart';
 import 'technicians_screen.dart';
 import 'add_tool_screen.dart';
+import 'assign_tool_screen.dart';
 import 'checkout_screen.dart';
 import 'checkin_screen.dart';
 import 'reports_screen.dart';
@@ -42,47 +44,86 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ToolProvider>().loadTools();
-      context.read<TechnicianProvider>().loadTechnicians();
+      context.read<SupabaseToolProvider>().loadTools();
+      context.read<SupabaseTechnicianProvider>().loadTechnicians();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'RGS',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'HVAC SERVICES',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: const Color(0xFF000000),
+        foregroundColor: Colors.white,
         elevation: 0,
+        toolbarHeight: 80, // Increased height to fit the slogan
+        title: _RGSLogo(),
         centerTitle: true,
+        actions: [
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return PopupMenuButton<String>(
+                icon: const Icon(Icons.account_circle),
+                onSelected: (value) async {
+                  if (value == 'logout') {
+                    await authProvider.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  }
+                },
+                itemBuilder: (BuildContext context) => [
+                  PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              authProvider.userFullName ?? 'User',
+                              style: AppTheme.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              authProvider.userEmail ?? '',
+                              style: AppTheme.bodySmall.copyWith(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Logout'),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFF000000),
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         items: const [
@@ -126,7 +167,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ToolProvider, TechnicianProvider>(
+    return Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
       builder: (context, toolProvider, technicianProvider, child) {
         final tools = toolProvider.tools;
         final technicians = technicianProvider.technicians;
@@ -149,15 +190,15 @@ class DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Overview of your HVAC tools and operations',
+                'RGS tools Overview',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 24),
@@ -210,6 +251,7 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Card(
+                color: const Color(0xFF1A1A1A),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -241,7 +283,12 @@ class DashboardScreen extends StatelessWidget {
                       Icons.person_add,
                       AppTheme.primaryColor,
                       () {
-                        _showToolSelectionDialog(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AssignToolScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -446,11 +493,12 @@ class DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
               Card(
+                color: const Color(0xFF1A1A1A),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: tools.isEmpty
@@ -462,13 +510,13 @@ class DashboardScreen extends StatelessWidget {
                                 Icon(
                                   Icons.build,
                                   size: 48,
-                                  color: Colors.grey,
+                                  color: Colors.white,
                                 ),
                                 SizedBox(height: 16),
                                 Text(
                                   'No tools added yet',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: Colors.white,
                                     fontSize: 16,
                                   ),
                                 ),
@@ -499,7 +547,7 @@ class DashboardScreen extends StatelessWidget {
                                 tool.name,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black,
+                                  color: Colors.white,
                                 ),
                               ),
                               subtitle: Text(
@@ -530,31 +578,32 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Card(
+      color: const Color(0xFF1A1A1A),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28, color: color),
+            Icon(icon, size: 24, color: color),
             const SizedBox(height: 6),
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 4),
             Flexible(
               child: Text(
-                title,
-                style: const TextStyle(
+              title,
+              style: const TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -575,7 +624,7 @@ class DashboardScreen extends StatelessWidget {
             status,
             style: const TextStyle(
               fontSize: 16,
-              color: Colors.black,
+              color: Colors.grey,
             ),
           ),
           Container(
@@ -599,6 +648,7 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
     return Card(
+      color: const Color(0xFF1A1A1A),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -612,7 +662,7 @@ class DashboardScreen extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -646,7 +696,7 @@ class DashboardScreen extends StatelessWidget {
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
-          child: Consumer<ToolProvider>(
+          child: Consumer<SupabaseToolProvider>(
             builder: (dialogContext, toolProvider, child) {
               final availableTools = toolProvider.tools
                   .where((tool) => tool.status == 'Available')
@@ -692,9 +742,65 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AssignToolScreen(),
+                ),
+              );
+            },
+            child: const Text('Browse All Tools'),
+          ),
         ],
       ),
     );
   }
 }
 
+class _RGSLogo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // RGS text - bigger and bold
+    const rgsStyle = TextStyle(
+      fontSize: 36, // Increased from 28
+      fontWeight: FontWeight.w800,
+      color: Colors.white,
+      letterSpacing: 0.5,
+    );
+    const rgsText = 'RGS';
+
+    // HVAC SERVICES text - bigger, positioned below RGS
+    const hvacStyle = TextStyle(
+      fontSize: 12, // Increased from 10
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+      letterSpacing: 0.1,
+    );
+    const hvacText = 'HVAC SERVICES';
+
+    // Slogan text - italic and smaller
+    const sloganStyle = TextStyle(
+      fontSize: 9,
+      fontWeight: FontWeight.w400,
+      fontStyle: FontStyle.italic,
+      color: Colors.white,
+      letterSpacing: 0.1,
+    );
+    const sloganText = '"Not your ordinary HVAC company"';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(rgsText, style: rgsStyle),
+        const SizedBox(height: 2), // Small gap between RGS and HVAC SERVICES
+        Text(hvacText, style: hvacStyle),
+        const SizedBox(height: 1), // Minimal gap before slogan
+        Text(sloganText, style: sloganStyle),
+      ],
+    );
+  }
+}

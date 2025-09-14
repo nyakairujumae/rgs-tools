@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
@@ -615,7 +615,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   List<Tool> _performSearch() {
-    return context.read<ToolProvider>().tools.where((tool) {
+    return context.read<SupabaseToolProvider>().tools.where((tool) {
       // Text search
       if (_searchController.text.isNotEmpty) {
         final searchText = _searchController.text.toLowerCase();
@@ -679,9 +679,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     }).toList();
   }
 
-  bool _isFavorite(int toolId) {
+  bool _isFavorite(String toolId) {
     // Mock favorite IDs - in real app, this would come from user preferences
-    final favoriteIds = [1, 3, 5, 7, 9];
+    final favoriteIds = ['1', '3', '5', '7', '9'];
     return favoriteIds.contains(toolId);
   }
 

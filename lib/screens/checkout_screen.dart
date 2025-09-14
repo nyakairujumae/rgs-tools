@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/tool.dart';
 import '../models/technician.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
@@ -99,8 +99,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
   Widget _buildSearchSection() {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
+            child: Column(
+              children: [
           TextField(
             controller: _searchController,
             decoration: const InputDecoration(
@@ -116,7 +116,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
             },
           ),
           const SizedBox(height: 16),
-          Consumer<ToolProvider>(
+          Consumer<SupabaseToolProvider>(
             builder: (context, toolProvider, child) {
               final availableTools = toolProvider.tools
                   .where((tool) => tool.status == 'Available')
@@ -184,33 +184,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
               Row(
                 children: [
                   const Icon(Icons.build, color: AppTheme.primaryColor),
                   const SizedBox(width: 8),
-                  Text(
+                                  Text(
                     'Selected Tool',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
+                                    ),
+                                  ),
+                                ],
+                              ),
               const SizedBox(height: 12),
               _buildDetailRow('Name', _selectedTool!.name),
               _buildDetailRow('Category', _selectedTool!.category),
               if (_selectedTool!.brand != null) _buildDetailRow('Brand', _selectedTool!.brand!),
               if (_selectedTool!.serialNumber != null) _buildDetailRow('Serial Number', _selectedTool!.serialNumber!),
               _buildDetailRow('Status', _selectedTool!.status, statusWidget: StatusChip(status: _selectedTool!.status)),
-            ],
-          ),
-        ),
-      ),
+                      ],
+                    ),
+                  ),
+                ),
     );
   }
 
@@ -220,16 +220,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Select Technician',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+                const Text(
+                  'Select Technician',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Consumer<TechnicianProvider>(
+                  ),
+                ),
+                const SizedBox(height: 12),
+          Consumer<SupabaseTechnicianProvider>(
             builder: (context, technicianProvider, child) {
               final activeTechnicians = technicianProvider.technicians
                   .where((tech) => tech.status == 'Active')
@@ -243,15 +243,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                 ),
                 items: activeTechnicians.map((technician) {
                   return DropdownMenuItem(
-                    value: technician,
+                          value: technician,
                     child: Text(technician.name),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedTechnician = value;
-                  });
-                },
+                            setState(() {
+                              _selectedTechnician = value;
+                            });
+                          },
                 validator: (value) {
                   if (value == null) {
                     return 'Please select a technician';
@@ -272,11 +272,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+                const Text(
             'Checkout Details',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
           ),
@@ -323,15 +323,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
           const SizedBox(height: 16),
           
           // Notes
-          TextField(
-            controller: _notesController,
-            decoration: const InputDecoration(
+                TextField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
               labelText: 'Notes',
-              border: OutlineInputBorder(),
+                    border: OutlineInputBorder(),
               hintText: 'Additional information...',
-            ),
-            maxLines: 3,
-          ),
+                  ),
+                  maxLines: 3,
+                ),
         ],
       ),
     );
@@ -342,29 +342,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
               onPressed: _canCheckout() ? _performCheckout : null,
-              style: ElevatedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Checkout Tool',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-            ),
-          ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                      'Checkout Tool',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -393,9 +393,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
         children: [
           SizedBox(
             width: 100,
-            child: Text(
+      child: Text(
               label,
-              style: const TextStyle(
+        style: const TextStyle(
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
               ),
@@ -425,7 +425,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
   }
 
   void _searchByBarcode(String barcode) {
-    final tool = context.read<ToolProvider>().tools.firstWhere(
+    final tool = context.read<SupabaseToolProvider>().tools.firstWhere(
       (tool) => tool.serialNumber == barcode && tool.status == 'Available',
       orElse: () => Tool(name: '', category: '', condition: ''),
     );
@@ -501,7 +501,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
         updatedAt: DateTime.now().toIso8601String(),
       );
 
-      await context.read<ToolProvider>().updateTool(updatedTool);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
 
       // TODO: Create tool usage record in database
       // This would typically be done through a service layer

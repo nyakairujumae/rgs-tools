@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/technician_provider.dart';
+import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
 
 class TechniciansScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TechnicianProvider>(
+    return Consumer<SupabaseTechnicianProvider>(
       builder: (context, technicianProvider, child) {
         final technicians = technicianProvider.technicians;
         
@@ -28,12 +28,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         }).toList();
 
         return Scaffold(
+          backgroundColor: const Color(0xFF000000),
           body: Column(
             children: [
               // Search Bar
               Container(
                 padding: const EdgeInsets.all(16.0),
-                color: Colors.white,
+                color: const Color(0xFF1A1A1A),
                 child: TextField(
                   decoration: const InputDecoration(
                     hintText: 'Search technicians...',
@@ -92,11 +93,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
+              print('FAB pressed!'); // Debug print
               _showAddTechnicianDialog();
             },
-            child: const Icon(Icons.add),
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
+            backgroundColor: Colors.blue,
           ),
         );
       },
@@ -106,6 +110,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   Widget _buildTechnicianCard(Technician technician) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
+      color: const Color(0xFF1A1A1A),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: technician.status == 'Active' ? Colors.green : Colors.grey,
@@ -121,18 +126,27 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           technician.name,
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (technician.employeeId != null)
-              Text('ID: ${technician.employeeId}'),
+              Text(
+                'ID: ${technician.employeeId}',
+                style: const TextStyle(color: Colors.grey),
+              ),
             if (technician.department != null)
-              Text('Department: ${technician.department}'),
+              Text(
+                'Department: ${technician.department}',
+                style: const TextStyle(color: Colors.grey),
+              ),
             if (technician.phone != null)
-              Text('Phone: ${technician.phone}'),
+              Text(
+                'Phone: ${technician.phone}',
+                style: const TextStyle(color: Colors.grey),
+              ),
             Row(
               children: [
                 _buildStatusChip(technician.status),
@@ -196,9 +210,19 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 
   void _showAddTechnicianDialog() {
+    print('Add technician button pressed!'); // Debug print
     showDialog(
       context: context,
-      builder: (context) => _TechnicianDialog(),
+      builder: (context) => AlertDialog(
+        title: const Text('Add Technician'),
+        content: const Text('This is a test dialog'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -213,16 +237,26 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Technician'),
-        content: Text('Are you sure you want to delete ${technician.name}?'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text(
+          'Delete Technician',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${technician.name}?',
+          style: const TextStyle(color: Colors.grey),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () {
-              context.read<TechnicianProvider>().deleteTechnician(technician.id!);
+              context.read<SupabaseTechnicianProvider>().deleteTechnician(technician.id!);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -289,8 +323,33 @@ class _TechnicianDialogState extends State<_TechnicianDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.technician == null ? 'Add Technician' : 'Edit Technician'),
-      content: Form(
+      backgroundColor: const Color(0xFF1A1A1A),
+      title: Text(
+        widget.technician == null ? 'Add Technician' : 'Edit Technician',
+        style: const TextStyle(color: Colors.white),
+      ),
+      content: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: const InputDecorationTheme(
+            labelStyle: TextStyle(color: Colors.white70),
+            hintStyle: TextStyle(color: Colors.grey),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.blue),
+            ),
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+          ),
+          textSelectionTheme: const TextSelectionThemeData(
+            cursorColor: Colors.blue,
+            selectionColor: Colors.blue,
+            selectionHandleColor: Colors.blue,
+          ),
+        ),
+        child: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
@@ -384,7 +443,7 @@ class _TechnicianDialogState extends State<_TechnicianDialog> {
                               ? '${_hireDate!.day}/${_hireDate!.month}/${_hireDate!.year}'
                               : 'Select date',
                           style: TextStyle(
-                            color: _hireDate != null ? Colors.black : Colors.grey,
+                            color: _hireDate != null ? Colors.white : Colors.grey,
                           ),
                         ),
                       ),
@@ -395,19 +454,27 @@ class _TechnicianDialogState extends State<_TechnicianDialog> {
             ],
           ),
         ),
+        ),
       ),
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: Colors.grey),
+          ),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _saveTechnician,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : Text(widget.technician == null ? 'Add' : 'Update'),
         ),
@@ -451,9 +518,9 @@ class _TechnicianDialogState extends State<_TechnicianDialog> {
       );
 
       if (widget.technician == null) {
-        await context.read<TechnicianProvider>().addTechnician(technician);
+        await context.read<SupabaseTechnicianProvider>().addTechnician(technician);
       } else {
-        await context.read<TechnicianProvider>().updateTechnician(technician);
+        await context.read<SupabaseTechnicianProvider>().updateTechnician(technician);
       }
 
       if (mounted) {

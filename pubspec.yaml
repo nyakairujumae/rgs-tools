@@ -49,6 +49,9 @@ dependencies:
   # Image handling
   image_picker: ^1.0.4
   
+  # Backend
+  supabase_flutter: ^2.3.4
+  
   # Barcode scanning (for future use)
   mobile_scanner: ^3.5.6
 
@@ -61,6 +64,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
+  flutter_native_splash: ^2.4.1
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
   sqflite_common_ffi: ^2.3.0
@@ -78,7 +82,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/
+    - assets/images/rgs.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -107,19 +111,34 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: true
-  image_path: "assets/images/rgs_logo.png"
+  image_path: "assets/images/rgs.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/rgs.png"
   web:
     generate: true
-    image_path: "assets/images/rgs_logo.png"
+    image_path: "assets/images/rgs.png"
     background_color: "#ffffff"
     theme_color: "#2196F3"
   windows:
     generate: true
-    image_path: "assets/images/rgs_logo.png"
+    image_path: "assets/images/rgs.png"
     icon_size: 48
   macos:
     generate: true
-    image_path: "assets/images/rgs_logo.png"
+    image_path: "assets/images/rgs.png"
+
+flutter_native_splash:
+  color: "#000000"
+  image: "assets/images/rgs.png"
+  android: true
+  ios: true
+
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
+
+  android_12:
+    image: "assets/images/rgs.png"
+    icon_background_color: "#000000"

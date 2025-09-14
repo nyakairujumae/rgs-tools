@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
+import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
@@ -25,7 +25,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
       ),
-      body: Consumer<ToolProvider>(
+      body: Consumer<SupabaseToolProvider>(
         builder: (context, toolProvider, child) {
           final tools = toolProvider.tools;
           

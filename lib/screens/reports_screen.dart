@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/tool_provider.dart';
-import '../providers/technician_provider.dart';
+import "../providers/supabase_tool_provider.dart";
+import '../providers/supabase_technician_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
@@ -28,10 +28,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
         title: const Text('Reports & Analytics'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: const Color(0xFF000000),
+        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
@@ -40,7 +41,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ],
       ),
-      body: Consumer2<ToolProvider, TechnicianProvider>(
+      body: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
         builder: (context, toolProvider, technicianProvider, child) {
           if (toolProvider.isLoading || technicianProvider.isLoading) {
             return const LoadingWidget(message: 'Loading reports...');
