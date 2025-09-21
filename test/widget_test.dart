@@ -22,13 +22,13 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const HvacToolsManagerApp());
 
-    // Wait for the splash screen to complete and navigate to home screen
+    // Wait for the app to initialize and show login screen
     await tester.pumpAndSettle();
 
-    // Verify that our app loads with the correct elements
-    expect(find.text('RGS'), findsOneWidget);
-    expect(find.text('HVAC SERVICES'), findsOneWidget);
-    // Look for the Dashboard text in the body (not the bottom nav)
-    expect(find.text('Dashboard').first, findsOneWidget);
+    // Verify that our app loads with the login screen elements
+    // Check for email field
+    expect(find.byType(TextFormField), findsWidgets);
+    // Check for sign in button
+    expect(find.text('Sign In'), findsOneWidget);
   });
 }
