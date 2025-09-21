@@ -1,0 +1,45 @@
+name: iOS AltStore Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-altstore-ipa:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.2'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run tests
+      run: flutter test
+      
+    - name: Build iOS app for development
+      run: flutter build ios --debug --no-codesign
+        
+    - name: Create AltStore-compatible IPA
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ../../../rgs-tools-altstore.ipa Payload/
+        
+    - name: Upload AltStore IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: rgs-tools-altstore
+        path: rgs-tools-altstore.ipa
+        retention-days: 30

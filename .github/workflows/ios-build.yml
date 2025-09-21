@@ -28,21 +28,21 @@ jobs:
     - name: Run tests
       run: flutter test
       
-    - name: Build iOS app
-      run: flutter build ios --release --no-codesign
+    - name: Build iOS app for AltStore
+      run: flutter build ios --debug --no-codesign
         
-    - name: Create IPA file
+    - name: Create AltStore-compatible IPA
       run: |
         cd build/ios/iphoneos
         mkdir -p Payload
         cp -r Runner.app Payload/
-        zip -r ../../../rgs-tools.ipa Payload/
+        zip -r ../../../rgs-tools-altstore.ipa Payload/
         
     - name: Upload iOS build artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
-        path: rgs-tools.ipa
+        path: rgs-tools-altstore.ipa
         
   build-android:
     runs-on: ubuntu-latest

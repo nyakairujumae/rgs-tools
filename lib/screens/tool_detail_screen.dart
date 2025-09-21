@@ -247,7 +247,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
         ),
         SizedBox(width: 8),
-        Expanded(
+                    Expanded(
           child: Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -270,9 +270,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   SizedBox(height: 4),
                   Flexible(
                     child: ConditionChip(condition: _currentTool.condition),
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
             ),
           ),
         ),
@@ -307,8 +307,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       fontSize: 12,
                     ),
                   ),
-                ],
-              ),
+              ],
+            ),
             ),
           ),
         ),
