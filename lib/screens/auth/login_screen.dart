@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common/rgs_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,33 +36,44 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SizedBox(height: 60),
               
-              // Logo and Title
+              // RGS Branding and Title
               Column(
                 children: [
+                  // RGS Logo with enhanced styling
                   Container(
-                    width: 80,
-                    height: 80,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor,
+                          AppTheme.primaryColor.withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: Icon(
-                      Icons.build_circle_outlined,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      size: 40,
-                    ),
+                    child: const RGSLogo(),
                   ),
                   SizedBox(height: 24),
                   Text(
-                    'RGS HVAC Services',
+                    'HVAC Tools Manager',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Tool Management System',
+                    'Professional Tool Management System',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.grey[400],
                     ),
@@ -81,7 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Sign In',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
+                        fontWeight: FontWeight.w600,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 32),
                     
@@ -95,18 +109,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
+                        prefixIcon: Icon(Icons.email_outlined, color: AppTheme.primaryColor),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
                         ),
                         filled: true,
                         fillColor: Theme.of(context).cardTheme.color,
@@ -134,11 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.grey,
+                            color: Colors.grey.shade600,
                           ),
                           onPressed: () {
                             setState(() {
@@ -148,15 +162,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
                         ),
                         filled: true,
                         fillColor: Theme.of(context).cardTheme.color,
@@ -180,12 +194,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         return ElevatedButton(
                           onPressed: authProvider.isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2196F3),
-                            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 3,
+                            shadowColor: AppTheme.primaryColor.withOpacity(0.3),
                           ),
                           child: authProvider.isLoading
                               ? SizedBox(
@@ -239,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             'Sign Up',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.blue, // Fixed blue color for visibility in dark mode
+                              color: AppTheme.primaryColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -268,10 +284,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (mounted) {
+        // Wait a moment for role to be properly loaded
+        await Future.delayed(Duration(milliseconds: 100));
+        
         // Navigate based on role (automatically determined from database)
+        debugPrint('🔍 Login: User role is ${authProvider.userRole}');
+        debugPrint('🔍 Login: isAdmin = ${authProvider.isAdmin}');
+        
         if (authProvider.isAdmin) {
+          debugPrint('🚀 Navigating to admin screen');
           Navigator.pushReplacementNamed(context, '/admin');
         } else {
+          debugPrint('🚀 Navigating to technician screen');
           Navigator.pushReplacementNamed(context, '/technician');
         }
       }

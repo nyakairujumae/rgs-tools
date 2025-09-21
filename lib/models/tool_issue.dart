@@ -34,8 +34,7 @@ class ToolIssue {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
+    Map<String, dynamic> json = {
       'tool_id': toolId,
       'tool_name': toolName,
       'reported_by': reportedBy,
@@ -51,6 +50,13 @@ class ToolIssue {
       'location': location,
       'estimated_cost': estimatedCost,
     };
+
+    // Only include id if it's not null (for updates)
+    if (id != null) {
+      json['id'] = id;
+    }
+
+    return json;
   }
 
   factory ToolIssue.fromJson(Map<String, dynamic> json) {

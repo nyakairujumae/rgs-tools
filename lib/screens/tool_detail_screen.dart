@@ -213,79 +213,88 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildQuickStatusCards() {
-    return Row(
-      children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
         Expanded(
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.info,
                     color: AppTheme.getStatusColor(_currentTool.status),
-                    size: 24,
+                    size: 20,
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 6),
                   Text(
                     'Status',
                     style: TextStyle(
                       color: Colors.grey[600],
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                   SizedBox(height: 4),
-                  StatusChip(status: _currentTool.status),
-                ],
-              ),
-            ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.assessment,
-                    color: AppTheme.getConditionColor(_currentTool.condition),
-                    size: 24,
+                  Flexible(
+                    child: StatusChip(status: _currentTool.status),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Condition',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  ConditionChip(condition: _currentTool.condition),
                 ],
               ),
             ),
           ),
         ),
-        SizedBox(width: 12),
+        SizedBox(width: 8),
         Expanded(
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.assessment,
+                    color: AppTheme.getConditionColor(_currentTool.condition),
+                    size: 20,
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    'Condition',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 11,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Flexible(
+                    child: ConditionChip(condition: _currentTool.condition),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.attach_money,
                     color: _currentTool.currentValue != null ? Colors.green : Colors.grey,
-                    size: 24,
+                    size: 20,
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 6),
                   Text(
                     'Value',
                     style: TextStyle(
                       color: Colors.grey[600],
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
                   SizedBox(height: 4),
@@ -295,15 +304,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         : 'N/A',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
-              ],
-            ),
+                ],
+              ),
             ),
           ),
         ),
       ],
+    );
+      },
     );
   }
 

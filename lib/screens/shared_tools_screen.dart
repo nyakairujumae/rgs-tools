@@ -222,7 +222,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   borderRadius: BorderRadius.circular(12),
                   color: Colors.grey[800],
                 ),
-                child: tool.imagePath != null
+                child: tool.imagePath != null && File(tool.imagePath!).existsSync()
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(

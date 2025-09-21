@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
+import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -68,9 +69,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
                   if (value == 'logout') {
-                    await authProvider.signOut();
-                    if (mounted) {
-                      Navigator.pushReplacementNamed(context, '/login');
+                    try {
+                      debugPrint('🚪 Starting logout process...');
+                      await authProvider.signOut();
+                      if (mounted) {
+                        debugPrint('🚀 Navigating to login screen after logout');
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint('❌ Error during logout: $e');
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
                     }
                   }
                 },

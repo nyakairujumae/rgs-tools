@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
-import '../services/image_upload_service.dart';
 
 class AddToolScreen extends StatefulWidget {
   const AddToolScreen({super.key});
@@ -424,11 +423,10 @@ class _AddToolScreenState extends State<AddToolScreen> {
     });
 
     try {
-      // Save image if selected (temporarily disabled for testing)
+      // Save image if selected
       String? savedImagePath;
       if (_selectedImage != null) {
-        // Temporarily skip image upload to test other functionality
-        savedImagePath = null; // await _saveImage(_selectedImage!);
+        savedImagePath = await _saveImage(_selectedImage!);
       }
 
       final tool = Tool(
@@ -681,15 +679,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
   Future<String?> _saveImage(File imageFile) async {
     try {
-      // Generate a temporary ID for the upload
-      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-      
-      // Upload image to Supabase Storage
-      final imageUrl = await ImageUploadService.uploadImage(imageFile, tempId);
-      
-      return imageUrl;
+      // For now, save the local path to the image
+      // This ensures the image displays correctly
+      return imageFile.path;
     } catch (e) {
-      throw Exception('Failed to upload image: $e');
+      throw Exception('Failed to save image: $e');
     }
   }
 }

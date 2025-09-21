@@ -4,6 +4,7 @@ import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -35,8 +36,75 @@ class AdminHomeScreen extends StatefulWidget {
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
+class AdminHomeScreenErrorBoundary extends StatelessWidget {
+  final Widget child;
+  
+  const AdminHomeScreenErrorBoundary({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        try {
+          return child;
+        } catch (e, stackTrace) {
+          debugPrint('❌ AdminHomeScreen Error: $e');
+          debugPrint('📍 Stack trace: $stackTrace');
+          
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Admin Dashboard'),
+              backgroundColor: Colors.red,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'Something went wrong',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Please try logging out and back in'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        final authProvider = context.read<AuthProvider>();
+                        await authProvider.signOut();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        });
+                      } catch (e) {
+                        debugPrint('Error in error boundary logout: $e');
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        });
+                      }
+                    },
+                    child: Text('Logout & Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+}
+
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
+  bool _isDisposed = false;
 
   final List<Widget> _screens = [
     const DashboardScreen(),
@@ -53,6 +121,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   @override
@@ -92,13 +166,31 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
-              return PopupMenuButton<String>(
+              return Builder(
+                builder: (context) {
+                  return PopupMenuButton<String>(
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
-                  if (value == 'logout') {
-                    await authProvider.signOut();
-                    if (mounted) {
-                      Navigator.pushReplacementNamed(context, '/login');
+                  if (value == 'logout' && !_isDisposed && mounted) {
+                    try {
+                      debugPrint('🚪 Starting logout process...');
+                      // Close any open popup menus first (safely)
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                      
+                      // Simply sign out - let the app handle navigation naturally
+                      await authProvider.signOut();
+                      debugPrint('✅ Logout completed - app will handle navigation');
+                      
+                    } catch (e) {
+                      debugPrint('❌ Error during logout: $e');
+                      // Still try to sign out even on error
+                      try {
+                        await authProvider.signOut();
+                      } catch (e2) {
+                        debugPrint('❌ Error during fallback logout: $e2');
+                      }
                     }
                   }
                 },
@@ -164,6 +256,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     ),
                   ),
                 ],
+              );
+                },
               );
             },
           ),
@@ -398,7 +492,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
       ),
       onTap: () {
-        Navigator.pop(context); // Close drawer
+        // Close drawer safely
+        if (Navigator.of(context).canPop()) {
+          Navigator.pop(context);
+        }
         onTap();
       },
     );

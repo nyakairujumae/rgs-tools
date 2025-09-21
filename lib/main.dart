@@ -21,6 +21,13 @@ import 'services/image_upload_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Add global error handling
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    print('🚨 FLUTTER ERROR: ${details.exception}');
+    print('📍 Stack trace: ${details.stack}');
+  };
+
   // Initialize Supabase
   await Supabase.initialize(
     url: SupabaseConfig.url,
@@ -34,6 +41,73 @@ void main() async {
   await ImageUploadService.ensureBucketExists();
 
   runApp(const HvacToolsManagerApp());
+}
+
+class ErrorBoundary extends StatelessWidget {
+  final Widget child;
+  
+  const ErrorBoundary({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        try {
+          return child;
+        } catch (e, stackTrace) {
+          debugPrint('🚨 Global Error Boundary caught: $e');
+          debugPrint('📍 Stack trace: $stackTrace');
+          
+          return MaterialApp(
+            home: Scaffold(
+              backgroundColor: Colors.red,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error, size: 64, color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      'Application Error',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Something went wrong. Please restart the app.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Try to navigate to login screen
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
+                      ),
+                      child: Text('Restart App'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
 }
 
 class HvacToolsManagerApp extends StatelessWidget {
@@ -61,7 +135,9 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/home': (context) => const HomeScreen(),
-              '/admin': (context) => const AdminHomeScreen(),
+              '/admin': (context) => AdminHomeScreenErrorBoundary(
+                child: const AdminHomeScreen(),
+              ),
               '/technician': (context) => const TechnicianHomeScreen(),
               '/tool-detail': (context) {
                 final tool = ModalRoute.of(context)!.settings.arguments as Tool;
@@ -69,6 +145,9 @@ class HvacToolsManagerApp extends StatelessWidget {
               },
             },
             debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              return ErrorBoundary(child: child!);
+            },
           );
         },
       ),
@@ -76,25 +155,38 @@ class HvacToolsManagerApp extends StatelessWidget {
   }
 
   Widget _getInitialRoute(AuthProvider authProvider) {
-    if (!authProvider.isInitialized) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF000000),
-        body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+    try {
+      if (!authProvider.isInitialized) {
+        return const Scaffold(
+          backgroundColor: Color(0xFF000000),
+          body: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+            ),
           ),
-        ),
-      );
-    }
-
-    if (authProvider.isAuthenticated) {
-      // Route based on user role
-      if (authProvider.isAdmin) {
-        return const AdminHomeScreen();
-      } else {
-        return const TechnicianHomeScreen();
+        );
       }
-    } else {
+
+      if (authProvider.isAuthenticated) {
+        debugPrint('🔍 Initial route: User authenticated, role = ${authProvider.userRole}');
+        // Route based on user role
+        if (authProvider.isAdmin) {
+          debugPrint('🚀 Initial route: Navigating to AdminHomeScreen');
+          return AdminHomeScreenErrorBoundary(
+            child: const AdminHomeScreen(),
+          );
+        } else {
+          debugPrint('🚀 Initial route: Navigating to TechnicianHomeScreen');
+          return const TechnicianHomeScreen();
+        }
+      } else {
+        debugPrint('🚀 Initial route: Navigating to LoginScreen');
+        return const LoginScreen();
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in _getInitialRoute: $e');
+      debugPrint('📍 Stack trace: $stackTrace');
+      // Always fallback to login screen on any error
       return const LoginScreen();
     }
   }

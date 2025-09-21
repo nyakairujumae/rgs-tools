@@ -5,6 +5,7 @@ import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -27,6 +28,7 @@ class TechnicianHomeScreen extends StatefulWidget {
 
 class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   int _selectedIndex = 0;
+  bool _isDisposed = false;
 
   final List<Widget> _screens = [
     const TechnicianDashboardScreen(),
@@ -41,6 +43,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   @override
@@ -83,10 +91,26 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
               return PopupMenuButton<String>(
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
-                  if (value == 'logout') {
-                    await authProvider.signOut();
-                    if (mounted) {
-                      Navigator.pushReplacementNamed(context, '/login');
+                  if (value == 'logout' && !_isDisposed && mounted) {
+                    try {
+                      debugPrint('🚪 Starting logout process...');
+                      // Close any open popup menus first (safely)
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                      
+                      // Simply sign out - let the app handle navigation naturally
+                      await authProvider.signOut();
+                      debugPrint('✅ Logout completed - app will handle navigation');
+                      
+                    } catch (e) {
+                      debugPrint('❌ Error during logout: $e');
+                      // Still try to sign out even on error
+                      try {
+                        await authProvider.signOut();
+                      } catch (e2) {
+                        debugPrint('❌ Error during fallback logout: $e2');
+                      }
                     }
                   }
                 },

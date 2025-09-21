@@ -25,7 +25,7 @@ class StatusChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
@@ -37,7 +37,7 @@ class StatusChip extends StatelessWidget {
             if (showIcon) ...[
               Icon(
                 _getStatusIcon(status),
-                size: 16,
+                size: 12,
                 color: color,
               ),
               const SizedBox(width: 4),
@@ -47,7 +47,7 @@ class StatusChip extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
@@ -95,7 +95,7 @@ class ConditionChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
@@ -107,7 +107,7 @@ class ConditionChip extends StatelessWidget {
             if (showIcon) ...[
               Icon(
                 _getConditionIcon(condition),
-                size: 16,
+                size: 12,
                 color: color,
               ),
               const SizedBox(width: 4),
@@ -117,7 +117,7 @@ class ConditionChip extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
