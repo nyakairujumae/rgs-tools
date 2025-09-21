@@ -28,15 +28,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Reports & Analytics'),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        title: Text('Reports & Analytics'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: Icon(Icons.download),
             onPressed: _exportReport,
           ),
         ],
@@ -57,31 +57,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 // Period Selector
                 _buildPeriodSelector(),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Key Metrics
                 _buildKeyMetrics(tools, technicians),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Tool Status Distribution
                 _buildToolStatusChart(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Tool Condition Analysis
                 _buildToolConditionChart(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Top Technicians
                 _buildTopTechnicians(tools, technicians),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Recent Activity
                 _buildRecentActivity(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Maintenance Alerts
                 _buildMaintenanceAlerts(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Financial Summary
                 _buildFinancialSummary(tools),
@@ -100,7 +100,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Report Period',
               style: TextStyle(
                 fontSize: 18,
@@ -108,7 +108,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedPeriod,
               decoration: const InputDecoration(
@@ -144,7 +144,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Key Metrics',
           style: TextStyle(
             fontSize: 20,
@@ -152,7 +152,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -181,7 +181,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
@@ -190,10 +190,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
@@ -217,7 +217,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Tool Status Distribution',
               style: TextStyle(
                 fontSize: 18,
@@ -225,7 +225,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...statusCounts.entries.map((entry) {
               final percentage = (entry.value / tools.length * 100).toStringAsFixed(1);
               return Padding(
@@ -233,7 +233,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Row(
                   children: [
                     StatusChip(status: entry.key),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: LinearProgressIndicator(
                         value: entry.value / tools.length,
@@ -243,10 +243,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       '${entry.value} (${percentage}%)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textPrimary,
                       ),
@@ -273,7 +273,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Tool Condition Analysis',
               style: TextStyle(
                 fontSize: 18,
@@ -281,7 +281,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...conditionCounts.entries.map((entry) {
               final percentage = (entry.value / tools.length * 100).toStringAsFixed(1);
               return Padding(
@@ -289,7 +289,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Row(
                   children: [
                     ConditionChip(condition: entry.key),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: LinearProgressIndicator(
                         value: entry.value / tools.length,
@@ -299,10 +299,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       '${entry.value} (${percentage}%)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textPrimary,
                       ),
@@ -334,7 +334,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Top Technicians by Tool Usage',
               style: TextStyle(
                 fontSize: 18,
@@ -342,9 +342,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             if (sortedTechnicians.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -363,14 +363,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         backgroundColor: AppTheme.primaryColor,
                         child: Text(
                           entry.key.isNotEmpty ? entry.key[0].toUpperCase() : '?',
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           entry.key,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: AppTheme.textPrimary,
                           ),
@@ -384,7 +384,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                         child: Text(
                           '${entry.value} tools',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.primaryColor,
                             fontWeight: FontWeight.bold,
                           ),
@@ -415,7 +415,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Recent Activity',
               style: TextStyle(
                 fontSize: 18,
@@ -423,25 +423,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...recentTools.take(5).map((tool) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: AppTheme.getStatusColor(tool.status),
-                    child: const Icon(Icons.build, color: Colors.white, size: 20),
+                    child: Icon(Icons.build, color: Theme.of(context).textTheme.bodyLarge?.color, size: 20),
                   ),
                   title: Text(
                     tool.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: AppTheme.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     '${tool.category} • ${tool.brand ?? 'Unknown'}',
-                    style: const TextStyle(color: AppTheme.textSecondary),
+                    style: TextStyle(color: AppTheme.textSecondary),
                   ),
                   trailing: StatusChip(status: tool.status),
                 ),
@@ -466,9 +466,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning, color: AppTheme.warningColor),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.warning, color: AppTheme.warningColor),
+                SizedBox(width: 8),
+                Text(
                   'Maintenance Alerts',
                   style: TextStyle(
                     fontSize: 18,
@@ -485,7 +485,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   child: Text(
                     '${maintenanceTools.length}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.warningColor,
                       fontWeight: FontWeight.bold,
                     ),
@@ -493,9 +493,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             if (maintenanceTools.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -511,18 +511,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: AppTheme.getConditionColor(tool.condition),
-                      child: const Icon(Icons.build, color: Colors.white, size: 20),
+                      child: Icon(Icons.build, color: Theme.of(context).textTheme.bodyLarge?.color, size: 20),
                     ),
                     title: Text(
                       tool.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textPrimary,
                       ),
                     ),
                     subtitle: Text(
                       '${tool.category} • ${tool.condition}',
-                      style: const TextStyle(color: AppTheme.textSecondary),
+                      style: TextStyle(color: AppTheme.textSecondary),
                     ),
                     trailing: ConditionChip(condition: tool.condition),
                   ),
@@ -546,7 +546,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Financial Summary',
               style: TextStyle(
                 fontSize: 18,
@@ -554,7 +554,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildFinancialRow('Total Purchase Value', '\$${totalPurchasePrice.toStringAsFixed(2)}'),
             _buildFinancialRow('Current Value', '\$${totalValue.toStringAsFixed(2)}'),
             _buildFinancialRow('Total Depreciation', '\$${depreciation.toStringAsFixed(2)}'),
@@ -573,13 +573,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),

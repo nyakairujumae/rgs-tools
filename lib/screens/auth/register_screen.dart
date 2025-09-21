@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../models/user_role.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  UserRole _selectedRole = UserRole.technician;
 
   @override
   void dispose() {
@@ -31,26 +33,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
               
               // Back Button
               Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
                   ),
                 ],
               ),
               
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               
               // Logo and Title
               Column(
@@ -62,31 +64,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: const Color(0xFF2196F3),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.build_circle_outlined,
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       size: 40,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Text(
                     'Create Account',
-                    style: AppTheme.heading1.copyWith(
-                      color: Colors.white,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 28,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Join RGS HVAC Services',
-                    style: AppTheme.bodyLarge.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.grey[400],
                     ),
                   ),
                 ],
               ),
               
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
               
               // Registration Form
               Form(
@@ -97,13 +99,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Full Name Field
                     TextFormField(
                       controller: _nameController,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
+                        prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.grey),
@@ -117,7 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -127,19 +129,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     
                     // Email Field
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.grey),
@@ -153,7 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -166,19 +168,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -203,7 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -216,19 +218,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     
                     // Confirm Password Field
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
@@ -253,7 +255,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -266,7 +268,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 24),
+                    SizedBox(height: 16),
+                    
+                    // Role Selection Field
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey),
+                      ),
+                      child: DropdownButtonFormField<UserRole>(
+                        initialValue: _selectedRole,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                        decoration: InputDecoration(
+                          labelText: 'Role',
+                          labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[400],
+                          ),
+                          prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        dropdownColor: Theme.of(context).cardTheme.color,
+                        items: UserRole.values.map((role) {
+                          return DropdownMenuItem<UserRole>(
+                            value: role,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  role == UserRole.admin ? Icons.admin_panel_settings : Icons.person,
+                                  color: role == UserRole.admin ? Colors.blue : Colors.green,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  role.displayName,
+                                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (UserRole? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _selectedRole = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    
+                    SizedBox(height: 24),
                     
                     // Register Button
                     Consumer<AuthProvider>(
@@ -275,25 +330,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onPressed: authProvider.isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2196F3),
-                            foregroundColor: Colors.white,
+                            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: authProvider.isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white),
                                   ),
                                 )
                               : Text(
                                   'Create Account',
-                                  style: AppTheme.bodyLarge.copyWith(
-                                    color: Colors.white,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -301,7 +356,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     
                     // Sign In Link
                     Row(
@@ -309,16 +364,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         Text(
                           'Already have an account? ',
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: Colors.grey[400],
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                           ),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Sign In',
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: const Color(0xFF2196F3),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.blue, // Fixed blue color for visibility in dark mode
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -341,29 +396,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = context.read<AuthProvider>();
     
     try {
-      await authProvider.signUp(
+      final response = await authProvider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         fullName: _nameController.text.trim(),
       );
+
+      // Set user role after successful signup
+      await authProvider.updateUserRole(_selectedRole);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully! Please check your email to verify your account.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Go back to login screen
-        Navigator.pop(context);
+        // Check if user is already confirmed or if email confirmation is disabled
+        if (response.user?.emailConfirmedAt != null || response.session != null) {
+          // User is automatically signed in
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created successfully! Welcome to RGS HVAC Services.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Navigate to home screen
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else {
+          // Email confirmation required
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created! Please check your email to verify your account.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          
+          // Go back to login screen
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Oops! Something went wrong. Please try again.';
+        
+        // Parse error message to show user-friendly text
+        String errorString = e.toString().toLowerCase();
+        if (errorString.contains('email already registered') || 
+            errorString.contains('user already exists')) {
+          errorMessage = 'Oh! It looks like you already have an account.';
+        } else if (errorString.contains('invalid email')) {
+          errorMessage = 'Hmm, that email doesn\'t look quite right.';
+        } else if (errorString.contains('password') && errorString.contains('weak')) {
+          errorMessage = 'Ah, your password needs to be a bit stronger.';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(errorMessage),
+            backgroundColor: Colors.blue, // Changed to blue
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+            duration: Duration(seconds: 4),
           ),
         );
       }

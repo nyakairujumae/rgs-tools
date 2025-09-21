@@ -32,7 +32,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
         actions: [
           IconButton(
             onPressed: _showFilterDialog,
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(Icons.filter_list),
             tooltip: 'Filter History',
           ),
         ],
@@ -164,14 +164,14 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.actionDisplayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
@@ -179,7 +179,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       ),
                       Text(
                         item.timeAgo,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                         ),
@@ -194,7 +194,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       color: AppTheme.successColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Recent',
                       style: TextStyle(
                         fontSize: 10,
@@ -206,12 +206,12 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
               ],
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Description
             Text(
               item.description,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textPrimary,
               ),
@@ -219,7 +219,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
             
             // Value Changes
             if (item.oldValue != null && item.newValue != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -230,32 +230,32 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                   children: [
                     Text(
                       'From: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,
                       ),
                     ),
                     Text(
                       item.oldValue!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.arrow_forward, size: 16, color: AppTheme.textSecondary),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
+                    Icon(Icons.arrow_forward, size: 16, color: AppTheme.textSecondary),
+                    SizedBox(width: 16),
                     Text(
                       'To: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,
                       ),
                     ),
                     Text(
                       item.newValue!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.primaryColor,
@@ -268,7 +268,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
             
             // Performed By
             if (item.performedBy != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(
                 children: [
                   Icon(
@@ -276,16 +276,16 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                     size: 16,
                     color: AppTheme.textSecondary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Performed by: ${item.performedBy}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondary,
                     ),
                   ),
                   if (item.performedByRole != null) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -294,7 +294,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       ),
                       child: Text(
                         item.performedByRole!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           color: AppTheme.primaryColor,
                         ),
@@ -307,7 +307,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
             
             // Location
             if (item.location != null) ...[
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Row(
                 children: [
                   Icon(
@@ -315,10 +315,10 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                     size: 16,
                     color: AppTheme.textSecondary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     item.location!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondary,
                     ),
@@ -329,7 +329,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
             
             // Notes
             if (item.notes != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -344,11 +344,11 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       size: 16,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         item.notes!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                           fontStyle: FontStyle.italic,
@@ -446,7 +446,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Filter History'),
+        title: Text('Filter History'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -460,7 +460,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),
@@ -471,7 +471,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
     return ListTile(
       title: Text(filter),
       subtitle: Text(description),
-      trailing: _selectedFilter == filter ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+      trailing: _selectedFilter == filter ? Icon(Icons.check, color: AppTheme.primaryColor) : null,
       onTap: () {
         setState(() {
           _selectedFilter = filter;

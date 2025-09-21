@@ -113,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ],
             ),
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -140,8 +140,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'Welcome to RGS Tools',
             style: TextStyle(
               fontSize: 20,
@@ -166,10 +166,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Text(
             '${_currentPage + 1}/${_pages.length}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppTheme.textSecondary,
@@ -201,12 +201,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           
-          const SizedBox(height: 48),
+          SizedBox(height: 48),
           
           // Title
           Text(
             page.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -214,12 +214,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Subtitle
           Text(
             page.subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: AppTheme.primaryColor,
@@ -227,12 +227,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           
           // Description
           Text(
             page.description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: AppTheme.textSecondary,
               height: 1.5,
@@ -253,7 +253,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (_currentPage < _pages.length - 1)
             TextButton(
               onPressed: _skipOnboarding,
-              child: const Text(
+              child: Text(
                 'Skip',
                 style: TextStyle(
                   fontSize: 16,
@@ -281,7 +281,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: Text(
                 _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),

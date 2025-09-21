@@ -84,7 +84,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Tool'),
+        title: Text('Edit Tool'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
@@ -92,12 +92,12 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
           TextButton(
             onPressed: _isLoading ? null : _saveTool,
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
+                : Text(
                     'Save',
                     style: TextStyle(
                       color: AppTheme.primaryColor,
@@ -116,7 +116,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
             children: [
               // Basic Information
               _buildSectionHeader('Basic Information'),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               
               TextFormField(
                 controller: _nameController,
@@ -132,7 +132,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
                 value: _categoryController.text.isEmpty ? null : _categoryController.text,
@@ -156,7 +156,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
@@ -170,7 +170,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _modelController,
@@ -183,7 +183,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _serialNumberController,
@@ -193,11 +193,11 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   hintText: 'e.g., FL123456789',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Purchase Information
               _buildSectionHeader('Purchase Information'),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
@@ -213,7 +213,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _currentValueController,
@@ -228,7 +228,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               InkWell(
                 onTap: _selectPurchaseDate,
@@ -247,11 +247,11 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Status and Condition
               _buildSectionHeader('Status & Condition'),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
@@ -276,7 +276,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _status,
@@ -299,7 +299,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _locationController,
@@ -309,7 +309,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                   hintText: 'e.g., Tool Room A, Van 1',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _notesController,
@@ -320,7 +320,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                 ),
                 maxLines: 3,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Save Button
               SizedBox(
@@ -336,8 +336,8 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text(
                           'Update Tool',
                           style: TextStyle(
                             fontSize: 16,
@@ -356,7 +356,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: AppTheme.textPrimary,

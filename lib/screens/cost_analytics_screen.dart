@@ -20,7 +20,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cost Analytics'),
+        title: Text('Cost Analytics'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
@@ -44,23 +44,23 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
               children: [
                 // Period and Category Filters
                 _buildFilters(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Key Metrics Cards
                 _buildKeyMetrics(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Cost Breakdown Chart
                 _buildCostBreakdown(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Top Expensive Tools
                 _buildTopExpensiveTools(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Category Analysis
                 _buildCategoryAnalysis(tools),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Depreciation Analysis
                 _buildDepreciationAnalysis(tools),
@@ -96,7 +96,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
             },
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(
           child: DropdownButtonFormField<String>(
             value: _selectedCategory,
@@ -132,7 +132,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Key Metrics',
           style: TextStyle(
             fontSize: 20,
@@ -140,7 +140,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -151,7 +151,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 'Total Investment',
@@ -162,7 +162,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -173,7 +173,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 AppTheme.errorColor,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
                 'Avg Tool Value',
@@ -198,11 +198,11 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
             Row(
               children: [
                 Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
@@ -210,7 +210,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
@@ -235,7 +235,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Cost Breakdown by Category',
               style: TextStyle(
                 fontSize: 18,
@@ -243,7 +243,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...categoryBreakdown.entries.map((entry) {
               final percentage = (entry.value / _calculateTotalValue(filteredTools)) * 100;
               return Padding(
@@ -256,7 +256,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                       children: [
                         Text(
                           entry.key,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: AppTheme.textPrimary,
@@ -264,14 +264,14 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                         ),
                         Text(
                           '\$${entry.value.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.textSecondary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: percentage / 100,
                       backgroundColor: Colors.grey[300],
@@ -302,7 +302,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Most Valuable Tools',
               style: TextStyle(
                 fontSize: 18,
@@ -310,7 +310,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...topTools.map((tool) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -323,20 +323,20 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                         color: AppTheme.primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.build,
                         color: AppTheme.primaryColor,
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             tool.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: AppTheme.textPrimary,
@@ -344,7 +344,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                           ),
                           Text(
                             tool.category,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary,
                             ),
@@ -354,7 +354,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     ),
                     Text(
                       '\$${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryColor,
@@ -380,7 +380,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Category Analysis',
               style: TextStyle(
                 fontSize: 18,
@@ -388,7 +388,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...categoryStats.entries.map((entry) {
               final stats = entry.value;
               return Padding(
@@ -407,13 +407,13 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     children: [
                       Text(
                         entry.key,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
@@ -448,7 +448,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Depreciation Analysis',
               style: TextStyle(
                 fontSize: 18,
@@ -456,7 +456,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -473,16 +473,16 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Tools with Highest Depreciation:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             ...depreciationData['topDepreciated'].map<Widget>((tool) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -491,7 +491,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     Expanded(
                       child: Text(
                         tool.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textPrimary,
                         ),
@@ -499,7 +499,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     ),
                     Text(
                       '\$${tool.depreciation.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.errorColor,
@@ -521,15 +521,15 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             color: AppTheme.textSecondary,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,

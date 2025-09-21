@@ -22,11 +22,11 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Assign Tool'),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        title: Text('Assign Tool'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
       ),
       body: Consumer<SupabaseToolProvider>(
@@ -54,17 +54,17 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[700]!),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.search, color: Colors.grey[400], size: 20),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                           decoration: InputDecoration(
                             hintText: 'Search tools...',
                             hintStyle: TextStyle(color: Colors.grey[500]),
@@ -80,7 +80,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 
                 // Filter Chips
                 SingleChildScrollView(
@@ -92,13 +92,13 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                           _selectedCategory = value;
                         });
                       }),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildFilterChip('Available', _selectedStatus, (value) {
                         setState(() {
                           _selectedStatus = value;
                         });
                       }),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildFilterChip('In Use', _selectedStatus, (value) {
                         setState(() {
                           _selectedStatus = value;
@@ -107,7 +107,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 
                 // Tools Grid
                 filteredTools.isEmpty
@@ -115,7 +115,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         child: Column(
                           children: [
                             Icon(Icons.build, size: 64, color: Colors.grey[600]),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             Text(
                               'No tools found',
                               style: TextStyle(
@@ -153,7 +153,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : const Color(0xFF1A1A1A),
+          color: isSelected ? Colors.blue : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? Colors.blue : Colors.grey[700]!,
@@ -162,7 +162,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[400],
+            color: isSelected ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[400],
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -182,7 +182,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           Container(
             height: 180,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey[700]!, width: 1),
             ),
@@ -195,7 +195,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: ClipRRect(
@@ -244,8 +244,8 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     ),
                     child: Text(
                       tool.status,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -263,15 +263,15 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               children: [
                 Text(
                   tool.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
-                    color: Colors.white,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   '${tool.category} • ${tool.brand ?? 'Unknown'}',
                   style: TextStyle(
@@ -280,7 +280,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                   ),
                 ),
                 if (tool.purchasePrice != null) ...[
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Value: \$${tool.purchasePrice?.toStringAsFixed(0)}',
                     style: TextStyle(

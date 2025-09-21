@@ -20,14 +20,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Approval Workflows'),
+        title: Text('Approval Workflows'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _showCreateRequestDialog,
-            icon: const Icon(Icons.add),
+            icon: Icon(Icons.add),
             tooltip: 'Create Request',
           ),
         ],
@@ -48,8 +48,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateRequestDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Create Request'),
+        icon: Icon(Icons.add),
+        label: Text('Create Request'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -202,14 +202,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         workflow.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
@@ -217,7 +217,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       ),
                       Text(
                         workflow.requestType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
                         ),
@@ -229,7 +229,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     StatusChip(status: workflow.status),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -250,18 +250,18 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               ],
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Description
             Text(
               workflow.description,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textPrimary,
               ),
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Details
             _buildDetailRow('Requester', workflow.requesterName),
@@ -276,7 +276,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             
             // Status specific information
             if (workflow.isApproved && workflow.approvedBy != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -290,10 +290,10 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       size: 16,
                       color: AppTheme.successColor,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       'Approved by ${workflow.approvedBy} on ${_formatDate(workflow.approvedDate!)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.successColor,
                         fontWeight: FontWeight.w500,
@@ -305,7 +305,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             ],
             
             if (workflow.isRejected && workflow.rejectedBy != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -322,10 +322,10 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                           size: 16,
                           color: AppTheme.errorColor,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'Rejected by ${workflow.rejectedBy} on ${_formatDate(workflow.rejectedDate!)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.errorColor,
                             fontWeight: FontWeight.w500,
@@ -334,10 +334,10 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       ],
                     ),
                     if (workflow.rejectionReason != null) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         'Reason: ${workflow.rejectionReason}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                         ),
@@ -349,7 +349,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             ],
             
             if (workflow.isOverdue) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -363,10 +363,10 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       size: 16,
                       color: AppTheme.warningColor,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       'Overdue by ${workflow.daysUntilDue.abs()} days',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.warningColor,
                         fontWeight: FontWeight.w500,
@@ -377,7 +377,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               ),
             ],
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Action Buttons
             if (workflow.isPending) ...[
@@ -386,20 +386,20 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _approveWorkflow(workflow),
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Approve'),
+                      icon: Icon(Icons.check, size: 16),
+                      label: Text('Approve'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.successColor,
                         foregroundColor: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _rejectWorkflow(workflow),
-                      icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
+                      icon: Icon(Icons.close, size: 16),
+                      label: Text('Reject'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.errorColor,
                         side: const BorderSide(color: AppTheme.errorColor),
@@ -414,8 +414,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _viewWorkflowDetails(workflow),
-                      icon: const Icon(Icons.visibility, size: 16),
-                      label: const Text('View Details'),
+                      icon: Icon(Icons.visibility, size: 16),
+                      label: Text('View Details'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.primaryColor,
                         side: const BorderSide(color: AppTheme.primaryColor),
@@ -423,12 +423,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                     ),
                   ),
                   if (workflow.isRejected) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _resubmitWorkflow(workflow),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Resubmit'),
+                        icon: Icon(Icons.refresh, size: 16),
+                        label: Text('Resubmit'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.secondaryColor,
                           side: const BorderSide(color: AppTheme.secondaryColor),
@@ -455,7 +455,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
@@ -465,7 +465,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textPrimary,
               ),
@@ -560,12 +560,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create Request'),
-        content: const Text('Request creation feature will be implemented in the next phase.'),
+        title: Text('Create Request'),
+        content: Text('Request creation feature will be implemented in the next phase.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -576,12 +576,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Approve Request'),
+        title: Text('Approve Request'),
         content: Text('Are you sure you want to approve "${workflow.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -593,7 +593,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 ),
               );
             },
-            child: const Text('Approve'),
+            child: Text('Approve'),
           ),
         ],
       ),
@@ -604,12 +604,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reject Request'),
+        title: Text('Reject Request'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Are you sure you want to reject this request?'),
-            const SizedBox(height: 16),
+            Text('Are you sure you want to reject this request?'),
+            SizedBox(height: 16),
             TextField(
               decoration: const InputDecoration(
                 labelText: 'Rejection Reason',
@@ -622,7 +622,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -634,7 +634,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 ),
               );
             },
-            child: const Text('Reject'),
+            child: Text('Reject'),
           ),
         ],
       ),
@@ -659,7 +659,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               if (workflow.dueDate != null) Text('Due Date: ${_formatDate(workflow.dueDate!)}'),
               if (workflow.assignedTo != null) Text('Assigned To: ${workflow.assignedTo}'),
               if (workflow.location != null) Text('Location: ${workflow.location}'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text('Description: ${workflow.description}'),
             ],
           ),
@@ -667,7 +667,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),

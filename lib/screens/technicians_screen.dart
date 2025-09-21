@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
+import 'add_technician_screen.dart';
 
 class TechniciansScreen extends StatefulWidget {
   const TechniciansScreen({super.key});
@@ -28,13 +29,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         }).toList();
 
         return Scaffold(
-          backgroundColor: const Color(0xFF000000),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Column(
             children: [
               // Search Bar
               Container(
                 padding: const EdgeInsets.all(16.0),
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).cardTheme.color,
                 child: TextField(
                   decoration: const InputDecoration(
                     hintText: 'Search technicians...',
@@ -53,9 +54,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               // Technicians List
               Expanded(
                 child: technicianProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(child: CircularProgressIndicator())
                     : filteredTechnicians.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -95,11 +96,10 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
-              print('FAB pressed!'); // Debug print
               _showAddTechnicianDialog();
             },
-            icon: const Icon(Icons.add),
-            label: const Text('Add'),
+            icon: Icon(Icons.add),
+            label: Text('Add'),
             backgroundColor: Colors.blue,
           ),
         );
@@ -110,23 +110,23 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   Widget _buildTechnicianCard(Technician technician) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      color: const Color(0xFF1A1A1A),
+      color: Theme.of(context).cardTheme.color,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: technician.status == 'Active' ? Colors.green : Colors.grey,
           child: Text(
             technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         title: Text(
           technician.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         subtitle: Column(
@@ -135,17 +135,17 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             if (technician.employeeId != null)
               Text(
                 'ID: ${technician.employeeId}',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey),
               ),
             if (technician.department != null)
               Text(
                 'Department: ${technician.department}',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey),
               ),
             if (technician.phone != null)
               Text(
                 'Phone: ${technician.phone}',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey),
               ),
             Row(
               children: [
@@ -200,8 +200,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       ),
       child: Text(
         status,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
@@ -210,26 +210,20 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 
   void _showAddTechnicianDialog() {
-    print('Add technician button pressed!'); // Debug print
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Technician'),
-        content: const Text('This is a test dialog'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddTechnicianScreen(),
       ),
     );
   }
 
   void _showEditTechnicianDialog(Technician technician) {
-    showDialog(
-      context: context,
-      builder: (context) => _TechnicianDialog(technician: technician),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTechnicianScreen(technician: technician),
+      ),
     );
   }
 
@@ -237,19 +231,19 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
+        backgroundColor: Theme.of(context).cardTheme.color,
+        title: Text(
           'Delete Technician',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
           'Are you sure you want to delete ${technician.name}?',
-          style: const TextStyle(color: Colors.grey),
+          style: TextStyle(color: Colors.grey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(color: Colors.grey),
             ),
@@ -265,7 +259,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 ),
               );
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -273,283 +267,4 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 }
 
-class _TechnicianDialog extends StatefulWidget {
-  final Technician? technician;
-
-  const _TechnicianDialog({this.technician});
-
-  @override
-  State<_TechnicianDialog> createState() => _TechnicianDialogState();
-}
-
-class _TechnicianDialogState extends State<_TechnicianDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _employeeIdController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _departmentController = TextEditingController();
-  
-  String _status = 'Active';
-  DateTime? _hireDate;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.technician != null) {
-      _nameController.text = widget.technician!.name;
-      _employeeIdController.text = widget.technician!.employeeId ?? '';
-      _phoneController.text = widget.technician!.phone ?? '';
-      _emailController.text = widget.technician!.email ?? '';
-      _departmentController.text = widget.technician!.department ?? '';
-      _status = widget.technician!.status;
-      if (widget.technician!.hireDate != null) {
-        _hireDate = DateTime.tryParse(widget.technician!.hireDate!);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _employeeIdController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    _departmentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1A1A1A),
-      title: Text(
-        widget.technician == null ? 'Add Technician' : 'Edit Technician',
-        style: const TextStyle(color: Colors.white),
-      ),
-      content: Theme(
-        data: Theme.of(context).copyWith(
-          inputDecorationTheme: const InputDecorationTheme(
-            labelStyle: TextStyle(color: Colors.white70),
-            hintStyle: TextStyle(color: Colors.grey),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.blue),
-            ),
-            border: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
-            ),
-          ),
-          textSelectionTheme: const TextSelectionThemeData(
-            cursorColor: Colors.blue,
-            selectionColor: Colors.blue,
-            selectionHandleColor: Colors.blue,
-          ),
-        ),
-        child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name *',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _employeeIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Employee ID',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _departmentController,
-                decoration: const InputDecoration(
-                  labelText: 'Department',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _status,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Active', child: Text('Active')),
-                        DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _status = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: InkWell(
-                      onTap: _selectHireDate,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Hire Date',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(
-                          _hireDate != null
-                              ? '${_hireDate!.day}/${_hireDate!.month}/${_hireDate!.year}'
-                              : 'Select date',
-                          style: TextStyle(
-                            color: _hireDate != null ? Colors.white : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _saveTechnician,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Text(widget.technician == null ? 'Add' : 'Update'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _selectHireDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _hireDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-    );
-    if (date != null) {
-      setState(() {
-        _hireDate = date;
-      });
-    }
-  }
-
-  Future<void> _saveTechnician() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final technician = Technician(
-        id: widget.technician?.id,
-        name: _nameController.text.trim(),
-        employeeId: _employeeIdController.text.trim().isEmpty ? null : _employeeIdController.text.trim(),
-        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        department: _departmentController.text.trim().isEmpty ? null : _departmentController.text.trim(),
-        hireDate: _hireDate?.toIso8601String().split('T')[0],
-        status: _status,
-      );
-
-      if (widget.technician == null) {
-        await context.read<SupabaseTechnicianProvider>().addTechnician(technician);
-      } else {
-        await context.read<SupabaseTechnicianProvider>().updateTechnician(technician);
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.technician == null 
-                ? 'Technician added successfully!' 
-                : 'Technician updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-}
 

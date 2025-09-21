@@ -39,7 +39,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Checkout Tool'),
+        title: Text('Checkout Tool'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
@@ -115,7 +115,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
               });
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Consumer<SupabaseToolProvider>(
             builder: (context, toolProvider, child) {
               final availableTools = toolProvider.tools
@@ -127,7 +127,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                   .toList();
 
               if (availableTools.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
                     child: Column(
@@ -155,7 +155,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppTheme.getStatusColor(tool.status),
-                          child: const Icon(Icons.build, color: Colors.white),
+                          child: Icon(Icons.build, color: Colors.white),
                         ),
                         title: Text(tool.name),
                         subtitle: Text('${tool.category} • ${tool.brand ?? 'Unknown'}'),
@@ -189,11 +189,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                                 children: [
               Row(
                 children: [
-                  const Icon(Icons.build, color: AppTheme.primaryColor),
-                  const SizedBox(width: 8),
+                  Icon(Icons.build, color: AppTheme.primaryColor),
+                  SizedBox(width: 8),
                                   Text(
                     'Selected Tool',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
@@ -201,7 +201,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                                   ),
                                 ],
                               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildDetailRow('Name', _selectedTool!.name),
               _buildDetailRow('Category', _selectedTool!.category),
               if (_selectedTool!.brand != null) _buildDetailRow('Brand', _selectedTool!.brand!),
@@ -220,7 +220,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-                const Text(
+                Text(
                   'Select Technician',
                   style: TextStyle(
                     fontSize: 18,
@@ -228,7 +228,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
               color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
           Consumer<SupabaseTechnicianProvider>(
             builder: (context, technicianProvider, child) {
               final activeTechnicians = technicianProvider.technicians
@@ -272,7 +272,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-                const Text(
+                Text(
             'Checkout Details',
                   style: TextStyle(
                     fontSize: 18,
@@ -280,7 +280,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
               color: AppTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Checkout Date
           InkWell(
@@ -300,7 +300,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Expected Return Date
           InkWell(
@@ -320,7 +320,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Notes
                 TextField(
@@ -355,8 +355,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
                       'Checkout Tool',
                             style: TextStyle(
                               fontSize: 16,
@@ -365,7 +365,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                           ),
                   ),
                 ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -377,7 +377,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
           ),
         ],
@@ -395,7 +395,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
             width: 100,
       child: Text(
               label,
-        style: const TextStyle(
+        style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
               ),
@@ -404,7 +404,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
           Expanded(
             child: statusWidget ?? Text(
               value,
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: AppTheme.textPrimary),
             ),
           ),
         ],

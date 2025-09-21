@@ -38,20 +38,20 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Assign ${widget.tool.name}'),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
       ),
       body: Theme(
         data: Theme.of(context).copyWith(
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: const Color(0xFF1A1A1A),
-            labelStyle: const TextStyle(color: Colors.grey),
-            hintStyle: const TextStyle(color: Colors.grey),
+            fillColor: Theme.of(context).cardTheme.color,
+            labelStyle: TextStyle(color: Colors.grey),
+            hintStyle: TextStyle(color: Colors.grey),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.grey),
@@ -65,9 +65,9 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
           ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white),
-            bodyMedium: TextStyle(color: Colors.white),
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+            bodyMedium: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
         ),
         child: Form(
@@ -79,27 +79,27 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             children: [
               // Tool Information Card
               _buildToolInfoCard(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Assignment Type
               _buildAssignmentTypeSection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Technician Selection
               _buildTechnicianSelection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Location Selection
               _buildLocationSelection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Assignment Date
               _buildAssignmentDateSection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Notes
               _buildNotesSection(),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Action Buttons
               _buildActionButtons(),
@@ -113,7 +113,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
 
   Widget _buildToolInfoCard() {
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: Theme.of(context).cardTheme.color,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -121,19 +121,19 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           children: [
             Row(
               children: [
-                const Icon(Icons.build, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-        const Text(
+                Icon(Icons.build, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+        Text(
           'Tool Information',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildInfoRow('Name', widget.tool.name),
             _buildInfoRow('Category', widget.tool.category),
             if (widget.tool.brand != null) _buildInfoRow('Brand', widget.tool.brand!),
@@ -149,24 +149,24 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Assignment Type',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Card(
-          color: const Color(0xFF1A1A1A),
+          color: Theme.of(context).cardTheme.color,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 RadioListTile<String>(
-                  title: const Text('Permanent Assignment', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Tool assigned to technician long-term', style: TextStyle(color: Colors.grey)),
+                  title: Text('Permanent Assignment', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                  subtitle: Text('Tool assigned to technician long-term', style: TextStyle(color: Colors.grey)),
                   value: 'Permanent',
                   groupValue: _assignmentType,
                   onChanged: (value) {
@@ -176,8 +176,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                   },
                 ),
                 RadioListTile<String>(
-                  title: const Text('Temporary Assignment', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Tool assigned for specific project/duration', style: TextStyle(color: Colors.grey)),
+                  title: Text('Temporary Assignment', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                  subtitle: Text('Tool assigned for specific project/duration', style: TextStyle(color: Colors.grey)),
                   value: 'Temporary',
                   groupValue: _assignmentType,
                   onChanged: (value) {
@@ -198,15 +198,15 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Select Technician',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             final activeTechnicians = technicianProvider.technicians
@@ -230,7 +230,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                       if (technician.department != null)
                         Text(
                           technician.department!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
@@ -261,15 +261,15 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Assignment Location',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         DropdownButtonFormField<Location>(
           value: _selectedLocation,
           decoration: const InputDecoration(
@@ -286,7 +286,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                   Text(location.name),
                   Text(
                     location.fullAddress,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondary,
                     ),
@@ -309,7 +309,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Assignment Date',
           style: TextStyle(
             fontSize: 18,
@@ -317,7 +317,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         InkWell(
           onTap: _selectAssignmentDate,
           child: InputDecorator(
@@ -344,15 +344,15 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Assignment Notes',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextField(
           controller: _notesController,
           decoration: const InputDecoration(
@@ -377,25 +377,25 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             onPressed: _canAssign() ? _performAssignment : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
+                ? CircularProgressIndicator(color: Theme.of(context).textTheme.bodyLarge?.color)
                 : Text(
                     _assignmentType == 'Permanent' 
                         ? 'Assign Permanently' 
                         : 'Assign Temporarily',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
@@ -407,7 +407,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
         ),
       ],
@@ -424,7 +424,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
               ),
@@ -433,7 +433,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           Expanded(
             child: statusWidget ?? Text(
               value,
-              style: const TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: AppTheme.textPrimary),
             ),
           ),
         ],

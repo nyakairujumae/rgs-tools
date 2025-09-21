@@ -27,6 +27,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
   String _condition = 'Good';
   String _status = 'Available';
+  String _selectedCategory = '';
   DateTime? _purchaseDate;
   bool _isLoading = false;
   File? _selectedImage;
@@ -40,6 +41,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
     'Measuring Tools',
     'Cutting Tools',
     'Fastening Tools',
+    'Electrical Tools',
+    'Plumbing Tools',
+    'Carpentry Tools',
+    'Automotive Tools',
+    'Garden Tools',
     'Other',
   ];
 
@@ -60,22 +66,22 @@ class _AddToolScreenState extends State<AddToolScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Add New Tool'),
-        backgroundColor: const Color(0xFF1A1A1A),
-        foregroundColor: Colors.white,
+        title: Text('Add New Tool'),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _saveTool,
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
+                : Text(
                     'Save',
                     style: TextStyle(
                       color: Colors.blue,
@@ -89,9 +95,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
         data: Theme.of(context).copyWith(
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: const Color(0xFF1A1A1A),
-            labelStyle: const TextStyle(color: Colors.grey),
-            hintStyle: const TextStyle(color: Colors.grey),
+            fillColor: Theme.of(context).cardTheme.color,
+            labelStyle: TextStyle(color: Colors.grey),
+            hintStyle: TextStyle(color: Colors.grey),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.grey),
@@ -105,9 +111,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
           ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white),
-            bodyMedium: TextStyle(color: Colors.white),
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+            bodyMedium: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
         ),
         child: Form(
@@ -118,19 +124,19 @@ class _AddToolScreenState extends State<AddToolScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Basic Information
-              const Text(
+              Text(
                 'Basic Information',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               
               // Image Selection Section
               _buildImageSelectionSection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               
               TextFormField(
                 controller: _nameController,
@@ -146,31 +152,41 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: _categoryController.text.isEmpty ? null : _categoryController.text,
+                value: _selectedCategory.isEmpty ? null : _selectedCategory,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Category *',
+                  hintText: 'Select a category',
                   border: OutlineInputBorder(),
                 ),
                 items: _categories.map((category) {
                   return DropdownMenuItem(
                     value: category,
-                    child: Text(category),
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  _categoryController.text = value!;
+                  setState(() {
+                    _selectedCategory = value ?? '';
+                    _categoryController.text = value ?? '';
+                  });
                 },
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (_selectedCategory.isEmpty) {
                     return 'Please select a category';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
@@ -184,7 +200,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _modelController,
@@ -197,7 +213,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _serialNumberController,
@@ -207,18 +223,18 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   hintText: 'e.g., FL123456789',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Purchase Information
-              const Text(
+              Text(
                 'Purchase Information',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
@@ -234,7 +250,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _currentValueController,
@@ -249,7 +265,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               InkWell(
                 onTap: _selectPurchaseDate,
@@ -263,39 +279,40 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
                         : 'Select date',
                     style: TextStyle(
-                      color: _purchaseDate != null ? Colors.black : Colors.grey,
+                      color: _purchaseDate != null ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Status and Condition
-              const Text(
+              Text(
                 'Status & Condition',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _condition,
+                      key: ValueKey(_condition),
+                      initialValue: _condition,
                       decoration: const InputDecoration(
                         labelText: 'Condition',
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Excellent', child: Text('Excellent')),
-                        DropdownMenuItem(value: 'Good', child: Text('Good')),
-                        DropdownMenuItem(value: 'Fair', child: Text('Fair')),
-                        DropdownMenuItem(value: 'Poor', child: Text('Poor')),
-                        DropdownMenuItem(value: 'Needs Repair', child: Text('Needs Repair')),
+                      items: [
+                        DropdownMenuItem(value: 'Excellent', child: Text('Excellent', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Good', child: Text('Good', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Fair', child: Text('Fair', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Poor', child: Text('Poor', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Needs Repair', child: Text('Needs Repair', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -304,19 +321,20 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _status,
+                      key: ValueKey(_status),
+                      initialValue: _status,
                       decoration: const InputDecoration(
                         labelText: 'Status',
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Available', child: Text('Available')),
-                        DropdownMenuItem(value: 'In Use', child: Text('In Use')),
-                        DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
-                        DropdownMenuItem(value: 'Retired', child: Text('Retired')),
+                      items: [
+                        DropdownMenuItem(value: 'Available', child: Text('Available', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'In Use', child: Text('In Use', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
+                        DropdownMenuItem(value: 'Retired', child: Text('Retired', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color))),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -327,7 +345,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _locationController,
@@ -337,7 +355,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   hintText: 'e.g., Tool Room A, Van 1',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               TextFormField(
                 controller: _notesController,
@@ -348,7 +366,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 ),
                 maxLines: 3,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Save Button
               SizedBox(
@@ -358,14 +376,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   onPressed: _isLoading ? null : _saveTool,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
+                      ? CircularProgressIndicator(color: Theme.of(context).textTheme.bodyLarge?.color)
+                      : Text(
                           'Add Tool',
                           style: TextStyle(
                             fontSize: 16,
@@ -462,20 +480,20 @@ class _AddToolScreenState extends State<AddToolScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Tool Image',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey[700]!),
           ),
@@ -495,12 +513,12 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       top: 8,
                       right: 8,
                       child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.54),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
+                          icon: Icon(Icons.close, color: Theme.of(context).textTheme.bodyLarge?.color),
                           onPressed: () {
                             setState(() {
                               _selectedImage = null;
@@ -522,7 +540,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         size: 48,
                         color: Colors.grey[600],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         'Add Tool Image',
                         style: TextStyle(
@@ -531,7 +549,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         'Tap to select from gallery or camera',
                         style: TextStyle(
@@ -550,7 +568,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -567,16 +585,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20),
+            Text(
               'Select Image Source',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -598,7 +616,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
           ],
         ),
       ),
@@ -616,18 +634,18 @@ class _AddToolScreenState extends State<AddToolScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF333333),
+          color: Colors.blue.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[700]!),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: Colors.white),
-            const SizedBox(height: 8),
+            Icon(icon, size: 32, color: Colors.blue),
+            SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Colors.blue,
                 fontWeight: FontWeight.w500,
               ),
             ),

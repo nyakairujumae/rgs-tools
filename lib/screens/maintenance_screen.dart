@@ -23,14 +23,14 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Maintenance Schedule'),
+        title: Text('Maintenance Schedule'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _showAddMaintenanceDialog,
-            icon: const Icon(Icons.add),
+            icon: Icon(Icons.add),
             tooltip: 'Schedule Maintenance',
           ),
         ],
@@ -48,8 +48,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMaintenanceDialog,
-        icon: const Icon(Icons.schedule),
-        label: const Text('Schedule'),
+        icon: Icon(Icons.schedule),
+        label: Text('Schedule'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -165,7 +165,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 Expanded(
                   child: Text(
                     item.toolName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
@@ -176,7 +176,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               ],
             ),
             
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             
             // Maintenance Type and Priority
             Row(
@@ -186,15 +186,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   size: 16,
                   color: AppTheme.textSecondary,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   item.maintenanceType,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
@@ -213,18 +213,18 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               ],
             ),
             
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             
             // Description
             Text(
               item.description,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondary,
               ),
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Date and Status Info
             Row(
@@ -234,21 +234,21 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   size: 16,
                   color: AppTheme.textSecondary,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   _formatDate(item.scheduledDate),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Icon(
                   Icons.access_time,
                   size: 16,
                   color: AppTheme.textSecondary,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   item.dueStatus,
                   style: TextStyle(
@@ -261,7 +261,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
             ),
             
             if (item.assignedTo != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(
                 children: [
                   Icon(
@@ -269,10 +269,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                     size: 16,
                     color: AppTheme.textSecondary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Assigned to: ${item.assignedTo}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
@@ -282,7 +282,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
             ],
             
             if (item.estimatedCost != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(
                 children: [
                   Icon(
@@ -290,10 +290,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                     size: 16,
                     color: AppTheme.textSecondary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Est. Cost: \$${item.estimatedCost!.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
@@ -302,7 +302,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               ),
             ],
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Action Buttons
             Row(
@@ -310,8 +310,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 if (item.status == 'Scheduled' || item.status == 'Overdue')
                   TextButton.icon(
                     onPressed: () => _startMaintenance(item),
-                    icon: const Icon(Icons.play_arrow, size: 16),
-                    label: const Text('Start'),
+                    icon: Icon(Icons.play_arrow, size: 16),
+                    label: Text('Start'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.primaryColor,
                     ),
@@ -319,8 +319,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 if (item.status == 'In Progress')
                   TextButton.icon(
                     onPressed: () => _completeMaintenance(item),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: const Text('Complete'),
+                    icon: Icon(Icons.check, size: 16),
+                    label: Text('Complete'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.successColor,
                     ),
@@ -328,8 +328,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () => _viewMaintenanceDetails(item),
-                  icon: const Icon(Icons.info_outline, size: 16),
-                  label: const Text('Details'),
+                  icon: Icon(Icons.info_outline, size: 16),
+                  label: Text('Details'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.textSecondary,
                   ),
@@ -447,12 +447,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Schedule Maintenance'),
-        content: const Text('Maintenance scheduling feature will be implemented in the next phase.'),
+        title: Text('Schedule Maintenance'),
+        content: Text('Maintenance scheduling feature will be implemented in the next phase.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -498,7 +498,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),

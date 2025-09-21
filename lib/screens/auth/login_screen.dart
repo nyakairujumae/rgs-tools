@@ -26,14 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
+              SizedBox(height: 60),
               
               // Logo and Title
               Column(
@@ -42,34 +42,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3),
+                      color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.build_circle_outlined,
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       size: 40,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Text(
                     'RGS HVAC Services',
-                    style: AppTheme.heading1.copyWith(
-                      color: Colors.white,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 28,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Tool Management System',
-                    style: AppTheme.bodyLarge.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.grey[400],
                     ),
                   ),
                 ],
               ),
               
-              const SizedBox(height: 60),
+              SizedBox(height: 60),
               
               // Login Form
               Form(
@@ -79,23 +79,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       'Sign In',
-                      style: AppTheme.heading2.copyWith(
-                        color: Colors.white,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     
                     // Email Field
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.grey),
@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -122,19 +122,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: AppTheme.bodyLarge.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: AppTheme.bodyMedium.copyWith(
+                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[400],
                         ),
-                        prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderSide: const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
+                        fillColor: Theme.of(context).cardTheme.color,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -172,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     
                     // Login Button
                     Consumer<AuthProvider>(
@@ -181,25 +181,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: authProvider.isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2196F3),
-                            foregroundColor: Colors.white,
+                            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: authProvider.isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white),
                                   ),
                                 )
                               : Text(
                                   'Sign In',
-                                  style: AppTheme.bodyLarge.copyWith(
-                                    color: Colors.white,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -207,20 +207,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     
                     // Forgot Password
                     TextButton(
                       onPressed: _handleForgotPassword,
                       child: Text(
                         'Forgot Password?',
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: const Color(0xFF2196F3),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),
                     
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     
                     // Sign Up Link
                     Row(
@@ -228,8 +228,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           "Don't have an account? ",
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: Colors.grey[400],
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
                           ),
                         ),
                         TextButton(
@@ -238,8 +238,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: Text(
                             'Sign Up',
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: const Color(0xFF2196F3),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.blue, // Fixed blue color for visibility in dark mode
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -268,14 +268,40 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Navigate based on role (automatically determined from database)
+        if (authProvider.isAdmin) {
+          Navigator.pushReplacementNamed(context, '/admin');
+        } else {
+          Navigator.pushReplacementNamed(context, '/technician');
+        }
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Oops! Something went wrong. Please try again.';
+        
+        // Parse error message to show user-friendly text
+        String errorString = e.toString().toLowerCase();
+        if (errorString.contains('invalid login credentials') || 
+            errorString.contains('invalid_credentials')) {
+          errorMessage = 'Hmm, that email or password doesn\'t look right.';
+        } else if (errorString.contains('user not found')) {
+          errorMessage = 'Sorry, we couldn\'t find an account with that email.';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
+        } else if (errorString.contains('too many requests')) {
+          errorMessage = 'Whoa! Too many attempts. Take a quick break.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(errorMessage),
+            backgroundColor: Colors.blue, // Changed to blue
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+            duration: Duration(seconds: 4),
           ),
         );
       }
@@ -307,10 +333,28 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Oops! Couldn\'t send the reset email.';
+        
+        // Parse error message to show user-friendly text
+        String errorString = e.toString().toLowerCase();
+        if (errorString.contains('user not found') || errorString.contains('invalid email')) {
+          errorMessage = 'Sorry, we couldn\'t find an account with that email.';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
+        } else if (errorString.contains('too many requests')) {
+          errorMessage = 'Whoa! Too many requests. Take a quick break.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send reset email: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(errorMessage),
+            backgroundColor: Colors.blue, // Changed to blue
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+            duration: Duration(seconds: 4),
           ),
         );
       }

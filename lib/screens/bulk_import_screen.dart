@@ -34,7 +34,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bulk Import Tools'),
+        title: Text('Bulk Import Tools'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
@@ -48,25 +48,25 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             children: [
               // Instructions Card
               _buildInstructionsCard(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Template Selection
               _buildTemplateSelection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // CSV Input
               _buildCsvInput(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Parse Button
               _buildParseButton(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Preview Data
               if (_parsedData.isNotEmpty) _buildDataPreview(),
               if (_errors.isNotEmpty) _buildErrorList(),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Import Button
               if (_parsedData.isNotEmpty) _buildImportButton(),
@@ -86,9 +86,9 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
           children: [
             Row(
               children: [
-                const Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+                Text(
                   'Import Instructions',
                   style: TextStyle(
                     fontSize: 18,
@@ -98,8 +98,8 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const Text(
+            SizedBox(height: 12),
+            Text(
               '1. Select a tool template below\n'
               '2. Copy your data from Excel/CSV\n'
               '3. Paste it in the text area\n'
@@ -111,14 +111,14 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 'Required columns: Name, Category, Brand, Serial Number, Purchase Date, Purchase Price',
                 style: TextStyle(
                   fontSize: 12,
@@ -137,7 +137,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Tool Template',
           style: TextStyle(
             fontSize: 18,
@@ -145,7 +145,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _selectedTemplate.isEmpty ? null : _selectedTemplate,
           decoration: const InputDecoration(
@@ -179,7 +179,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'CSV Data',
           style: TextStyle(
             fontSize: 18,
@@ -187,7 +187,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextField(
           controller: _csvController,
           decoration: const InputDecoration(
@@ -210,12 +210,12 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
       child: ElevatedButton.icon(
         onPressed: _isLoading ? null : _parseCsvData,
         icon: _isLoading 
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.analytics),
+            : Icon(Icons.analytics),
         label: Text(_isLoading ? 'Parsing...' : 'Parse Data'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
@@ -232,11 +232,11 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
       children: [
         Row(
           children: [
-            const Icon(Icons.preview, color: AppTheme.primaryColor),
-            const SizedBox(width: 8),
+            Icon(Icons.preview, color: AppTheme.primaryColor),
+            SizedBox(width: 8),
             Text(
               'Preview (${_parsedData.length} tools)',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -244,7 +244,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           height: 300,
           decoration: BoxDecoration(
@@ -260,7 +260,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                   backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                   child: Text(
                     '${index + 1}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
@@ -270,7 +270,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 subtitle: Text('${item['category']} • ${item['brand']}'),
                 trailing: Text(
                   '\$${item['purchasePrice'] ?? '0.00'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
                   ),
@@ -289,11 +289,11 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
       children: [
         Row(
           children: [
-            const Icon(Icons.error, color: AppTheme.errorColor),
-            const SizedBox(width: 8),
+            Icon(Icons.error, color: AppTheme.errorColor),
+            SizedBox(width: 8),
             Text(
               'Errors (${_errors.length})',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.errorColor,
@@ -301,7 +301,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -315,7 +315,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
                 '• $error',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.errorColor,
                   fontSize: 12,
                 ),
@@ -334,8 +334,8 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _errors.isEmpty ? _importTools : null,
-            icon: const Icon(Icons.upload),
-            label: const Text('Import Tools'),
+            icon: Icon(Icons.upload),
+            label: Text('Import Tools'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.successColor,
               foregroundColor: Colors.white,
@@ -343,7 +343,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -354,8 +354,8 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 _csvController.clear();
               });
             },
-            icon: const Icon(Icons.clear),
-            label: const Text('Clear All'),
+            icon: Icon(Icons.clear),
+            label: Text('Clear All'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primaryColor,
               side: const BorderSide(color: AppTheme.primaryColor),

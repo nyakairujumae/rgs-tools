@@ -60,19 +60,19 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: Colors.blue,
-                          child: const Icon(
+                          child: Icon(
                             Icons.build,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 widget.tool.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
@@ -80,14 +80,14 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                               ),
                               Text(
                                 '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.grey,
                                 ),
                               ),
                               if (widget.tool.assignedTo != null)
                                 Text(
                                   'Currently assigned to: ${widget.tool.assignedTo}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.blue,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -101,10 +101,10 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Return Info
-            const Text(
+            Text(
               'Temporary Return',
               style: TextStyle(
                 fontSize: 18,
@@ -112,18 +112,18 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 color: Colors.black,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'This tool will be temporarily returned to the company. The technician will get it back when they return.',
               style: TextStyle(
                 color: Colors.grey,
                 fontSize: 14,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Return Reason
-            const Text(
+            Text(
               'Reason for Return',
               style: TextStyle(
                 fontSize: 18,
@@ -131,7 +131,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 color: Colors.black,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -155,10 +155,10 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Expected Return Date
-            const Text(
+            Text(
               'Expected Return Date',
               style: TextStyle(
                 fontSize: 18,
@@ -166,7 +166,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 color: Colors.black,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             InkWell(
               onTap: _selectReturnDate,
               child: InputDecorator(
@@ -184,10 +184,10 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Notes
-            const Text(
+            Text(
               'Return Notes (Optional)',
               style: TextStyle(
                 fontSize: 18,
@@ -195,7 +195,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 color: Colors.black,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _notesController,
               decoration: const InputDecoration(
@@ -205,7 +205,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
               ),
               maxLines: 3,
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Return Button
             SizedBox(
@@ -223,8 +223,8 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                   ),
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text(
                         'Temporary Return',
                         style: TextStyle(
                           fontSize: 16,

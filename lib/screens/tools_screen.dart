@@ -38,13 +38,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
         }).toList();
 
         return Scaffold(
-          backgroundColor: const Color(0xFF000000),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Column(
             children: [
               // Search and Filter Bar
               Container(
                 padding: const EdgeInsets.all(16.0),
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).cardTheme.color,
                 child: Column(
                   children: [
                     // Search Bar
@@ -61,7 +61,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     
                     // Filter Row
                     Row(
@@ -87,7 +87,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _selectedStatus,
@@ -119,9 +119,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
               // Tools List
               Expanded(
                 child: toolProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(child: CircularProgressIndicator())
                     : filteredTools.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -174,17 +174,17 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ? FileImage(File(tool.imagePath!)) 
               : null,
           child: tool.imagePath == null 
-              ? const Icon(
+              ? Icon(
                   Icons.build,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 )
               : null,
         ),
         title: Text(
           tool.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         subtitle: Column(
@@ -196,7 +196,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Row(
               children: [
                 _buildStatusChip(tool.status),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildConditionChip(tool.condition),
               ],
             ),
@@ -208,12 +208,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
             if (tool.currentValue != null)
               Text(
                 '\$${tool.currentValue!.toStringAsFixed(0)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),
               ),
-            const Icon(Icons.chevron_right),
+            Icon(Icons.chevron_right),
           ],
         ),
         onTap: () {
@@ -255,8 +255,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
       ),
       child: Text(
         status,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
@@ -294,8 +294,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
       ),
       child: Text(
         condition,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge?.color,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),

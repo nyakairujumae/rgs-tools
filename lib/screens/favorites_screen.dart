@@ -22,14 +22,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites'),
+        title: Text('Favorites'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _showSortDialog,
-            icon: const Icon(Icons.sort),
+            icon: Icon(Icons.sort),
             tooltip: 'Sort Favorites',
           ),
         ],
@@ -135,7 +135,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
         title: Text(
           tool.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -146,19 +146,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           children: [
             Text(
               '${tool.category} • ${tool.brand ?? 'Unknown'}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Row(
               children: [
                 StatusChip(status: tool.status),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '\$${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -263,12 +263,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove from Favorites'),
+        title: Text('Remove from Favorites'),
         content: Text('Are you sure you want to remove "${tool.name}" from your favorites?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -280,7 +280,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               );
             },
-            child: const Text('Remove'),
+            child: Text('Remove'),
           ),
         ],
       ),
@@ -291,7 +291,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sort Favorites'),
+        title: Text('Sort Favorites'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -306,7 +306,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text('Close'),
           ),
         ],
       ),
@@ -317,7 +317,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return ListTile(
       title: Text(sortBy),
       subtitle: Text(description),
-      trailing: _sortBy == sortBy ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+      trailing: _sortBy == sortBy ? Icon(Icons.check, color: AppTheme.primaryColor) : null,
       onTap: () {
         setState(() {
           _sortBy = sortBy;

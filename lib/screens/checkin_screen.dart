@@ -35,11 +35,11 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Checkin Tool'),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        title: Text('Checkin Tool'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         actions: [
           IconButton(
@@ -52,9 +52,9 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         data: Theme.of(context).copyWith(
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: const Color(0xFF1A1A1A),
-            labelStyle: const TextStyle(color: Colors.grey),
-            hintStyle: const TextStyle(color: Colors.grey),
+            fillColor: Theme.of(context).cardTheme.color,
+            labelStyle: TextStyle(color: Colors.grey),
+            hintStyle: TextStyle(color: Colors.grey),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.grey),
@@ -68,9 +68,9 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
           ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white),
-            bodyMedium: TextStyle(color: Colors.white),
+          textTheme: TextTheme(
+            bodyLarge: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+            bodyMedium: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
         ),
         child: SingleChildScrollView(
@@ -121,7 +121,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   Widget _buildSearchSection() {
     return Container(
-      color: const Color(0xFF1A1A1A),
+      color: Theme.of(context).cardTheme.color,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -139,7 +139,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               });
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Consumer<SupabaseToolProvider>(
             builder: (context, toolProvider, child) {
               final inUseTools = toolProvider.tools
@@ -151,7 +151,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                   .toList();
 
               if (inUseTools.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
                     child: Column(
@@ -175,21 +175,21 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                   itemBuilder: (context, index) {
                     final tool = inUseTools[index];
                     return Card(
-                      color: const Color(0xFF1A1A1A),
+                      color: Theme.of(context).cardTheme.color,
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppTheme.getStatusColor(tool.status),
-                          child: const Icon(Icons.build, color: Colors.white),
+                          child: Icon(Icons.build, color: Theme.of(context).textTheme.bodyLarge?.color),
                         ),
-                        title: Text(tool.name, style: const TextStyle(color: Colors.white)),
+                        title: Text(tool.name, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${tool.category} • ${tool.brand ?? 'Unknown'}', style: const TextStyle(color: Colors.grey)),
+                            Text('${tool.category} • ${tool.brand ?? 'Unknown'}', style: TextStyle(color: Colors.grey)),
                             if (tool.assignedTo != null)
                               Text('Assigned to: ${tool.assignedTo!}', 
-                                   style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                   style: TextStyle(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                         trailing: StatusChip(status: tool.status),
@@ -215,7 +215,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        color: const Color(0xFF1A1A1A),
+        color: Theme.of(context).cardTheme.color,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -223,19 +223,19 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.build, color: AppTheme.primaryColor),
-                  const SizedBox(width: 8),
+                  Icon(Icons.build, color: AppTheme.primaryColor),
+                  SizedBox(width: 8),
                   Text(
                     'Tool to Check In',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _buildDetailRow('Name', _selectedTool!.name),
               _buildDetailRow('Category', _selectedTool!.category),
               if (_selectedTool!.brand != null) _buildDetailRow('Brand', _selectedTool!.brand!),
@@ -256,15 +256,15 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Checkin Details',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Checkin Date
           InkWell(
@@ -284,7 +284,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Return Condition
           DropdownButtonFormField<String>(
@@ -306,7 +306,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               });
             },
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Notes
           TextField(
@@ -335,14 +335,14 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               onPressed: _canCheckin() ? _performCheckin : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+                foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
+                  ? CircularProgressIndicator(color: Theme.of(context).textTheme.bodyLarge?.color)
+                  : Text(
                       'Checkin Tool',
                       style: TextStyle(
                         fontSize: 16,
@@ -351,7 +351,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -363,7 +363,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
           ),
         ],
@@ -381,7 +381,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey,
               ),
@@ -390,7 +390,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           Expanded(
             child: statusWidget ?? Text(
               value,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
           ),
         ],

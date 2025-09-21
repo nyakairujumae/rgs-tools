@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
+import "../providers/auth_provider.dart";
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
@@ -108,11 +109,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           children: [
               // Tool Image Section
               _buildImageSection(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Quick Status Cards
               _buildQuickStatusCards(),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Basic Information
             _buildInfoSection('Basic Information', [
@@ -149,7 +150,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   _buildInfoRow('', _currentTool.notes!),
               ]),
 
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Action Buttons
               _buildActionButtons(),
@@ -187,7 +188,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   size: 64,
                   color: Colors.grey[400],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'No image available',
                   style: TextStyle(
@@ -195,11 +196,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 ElevatedButton.icon(
                   onPressed: _addImage,
-                  icon: const Icon(Icons.camera_alt, size: 16),
-                  label: const Text('Add Photo'),
+                  icon: Icon(Icons.camera_alt, size: 16),
+                  label: Text('Add Photo'),
                       style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
@@ -225,7 +226,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     color: AppTheme.getStatusColor(_currentTool.status),
                     size: 24,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Status',
                     style: TextStyle(
@@ -233,14 +234,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   StatusChip(status: _currentTool.status),
                 ],
               ),
             ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
           child: Card(
             child: Padding(
@@ -252,7 +253,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     color: AppTheme.getConditionColor(_currentTool.condition),
                     size: 24,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Condition',
                     style: TextStyle(
@@ -260,14 +261,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   ConditionChip(condition: _currentTool.condition),
                 ],
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Card(
             child: Padding(
@@ -279,7 +280,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     color: _currentTool.currentValue != null ? Colors.green : Colors.grey,
                     size: 24,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Value',
                     style: TextStyle(
@@ -287,12 +288,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     _currentTool.currentValue != null 
                         ? '\$${_currentTool.currentValue!.toStringAsFixed(0)}'
                         : 'N/A',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -312,13 +313,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -327,7 +328,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
       ],
     );
   }
@@ -342,7 +343,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
               ),
@@ -351,7 +352,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           Expanded(
             child: statusWidget ?? Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                 color: AppTheme.textPrimary,
                     ),
                   ),
@@ -377,8 +378,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   ),
                 );
               },
-              icon: const Icon(Icons.person_add),
-              label: const Text('Assign to Technician'),
+              icon: Icon(Icons.person_add),
+              label: Text('Assign to Technician'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -398,8 +399,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   ),
                 );
               },
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('Reassign Tool'),
+              icon: Icon(Icons.swap_horiz),
+              label: Text('Reassign Tool'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accentColor,
                 foregroundColor: Colors.white,
@@ -408,7 +409,32 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             ),
           ),
         
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
+        
+        // Badge System for Technicians
+        Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            // Show badge button for technicians when tool is available
+            if (authProvider.userRole != null && authProvider.userRole!.name == 'technician' && _currentTool.status == 'Available') {
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _badgeTool,
+                  icon: Icon(Icons.badge),
+                  label: Text('Badge Tool (I have this)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              );
+            }
+            return SizedBox.shrink();
+          },
+        ),
+        
+        SizedBox(height: 12),
         
         // Secondary Action Buttons
         Row(
@@ -416,20 +442,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _scheduleMaintenance,
-                icon: const Icon(Icons.build),
-                label: const Text('Maintenance'),
+                icon: Icon(Icons.build),
+                label: Text('Maintenance'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.primaryColor,
                   side: const BorderSide(color: AppTheme.primaryColor),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _editTool,
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit'),
+                icon: Icon(Icons.edit),
+                label: Text('Edit'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.primaryColor,
                   side: const BorderSide(color: AppTheme.primaryColor),
@@ -454,8 +480,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     ),
                   );
                 },
-                icon: const Icon(Icons.holiday_village),
-                label: const Text('Temporary Return'),
+                icon: Icon(Icons.holiday_village),
+                label: Text('Temporary Return'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.secondaryColor,
                   side: const BorderSide(color: AppTheme.secondaryColor),
@@ -576,6 +602,81 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     );
   }
 
+  void _badgeTool() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Badge Tool'),
+        content: Text('Are you sure you want to badge yourself as having this tool? This will notify other technicians that you have it temporarily.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performBadgeTool();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: Text('Badge Tool'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performBadgeTool() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Update tool status to "In Use" and assign to current user
+      final authProvider = context.read<AuthProvider>();
+      final toolProvider = context.read<SupabaseToolProvider>();
+      
+      final updatedTool = _currentTool.copyWith(
+        status: 'In Use',
+        assignedTo: authProvider.userId,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await toolProvider.updateTool(updatedTool);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tool badged successfully! Other technicians will see you have this tool.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Update the current tool
+        setState(() {
+          _currentTool = updatedTool;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error badging tool: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _viewHistory() {
     // TODO: Implement history view
     ScaffoldMessenger.of(context).showSnackBar(
@@ -590,12 +691,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Tool'),
+        title: Text('Delete Tool'),
         content: Text('Are you sure you want to delete "${_currentTool.name}"? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -625,7 +726,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 }
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

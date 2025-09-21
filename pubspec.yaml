@@ -52,8 +52,12 @@ dependencies:
   # Backend
   supabase_flutter: ^2.3.4
   
+  # Preferences
+  shared_preferences: ^2.2.2
+  
   # Barcode scanning (for future use)
   mobile_scanner: ^3.5.6
+  flutter_native_splash: ^2.4.6
 
 dev_dependencies:
   flutter_test:
@@ -64,7 +68,6 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_native_splash: ^2.4.1
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
   sqflite_common_ffi: ^2.3.0
@@ -82,7 +85,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/rgs.png
+    - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -130,15 +133,4 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/images/rgs.png"
 
-flutter_native_splash:
-  color: "#000000"
-  image: "assets/images/rgs.png"
-  android: true
-  ios: true
 
-  android_gravity: center
-  ios_content_mode: scaleAspectFit
-
-  android_12:
-    image: "assets/images/rgs.png"
-    icon_background_color: "#000000"

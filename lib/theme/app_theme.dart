@@ -34,31 +34,32 @@ class AppTheme {
   static const Color conditionPoor = Colors.red;
   static const Color conditionNeedsRepair = Colors.red;
 
-  /// Main app theme
+  /// Light theme with white background and dark text
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         primary: primaryColor,
         secondary: secondaryColor,
-        surface: surfaceColor,
+        surface: Colors.white,
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: textPrimary,
+        onSurface: Colors.black,
         onError: Colors.white,
       ),
       
       // AppBar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: backgroundColor,
-        foregroundColor: textPrimary,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+        shadowColor: Colors.grey,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          color: textPrimary,
+          color: Colors.black,
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
@@ -66,37 +67,39 @@ class AppTheme {
       
       // Card theme
       cardTheme: CardThemeData(
-        color: cardColor,
+        color: Colors.white,
         elevation: 2,
+        shadowColor: Colors.grey.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
       
       // Text theme
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: textPrimary, fontSize: 32, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(color: textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(color: textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(color: textPrimary, fontSize: 22, fontWeight: FontWeight.w600),
-        headlineMedium: TextStyle(color: textPrimary, fontSize: 20, fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-        titleSmall: TextStyle(color: textPrimary, fontSize: 12, fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
-        bodyMedium: TextStyle(color: textPrimary, fontSize: 14),
-        bodySmall: TextStyle(color: textSecondary, fontSize: 12),
-        labelLarge: TextStyle(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(color: textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(color: textHint, fontSize: 10, fontWeight: FontWeight.w500),
+        displayLarge: TextStyle(color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(color: Colors.black, fontSize: 28, fontWeight: FontWeight.bold),
+        displaySmall: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.w600),
+        headlineMedium: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
+        titleLarge: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+        titleSmall: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500),
+        bodyLarge: TextStyle(color: Colors.black, fontSize: 16),
+        bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
+        bodySmall: TextStyle(color: Colors.grey, fontSize: 12),
+        labelLarge: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+        labelSmall: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w500),
       ),
       
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Color(0xFF000000),
+        fillColor: Colors.grey[50],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -113,8 +116,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: errorColor),
         ),
-        labelStyle: const TextStyle(color: textSecondary),
-        hintStyle: const TextStyle(color: textHint),
+        labelStyle: const TextStyle(color: Color(0xFF8B949E)), // Subtle gray labels
+        hintStyle: const TextStyle(color: Color(0xFF8B949E)), // Subtle gray hints
       ),
       
       // Button themes
@@ -160,17 +163,17 @@ class AppTheme {
       
       // Bottom navigation bar theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.white,
         selectedItemColor: primaryColor,
-        unselectedItemColor: textSecondary,
+        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       
       // Chip theme
       chipTheme: ChipThemeData(
-        backgroundColor: Color(0xFF000000),
-        labelStyle: const TextStyle(color: textPrimary),
+        backgroundColor: Colors.grey[100],
+        labelStyle: const TextStyle(color: Colors.black),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -187,22 +190,25 @@ class AppTheme {
         brightness: Brightness.dark,
         primary: primaryColor,
         secondary: secondaryColor,
-        surface: const Color(0xFF2D2D2D),
+        surface: const Color(0xFF0D1117), // Much darker surface
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: Colors.white,
+        onSurface: const Color(0xFFF0F6FC), // Slightly off-white for better contrast
         onError: Colors.white,
       ),
       
+      // Scaffold background
+      scaffoldBackgroundColor: const Color(0xFF000000), // Pure black
+      
       // AppBar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1E1E1E),
-        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFF000000), // Pure black
+        foregroundColor: Color(0xFFF0F6FC), // Slightly off-white
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          color: Colors.white,
+          color: Color(0xFFF0F6FC),
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
@@ -210,44 +216,46 @@ class AppTheme {
       
       // Card theme
       cardTheme: CardThemeData(
-        color: const Color(0xFF2D2D2D),
-        elevation: 2,
+        color: const Color(0xFF161B22), // Darker card background
+        elevation: 8, // Higher elevation for better depth
+        shadowColor: Colors.black.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFF21262D), width: 1), // Subtle border
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
       
       // Text theme
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
-        headlineMedium: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-        titleSmall: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(color: Colors.white, fontSize: 16),
-        bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
-        bodySmall: TextStyle(color: Colors.grey, fontSize: 12),
-        labelLarge: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w500),
+        displayLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 32, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 28, fontWeight: FontWeight.bold),
+        displaySmall: TextStyle(color: Color(0xFFF0F6FC), fontSize: 24, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 22, fontWeight: FontWeight.w600),
+        headlineMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 20, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(color: Color(0xFFF0F6FC), fontSize: 18, fontWeight: FontWeight.w600),
+        titleLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 16, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 14, fontWeight: FontWeight.w500),
+        titleSmall: TextStyle(color: Color(0xFFF0F6FC), fontSize: 12, fontWeight: FontWeight.w500),
+        bodyLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 16),
+        bodyMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 14),
+        bodySmall: TextStyle(color: Color(0xFF8B949E), fontSize: 12), // Subtle gray for secondary text
+        labelLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium: TextStyle(color: Color(0xFF8B949E), fontSize: 12, fontWeight: FontWeight.w500),
+        labelSmall: TextStyle(color: Color(0xFF8B949E), fontSize: 10, fontWeight: FontWeight.w500),
       ),
       
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF3D3D3D),
+        fillColor: const Color(0xFF161B22), // Darker input background
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: const BorderSide(color: Color(0xFF21262D)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: const BorderSide(color: Color(0xFF21262D)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -257,8 +265,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: errorColor),
         ),
-        labelStyle: const TextStyle(color: Colors.grey),
-        hintStyle: const TextStyle(color: Colors.grey),
+        labelStyle: const TextStyle(color: Color(0xFF8B949E)), // Subtle gray labels
+        hintStyle: const TextStyle(color: Color(0xFF8B949E)), // Subtle gray hints
       ),
       
       // Button themes
@@ -304,19 +312,20 @@ class AppTheme {
       
       // Bottom navigation bar theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF1E1E1E),
+        backgroundColor: Color(0xFF000000), // Pure black
         selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Color(0xFF8B949E), // Subtle gray for unselected
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       
       // Chip theme
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFF3D3D3D),
-        labelStyle: const TextStyle(color: Colors.white),
+        backgroundColor: const Color(0xFF161B22), // Darker chip background
+        labelStyle: const TextStyle(color: Color(0xFFF0F6FC)), // Off-white text
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF21262D), width: 1), // Subtle border
         ),
       ),
     );
@@ -370,31 +379,37 @@ class AppTheme {
     }
   }
 
-  // Static text styles for easy access
+  // Static text styles for easy access (will be overridden by theme)
   static const TextStyle heading1 = TextStyle(
-    color: textPrimary,
+    color: Colors.black,
     fontSize: 28,
     fontWeight: FontWeight.bold,
   );
 
   static const TextStyle heading2 = TextStyle(
-    color: textPrimary,
+    color: Colors.black,
     fontSize: 24,
     fontWeight: FontWeight.w600,
   );
 
+  static const TextStyle heading3 = TextStyle(
+    color: Colors.black,
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+  );
+
   static const TextStyle bodyLarge = TextStyle(
-    color: textPrimary,
+    color: Colors.black,
     fontSize: 16,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    color: textPrimary,
+    color: Colors.black,
     fontSize: 14,
   );
 
   static const TextStyle bodySmall = TextStyle(
-    color: textSecondary,
+    color: Colors.grey,
     fontSize: 12,
   );
 }

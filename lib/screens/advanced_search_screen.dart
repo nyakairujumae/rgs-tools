@@ -42,14 +42,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Advanced Search'),
+        title: Text('Advanced Search'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _clearFilters,
-            icon: const Icon(Icons.clear_all),
+            icon: Icon(Icons.clear_all),
             tooltip: 'Clear All Filters',
           ),
         ],
@@ -68,37 +68,37 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                   children: [
                     // Text Search
                     _buildTextSearch(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Category Filter
                     _buildCategoryFilter(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Status and Condition Filters
                     Row(
                       children: [
                         Expanded(child: _buildStatusFilter()),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16),
                         Expanded(child: _buildConditionFilter()),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Location Filter
                     _buildLocationFilter(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Value Range
                     _buildValueRange(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Date Range
                     _buildDateRange(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Additional Filters
                     _buildAdditionalFilters(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Search Button
                     _buildSearchButton(),
@@ -122,7 +122,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Search Text',
           style: TextStyle(
             fontSize: 18,
@@ -130,7 +130,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextField(
           controller: _searchController,
           decoration: const InputDecoration(
@@ -153,7 +153,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Category',
           style: TextStyle(
             fontSize: 18,
@@ -161,7 +161,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _selectedCategory,
           decoration: const InputDecoration(
@@ -183,7 +183,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Status',
           style: TextStyle(
             fontSize: 16,
@@ -191,7 +191,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedStatus,
           decoration: const InputDecoration(
@@ -219,7 +219,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Condition',
           style: TextStyle(
             fontSize: 16,
@@ -227,7 +227,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedCondition,
           decoration: const InputDecoration(
@@ -256,7 +256,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Location',
           style: TextStyle(
             fontSize: 18,
@@ -264,7 +264,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: _selectedLocation,
           decoration: const InputDecoration(
@@ -291,7 +291,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Value Range',
           style: TextStyle(
             fontSize: 18,
@@ -299,7 +299,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -316,7 +316,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Expanded(
               child: TextFormField(
                 initialValue: _maxValue.toString(),
@@ -341,7 +341,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Purchase Date Range',
           style: TextStyle(
             fontSize: 18,
@@ -349,7 +349,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -372,7 +372,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Expanded(
               child: InkWell(
                 onTap: _selectToDate,
@@ -403,7 +403,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Additional Filters',
           style: TextStyle(
             fontSize: 18,
@@ -411,10 +411,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         CheckboxListTile(
-          title: const Text('Show only favorites'),
-          subtitle: const Text('Filter to show only favorite tools'),
+          title: Text('Show only favorites'),
+          subtitle: Text('Filter to show only favorite tools'),
           value: _showOnlyFavorites,
           onChanged: (value) {
             setState(() {
@@ -423,8 +423,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           },
         ),
         CheckboxListTile(
-          title: const Text('Show only assigned tools'),
-          subtitle: const Text('Filter to show only tools currently assigned'),
+          title: Text('Show only assigned tools'),
+          subtitle: Text('Filter to show only tools currently assigned'),
           value: _showOnlyAssigned,
           onChanged: (value) {
             setState(() {
@@ -441,8 +441,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: _search,
-        icon: const Icon(Icons.search),
-        label: const Text('Search Tools'),
+        icon: Icon(Icons.search),
+        label: Text('Search Tools'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
@@ -454,7 +454,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
 
   Widget _buildSearchResults() {
     if (!_hasSearched) {
-      return const Center(
+      return Center(
         child: Text(
           'Enter search criteria and click "Search Tools" to find tools',
           style: TextStyle(
@@ -481,11 +481,11 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           color: AppTheme.primaryColor.withOpacity(0.1),
           child: Row(
             children: [
-              const Icon(Icons.search, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
+              Icon(Icons.search, color: AppTheme.primaryColor),
+              SizedBox(width: 8),
               Text(
                 'Found ${_searchResults.length} tool${_searchResults.length == 1 ? '' : 's'}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimary,
@@ -529,7 +529,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
         ),
         title: Text(
           tool.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -540,19 +540,19 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           children: [
             Text(
               '${tool.category} • ${tool.brand ?? 'Unknown'}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Row(
               children: [
                 StatusChip(status: tool.status),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '\$${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -562,7 +562,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             ),
           ],
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () => _viewToolDetails(tool),
       ),
     );

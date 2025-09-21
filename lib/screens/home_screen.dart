@@ -22,6 +22,7 @@ import 'favorites_screen.dart';
 import 'advanced_search_screen.dart';
 import 'compliance_screen.dart';
 import 'approval_workflows_screen.dart';
+import '../widgets/common/rgs_logo.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,19 +53,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         toolbarHeight: 80, // Increased height to fit the slogan
-        title: _RGSLogo(),
+        title: const RGSLogo(),
         centerTitle: true,
         actions: [
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return PopupMenuButton<String>(
-                icon: const Icon(Icons.account_circle),
+                icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
                   if (value == 'logout') {
                     await authProvider.signOut();
@@ -78,21 +79,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: 'profile',
                     child: Row(
                       children: [
-                        const Icon(Icons.person, color: Colors.grey),
-                        const SizedBox(width: 8),
+                        Icon(Icons.person, color: Colors.grey),
+                        SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               authProvider.userFullName ?? 'User',
-                              style: AppTheme.bodyMedium.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               authProvider.userEmail ?? '',
-                              style: AppTheme.bodySmall.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.grey,
                               ),
                             ),
@@ -115,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       body: _screens[_selectedIndex],
@@ -123,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF000000),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         items: const [
@@ -155,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               },
-              child: const Icon(Icons.add),
+              child: Icon(Icons.add),
             )
           : null,
     );
@@ -185,23 +186,23 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              const Text(
+              Text(
                 'Dashboard',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 8),
+              Text(
                 'RGS tools Overview',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Stats Grid
               GridView.count(
@@ -217,41 +218,45 @@ class DashboardScreen extends StatelessWidget {
                     totalTools.toString(),
                     Icons.build,
                     Colors.blue,
+                    context,
                   ),
                   _buildStatCard(
                     'Technicians',
                     technicians.length.toString(),
                     Icons.people,
                     Colors.green,
+                    context,
                   ),
                   _buildStatCard(
                     'Total Value',
                     '\$${totalValue.toStringAsFixed(0)}',
                     Icons.attach_money,
                     Colors.orange,
+                    context,
                   ),
                   _buildStatCard(
                     'Need Maintenance',
                     toolsNeedingMaintenance.toString(),
                     Icons.warning,
                     Colors.red,
+                    context,
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Status Overview
-              const Text(
+              Text(
                 'Tool Status',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Card(
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).cardTheme.color,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -263,10 +268,10 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Quick Actions
-              const Text(
+              Text(
                 'Quick Actions',
                 style: TextStyle(
                   fontSize: 20,
@@ -274,7 +279,7 @@ class DashboardScreen extends StatelessWidget {
                   color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -290,9 +295,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Return Tool',
@@ -306,11 +312,12 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -326,9 +333,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Add Technician',
@@ -337,11 +345,12 @@ class DashboardScreen extends StatelessWidget {
                       () {
                         // Navigate to add technician
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -357,9 +366,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Cost Analytics',
@@ -373,11 +383,12 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -393,9 +404,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Search',
@@ -409,11 +421,12 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -429,9 +442,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Compliance',
@@ -445,11 +459,12 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -465,9 +480,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Settings',
@@ -481,28 +497,29 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      context,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Recent Tools
-              const Text(
+              Text(
                 'Recent Tools',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Card(
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).cardTheme.color,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: tools.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Padding(
                             padding: EdgeInsets.all(32.0),
                             child: Column(
@@ -510,13 +527,13 @@ class DashboardScreen extends StatelessWidget {
                                 Icon(
                                   Icons.build,
                                   size: 48,
-                                  color: Colors.white,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                                 SizedBox(height: 16),
                                 Text(
                                   'No tools added yet',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                     fontSize: 16,
                                   ),
                                 ),
@@ -539,26 +556,26 @@ class DashboardScreen extends StatelessWidget {
                                 backgroundColor: _getStatusColor(tool.status),
                                 child: Icon(
                                   Icons.build,
-                                  color: Colors.white,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                   size: 20,
                                 ),
                               ),
                               title: Text(
                                 tool.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.white,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               subtitle: Text(
                                 '${tool.category} • ${tool.brand ?? 'Unknown'}',
-                                style: const TextStyle(color: Colors.grey),
+                                style: TextStyle(color: Colors.grey),
                               ),
                               trailing: Chip(
                                 label: Text(
                                   tool.status,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -576,9 +593,9 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context) {
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: Theme.of(context).cardTheme.color,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -586,20 +603,20 @@ class DashboardScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 24, color: color),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Flexible(
               child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 12,
                 color: Colors.grey,
               ),
@@ -622,7 +639,7 @@ class DashboardScreen extends StatelessWidget {
         children: [
           Text(
             status,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: Colors.grey,
             ),
@@ -635,7 +652,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             child: Text(
               count.toString(),
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -646,9 +663,9 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap, BuildContext context) {
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: Theme.of(context).cardTheme.color,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -657,12 +674,12 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             children: [
               Icon(icon, size: 32, color: color),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -692,7 +709,7 @@ class DashboardScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Select Tool to Assign'),
+        title: Text('Select Tool to Assign'),
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
@@ -740,7 +757,7 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -752,7 +769,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
               );
             },
-            child: const Text('Browse All Tools'),
+            child: Text('Browse All Tools'),
           ),
         ],
       ),
@@ -760,47 +777,3 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _RGSLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // RGS text - bigger and bold
-    const rgsStyle = TextStyle(
-      fontSize: 36, // Increased from 28
-      fontWeight: FontWeight.w800,
-      color: Colors.white,
-      letterSpacing: 0.5,
-    );
-    const rgsText = 'RGS';
-
-    // HVAC SERVICES text - bigger, positioned below RGS
-    const hvacStyle = TextStyle(
-      fontSize: 12, // Increased from 10
-      fontWeight: FontWeight.w500,
-      color: Colors.white,
-      letterSpacing: 0.1,
-    );
-    const hvacText = 'HVAC SERVICES';
-
-    // Slogan text - italic and smaller
-    const sloganStyle = TextStyle(
-      fontSize: 9,
-      fontWeight: FontWeight.w400,
-      fontStyle: FontStyle.italic,
-      color: Colors.white,
-      letterSpacing: 0.1,
-    );
-    const sloganText = '"Not your ordinary HVAC company"';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(rgsText, style: rgsStyle),
-        const SizedBox(height: 2), // Small gap between RGS and HVAC SERVICES
-        Text(hvacText, style: hvacStyle),
-        const SizedBox(height: 1), // Minimal gap before slogan
-        Text(sloganText, style: sloganStyle),
-      ],
-    );
-  }
-}

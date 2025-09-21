@@ -38,8 +38,7 @@ class Tool {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    Map<String, dynamic> map = {
       'name': name,
       'category': category,
       'brand': brand,
@@ -50,13 +49,19 @@ class Tool {
       'current_value': currentValue,
       'condition': condition,
       'location': location,
-      'assigned_to': assignedTo,
       'status': status,
       'image_path': imagePath,
       'notes': notes,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
+    
+    // Only include id if it's not null (for updates)
+    if (id != null) {
+      map['id'] = id;
+    }
+    
+    return map;
   }
 
   factory Tool.fromMap(Map<String, dynamic> map) {

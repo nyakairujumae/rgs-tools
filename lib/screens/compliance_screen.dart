@@ -19,14 +19,14 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Compliance & Certifications'),
+        title: Text('Compliance & Certifications'),
         backgroundColor: AppTheme.backgroundColor,
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _showAddCertificationDialog,
-            icon: const Icon(Icons.add),
+            icon: Icon(Icons.add),
             tooltip: 'Add Certification',
           ),
         ],
@@ -47,8 +47,8 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddCertificationDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Certification'),
+        icon: Icon(Icons.add),
+        label: Text('Add Certification'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -105,7 +105,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Compliance Overview',
             style: TextStyle(
               fontSize: 18,
@@ -113,25 +113,25 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
               color: AppTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: _buildOverviewCard('Total', totalCount.toString(), Icons.assignment, AppTheme.primaryColor),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: _buildOverviewCard('Valid', validCount.toString(), Icons.check_circle, AppTheme.successColor),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildOverviewCard('Expiring Soon', expiringCount.toString(), Icons.warning, AppTheme.warningColor),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: _buildOverviewCard('Expired', expiredCount.toString(), Icons.error, AppTheme.errorColor),
               ),
@@ -153,7 +153,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
@@ -164,7 +164,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
           ),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondary,
             ),
@@ -251,14 +251,14 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         certification.toolName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
@@ -266,7 +266,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                       ),
                       Text(
                         certification.certificationType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
                         ),
@@ -278,7 +278,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
               ],
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Certification Details
             _buildDetailRow('Certification #', certification.certificationNumber),
@@ -294,7 +294,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
               _buildDetailRow('Location', certification.location!),
             
             if (certification.notes != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -309,11 +309,11 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                       size: 16,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         certification.notes!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                           fontStyle: FontStyle.italic,
@@ -325,7 +325,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
               ),
             ],
             
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             
             // Action Buttons
             Row(
@@ -333,8 +333,8 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                 if (certification.documentPath != null)
                   TextButton.icon(
                     onPressed: () => _viewDocument(certification),
-                    icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('View Document'),
+                    icon: Icon(Icons.visibility, size: 16),
+                    label: Text('View Document'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.primaryColor,
                     ),
@@ -342,17 +342,17 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () => _editCertification(certification),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit'),
+                  icon: Icon(Icons.edit, size: 16),
+                  label: Text('Edit'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => _renewCertification(certification),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Renew'),
+                  icon: Icon(Icons.refresh, size: 16),
+                  label: Text('Renew'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.successColor,
                   ),
@@ -375,7 +375,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
@@ -385,7 +385,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textPrimary,
               ),
@@ -451,12 +451,12 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Certification'),
-        content: const Text('Certification management feature will be implemented in the next phase.'),
+        title: Text('Add Certification'),
+        content: Text('Certification management feature will be implemented in the next phase.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -485,12 +485,12 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Renew Certification'),
+        title: Text('Renew Certification'),
         content: Text('Are you sure you want to renew the certification for ${certification.toolName}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -502,7 +502,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                 ),
               );
             },
-            child: const Text('Renew'),
+            child: Text('Renew'),
           ),
         ],
       ),

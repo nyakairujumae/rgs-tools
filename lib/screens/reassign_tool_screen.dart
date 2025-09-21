@@ -51,7 +51,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.info, color: Colors.orange),
                             SizedBox(width: 8),
@@ -65,10 +65,10 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           'Currently assigned to: ${widget.tool.assignedTo ?? 'Unknown'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: Colors.black,
                           ),
@@ -77,7 +77,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Tool Info
                 Card(
@@ -87,19 +87,19 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: Colors.blue,
-                          child: const Icon(
+                          child: Icon(
                             Icons.build,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 widget.tool.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
@@ -107,7 +107,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                               ),
                               Text(
                                 '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.grey,
                                 ),
                               ),
@@ -118,10 +118,10 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // New Technician Selection
-                const Text(
+                Text(
                   'Assign to New Technician',
                   style: TextStyle(
                     fontSize: 18,
@@ -129,10 +129,10 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 
                 if (technicians.isEmpty)
-                  const Card(
+                  Card(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: Center(
@@ -150,14 +150,14 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                         return RadioListTile<Technician>(
                           title: Text(
                             technician.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w500,
                               color: Colors.black,
                             ),
                           ),
                           subtitle: Text(
                             '${technician.department ?? 'No Department'} • ${technician.employeeId ?? 'No ID'}',
-                            style: const TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Colors.grey),
                           ),
                           value: technician,
                           groupValue: _selectedTechnician,
@@ -170,10 +170,10 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                       }).toList(),
                     ),
                   ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Reassignment Notes
-                const Text(
+                Text(
                   'Reassignment Notes (Optional)',
                   style: TextStyle(
                     fontSize: 18,
@@ -181,7 +181,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextField(
                   controller: _notesController,
                   decoration: const InputDecoration(
@@ -191,7 +191,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                   ),
                   maxLines: 3,
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // Reassign Button
                 SizedBox(
@@ -209,8 +209,8 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
                             'Reassign Tool',
                             style: TextStyle(
                               fontSize: 16,
