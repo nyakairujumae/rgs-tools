@@ -604,31 +604,55 @@ class TechnicianDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildToolItem(Tool tool, BuildContext context, {bool isShared = false}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isShared ? Colors.blue.withValues(alpha: 0.3) : Colors.green.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: (isShared ? Colors.blue : Colors.green).withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.build,
-              color: isShared ? Colors.blue : Colors.green,
-              size: 20,
-            ),
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/tool-detail',
+          arguments: tool,
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isShared ? Colors.blue.withValues(alpha: 0.3) : Colors.green.withValues(alpha: 0.3),
           ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[800],
+              ),
+              child: tool.imagePath != null && File(tool.imagePath!).existsSync()
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(tool.imagePath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.build,
+                            color: isShared ? Colors.blue : Colors.green,
+                            size: 20,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
+                      Icons.build,
+                      color: isShared ? Colors.blue : Colors.green,
+                      size: 20,
+                    ),
+            ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -656,6 +680,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 
