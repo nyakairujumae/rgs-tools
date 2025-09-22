@@ -7,7 +7,9 @@ import 'tool_detail_screen.dart';
 import 'add_tool_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
-  const ToolsScreen({super.key});
+  final String? initialStatusFilter;
+  
+  const ToolsScreen({super.key, this.initialStatusFilter});
 
   @override
   State<ToolsScreen> createState() => _ToolsScreenState();
@@ -15,8 +17,14 @@ class ToolsScreen extends StatefulWidget {
 
 class _ToolsScreenState extends State<ToolsScreen> {
   String _selectedCategory = 'All';
-  String _selectedStatus = 'All';
+  late String _selectedStatus;
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.initialStatusFilter ?? 'All';
+  }
 
   @override
   Widget build(BuildContext context) {

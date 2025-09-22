@@ -113,7 +113,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.initState();
     _selectedIndex = widget.initialTab;
     _screens = [
-      DashboardScreen(onNavigateToTab: _navigateToScreen),
+      DashboardScreen(
+        onNavigateToTab: _navigateToScreen,
+        onNavigateToToolsWithFilter: _navigateToToolsWithFilter,
+      ),
       const ToolsScreen(),
       const SharedToolsScreen(),
       const TechniciansScreen(),
@@ -506,6 +509,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     });
   }
 
+  void _navigateToToolsWithFilter(String statusFilter) {
+    setState(() {
+      _selectedIndex = 1; // Tools tab
+      // Replace the ToolsScreen with a filtered version
+      _screens[1] = ToolsScreen(initialStatusFilter: statusFilter);
+    });
+  }
+
   void _showThemeDialog(BuildContext context, ThemeProvider themeProvider) {
     showDialog(
       context: context,
@@ -568,8 +579,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 // Dashboard Screen for Admin
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateToTab;
+  final Function(String) onNavigateToToolsWithFilter;
   
-  const DashboardScreen({super.key, required this.onNavigateToTab});
+  const DashboardScreen({
+    super.key, 
+    required this.onNavigateToTab,
+    required this.onNavigateToToolsWithFilter,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -681,7 +697,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.warning,
                     Colors.red,
                     context,
-                    () => onNavigateToTab(1), // Navigate to Tools tab (can filter by maintenance)
+                    () => onNavigateToToolsWithFilter('Maintenance'), // Navigate to Tools tab with maintenance filter
                   ),
                 ],
               ),
