@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
+import '../services/image_upload_service.dart';
 
 class AddToolScreen extends StatefulWidget {
   const AddToolScreen({super.key});
@@ -423,12 +424,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     });
 
     try {
-      // Save image if selected
-      String? savedImagePath;
-      if (_selectedImage != null) {
-        savedImagePath = await _saveImage(_selectedImage!);
-      }
-
+      // First, create the tool without image
       final tool = Tool(
         name: _nameController.text.trim(),
         category: _categoryController.text.trim(),
@@ -441,11 +437,35 @@ class _AddToolScreenState extends State<AddToolScreen> {
         condition: _condition,
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         status: _status,
-        imagePath: savedImagePath,
+        imagePath: null, // Will be set after upload
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
 
-      await context.read<SupabaseToolProvider>().addTool(tool);
+      // Add the tool first to get the ID
+      final addedTool = await context.read<SupabaseToolProvider>().addTool(tool);
+
+      // Now upload image if selected and update the tool with image URL
+      if (_selectedImage != null && addedTool.id != null) {
+        try {
+          final imageUrl = await ImageUploadService.uploadImage(_selectedImage!, addedTool.id!);
+          if (imageUrl != null) {
+            // Update the tool with the image URL
+            final updatedTool = addedTool.copyWith(imagePath: imageUrl);
+            await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+          }
+        } catch (e) {
+          // If image upload fails, show warning but don't fail the tool creation
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Tool saved but image upload failed: $e'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

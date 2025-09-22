@@ -222,20 +222,53 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   borderRadius: BorderRadius.circular(12),
                   color: Colors.grey[800],
                 ),
-                child: tool.imagePath != null && File(tool.imagePath!).existsSync()
+                child: tool.imagePath != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(tool.imagePath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.build,
-                              color: Colors.grey[400],
-                              size: 30,
-                            );
-                          },
-                        ),
+                        child: tool.imagePath!.startsWith('http')
+                            ? Image.network(
+                                tool.imagePath!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.build,
+                                    color: Colors.grey[400],
+                                    size: 30,
+                                  );
+                                },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: Colors.grey[800],
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : File(tool.imagePath!).existsSync()
+                                ? Image.file(
+                                    File(tool.imagePath!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        Icons.build,
+                                        color: Colors.grey[400],
+                                        size: 30,
+                                      );
+                                    },
+                                  )
+                                : Icon(
+                                    Icons.build,
+                                    color: Colors.grey[400],
+                                    size: 30,
+                                  ),
                       )
                     : Icon(
                         Icons.build,

@@ -177,7 +177,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
         leading: CircleAvatar(
           backgroundColor: _getStatusColor(tool.status),
           backgroundImage: tool.imagePath != null 
-              ? FileImage(File(tool.imagePath!)) 
+              ? (tool.imagePath!.startsWith('http')
+                  ? NetworkImage(tool.imagePath!) as ImageProvider
+                  : FileImage(File(tool.imagePath!)))
               : null,
           child: tool.imagePath == null 
               ? Icon(

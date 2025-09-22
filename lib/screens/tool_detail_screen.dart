@@ -170,15 +170,68 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child: _currentTool.imagePath != null && File(_currentTool.imagePath!).existsSync()
+      child: _currentTool.imagePath != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                File(_currentTool.imagePath!),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 200,
-              ),
+              child: _currentTool.imagePath!.startsWith('http')
+                  ? Image.network(
+                      _currentTool.imagePath!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 200,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error, size: 48, color: Colors.grey[600]),
+                                SizedBox(height: 8),
+                                Text('Failed to load image', style: TextStyle(color: Colors.grey[600])),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : File(_currentTool.imagePath!).existsSync()
+                      ? Image.file(
+                          File(_currentTool.imagePath!),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 200,
+                        )
+                      : Container(
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image_not_supported, size: 48, color: Colors.grey[600]),
+                                SizedBox(height: 8),
+                                Text('Image not found', style: TextStyle(color: Colors.grey[600])),
+                              ],
+                            ),
+                          ),
+                        ),
             )
           : Column(
               mainAxisAlignment: MainAxisAlignment.center,
