@@ -112,7 +112,7 @@ class ImageUploadService {
 
   /// Check authentication and bucket status
   static Future<Map<String, dynamic>> checkStorageStatus() async {
-    final status = {
+    final Map<String, dynamic> status = {
       'authenticated': false,
       'bucketExists': false,
       'user': null,
