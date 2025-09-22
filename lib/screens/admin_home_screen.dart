@@ -109,7 +109,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   bool _isDisposed = false;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    DashboardScreen(onNavigateToTab: _navigateToScreen),
     const ToolsScreen(),
     const SharedToolsScreen(),
     const TechniciansScreen(),
@@ -571,7 +571,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
 // Dashboard Screen for Admin
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  final Function(int) onNavigateToTab;
+  
+  const DashboardScreen({super.key, required this.onNavigateToTab});
 
   @override
   Widget build(BuildContext context) {
@@ -659,6 +661,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.build,
                     Colors.blue,
                     context,
+                    () => onNavigateToTab(1), // Navigate to Tools tab
                   ),
                   _buildStatCard(
                     'Technicians',
@@ -666,6 +669,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.people,
                     Colors.green,
                     context,
+                    () => onNavigateToTab(3), // Navigate to Technicians tab
                   ),
                   _buildStatCard(
                     'Total Value',
@@ -673,6 +677,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.attach_money,
                     Colors.orange,
                     context,
+                    () => onNavigateToTab(4), // Navigate to Reports tab
                   ),
                   _buildStatCard(
                     'Need Maintenance',
@@ -680,6 +685,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.warning,
                     Colors.red,
                     context,
+                    () => onNavigateToTab(1), // Navigate to Tools tab (can filter by maintenance)
                   ),
                 ],
               ),
@@ -835,14 +841,16 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-      ),
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -877,6 +885,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

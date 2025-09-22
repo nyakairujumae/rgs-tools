@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    DashboardScreen(onNavigateToTab: _navigateToTab),
     const ToolsScreen(),
     const TechniciansScreen(),
     const ReportsScreen(),
@@ -48,6 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
+    });
+  }
+
+  void _navigateToTab(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
@@ -182,7 +188,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  final Function(int) onNavigateToTab;
+  
+  const DashboardScreen({super.key, required this.onNavigateToTab});
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +245,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.build,
                     Colors.blue,
                     context,
+                    () => onNavigateToTab(1), // Navigate to Tools tab
                   ),
                   _buildStatCard(
                     'Technicians',
@@ -244,6 +253,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.people,
                     Colors.green,
                     context,
+                    () => onNavigateToTab(2), // Navigate to Technicians tab
                   ),
                   _buildStatCard(
                     'Total Value',
@@ -251,6 +261,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.attach_money,
                     Colors.orange,
                     context,
+                    () => onNavigateToTab(3), // Navigate to Reports tab
                   ),
                   _buildStatCard(
                     'Need Maintenance',
@@ -258,6 +269,7 @@ class DashboardScreen extends StatelessWidget {
                     Icons.warning,
                     Colors.red,
                     context,
+                    () => onNavigateToTab(1), // Navigate to Tools tab (can filter by maintenance)
                   ),
                 ],
               ),
@@ -611,36 +623,38 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context) {
-    return Card(
-      color: Theme.of(context).cardTheme.color,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 24, color: color),
-            SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: Theme.of(context).cardTheme.color,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 24, color: color),
+              SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Flexible(
-              child: Text(
-              title,
-              style: TextStyle(
-                  fontSize: 12,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              SizedBox(height: 4),
+              Flexible(
+                child: Text(
+                title,
+                style: TextStyle(
+                    fontSize: 12,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
