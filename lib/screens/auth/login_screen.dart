@@ -239,14 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await Future.delayed(Duration(milliseconds: 100));
         
         // Navigate based on role (automatically determined from database)
-        debugPrint('🔍 Login: User role is ${authProvider.userRole}');
-        debugPrint('🔍 Login: isAdmin = ${authProvider.isAdmin}');
-        
         if (authProvider.isAdmin) {
-          debugPrint('🚀 Navigating to admin screen');
           Navigator.pushReplacementNamed(context, '/admin');
         } else {
-          debugPrint('🚀 Navigating to technician screen');
           Navigator.pushReplacementNamed(context, '/technician');
         }
       }

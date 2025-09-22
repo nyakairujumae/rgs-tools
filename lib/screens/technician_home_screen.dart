@@ -93,7 +93,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 onSelected: (value) async {
                   if (value == 'logout' && !_isDisposed && mounted) {
                     try {
-                      debugPrint('🚪 Starting logout process...');
                       // Close any open popup menus first (safely)
                       if (Navigator.of(context).canPop()) {
                         Navigator.of(context).pop();
@@ -101,15 +100,13 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       
                       // Simply sign out - let the app handle navigation naturally
                       await authProvider.signOut();
-                      debugPrint('✅ Logout completed - app will handle navigation');
                       
                     } catch (e) {
-                      debugPrint('❌ Error during logout: $e');
                       // Still try to sign out even on error
                       try {
                         await authProvider.signOut();
                       } catch (e2) {
-                        debugPrint('❌ Error during fallback logout: $e2');
+                        // Silent fallback
                       }
                     }
                   }

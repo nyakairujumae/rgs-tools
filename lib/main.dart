@@ -24,8 +24,6 @@ void main() async {
   // Add global error handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    print('🚨 FLUTTER ERROR: ${details.exception}');
-    print('📍 Stack trace: ${details.stack}');
   };
 
   // Initialize Supabase
@@ -55,8 +53,7 @@ class ErrorBoundary extends StatelessWidget {
         try {
           return child;
         } catch (e, stackTrace) {
-          debugPrint('🚨 Global Error Boundary caught: $e');
-          debugPrint('📍 Stack trace: $stackTrace');
+          // Handle error silently in production
           
           return MaterialApp(
             home: Scaffold(
@@ -172,24 +169,18 @@ class HvacToolsManagerApp extends StatelessWidget {
       }
 
       if (authProvider.isAuthenticated) {
-        debugPrint('🔍 Initial route: User authenticated, role = ${authProvider.userRole}');
         // Route based on user role
         if (authProvider.isAdmin) {
-          debugPrint('🚀 Initial route: Navigating to AdminHomeScreen');
           return AdminHomeScreenErrorBoundary(
             child: const AdminHomeScreen(),
           );
         } else {
-          debugPrint('🚀 Initial route: Navigating to TechnicianHomeScreen');
           return const TechnicianHomeScreen();
         }
       } else {
-        debugPrint('🚀 Initial route: Navigating to LoginScreen');
         return const LoginScreen();
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error in _getInitialRoute: $e');
-      debugPrint('📍 Stack trace: $stackTrace');
       // Always fallback to login screen on any error
       return const LoginScreen();
     }

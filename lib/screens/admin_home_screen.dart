@@ -50,8 +50,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
         try {
           return child;
         } catch (e, stackTrace) {
-          debugPrint('❌ AdminHomeScreen Error: $e');
-          debugPrint('📍 Stack trace: $stackTrace');
+          // Handle error silently in production
           
           return Scaffold(
             appBar: AppBar(
@@ -83,7 +82,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                           );
                         });
                       } catch (e) {
-                        debugPrint('Error in error boundary logout: $e');
+                        // Silent error handling
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -176,7 +175,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 onSelected: (value) async {
                   if (value == 'logout' && !_isDisposed && mounted) {
                     try {
-                      debugPrint('🚪 Starting logout process...');
                       // Close any open popup menus first (safely)
                       if (Navigator.of(context).canPop()) {
                         Navigator.of(context).pop();
@@ -184,15 +182,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       
                       // Simply sign out - let the app handle navigation naturally
                       await authProvider.signOut();
-                      debugPrint('✅ Logout completed - app will handle navigation');
                       
                     } catch (e) {
-                      debugPrint('❌ Error during logout: $e');
                       // Still try to sign out even on error
                       try {
                         await authProvider.signOut();
                       } catch (e2) {
-                        debugPrint('❌ Error during fallback logout: $e2');
+                        // Silent fallback
                       }
                     }
                   }

@@ -76,10 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onSelected: (value) async {
                   if (value == 'logout') {
                     try {
-                      debugPrint('🚪 Starting logout process...');
                       await authProvider.signOut();
                       if (mounted) {
-                        debugPrint('🚀 Navigating to login screen after logout');
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -87,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
                     } catch (e) {
-                      debugPrint('❌ Error during logout: $e');
                       if (mounted) {
                         Navigator.pushAndRemoveUntil(
                           context,
