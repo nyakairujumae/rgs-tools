@@ -107,19 +107,19 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   late int _selectedIndex;
   bool _isDisposed = false;
-
-  final List<Widget> _screens = [
-    DashboardScreen(onNavigateToTab: _navigateToScreen),
-    const ToolsScreen(),
-    const SharedToolsScreen(),
-    const TechniciansScreen(),
-    const ReportsScreen(),
-  ];
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialTab;
+    _screens = [
+      DashboardScreen(onNavigateToTab: _navigateToScreen),
+      const ToolsScreen(),
+      const SharedToolsScreen(),
+      const TechniciansScreen(),
+      const ReportsScreen(),
+    ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();

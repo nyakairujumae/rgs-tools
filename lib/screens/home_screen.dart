@@ -34,17 +34,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    DashboardScreen(onNavigateToTab: _navigateToTab),
-    const ToolsScreen(),
-    const TechniciansScreen(),
-    const ReportsScreen(),
-  ];
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _screens = [
+      DashboardScreen(onNavigateToTab: _navigateToTab),
+      const ToolsScreen(),
+      const TechniciansScreen(),
+      const ReportsScreen(),
+    ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
@@ -660,7 +660,7 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildStatusRow(String status, int count, Color color) {
