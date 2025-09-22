@@ -87,7 +87,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                     icon: Icons.share,
                     title: _selectedFilter == 'All' ? 'No Shared Tools' : 'No Tools Found',
                     subtitle: _selectedFilter == 'All' 
-                        ? 'Add tools to make them available for sharing'
+                        ? 'Tools need to be marked as "Shared" in the All Tools inventory to appear here'
                         : 'Try adjusting your filters or search terms',
                   );
                 }
@@ -335,6 +335,11 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
 
   List<Tool> _getFilteredTools(List<Tool> tools) {
     var filteredTools = tools.where((tool) {
+      // Only show tools that are marked as 'shared' or 'assigned' (available for checkout)
+      if (tool.toolType != 'shared' && tool.toolType != 'assigned') {
+        return false;
+      }
+
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();

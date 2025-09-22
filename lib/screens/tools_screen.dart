@@ -202,18 +202,40 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (tool.currentValue != null)
-              Text(
-                '\$${tool.currentValue!.toStringAsFixed(0)}',
+            // Tool Type Indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getToolTypeColor(tool.toolType),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                tool.toolType.toUpperCase(),
                 style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
                 ),
               ),
-            Icon(Icons.chevron_right),
+            ),
+            SizedBox(width: 8),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (tool.currentValue != null)
+                  Text(
+                    '\$${tool.currentValue!.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                Icon(Icons.chevron_right),
+              ],
+            ),
           ],
         ),
         onTap: () {
@@ -224,6 +246,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           );
         },
+        onLongPress: () => _showToolActions(context, tool),
       ),
     );
   }
@@ -315,6 +338,140 @@ class _ToolsScreenState extends State<ToolsScreen> {
         return Colors.grey;
       default:
         return Colors.grey;
+    }
+  }
+
+  Color _getToolTypeColor(String toolType) {
+    switch (toolType) {
+      case 'inventory':
+        return Colors.grey;
+      case 'shared':
+        return Colors.blue;
+      case 'assigned':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showToolActions(BuildContext context, Tool tool) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Tool Actions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.share, color: Colors.blue),
+              title: Text(
+                tool.toolType == 'inventory' 
+                    ? 'Make Shared Tool' 
+                    : 'Already ${tool.toolType}',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              subtitle: Text(
+                tool.toolType == 'inventory'
+                    ? 'Make this tool available for checkout'
+                    : 'Tool type: ${tool.toolType}',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ),
+              onTap: tool.toolType == 'inventory' 
+                  ? () => _convertToSharedTool(context, tool)
+                  : null,
+            ),
+            if (tool.toolType == 'shared')
+              ListTile(
+                leading: Icon(Icons.inventory, color: Colors.grey),
+                title: Text(
+                  'Move to Inventory',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                subtitle: Text(
+                  'Remove from shared tools',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                onTap: () => _convertToInventoryTool(context, tool),
+              ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _convertToSharedTool(BuildContext context, Tool tool) async {
+    try {
+      final updatedTool = tool.copyWith(toolType: 'shared');
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Close bottom sheet
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tool.name} is now available as a shared tool'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close bottom sheet
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _convertToInventoryTool(BuildContext context, Tool tool) async {
+    try {
+      final updatedTool = tool.copyWith(toolType: 'inventory');
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Close bottom sheet
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tool.name} moved back to inventory'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close bottom sheet
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

@@ -12,6 +12,7 @@ class Tool {
   final String? location;
   final String? assignedTo;
   final String status;
+  final String toolType; // 'inventory', 'shared', 'assigned'
   final String? imagePath;
   final String? notes;
   final String? createdAt;
@@ -31,6 +32,7 @@ class Tool {
     this.location,
     this.assignedTo,
     this.status = 'Available',
+    this.toolType = 'inventory', // Default to inventory when adding new tools
     this.imagePath,
     this.notes,
     this.createdAt,
@@ -50,6 +52,7 @@ class Tool {
       'condition': condition,
       'location': location,
       'status': status,
+      'tool_type': toolType,
       'image_path': imagePath,
       'notes': notes,
       'created_at': createdAt,
@@ -59,6 +62,11 @@ class Tool {
     // Only include id if it's not null (for updates)
     if (id != null) {
       map['id'] = id;
+    }
+    
+    // Only include assigned_to if it's not null
+    if (assignedTo != null) {
+      map['assigned_to'] = assignedTo;
     }
     
     return map;
@@ -79,6 +87,7 @@ class Tool {
       location: map['location'],
       assignedTo: map['assigned_to'],
       status: map['status'],
+      toolType: map['tool_type'] ?? 'inventory', // Default to inventory if null
       imagePath: map['image_path'],
       notes: map['notes'],
       createdAt: map['created_at'],
@@ -100,6 +109,7 @@ class Tool {
     String? location,
     String? assignedTo,
     String? status,
+    String? toolType,
     String? imagePath,
     String? notes,
     String? createdAt,
@@ -119,6 +129,7 @@ class Tool {
       location: location ?? this.location,
       assignedTo: assignedTo ?? this.assignedTo,
       status: status ?? this.status,
+      toolType: toolType ?? this.toolType,
       imagePath: imagePath ?? this.imagePath,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
