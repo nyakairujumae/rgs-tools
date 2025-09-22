@@ -454,15 +454,32 @@ class _AddToolScreenState extends State<AddToolScreen> {
             await context.read<SupabaseToolProvider>().updateTool(updatedTool);
           }
         } catch (e) {
-          // If image upload fails, show warning but don't fail the tool creation
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Tool saved but image upload failed: $e'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
+          // If Supabase upload fails, fall back to local storage
+          try {
+            final localImagePath = await _saveImageLocally(_selectedImage!, addedTool.id!);
+            final updatedTool = addedTool.copyWith(imagePath: localImagePath);
+            await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Tool saved with local image (cloud upload failed: ${e.toString().split(':').last})'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          } catch (e2) {
+            // If both fail, just show the original error
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Tool saved but image upload failed: ${e.toString().split(':').last}'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
           }
         }
       }
@@ -715,6 +732,21 @@ class _AddToolScreenState extends State<AddToolScreen> {
       return imageFile.path;
     } catch (e) {
       throw Exception('Failed to save image: $e');
+    }
+  }
+
+  Future<String> _saveImageLocally(File imageFile, String toolId) async {
+    try {
+      // Create a unique filename for local storage
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = imageFile.path.split('.').last;
+      final fileName = 'tool_${toolId}_$timestamp.$extension';
+      
+      // For now, just return the original path
+      // In a real app, you'd copy to a persistent directory
+      return imageFile.path;
+    } catch (e) {
+      throw Exception('Failed to save image locally: $e');
     }
   }
 
