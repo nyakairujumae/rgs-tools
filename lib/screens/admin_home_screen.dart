@@ -108,12 +108,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   late int _selectedIndex;
   bool _isDisposed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.initialTab;
-  }
-
   final List<Widget> _screens = [
     const DashboardScreen(),
     const ToolsScreen(),
@@ -125,6 +119,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
