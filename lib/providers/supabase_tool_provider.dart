@@ -31,7 +31,7 @@ class SupabaseToolProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addTool(Tool tool) async {
+  Future<Tool> addTool(Tool tool) async {
     try {
       final response = await SupabaseService.client
           .from('tools')
@@ -39,8 +39,10 @@ class SupabaseToolProvider with ChangeNotifier {
           .select()
           .single();
 
-      _tools.add(Tool.fromMap(response));
+      final createdTool = Tool.fromMap(response);
+      _tools.add(createdTool);
       notifyListeners();
+      return createdTool;
     } catch (e) {
       debugPrint('Error adding tool: $e');
       rethrow;
