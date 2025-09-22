@@ -30,7 +30,9 @@ import 'tool_issues_screen.dart';
 import '../widgets/common/rgs_logo.dart';
 
 class AdminHomeScreen extends StatefulWidget {
-  const AdminHomeScreen({super.key});
+  final int initialTab;
+  
+  const AdminHomeScreen({super.key, this.initialTab = 0});
 
   @override
   State<AdminHomeScreen> createState() => _AdminHomeScreenState();
@@ -103,8 +105,14 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   bool _isDisposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialTab;
+  }
 
   final List<Widget> _screens = [
     const DashboardScreen(),

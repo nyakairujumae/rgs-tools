@@ -135,9 +135,13 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/home': (context) => const HomeScreen(),
-              '/admin': (context) => AdminHomeScreenErrorBoundary(
-                child: const AdminHomeScreen(),
-              ),
+              '/admin': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                final initialTab = args?['initialTab'] as int? ?? 0;
+                return AdminHomeScreenErrorBoundary(
+                  child: AdminHomeScreen(initialTab: initialTab),
+                );
+              },
               '/technician': (context) => const TechnicianHomeScreen(),
               '/tool-detail': (context) {
                 final tool = ModalRoute.of(context)!.settings.arguments as Tool;

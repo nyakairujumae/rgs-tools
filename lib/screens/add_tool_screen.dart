@@ -449,9 +449,20 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tool added successfully!'),
+          SnackBar(
+            content: const Text('Tool added successfully!'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'View All Tools',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pop(context); // Close add tool screen
+                // Navigate to All Tools screen (index 1 in the bottom navigation)
+                // We need to find the parent HomeScreen and set the selected index
+                _navigateToAllTools(context);
+              },
+            ),
           ),
         );
         Navigator.pop(context);
@@ -685,6 +696,18 @@ class _AddToolScreenState extends State<AddToolScreen> {
     } catch (e) {
       throw Exception('Failed to save image: $e');
     }
+  }
+
+  void _navigateToAllTools(BuildContext context) {
+    // Navigate back to the admin home screen and set the selected index to 1 (All Tools)
+    Navigator.popUntil(context, (route) => route.isFirst);
+    
+    // Navigate to admin home screen with All Tools tab (index 1) selected
+    Navigator.pushNamed(
+      context, 
+      '/admin',
+      arguments: {'initialTab': 1}, // 1 = All Tools tab
+    );
   }
 }
 
