@@ -158,14 +158,7 @@ class HvacToolsManagerApp extends StatelessWidget {
   Widget _getInitialRoute(AuthProvider authProvider) {
     try {
       if (!authProvider.isInitialized) {
-        return const Scaffold(
-          backgroundColor: Color(0xFF000000),
-          body: Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
-            ),
-          ),
-        );
+        return const LoginScreen();
       }
 
       if (authProvider.isAuthenticated) {

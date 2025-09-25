@@ -120,7 +120,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       const ToolsScreen(),
       const SharedToolsScreen(),
       const TechniciansScreen(),
-      const ReportsScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
@@ -292,10 +291,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Technicians',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Reports',
           ),
         ],
       ),

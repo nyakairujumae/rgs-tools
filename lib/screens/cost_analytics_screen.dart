@@ -353,7 +353,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                       ),
                     ),
                     Text(
-                      '\$${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
+                      'AED ${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

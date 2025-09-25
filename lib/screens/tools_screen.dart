@@ -154,8 +154,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ],
                             ),
                           )
-                        : ListView.builder(
+                        : GridView.builder(
                             padding: const EdgeInsets.all(16.0),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.8,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
                             itemCount: filteredTools.length,
                             itemBuilder: (context, index) {
                               final tool = filteredTools[index];
@@ -172,80 +178,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
   Widget _buildToolCard(Tool tool) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(tool.status),
-          backgroundImage: tool.imagePath != null 
-              ? (tool.imagePath!.startsWith('http')
-                  ? NetworkImage(tool.imagePath!) as ImageProvider
-                  : FileImage(File(tool.imagePath!)))
-              : null,
-          child: tool.imagePath == null 
-              ? Icon(
-                  Icons.build,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                )
-              : null,
-        ),
-        title: Text(
-          tool.name,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${tool.category} • ${tool.brand ?? 'Unknown'}'),
-            if (tool.serialNumber != null)
-              Text('SN: ${tool.serialNumber}'),
-            Row(
-              children: [
-                _buildStatusChip(tool.status),
-                SizedBox(width: 8),
-                _buildConditionChip(tool.condition),
-              ],
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Tool Type Indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: _getToolTypeColor(tool.toolType),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                tool.toolType.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            SizedBox(width: 8),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (tool.currentValue != null)
-                  Text(
-                    '\$${tool.currentValue!.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                Icon(Icons.chevron_right),
-              ],
-            ),
-          ],
-        ),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           Navigator.push(
             context,
@@ -255,6 +193,182 @@ class _ToolsScreenState extends State<ToolsScreen> {
           );
         },
         onLongPress: () => _showToolActions(context, tool),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).cardTheme.color ?? Colors.white,
+                (Theme.of(context).cardTheme.color ?? Colors.white).withOpacity(0.8),
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
+              Expanded(
+                flex: 3,
+                child: tool.imagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        child: tool.imagePath!.startsWith('http')
+                            ? Image.network(
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              )
+                            : Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              ),
+                      )
+                    : _buildPlaceholderImage(),
+              ),
+              
+              // Content Section
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Tool Name
+                      Flexible(
+                        child: Text(
+                          tool.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 3),
+                      
+                      // Brand and Category
+                      Flexible(
+                        child: Text(
+                          '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 6),
+                      
+                      // Status and Condition Chips
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatusChip(tool.status),
+                          ),
+                          SizedBox(width: 3),
+                          Expanded(
+                            child: _buildConditionChip(tool.condition),
+                          ),
+                        ],
+                      ),
+                      
+                      SizedBox(height: 6),
+                      
+                      // Price and Tool Type
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (tool.currentValue != null)
+                            Flexible(
+                              child: Text(
+                                'AED ${tool.currentValue!.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                          else
+                            SizedBox(),
+                          
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: _getToolTypeColor(tool.toolType),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                tool.toolType.toUpperCase(),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 7,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+        color: Colors.grey[200],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 40,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 4),
+          Text(
+            'No Image',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -279,18 +393,19 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         status,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 10,
+          color: Colors.white,
+          fontSize: 8,
           fontWeight: FontWeight.bold,
         ),
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -318,18 +433,19 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         condition,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-          fontSize: 10,
+          color: Colors.white,
+          fontSize: 8,
           fontWeight: FontWeight.bold,
         ),
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

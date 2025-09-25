@@ -282,7 +282,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                 if (tool.purchasePrice != null) ...[
                   SizedBox(height: 4),
                   Text(
-                    'Value: \$${tool.purchasePrice?.toStringAsFixed(0)}',
+                    'Value: AED ${tool.purchasePrice?.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[500],

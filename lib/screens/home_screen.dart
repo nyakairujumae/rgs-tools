@@ -43,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
       DashboardScreen(onNavigateToTab: _navigateToTab),
       const ToolsScreen(),
       const TechniciansScreen(),
-      const ReportsScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
@@ -160,10 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Technicians',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Reports',
           ),
         ],
       ),

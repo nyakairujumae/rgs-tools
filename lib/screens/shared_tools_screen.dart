@@ -316,7 +316,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                               border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                             ),
                             child: Text(
-                              '\$${tool.currentValue!.toStringAsFixed(0)}',
+                              'AED ${tool.currentValue!.toStringAsFixed(0)}',
                               style: TextStyle(
                                 color: Colors.green,
                                 fontSize: 12,

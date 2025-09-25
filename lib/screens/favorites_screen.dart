@@ -157,7 +157,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 StatusChip(status: tool.status),
                 SizedBox(width: 8),
                 Text(
-                  '\$${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
+                  'AED ${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

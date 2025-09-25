@@ -201,17 +201,53 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(height: 16),
                     
                     // Forgot Password
-                    TextButton(
-                      onPressed: _handleForgotPassword,
-                      child: Text(
-                        'Forgot Password?',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).primaryColor,
+                    Center(
+                      child: TextButton(
+                        onPressed: _handleForgotPassword,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
                     
-                    SizedBox(height: 32),
+                    SizedBox(height: 24),
+                    
+                    // Sign Up Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Don\'t have an account? ',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _handleSignUp,
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          ),
+                          child: Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    SizedBox(height: 16),
                     
                   ],
                 ),
@@ -329,5 +365,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
+  }
+
+  void _handleSignUp() {
+    Navigator.pushNamed(context, '/register');
   }
 }

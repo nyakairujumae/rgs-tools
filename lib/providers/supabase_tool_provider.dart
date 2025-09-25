@@ -69,25 +69,42 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<void> deleteTool(String toolId) async {
     try {
-      await SupabaseService.client
-          .from('tools')
-          .delete()
-          .eq('id', toolId);
-
-      _tools.removeWhere((tool) => tool.id == toolId);
-      notifyListeners();
+      // Add timeout to prevent hanging
+      await Future.any([
+        _performDeletion(toolId),
+        Future.delayed(Duration(seconds: 3), () => throw Exception('Deletion timeout - please try again')),
+      ]);
     } catch (e) {
       debugPrint('Error deleting tool: $e');
       rethrow;
     }
   }
 
+  Future<void> _performDeletion(String toolId) async {
+    // Simple deletion - just delete the tool directly
+    // Let the database handle foreign key constraints
+    await SupabaseService.client
+        .from('tools')
+        .delete()
+        .eq('id', toolId);
+
+    // Update local state
+    _tools.removeWhere((tool) => tool.id == toolId);
+    notifyListeners();
+    
+    debugPrint('Tool deleted successfully: $toolId');
+  }
+
+
   Future<void> assignTool(String toolId, String technicianId, String assignmentType) async {
     try {
-      // Update tool status
+      // Update tool status and assigned_to field
       await SupabaseService.client
           .from('tools')
-          .update({'status': 'Assigned'})
+          .update({
+            'status': 'Assigned',
+            'assigned_to': technicianId
+          })
           .eq('id', toolId);
 
       // Create assignment record
@@ -105,7 +122,8 @@ class SupabaseToolProvider with ChangeNotifier {
       if (index != -1) {
         _tools[index] = Tool.fromMap({
           ..._tools[index].toMap(),
-          'status': 'Assigned'
+          'status': 'Assigned',
+          'assigned_to': technicianId
         });
         notifyListeners();
       }
@@ -117,10 +135,13 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<void> returnTool(String toolId) async {
     try {
-      // Update tool status
+      // Update tool status and clear assigned_to field
       await SupabaseService.client
           .from('tools')
-          .update({'status': 'Available'})
+          .update({
+            'status': 'Available',
+            'assigned_to': null
+          })
           .eq('id', toolId);
 
       // Update assignment status
@@ -138,7 +159,8 @@ class SupabaseToolProvider with ChangeNotifier {
       if (index != -1) {
         _tools[index] = Tool.fromMap({
           ..._tools[index].toMap(),
-          'status': 'Available'
+          'status': 'Available',
+          'assigned_to': null
         });
         notifyListeners();
       }

@@ -292,7 +292,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
     return Consumer2<SupabaseToolProvider, AuthProvider>(
       builder: (context, toolProvider, authProvider, child) {
         final tools = toolProvider.tools;
-        final userId = authProvider.userId;
+        final userId = authProvider.user?.id;
         
         // Get tools assigned to this technician
         final myTools = tools.where((tool) => tool.assignedTo == userId).toList();
@@ -359,42 +359,48 @@ class TechnicianDashboardScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               // My Tools Overview
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'My Assigned Tools',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${myTools.length}',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
+              InkWell(
+                onTap: () {
+                  // Navigate to My Tools tab
+                  _navigateToTab(2, context);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'My Assigned Tools',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${myTools.length}',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     SizedBox(height: 16),
                     if (myTools.isEmpty)
                       Container(
@@ -448,46 +454,53 @@ class TechnicianDashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              ),
 
               SizedBox(height: 24),
 
               // Available Shared Tools
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Available Shared Tools',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${availableSharedTools.length}',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
+              InkWell(
+                onTap: () {
+                  // Navigate to Shared Tools tab
+                  _navigateToTab(1, context);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Available Shared Tools',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${availableSharedTools.length}',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     SizedBox(height: 16),
                     if (availableSharedTools.isEmpty)
                       Container(
@@ -532,6 +545,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
                       ),
                   ],
                 ),
+              ),
               ),
 
               SizedBox(height: 24),
@@ -775,7 +789,7 @@ class MyToolsScreen extends StatelessWidget {
     return Consumer2<SupabaseToolProvider, AuthProvider>(
       builder: (context, toolProvider, authProvider, child) {
         final tools = toolProvider.tools;
-        final userId = authProvider.userId;
+        final userId = authProvider.user?.id;
         
         // Get tools assigned to this technician
         final myTools = tools.where((tool) => tool.assignedTo == userId).toList();
@@ -939,7 +953,7 @@ class MyToolsScreen extends StatelessWidget {
                               border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                             ),
                             child: Text(
-                              '\$${tool.currentValue!.toStringAsFixed(0)}',
+                              'AED ${tool.currentValue!.toStringAsFixed(0)}',
                               style: TextStyle(
                                 color: Colors.green,
                                 fontSize: 12,

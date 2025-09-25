@@ -137,8 +137,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             // Financial Information
               if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
               _buildInfoSection('Financial Information', [
-                  if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', '\$${_currentTool.purchasePrice!.toStringAsFixed(2)}'),
-                  if (_currentTool.currentValue != null) _buildInfoRow('Current Value', '\$${_currentTool.currentValue!.toStringAsFixed(2)}'),
+                  if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', 'AED ${_currentTool.purchasePrice!.toStringAsFixed(2)}'),
+                  if (_currentTool.currentValue != null) _buildInfoRow('Current Value', 'AED ${_currentTool.currentValue!.toStringAsFixed(2)}'),
                   if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
                   if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
                     _buildInfoRow('Depreciation', _calculateDepreciation()),
@@ -353,7 +353,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   SizedBox(height: 4),
                   Text(
                     _currentTool.currentValue != null 
-                        ? '\$${_currentTool.currentValue!.toStringAsFixed(0)}'
+                        ? 'AED ${_currentTool.currentValue!.toStringAsFixed(0)}'
                         : 'N/A',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -574,7 +574,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     final depreciation = _currentTool.purchasePrice! - _currentTool.currentValue!;
     final percentage = (depreciation / _currentTool.purchasePrice!) * 100;
     
-    return '\$${depreciation.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)';
+    return 'AED ${depreciation.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)';
   }
 
   void _handleMenuAction(String action) async {
@@ -752,11 +752,61 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   void _deleteTool() {
+    // Check if tool is currently assigned
+    if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot delete tool that is currently assigned. Please return it first.'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Tool'),
-        content: Text('Are you sure you want to delete "${_currentTool.name}"? This action cannot be undone.'),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete Tool'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to delete "${_currentTool.name}"?'),
+            SizedBox(height: 12),
+            Text(
+              'This will permanently delete:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('• The tool and all its data'),
+            Text('• All maintenance records'),
+            Text('• All usage history'),
+            Text('• All reported issues'),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Text(
+                'This action cannot be undone!',
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -765,23 +815,77 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _isLoading = true;
-              });
+              
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  content: Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Deleting tool...'),
+                    ],
+                  ),
+                ),
+              );
               
               try {
                 await context.read<SupabaseToolProvider>().deleteTool(_currentTool.id!);
                 if (mounted) {
+                  // Close loading dialog
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tool deleted successfully'),
-                      backgroundColor: Colors.green,
+                  
+                  // Show success dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => AlertDialog(
+                      title: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green, size: 28),
+                          SizedBox(width: 12),
+                          Text('Success!'),
+                        ],
+                      ),
+                      content: Text('Tool "${_currentTool.name}" has been deleted successfully.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close dialog
+                            Navigator.pop(context); // Go back to tools list
+                          },
+                          child: Text('OK'),
+                        ),
+                      ],
                     ),
                   );
                 }
               } catch (e) {
-                handleError(e);
+                if (mounted) {
+                  // Close loading dialog
+                  Navigator.pop(context);
+                  
+                  String errorMessage = 'Failed to delete tool. ';
+                  if (e.toString().contains('active assignments')) {
+                    errorMessage += 'This tool is currently assigned to a technician. Please return it first.';
+                  } else if (e.toString().contains('permission')) {
+                    errorMessage += 'You do not have permission to delete this tool.';
+                  } else if (e.toString().contains('network')) {
+                    errorMessage += 'Network error. Please check your connection.';
+                  } else {
+                    errorMessage += 'Please try again.';
+                  }
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
               } finally {
                 if (mounted) {
                   setState(() {
