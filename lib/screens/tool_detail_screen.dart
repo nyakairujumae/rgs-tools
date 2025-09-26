@@ -38,8 +38,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentTool.name),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         actions: [
           PopupMenuButton<String>(
@@ -166,7 +166,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       width: double.infinity,
       height: 200,
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -380,7 +380,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         SizedBox(height: 12),
@@ -409,7 +409,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ),
@@ -417,7 +417,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             child: statusWidget ?? Text(
                       value,
                       style: TextStyle(
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
           ),
