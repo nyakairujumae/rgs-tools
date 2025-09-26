@@ -8,6 +8,7 @@ class AuthProvider with ChangeNotifier {
   UserRole _userRole = UserRole.technician;
   bool _isLoading = false;
   bool _isInitialized = false;
+  bool _isLoggingOut = false;
 
   User? get user => _user;
   UserRole get userRole => _userRole;
@@ -16,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _user != null;
   bool get isAdmin => _userRole == UserRole.admin;
   bool get isTechnician => _userRole == UserRole.technician;
+  bool get isLoggingOut => _isLoggingOut;
 
   Future<void> initialize() async {
     _isLoading = true;
@@ -111,6 +113,7 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> signOut() async {
     _isLoading = true;
+    _isLoggingOut = true;
     notifyListeners();
 
     try {
@@ -133,6 +136,7 @@ class AuthProvider with ChangeNotifier {
       _userRole = UserRole.technician;
     } finally {
       _isLoading = false;
+      _isLoggingOut = false;
       notifyListeners();
       debugPrint('✅ AuthProvider: signOut process completed');
     }

@@ -171,7 +171,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               // Don't render PopupMenuButton during logout to prevent widget tree issues
-              if (authProvider.isLoading) {
+              if (authProvider.isLoading || authProvider.isLoggingOut) {
                 return IconButton(
                   icon: Icon(Icons.account_circle),
                   onPressed: null, // Disabled during logout
