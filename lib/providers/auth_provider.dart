@@ -155,6 +155,8 @@ class AuthProvider with ChangeNotifier {
     }
 
     debugPrint('🔍 _loadUserRole: Loading role for user ${_user!.id}');
+    _isLoading = true;
+    notifyListeners();
 
     try {
       // First try to get role from user metadata
@@ -187,6 +189,9 @@ class AuthProvider with ChangeNotifier {
       // Default to technician for security
       _userRole = UserRole.technician;
       debugPrint('⚠️ Defaulting to technician role due to error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

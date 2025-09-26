@@ -162,6 +162,15 @@ class HvacToolsManagerApp extends StatelessWidget {
       }
 
       if (authProvider.isAuthenticated) {
+        // Show loading screen while role is being determined
+        if (authProvider.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         // Route based on user role
         if (authProvider.isAdmin) {
           return AdminHomeScreenErrorBoundary(
