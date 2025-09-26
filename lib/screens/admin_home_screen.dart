@@ -856,78 +856,103 @@ class DashboardScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: color, size: 24),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon and value row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon, 
+                    color: color, 
+                    size: 28,
+                  ),
                 ),
-                child: Text(
+                Text(
                   value,
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+              ],
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: 16),
+            // Title
+            Text(
+              title,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatusItem(String status, String count, Color color, BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Text(
             count,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 20,
+              fontSize: 28,
+              letterSpacing: -0.5,
             ),
           ),
-        ),
-        SizedBox(height: 8),
-        Text(
-          status,
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            fontSize: 12,
+          const SizedBox(height: 8),
+          Text(
+            status,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
