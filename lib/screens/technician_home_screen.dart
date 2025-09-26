@@ -88,6 +88,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
+              // Don't render PopupMenuButton during logout to prevent widget tree issues
+              if (authProvider.isLoading) {
+                return IconButton(
+                  icon: Icon(Icons.account_circle),
+                  onPressed: null, // Disabled during logout
+                );
+              }
+              
               return PopupMenuButton<String>(
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
@@ -102,12 +110,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       await authProvider.signOut();
                       
                     } catch (e) {
-                      // Still try to sign out even on error
-                      try {
-                        await authProvider.signOut();
-                      } catch (e2) {
-                        // Silent fallback
-                      }
+                      // Silent error handling - the app will handle navigation
+                      debugPrint('Logout error: $e');
                     }
                   }
                 },

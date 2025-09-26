@@ -115,16 +115,20 @@ class AuthProvider with ChangeNotifier {
 
     try {
       debugPrint('🚪 AuthProvider: Starting signOut process...');
+      
+      // Clear user data first to prevent widget tree issues
+      _user = null;
+      _userRole = UserRole.technician;
+      notifyListeners();
+      
+      // Then sign out from Supabase
       await SupabaseService.client.auth.signOut();
       debugPrint('✅ AuthProvider: Supabase signOut successful');
-      
-      _user = null;
-      _userRole = UserRole.technician; // Reset to default role
       debugPrint('✅ AuthProvider: User data cleared');
     } catch (e) {
       debugPrint('❌ AuthProvider: Error during signOut: $e');
       debugPrint('❌ AuthProvider: Error type: ${e.runtimeType}');
-      // Don't rethrow - just clear local state
+      // Ensure user data is cleared even on error
       _user = null;
       _userRole = UserRole.technician;
     } finally {

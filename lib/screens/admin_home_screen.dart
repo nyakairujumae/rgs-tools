@@ -170,6 +170,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
+              // Don't render PopupMenuButton during logout to prevent widget tree issues
+              if (authProvider.isLoading) {
+                return IconButton(
+                  icon: Icon(Icons.account_circle),
+                  onPressed: null, // Disabled during logout
+                );
+              }
+              
               return Builder(
                 builder: (context) {
                   return PopupMenuButton<String>(
@@ -186,12 +194,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       await authProvider.signOut();
                       
                     } catch (e) {
-                      // Still try to sign out even on error
-                      try {
-                        await authProvider.signOut();
-                      } catch (e2) {
-                        // Silent fallback
-                      }
+                      // Silent error handling - the app will handle navigation
+                      debugPrint('Logout error: $e');
                     }
                   }
                 },

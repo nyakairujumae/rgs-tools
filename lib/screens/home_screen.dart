@@ -70,6 +70,14 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
+              // Don't render PopupMenuButton during logout to prevent widget tree issues
+              if (authProvider.isLoading) {
+                return IconButton(
+                  icon: Icon(Icons.account_circle),
+                  onPressed: null, // Disabled during logout
+                );
+              }
+              
               return PopupMenuButton<String>(
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
