@@ -1,11 +1,11 @@
 {
-    "name": "hvac_tools_manager",
-    "short_name": "hvac_tools_manager",
+    "name": "RGS Tools - Professional Tools Management",
+    "short_name": "RGS Tools",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#2196F3",
-    "description": "A new Flutter project.",
+    "background_color": "#ffffff",
+    "theme_color": "#1976D2",
+    "description": "Professional HVAC and construction tools management system for technicians and administrators.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
