@@ -1,6 +1,6 @@
 [build]
-  command = "flutter build web --release --base-href /"
-  publish = "build/web"
+  command = "echo 'Using pre-built web files'"
+  publish = "web-build"
 
 [build.environment]
   FLUTTER_VERSION = "3.24.5"
