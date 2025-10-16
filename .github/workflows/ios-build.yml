@@ -16,7 +16,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        flutter-version: '3.27.0'
         channel: 'stable'
         cache: true
         
@@ -34,10 +34,16 @@ jobs:
     - name: Xcode version
       run: xcodebuild -version
       
+    - name: Clean iOS build directory
+      run: |
+        rm -rf ios/build/
+        rm -rf build/ios/
+        
     - name: Install CocoaPods
       run: |
         cd ios
         sudo gem install cocoapods
+        pod deintegrate || true
         pod install --repo-update
         
     - name: Flutter clean

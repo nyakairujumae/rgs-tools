@@ -49,5 +49,11 @@
 		<false/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>This app needs access to camera to scan barcodes and take photos of tools.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app needs access to photo library to select tool images.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>This app needs access to microphone for video recording features.</string>
 	</dict>
 </plist>
