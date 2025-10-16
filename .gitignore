@@ -57,6 +57,14 @@ rgs-tools-*/
 web-build/
 build/web/
 
+# Build directories
+build/
+ios/build/
+android/build/
+ios/Pods/
+android/.gradle/
+.dart_tool/
+
 # SQL files (keep only the essential ones)
 SUPABASE_*.sql
 !SUPABASE_RECREATE_ALL_TABLES.sql
