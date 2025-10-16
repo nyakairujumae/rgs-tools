@@ -20,6 +20,9 @@ jobs:
         channel: 'stable'
         cache: true
         
+    - name: Flutter doctor
+      run: flutter doctor -v
+      
     - name: Install dependencies
       run: flutter pub get
       
@@ -28,6 +31,9 @@ jobs:
       with:
         xcode-version: '15.4'
         
+    - name: Xcode version
+      run: xcodebuild -version
+      
     - name: Install CocoaPods
       run: |
         cd ios
@@ -40,17 +46,33 @@ jobs:
     - name: Flutter pub get
       run: flutter pub get
       
+    - name: Check iOS configuration
+      run: |
+        flutter config --list
+        flutter devices
+      
+    - name: Build iOS app (debug first)
+      run: |
+        flutter build ios --debug --no-codesign
+        echo "Debug build completed"
+        
+    - name: List debug build artifacts
+      run: |
+        find build/ios -name "*.app" -o -name "*.ipa" | head -10
+        
     - name: Build iOS IPA for iOS 18+
       run: |
-        flutter build ipa --release --no-codesign --target-platform ios-arm64
+        flutter build ipa --release --no-codesign
         echo "iOS 18+ IPA build completed"
         
     - name: List build artifacts
       run: |
-        ls -la build/ios/ipa/
+        ls -la build/ios/ipa/ || echo "No IPA directory found"
+        find build/ios -name "*.ipa" || echo "No IPA files found"
         
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: rgs-tools-ios-18
         path: build/ios/ipa/*.ipa
