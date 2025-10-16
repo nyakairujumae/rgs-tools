@@ -1,4 +1,4 @@
-name: Build iOS IPA for iOS 18+
+name: Build iOS IPA
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.0'
+        flutter-version: '3.24.0'
         channel: 'stable'
         cache: true
         
@@ -29,59 +29,60 @@ jobs:
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '15.4'
+        xcode-version: '15.0'
         
     - name: Xcode version
       run: xcodebuild -version
       
-    - name: Clean iOS build directory
+    - name: Clean everything
       run: |
+        flutter clean
         rm -rf ios/build/
-        rm -rf build/ios/
+        rm -rf build/
+        rm -rf ios/Pods/
+        rm -rf ios/Podfile.lock
         
+    - name: Flutter pub get
+      run: flutter pub get
+      
     - name: Install CocoaPods
       run: |
         cd ios
         sudo gem install cocoapods
-        pod deintegrate || true
-        pod install --repo-update
+        pod install
         
-    - name: Flutter clean
-      run: flutter clean
-      
-    - name: Flutter pub get
-      run: flutter pub get
-      
     - name: Check iOS configuration
       run: |
         flutter config --list
         flutter devices
-      
-    - name: Build iOS app (debug first)
-      run: |
-        flutter build ios --debug --no-codesign
-        echo "Debug build completed"
         
-    - name: List debug build artifacts
+    - name: Build iOS app
       run: |
-        find build/ios -name "*.app" -o -name "*.ipa" | head -10
-        
-    - name: Build iOS IPA for iOS 18+
-      run: |
-        flutter build ipa --release --no-codesign
-        echo "iOS 18+ IPA build completed"
+        flutter build ios --release --no-codesign
+        echo "iOS build completed"
         
     - name: List build artifacts
       run: |
-        ls -la build/ios/ipa/ || echo "No IPA directory found"
-        find build/ios -name "*.ipa" || echo "No IPA files found"
+        find build/ios -name "*.app" -o -name "*.ipa" || echo "No build artifacts found"
+        
+    - name: Create IPA manually
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ../../../rgs-tools.ipa Payload/
+        echo "IPA created successfully"
+        
+    - name: List final artifacts
+      run: |
+        ls -la *.ipa || echo "No IPA files found"
+        find . -name "*.ipa" || echo "No IPA files found"
         
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
-      if: success()
       with:
-        name: rgs-tools-ios-18
-        path: build/ios/ipa/*.ipa
+        name: rgs-tools-ios
+        path: rgs-tools.ipa
         retention-days: 30
         
     - name: Upload build logs
