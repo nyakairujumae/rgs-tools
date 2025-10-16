@@ -149,18 +149,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         toolbarHeight: 80,
         title: const RGSLogo(),
         centerTitle: true,
-        leading: Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return IconButton(
-              icon: Icon(
-                themeProvider.themeIcon,
-                color: themeProvider.themeColor,
-              ),
-              onPressed: () => _showThemeDialog(context, themeProvider),
-              tooltip: 'Change Theme',
-            );
-          },
-        ),
         actions: [
           // Settings button
           IconButton(
@@ -530,63 +518,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     });
   }
 
-  void _showThemeDialog(BuildContext context, ThemeProvider themeProvider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Choose Theme'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: Text('Light Mode'),
-                subtitle: Text('Always use the light theme'),
-                value: ThemeMode.light,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('Dark Mode'),
-                subtitle: Text('Always use the dark theme'),
-                value: ThemeMode.dark,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('System Default'),
-                subtitle: Text('Follow the system setting'),
-                value: ThemeMode.system,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 // Dashboard Screen for Admin
