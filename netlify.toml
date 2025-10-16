@@ -1,9 +1,11 @@
 [build]
-  command = "echo 'Using pre-built web files'"
-  publish = "web-build"
+  publish = "public"
+  command = "echo 'Using pre-built files'"
 
 [build.environment]
   FLUTTER_VERSION = "3.24.5"
 
-[[plugins]]
-  package = "@netlify/plugin-flutter"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

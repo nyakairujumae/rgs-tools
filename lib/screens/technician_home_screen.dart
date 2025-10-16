@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/theme_provider.dart';
 import 'auth/login_screen.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import 'shared_tools_screen.dart';
-import 'assign_tool_screen.dart';
-import 'checkout_screen.dart';
 import 'checkin_screen.dart';
+import 'checkin_screen_web.dart';
 import 'tool_detail_screen.dart';
 import 'settings_screen.dart';
 import 'add_tool_issue_screen.dart';
@@ -30,8 +28,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   int _selectedIndex = 0;
   bool _isDisposed = false;
 
-  final List<Widget> _screens = [
-    const TechnicianDashboardScreen(),
+  List<Widget> get _screens => [
+    TechnicianDashboardScreen(
+      key: ValueKey('tech_dashboard_${DateTime.now().millisecondsSinceEpoch}'),
+    ),
     const SharedToolsScreen(),
     const MyToolsScreen(),
   ];
@@ -62,18 +62,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         toolbarHeight: 80,
         title: const RGSLogo(),
         centerTitle: true,
-        leading: Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return IconButton(
-              icon: Icon(
-                themeProvider.themeIcon,
-                color: themeProvider.themeColor,
-              ),
-              onPressed: () => _showThemeDialog(context, themeProvider),
-              tooltip: 'Change Theme',
-            );
-          },
-        ),
         actions: [
           // Settings button
           IconButton(
@@ -106,8 +94,17 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                         Navigator.of(context).pop();
                       }
                       
-                      // Simply sign out - let the app handle navigation naturally
+                      // Sign out and navigate to login
                       await authProvider.signOut();
+                      
+                      // Navigate to login screen
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
                       
                     } catch (e) {
                       // Silent error handling - the app will handle navigation
@@ -199,7 +196,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CheckinScreen(),
+                    builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
                   ),
                 );
               },
@@ -221,63 +218,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     );
   }
 
-  void _showThemeDialog(BuildContext context, ThemeProvider themeProvider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Choose Theme'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: Text('Light Mode'),
-                subtitle: Text('Always use the light theme'),
-                value: ThemeMode.light,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('Dark Mode'),
-                subtitle: Text('Always use the dark theme'),
-                value: ThemeMode.dark,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                title: Text('System Default'),
-                subtitle: Text('Follow the system setting'),
-                value: ThemeMode.system,
-                groupValue: themeProvider.themeMode,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 // Technician Dashboard Screen
@@ -286,9 +226,10 @@ class TechnicianDashboardScreen extends StatelessWidget {
 
   void _navigateToTab(int index, BuildContext context) {
     final technicianHomeState = context.findAncestorStateOfType<_TechnicianHomeScreenState>();
-    technicianHomeState?.setState(() {
+    if (technicianHomeState != null) {
       technicianHomeState._selectedIndex = index;
-    });
+      technicianHomeState.setState(() {});
+    }
   }
 
   @override
@@ -572,7 +513,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CheckinScreen(),
+                          builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
                         ),
                       ),
                       context,

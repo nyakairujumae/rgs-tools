@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+  command = "echo Using pre-built Flutter web files"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

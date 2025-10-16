@@ -437,6 +437,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
         condition: _condition,
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         status: _status,
+        toolType: 'inventory', // Explicitly set to inventory for admin tools
         imagePath: null, // Will be set after upload
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );

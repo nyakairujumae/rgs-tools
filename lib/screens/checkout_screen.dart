@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/tool.dart';
@@ -75,6 +76,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> with ErrorHandlingMixin
   }
 
   Widget _buildScannerSection() {
+    // Skip scanner on web
+    if (kIsWeb) {
+      return Container(
+        height: 300,
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.primaryColor),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.qr_code_scanner, size: 64, color: AppTheme.primaryColor),
+              SizedBox(height: 16),
+              Text(
+                'Scanner not available on web',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please use the search function below',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Container(
       height: 300,
       margin: const EdgeInsets.all(16),

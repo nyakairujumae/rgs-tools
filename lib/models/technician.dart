@@ -22,8 +22,7 @@ class Technician {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final map = {
       'name': name,
       'employee_id': employeeId,
       'phone': phone,
@@ -31,8 +30,17 @@ class Technician {
       'department': department,
       'hire_date': hireDate,
       'status': status,
-      'created_at': createdAt,
     };
+    
+    // Only include id and created_at if they're not null (for updates)
+    if (id != null) {
+      map['id'] = id;
+    }
+    if (createdAt != null) {
+      map['created_at'] = createdAt;
+    }
+    
+    return map;
   }
 
   factory Technician.fromMap(Map<String, dynamic> map) {

@@ -416,8 +416,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           );
           
-          // Navigate to home screen
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          // Navigate to appropriate screen based on role
+          if (authProvider.isAdmin) {
+            Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+          } else {
+            Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+          }
         } else {
           // Email confirmation required
           ScaffoldMessenger.of(context).showSnackBar(

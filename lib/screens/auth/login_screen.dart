@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
@@ -29,43 +30,46 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: 60),
-              
-              // RGS Branding and Title
-              Column(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // RGS Logo with enhanced styling
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryColor.withOpacity(0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
+                  SizedBox(height: 60),
+                  
+                  // RGS Branding and Title
+                  Column(
+                    children: [
+                      // RGS Logo with enhanced styling
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor,
+                              AppTheme.primaryColor.withOpacity(0.8),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: const RGSLogo(),
+                        child: const RGSLogo(),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              
-              SizedBox(height: 60),
+                  
+                  SizedBox(height: 60),
               
               // Login Form
               Form(
@@ -252,7 +256,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -262,9 +268,38 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = context.read<AuthProvider>();
-    
     try {
+      // For web, simulate login without backend
+      if (kIsWeb) {
+        // Show loading state
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signing in...'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        
+        // Simulate a brief loading delay
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Determine role based on email for demo
+        final email = _emailController.text.toLowerCase();
+        final isAdmin = email.contains('admin') || email.contains('manager');
+        
+        if (mounted) {
+          // Navigate based on role
+          if (isAdmin) {
+            Navigator.pushReplacementNamed(context, '/admin');
+          } else {
+            Navigator.pushReplacementNamed(context, '/technician');
+          }
+        }
+        return;
+      }
+
+      // Original mobile login logic
+      final authProvider = context.read<AuthProvider>();
+      
       await authProvider.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,

@@ -20,16 +20,21 @@ class AuthProvider with ChangeNotifier {
   bool get isLoggingOut => _isLoggingOut;
 
   Future<void> initialize() async {
+    print('🔍 AuthProvider initialize called');
     _isLoading = true;
     notifyListeners();
 
     try {
+      print('🔍 Getting current session...');
       // Get current session
       final session = SupabaseService.client.auth.currentSession;
       _user = session?.user;
+      print('🔍 Current user: ${_user?.email ?? "None"}');
 
       // Listen to auth state changes
+      print('🔍 Setting up auth state listener...');
       SupabaseService.client.auth.onAuthStateChange.listen((data) {
+        print('🔍 Auth state changed: ${data.session?.user?.email ?? "None"}');
         _user = data.session?.user;
         _loadUserRole();
         notifyListeners();
@@ -37,11 +42,18 @@ class AuthProvider with ChangeNotifier {
 
       // Load user role if user exists
       if (_user != null) {
+        print('🔍 Loading user role...');
         await _loadUserRole();
+      } else {
+        print('🔍 No user found, setting default role');
+        _userRole = UserRole.technician;
       }
     } catch (e) {
-      debugPrint('Error initializing auth: $e');
+      print('❌ Error initializing auth: $e');
+      // Set default values on error
+      _userRole = UserRole.technician;
     } finally {
+      print('🔍 AuthProvider initialization complete');
       _isLoading = false;
       _isInitialized = true;
       notifyListeners();
@@ -178,19 +190,30 @@ class AuthProvider with ChangeNotifier {
       debugPrint('🔍 No role in metadata, checking users table...');
 
       // If not in metadata, try to get from users table in Supabase
+      // Add timeout to prevent hanging
       final response = await SupabaseService.client
           .from('users')
           .select('role')
           .eq('id', _user!.id)
-          .single();
+          .single()
+          .timeout(Duration(seconds: 5)); // 5 second timeout
 
       if (response['role'] != null) {
         _userRole = UserRoleExtension.fromString(response['role']);
         debugPrint('✅ Role loaded from database: $_userRole');
       } else {
-        // Default to technician for security
+        // If user doesn't exist in users table, create them with default role
+        debugPrint('🔍 User not found in users table, creating with default role');
+        await SupabaseService.client
+            .from('users')
+            .insert({
+              'id': _user!.id,
+              'email': _user!.email,
+              'full_name': _user!.userMetadata?['full_name'],
+              'role': 'technician',
+            });
         _userRole = UserRole.technician;
-        debugPrint('⚠️ No role found in database, defaulting to technician');
+        debugPrint('✅ User created with default technician role');
       }
     } catch (e) {
       debugPrint('❌ Error loading user role: $e');

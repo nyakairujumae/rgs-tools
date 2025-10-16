@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../providers/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,7 +28,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           // Appearance Section
           _buildSectionHeader('Appearance'),
-          _buildThemeCard(),
           SizedBox(height: 24),
 
           // General Settings
@@ -71,145 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeCard() {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(themeProvider.themeIcon, color: themeProvider.themeColor),
-                    SizedBox(width: 12),
-                    Text(
-                      'Theme',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      themeProvider.themeModeDisplayName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: themeProvider.themeColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  themeProvider.themeModeDescription,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 16),
-                _buildThemeModeSelector(themeProvider),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
-  Widget _buildThemeModeSelector(ThemeProvider themeProvider) {
-    return Column(
-      children: ThemeMode.values.map((mode) {
-        final isSelected = themeProvider.themeMode == mode;
-        String title;
-        String subtitle;
-        IconData icon;
-        Color color;
-
-        switch (mode) {
-          case ThemeMode.light:
-            title = 'Light';
-            subtitle = 'Always use light theme';
-            icon = Icons.light_mode;
-            color = Colors.orange;
-            break;
-          case ThemeMode.dark:
-            title = 'Dark';
-            subtitle = 'Always use dark theme';
-            icon = Icons.dark_mode;
-            color = Colors.blue;
-            break;
-          case ThemeMode.system:
-            title = 'System';
-            subtitle = 'Follow system setting';
-            icon = Icons.brightness_auto;
-            color = Colors.purple;
-            break;
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: InkWell(
-            onTap: () => themeProvider.setThemeMode(mode),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isSelected ? color : Colors.grey.withValues(alpha: 0.3),
-                  width: isSelected ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(8),
-                color: isSelected ? color.withValues(alpha: 0.1) : null,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: isSelected ? color : Colors.grey,
-                    size: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: isSelected ? color : AppTheme.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isSelected ? color.withValues(alpha: 0.8) : AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSelected)
-                    Icon(
-                      Icons.check_circle,
-                      color: color,
-                      size: 20,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
 
 
   Widget _buildLanguageCard() {

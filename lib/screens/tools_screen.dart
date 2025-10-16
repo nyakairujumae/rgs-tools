@@ -158,7 +158,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             padding: const EdgeInsets.all(16.0),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              childAspectRatio: 0.8,
+                              childAspectRatio: 0.65, // Adjusted for details below cards
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                             ),
@@ -177,166 +177,193 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   Widget _buildToolCard(Tool tool) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ToolDetailScreen(tool: tool),
-            ),
-          );
-        },
-        onLongPress: () => _showToolActions(context, tool),
-        child: Container(
-          decoration: BoxDecoration(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Main Tool Card - Clean and minimal
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).cardTheme.color ?? Colors.white,
-                (Theme.of(context).cardTheme.color ?? Colors.white).withOpacity(0.8),
-              ],
-            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image Section
-              Expanded(
-                flex: 3,
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              )
-                            : Image.file(
-                                File(tool.imagePath!),
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              ),
-                      )
-                    : _buildPlaceholderImage(),
-              ),
-              
-              // Content Section
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Tool Name
-                      Flexible(
-                        child: Text(
-                          tool.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      
-                      SizedBox(height: 3),
-                      
-                      // Brand and Category
-                      Flexible(
-                        child: Text(
-                          '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      
-                      SizedBox(height: 6),
-                      
-                      // Status and Condition Chips
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatusChip(tool.status),
-                          ),
-                          SizedBox(width: 3),
-                          Expanded(
-                            child: _buildConditionChip(tool.condition),
-                          ),
-                        ],
-                      ),
-                      
-                      SizedBox(height: 6),
-                      
-                      // Price and Tool Type
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          if (tool.currentValue != null)
-                            Flexible(
-                              child: Text(
-                                'AED ${tool.currentValue!.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                  fontSize: 11,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            )
-                          else
-                            SizedBox(),
-                          
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: _getToolTypeColor(tool.toolType),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                tool.toolType.toUpperCase(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 7,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ToolDetailScreen(tool: tool),
+                ),
+              );
+            },
+            onLongPress: () => _showToolActions(context, tool),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).cardTheme.color ?? Colors.white,
+                    (Theme.of(context).cardTheme.color ?? Colors.white).withOpacity(0.8),
+                  ],
                 ),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image Section
+                  Expanded(
+                    flex: 3,
+                    child: tool.imagePath != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                            ),
+                            child: tool.imagePath!.startsWith('http')
+                                ? Image.network(
+                                    tool.imagePath!,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                                  )
+                                : Image.file(
+                                    File(tool.imagePath!),
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                                  ),
+                          )
+                        : _buildPlaceholderImage(),
+                  ),
+                  
+                  // Content Section - Only essential info
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Tool Name
+                          Flexible(
+                            child: Text(
+                              tool.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          
+                          SizedBox(height: 3),
+                          
+                          // Brand and Category
+                          Flexible(
+                            child: Text(
+                              '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          
+                          SizedBox(height: 6),
+                          
+                          // Status and Condition Chips
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStatusChip(tool.status),
+                              ),
+                              SizedBox(width: 3),
+                              Expanded(
+                                child: _buildConditionChip(tool.condition),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
+        
+        // Details below card - Clean and professional
+        const SizedBox(height: 6),
+        _buildToolDetailsBelow(tool),
+      ],
+    );
+  }
+
+  Widget _buildToolDetailsBelow(Tool tool) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color?.withOpacity(0.5) ?? Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Price
+          if (tool.currentValue != null)
+            Row(
+              children: [
+                Icon(
+                  Icons.attach_money,
+                  size: 12,
+                  color: Colors.green,
+                ),
+                SizedBox(width: 2),
+                Text(
+                  'AED ${tool.currentValue!.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          
+          // Tool Type
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: _getToolTypeColor(tool.toolType),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                tool.toolType.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 7,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

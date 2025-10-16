@@ -6,7 +6,7 @@ class ThemeProvider with ChangeNotifier {
   static const String _themeKey = 'app_theme';
   
   ThemeMode _themeMode = ThemeMode.system;
-  bool _isDarkMode = true; // Default to dark mode
+  bool _isDarkMode = false; // Will be determined by system
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _isDarkMode;
@@ -40,6 +40,7 @@ class ThemeProvider with ChangeNotifier {
 
   ThemeProvider() {
     _loadTheme();
+    _listenToSystemBrightness();
   }
 
   // Load theme from SharedPreferences
@@ -84,6 +85,16 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  // Listen to system brightness changes
+  void _listenToSystemBrightness() {
+    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = () {
+      if (_themeMode == ThemeMode.system) {
+        _updateDarkMode();
+        notifyListeners();
+      }
+    };
+  }
+
   // Change theme mode
   Future<void> setThemeMode(ThemeMode mode) async {
     if (_themeMode != mode) {
@@ -94,46 +105,5 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
-  // Toggle between light and dark (ignoring system)
-  Future<void> toggleTheme() async {
-    final newMode = _isDarkMode ? ThemeMode.light : ThemeMode.dark;
-    await setThemeMode(newMode);
-  }
 
-  // Set specific theme
-  Future<void> setDarkTheme() async {
-    await setThemeMode(ThemeMode.dark);
-  }
-
-  Future<void> setLightTheme() async {
-    await setThemeMode(ThemeMode.light);
-  }
-
-  Future<void> setSystemTheme() async {
-    await setThemeMode(ThemeMode.system);
-  }
-
-  // Get theme icon
-  IconData get themeIcon {
-    switch (_themeMode) {
-      case ThemeMode.light:
-        return Icons.light_mode;
-      case ThemeMode.dark:
-        return Icons.dark_mode;
-      case ThemeMode.system:
-        return Icons.brightness_auto;
-    }
-  }
-
-  // Get theme color
-  Color get themeColor {
-    switch (_themeMode) {
-      case ThemeMode.light:
-        return Colors.orange;
-      case ThemeMode.dark:
-        return Colors.blue;
-      case ThemeMode.system:
-        return Colors.purple;
-    }
-  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
@@ -8,12 +9,15 @@ import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
+import '../utils/responsive_helper.dart';
 import 'tools_screen.dart';
 import 'technicians_screen.dart';
 import 'add_tool_screen.dart';
 import 'assign_tool_screen.dart';
 import 'checkout_screen.dart';
 import 'checkin_screen.dart';
+import 'checkout_screen_web.dart';
+import 'checkin_screen_web.dart';
 import 'reports_screen.dart';
 import 'permanent_assignment_screen.dart';
 import 'bulk_import_screen.dart';
@@ -114,6 +118,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     _selectedIndex = widget.initialTab;
     _screens = [
       DashboardScreen(
+        key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
         onNavigateToTab: _navigateToScreen,
         onNavigateToToolsWithFilter: _navigateToToolsWithFilter,
       ),
@@ -190,8 +195,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         Navigator.of(context).pop();
                       }
                       
-                      // Simply sign out - let the app handle navigation naturally
+                      // Sign out and navigate to login
                       await authProvider.signOut();
+                      
+                      // Navigate to login screen
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
                       
                     } catch (e) {
                       // Silent error handling - the app will handle navigation
@@ -600,9 +614,14 @@ class DashboardScreen extends StatelessWidget {
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveHelper.getMaxWidth(context),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               // Welcome Section
               Container(
                 width: double.infinity,
@@ -661,10 +680,10 @@ class DashboardScreen extends StatelessWidget {
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
+                crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
+                childAspectRatio: ResponsiveHelper.isWeb ? 1.5 : 1.2,
                 children: [
                   _buildStatCard(
                     'Total Tools',
@@ -803,7 +822,7 @@ class DashboardScreen extends StatelessWidget {
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const CheckinScreen(),
+                          builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
                         ),
                       ),
                       context,
@@ -845,7 +864,9 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -856,10 +877,10 @@ class DashboardScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: ResponsiveHelper.getCardPadding(context),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),

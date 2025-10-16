@@ -30,6 +30,15 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Load technicians when the screen is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseTechnicianProvider>().loadTechnicians();
+    });
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
     super.dispose();
@@ -209,9 +218,51 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         SizedBox(height: 12),
         Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
+            // Debug: Print technician count
+            print('Total technicians: ${technicianProvider.technicians.length}');
+            print('Technician provider loading: ${technicianProvider.isLoading}');
+            
+            if (technicianProvider.isLoading) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
             final activeTechnicians = technicianProvider.technicians
                 .where((tech) => tech.status == 'Active')
                 .toList();
+
+            print('Active technicians: ${activeTechnicians.length}');
+
+            if (activeTechnicians.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  border: Border.all(color: Colors.orange[200]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, size: 20, color: Colors.orange[600]),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No technicians available. Add technicians first.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
             return DropdownButtonFormField<Technician>(
               value: _selectedTechnician,
@@ -270,8 +321,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           ),
         ),
         SizedBox(height: 12),
-        DropdownButtonFormField<Location>(
-          value: _selectedLocation,
+        DropdownButtonFormField<int>(
+          value: _selectedLocation?.id,
           decoration: const InputDecoration(
             labelText: 'Location (Optional)',
             border: OutlineInputBorder(),
@@ -279,25 +330,22 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           ),
           items: _getMockLocations().map((location) {
             return DropdownMenuItem(
-              value: location,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(location.name),
-                  Text(
-                    location.fullAddress,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+              value: location.id,
+              child: Text(
+                location.name,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(fontSize: 14),
               ),
             );
           }).toList(),
           onChanged: (value) {
             setState(() {
-              _selectedLocation = value;
+              if (value != null) {
+                _selectedLocation = _getMockLocations().firstWhere((loc) => loc.id == value);
+              } else {
+                _selectedLocation = null;
+              }
             });
           },
         ),
