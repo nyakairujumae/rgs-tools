@@ -43,3 +43,20 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Deployment artifacts
+github-pages/
+netlify-deploy*/
+vercel-deploy/
+public/
+test_web_app/
+*.zip
+rgs-tools-*/
+
+# Web build artifacts
+web-build/
+build/web/
+
+# SQL files (keep only the essential ones)
+SUPABASE_*.sql
+!SUPABASE_RECREATE_ALL_TABLES.sql
