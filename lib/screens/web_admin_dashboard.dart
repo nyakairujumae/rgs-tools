@@ -23,7 +23,6 @@ import 'web_add_tool_screen.dart';
 import 'web_add_technician_screen.dart';
 import 'assign_tool_screen.dart';
 import 'web_assign_tool_screen.dart';
-import 'bulk_import_screen.dart';
 import 'maintenance_screen.dart';
 
 class WebAdminDashboard extends StatefulWidget {
@@ -546,9 +545,6 @@ class DashboardPage extends StatelessWidget {
                       }),
                       _buildQuickActionCard('Bulk Assign', Icons.group_add, const Color(0xFF8B5CF6), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const BulkAssignmentScreen()));
-                      }),
-                      _buildQuickActionCard('Bulk Import', Icons.upload_file, const Color(0xFF06B6D4), () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const BulkImportScreen()));
                       }),
                       _buildQuickActionCard('Maintenance', Icons.build, const Color(0xFFF97316), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const MaintenanceScreen()));

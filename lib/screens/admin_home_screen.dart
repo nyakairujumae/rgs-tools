@@ -20,7 +20,6 @@ import 'checkout_screen_web.dart';
 import 'checkin_screen_web.dart';
 import 'reports_screen.dart';
 import 'permanent_assignment_screen.dart';
-import 'bulk_import_screen.dart';
 import 'bulk_assignment_screen.dart';
 import 'maintenance_screen.dart';
 import 'cost_analytics_screen.dart';
@@ -379,16 +378,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             onTap: () => _navigateToScreen(4),
           ),
           Divider(color: Colors.grey),
-          _buildDrawerItem(
-            icon: Icons.upload_file,
-            title: 'Bulk Import',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BulkImportScreen(),
-              ),
-            ),
-          ),
           _buildDrawerItem(
             icon: Icons.build_circle,
             title: 'Maintenance',
