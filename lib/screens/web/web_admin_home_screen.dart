@@ -9,9 +9,9 @@ import '../utils/error_handler.dart';
 import '../widgets/common/status_chip.dart';
 import 'checkin_screen_web.dart';
 import 'checkout_screen_web.dart';
-import 'tools_screen.dart';
-import 'reports_screen.dart';
-import 'technicians_screen.dart';
+import '../tools_screen.dart';
+import '../reports_screen.dart';
+import '../technicians_screen.dart';
 import 'web_login_screen.dart';
 
 class WebAdminHomeScreen extends StatefulWidget {

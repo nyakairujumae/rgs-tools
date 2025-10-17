@@ -3,10 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'no_backend_web.dart';
-import 'screens/web_login_screen.dart';
-import 'screens/web_admin_home_screen.dart';
-import 'screens/web_admin_dashboard.dart';
-import 'screens/web_technician_dashboard.dart';
+import 'screens/web/web_login_screen.dart';
+import 'screens/web/web_admin_home_screen.dart';
+import 'screens/web/web_admin_dashboard.dart';
+import 'screens/web/web_technician_dashboard.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
