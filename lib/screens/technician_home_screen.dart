@@ -10,7 +10,7 @@ import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import 'shared_tools_screen.dart';
 import 'checkin_screen.dart';
-import 'checkin_screen_web.dart';
+import 'web/checkin_screen_web.dart';
 import 'tool_detail_screen.dart';
 import 'settings_screen.dart';
 import 'add_tool_issue_screen.dart';
