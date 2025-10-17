@@ -21,6 +21,7 @@ import 'checkin_screen_web.dart';
 import 'reports_screen.dart';
 import 'permanent_assignment_screen.dart';
 import 'bulk_import_screen.dart';
+import 'bulk_assignment_screen.dart';
 import 'maintenance_screen.dart';
 import 'cost_analytics_screen.dart';
 import 'settings_screen.dart';
@@ -747,13 +748,13 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildQuickActionCard(
-                      'Check In',
-                      Icons.keyboard_return,
-                      Colors.orange,
+                      'Bulk Assign',
+                      Icons.group_add,
+                      Colors.purple,
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
+                          builder: (context) => const BulkAssignmentScreen(),
                         ),
                       ),
                       context,
