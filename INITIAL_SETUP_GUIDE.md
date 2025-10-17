@@ -3,38 +3,35 @@
 ## Problem
 Your company already has technicians with tools, but the app only allows admins to add tools.
 
-## Solution: Admin-Only Initial Setup
+## Solution: Technician Tool Registration
 
 ### Step 1: Admin Account Setup
 1. **Create admin account first** - This person will be the "Tool Manager" or "Operations Manager"
-2. **Admin imports all existing tools** using the bulk import feature
-3. **Admin creates technician accounts** for all existing technicians
-4. **Admin assigns tools to technicians** using the assign tool feature
+2. **Admin creates technician accounts** for all existing technicians
+3. **Technicians register their existing tools** using the temporary add tool feature
+4. **Admin can then assign tools** using the bulk assignment feature
 
-### Step 2: Bulk Tool Import Process
-1. **Prepare CSV file** with all existing tools:
-   ```
-   name,category,brand,model,serial_number,purchase_date,purchase_price,current_value,condition,location,status,notes
-   "Drill Set","Power Tools","DeWalt","DCD791","DW123456","2023-01-15",299.99,250.00,"Good","Warehouse A","Available",""
-   "Multimeter","Electrical","Fluke","87V","FL789012","2023-02-20",199.99,180.00,"Excellent","Warehouse B","Available",""
-   ```
+### Step 2: Technician Tool Registration Process
+1. **Technicians receive login credentials** from admin
+2. **Technicians use "Add Tool" feature** to register their existing tools
+3. **Each technician adds their tools** one by one during initial setup
+4. **Admin reviews and assigns tools** as needed using bulk assignment
 
-2. **Admin uses bulk import** to add all tools at once
-3. **Admin assigns tools** to appropriate technicians
-
-### Step 3: Technician Onboarding
-1. **Technicians receive login credentials**
-2. **Technicians can immediately see their assigned tools**
-3. **Technicians can checkout/checkin tools** as needed
+### Step 3: Post-Setup
+1. **Remove technician add tool access** after initial setup is complete
+2. **Normal operation** - only admins can add new tools
+3. **Technicians can checkout/checkin** their assigned tools
 
 ## Benefits
-- ✅ **Controlled data entry** - Only admins can add tools
-- ✅ **Bulk import capability** - Handle hundreds of tools quickly
-- ✅ **Proper assignment** - Tools are properly assigned to technicians
-- ✅ **Audit trail** - All tools have proper ownership and history
+- ✅ **Technicians know their tools best** - They can add accurate details
+- ✅ **No bulk import needed** - Tools weren't documented before
+- ✅ **Controlled process** - Admin manages the overall setup
+- ✅ **Accurate data** - Technicians provide real tool information
+- ✅ **Efficient assignment** - Admin uses bulk assignment after registration
 
-## Alternative: Temporary Admin Access
-If you need technicians to add their own tools initially:
-1. **Temporarily promote technicians to admin** for initial setup
-2. **After setup, demote back to technician** role
-3. **Use role management** in the admin panel
+## Workflow
+1. **Admin creates accounts** for all technicians
+2. **Technicians log in** and add their existing tools
+3. **Admin reviews** all registered tools
+4. **Admin uses bulk assignment** to assign tools to technicians
+5. **Normal operation** begins with proper tool management
