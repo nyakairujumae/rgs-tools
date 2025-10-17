@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import '../providers/supabase_technician_provider.dart';
-import '../models/technician.dart';
+import '../../providers/supabase_technician_provider.dart';
+import '../../models/technician.dart';
 import 'web_add_technician_screen.dart';
 
 class WebTechniciansScreen extends StatefulWidget {

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import '../providers/auth_provider.dart';
-import '../theme/app_theme.dart';
-import '../utils/error_handler.dart';
+import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/error_handler.dart';
 
 class WebLoginScreen extends StatefulWidget {
   const WebLoginScreen({super.key});

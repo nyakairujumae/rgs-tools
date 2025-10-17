@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-import "../providers/supabase_tool_provider.dart";
-import '../models/tool.dart';
+import "../../providers/supabase_tool_provider.dart";
+import '../../models/tool.dart';
 import 'tool_detail_screen.dart';
 import 'web_add_tool_screen.dart';
 

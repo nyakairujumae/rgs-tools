@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import "../providers/supabase_tool_provider.dart";
-import '../models/tool.dart';
-import '../services/image_upload_service.dart';
+import "../../providers/supabase_tool_provider.dart";
+import '../../models/tool.dart';
+import '../../services/image_upload_service.dart';
 
 class WebAddToolScreen extends StatefulWidget {
   const WebAddToolScreen({super.key});
