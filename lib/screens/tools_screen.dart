@@ -51,7 +51,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             children: [
               // Search and Filter Bar
               Container(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(16.0),
                 color: Theme.of(context).cardTheme.color,
                 child: Column(
                   children: [
@@ -61,7 +61,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         hintText: 'Search tools...',
                         prefixIcon: Icon(Icons.search),
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -69,52 +69,79 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         });
                       },
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: 12),
                     
-                    // Filter Row - Stack vertically to prevent overflow
-                    Column(
+                    // Professional Filter Row
+                    Row(
                       children: [
-                        DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        // Category Filter
+                        Expanded(
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedCategory,
+                                isExpanded: true,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                style: TextStyle(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontSize: 14,
+                                ),
+                                items: categories.map((category) {
+                                  return DropdownMenuItem(
+                                    value: category,
+                                    child: Text(
+                                      category,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedCategory = value!;
+                                  });
+                                },
+                              ),
+                            ),
                           ),
-                          items: categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value!;
-                            });
-                          },
                         ),
-                        SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _selectedStatus,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Status',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        SizedBox(width: 12),
+                        // Status Filter
+                        Expanded(
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedStatus,
+                                isExpanded: true,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                style: TextStyle(
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontSize: 14,
+                                ),
+                                items: const [
+                                  DropdownMenuItem(value: 'All', child: Text('All')),
+                                  DropdownMenuItem(value: 'Available', child: Text('Available')),
+                                  DropdownMenuItem(value: 'In Use', child: Text('In Use')),
+                                  DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
+                                  DropdownMenuItem(value: 'Retired', child: Text('Retired')),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedStatus = value!;
+                                  });
+                                },
+                              ),
+                            ),
                           ),
-                          items: const [
-                            DropdownMenuItem(value: 'All', child: Text('All')),
-                            DropdownMenuItem(value: 'Available', child: Text('Available')),
-                            DropdownMenuItem(value: 'In Use', child: Text('In Use')),
-                            DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
-                            DropdownMenuItem(value: 'Retired', child: Text('Retired')),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedStatus = value!;
-                            });
-                          },
                         ),
                       ],
                     ),
