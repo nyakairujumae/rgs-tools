@@ -226,7 +226,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
 
   void _navigateToTab(int index, BuildContext context) {
     final technicianHomeState = context.findAncestorStateOfType<_TechnicianHomeScreenState>();
-    if (technicianHomeState != null) {
+    if (technicianHomeState != null && technicianHomeState.mounted) {
       technicianHomeState._selectedIndex = index;
       technicianHomeState.setState(() {});
     }
