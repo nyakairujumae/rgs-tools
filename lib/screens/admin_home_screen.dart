@@ -825,45 +825,45 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon and value row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon, 
-                    color: color, 
-                    size: 28,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
+            // Large value at the top
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 32,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            // Title
+            const SizedBox(height: 12),
+            // Icon in the middle
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon, 
+                color: color, 
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Title at the bottom
             Text(
               title,
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
