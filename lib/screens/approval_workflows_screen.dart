@@ -559,15 +559,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   void _showCreateRequestDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create Request'),
-        content: Text('Request creation feature will be implemented in the next phase.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
+      builder: (context) => _CreateRequestDialog(
+        onRequestCreated: (workflow) {
+          // Add the new workflow to the list
+          setState(() {
+            // In a real app, this would be saved to the database
+            // For now, we'll just refresh the UI
+          });
+        },
       ),
     );
   }
@@ -681,5 +680,877 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
         backgroundColor: AppTheme.primaryColor,
       ),
     );
+  }
+}
+
+class _CreateRequestDialog extends StatefulWidget {
+  final Function(ApprovalWorkflow) onRequestCreated;
+
+  const _CreateRequestDialog({
+    required this.onRequestCreated,
+  });
+
+  @override
+  State<_CreateRequestDialog> createState() => _CreateRequestDialogState();
+}
+
+class _CreateRequestDialogState extends State<_CreateRequestDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _commentsController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _quantityController = TextEditingController();
+  final _unitPriceController = TextEditingController();
+  final _totalCostController = TextEditingController();
+  final _supplierController = TextEditingController();
+  final _technicianController = TextEditingController();
+  final _toolController = TextEditingController();
+  final _reasonController = TextEditingController();
+  final _fromLocationController = TextEditingController();
+  final _toLocationController = TextEditingController();
+
+  String _selectedRequestType = RequestTypes.toolAssignment;
+  String _selectedPriority = 'Medium';
+  DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 7));
+  String _selectedAssignedTo = 'Manager';
+  String _selectedAssignedToRole = 'Manager';
+
+  final List<String> _requestTypes = RequestTypes.allTypes;
+  final List<String> _priorities = ['Low', 'Medium', 'High', 'Critical'];
+  final List<String> _assignedToOptions = ['Manager', 'Supervisor', 'Admin', 'Maintenance Team'];
+  final List<String> _assignedToRoles = ['Manager', 'Supervisor', 'Admin', 'Maintenance Supervisor'];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _commentsController.dispose();
+    _locationController.dispose();
+    _quantityController.dispose();
+    _unitPriceController.dispose();
+    _totalCostController.dispose();
+    _supplierController.dispose();
+    _technicianController.dispose();
+    _toolController.dispose();
+    _reasonController.dispose();
+    _fromLocationController.dispose();
+    _toLocationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.9,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(
+                  Icons.add_circle,
+                  color: AppTheme.primaryColor,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Create New Request',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Form
+            Expanded(
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Request Type Selection
+                      _buildRequestTypeSection(),
+                      const SizedBox(height: 24),
+
+                      // Basic Information
+                      _buildBasicInfoSection(),
+                      const SizedBox(height: 24),
+
+                      // Dynamic Fields Based on Request Type
+                      _buildDynamicFields(),
+                      const SizedBox(height: 24),
+
+                      // Priority and Due Date
+                      _buildPriorityAndDueDateSection(),
+                      const SizedBox(height: 24),
+
+                      // Assignment Information
+                      _buildAssignmentSection(),
+                      const SizedBox(height: 24),
+
+                      // Comments
+                      _buildCommentsSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Action Buttons
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _submitRequest,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: Text('Create Request'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequestTypeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Request Type',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: _selectedRequestType,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          items: _requestTypes.map((type) {
+            return DropdownMenuItem<String>(
+              value: type,
+              child: Row(
+                children: [
+                  Icon(
+                    _getTypeIcon(type),
+                    color: _getTypeColor(type),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(type),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedRequestType = value ?? RequestTypes.toolAssignment;
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          RequestTypes.typeDescriptions[_selectedRequestType] ?? '',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppTheme.textSecondary,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBasicInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Basic Information',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _titleController,
+          decoration: InputDecoration(
+            labelText: 'Request Title',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter a request title';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _descriptionController,
+          decoration: InputDecoration(
+            labelText: 'Description',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          maxLines: 3,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter a description';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _locationController,
+          decoration: InputDecoration(
+            labelText: 'Location',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDynamicFields() {
+    switch (_selectedRequestType) {
+      case RequestTypes.toolPurchase:
+        return _buildToolPurchaseFields();
+      case RequestTypes.toolAssignment:
+        return _buildToolAssignmentFields();
+      case RequestTypes.toolDisposal:
+        return _buildToolDisposalFields();
+      case RequestTypes.transfer:
+        return _buildTransferFields();
+      case RequestTypes.maintenance:
+        return _buildMaintenanceFields();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildToolPurchaseFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Purchase Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _quantityController,
+                decoration: InputDecoration(
+                  labelText: 'Quantity',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter quantity';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextFormField(
+                controller: _unitPriceController,
+                decoration: InputDecoration(
+                  labelText: 'Unit Price (\$)',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: _calculateTotalCost,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter unit price';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _totalCostController,
+          decoration: InputDecoration(
+            labelText: 'Total Cost (\$)',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          keyboardType: TextInputType.number,
+          readOnly: true,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _supplierController,
+          decoration: InputDecoration(
+            labelText: 'Supplier',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolAssignmentFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Assignment Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _toolController,
+          decoration: InputDecoration(
+            labelText: 'Tool Name/Serial',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter tool name or serial';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _technicianController,
+          decoration: InputDecoration(
+            labelText: 'Technician Name',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter technician name';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolDisposalFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Disposal Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _toolController,
+          decoration: InputDecoration(
+            labelText: 'Tool Name/Serial',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter tool name or serial';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _reasonController,
+          decoration: InputDecoration(
+            labelText: 'Disposal Reason',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          maxLines: 2,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter disposal reason';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransferFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Transfer Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _toolController,
+          decoration: InputDecoration(
+            labelText: 'Tool Name/Serial',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter tool name or serial';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _fromLocationController,
+                decoration: InputDecoration(
+                  labelText: 'From Location',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter from location';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextFormField(
+                controller: _toLocationController,
+                decoration: InputDecoration(
+                  labelText: 'To Location',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter to location';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMaintenanceFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Maintenance Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _toolController,
+          decoration: InputDecoration(
+            labelText: 'Tool Name/Serial',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter tool name or serial';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _reasonController,
+          decoration: InputDecoration(
+            labelText: 'Maintenance Type/Reason',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter maintenance type or reason';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriorityAndDueDateSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Priority & Timeline',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedPriority,
+                decoration: InputDecoration(
+                  labelText: 'Priority',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: _priorities.map((priority) {
+                  return DropdownMenuItem<String>(
+                    value: priority,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: _getPriorityColor(priority),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(priority),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPriority = value ?? 'Medium';
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: InkWell(
+                onTap: _selectDueDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 20),
+                      const SizedBox(width: 8),
+                      Text(_formatDate(_selectedDueDate)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAssignmentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Assignment',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedAssignedTo,
+                decoration: InputDecoration(
+                  labelText: 'Assigned To',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: _assignedToOptions.map((option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text(option),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAssignedTo = value ?? 'Manager';
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedAssignedToRole,
+                decoration: InputDecoration(
+                  labelText: 'Role',
+                  border: OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: _assignedToRoles.map((role) {
+                  return DropdownMenuItem<String>(
+                    value: role,
+                    child: Text(role),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedAssignedToRole = value ?? 'Manager';
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Additional Comments',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _commentsController,
+          decoration: InputDecoration(
+            labelText: 'Comments (Optional)',
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          maxLines: 3,
+        ),
+      ],
+    );
+  }
+
+  void _calculateTotalCost(String value) {
+    final quantity = int.tryParse(_quantityController.text) ?? 0;
+    final unitPrice = double.tryParse(value) ?? 0.0;
+    final total = quantity * unitPrice;
+    _totalCostController.text = total.toStringAsFixed(2);
+  }
+
+  void _selectDueDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) {
+      setState(() {
+        _selectedDueDate = date;
+      });
+    }
+  }
+
+  void _submitRequest() {
+    if (_formKey.currentState?.validate() ?? false) {
+      // Create the approval workflow
+      final workflow = ApprovalWorkflow(
+        requestType: _selectedRequestType,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        requesterId: 'REQ-${DateTime.now().millisecondsSinceEpoch}',
+        requesterName: 'Current User', // In a real app, get from auth
+        requesterRole: 'User', // In a real app, get from auth
+        status: 'Pending',
+        priority: _selectedPriority,
+        requestDate: DateTime.now(),
+        dueDate: _selectedDueDate,
+        assignedTo: _selectedAssignedTo,
+        assignedToRole: _selectedAssignedToRole,
+        comments: _commentsController.text.trim().isEmpty ? null : _commentsController.text.trim(),
+        location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
+        requestData: _buildRequestData(),
+      );
+
+      widget.onRequestCreated(workflow);
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Request created successfully!'),
+          backgroundColor: AppTheme.primaryColor,
+        ),
+      );
+    }
+  }
+
+  Map<String, dynamic> _buildRequestData() {
+    final data = <String, dynamic>{};
+    
+    switch (_selectedRequestType) {
+      case RequestTypes.toolPurchase:
+        data['quantity'] = _quantityController.text;
+        data['unit_price'] = _unitPriceController.text;
+        data['total_cost'] = _totalCostController.text;
+        data['supplier'] = _supplierController.text;
+        break;
+      case RequestTypes.toolAssignment:
+        data['tool_name'] = _toolController.text;
+        data['technician_name'] = _technicianController.text;
+        break;
+      case RequestTypes.toolDisposal:
+        data['tool_name'] = _toolController.text;
+        data['disposal_reason'] = _reasonController.text;
+        break;
+      case RequestTypes.transfer:
+        data['tool_name'] = _toolController.text;
+        data['from_location'] = _fromLocationController.text;
+        data['to_location'] = _toLocationController.text;
+        break;
+      case RequestTypes.maintenance:
+        data['tool_name'] = _toolController.text;
+        data['maintenance_type'] = _reasonController.text;
+        break;
+    }
+    
+    return data;
+  }
+
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case RequestTypes.toolAssignment:
+        return AppTheme.primaryColor;
+      case RequestTypes.toolPurchase:
+        return AppTheme.secondaryColor;
+      case RequestTypes.toolDisposal:
+        return AppTheme.errorColor;
+      case RequestTypes.maintenance:
+        return AppTheme.warningColor;
+      case RequestTypes.transfer:
+        return AppTheme.accentColor;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case RequestTypes.toolAssignment:
+        return Icons.person_add;
+      case RequestTypes.toolPurchase:
+        return Icons.shopping_cart;
+      case RequestTypes.toolDisposal:
+        return Icons.delete;
+      case RequestTypes.maintenance:
+        return Icons.build;
+      case RequestTypes.transfer:
+        return Icons.swap_horiz;
+      default:
+        return Icons.assignment;
+    }
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'Low':
+        return Colors.green;
+      case 'Medium':
+        return Colors.orange;
+      case 'High':
+        return Colors.red;
+      case 'Critical':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }
