@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/supabase_tool_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/tool.dart';
 import '../models/user_role.dart';
 import '../services/image_upload_service.dart';
@@ -435,6 +436,10 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         imagePath = await ImageUploadService.uploadImage(_selectedImage!, tempToolId);
       }
 
+      // Get current user ID for assignment
+      final authProvider = context.read<AuthProvider>();
+      final currentUserId = authProvider.user?.id;
+
       final tool = Tool(
         name: _nameController.text.trim(),
         category: _selectedCategory,
@@ -445,6 +450,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         status: _status,
         toolType: 'inventory', // Set as inventory tool
+        assignedTo: currentUserId, // Assign to current technician
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         imagePath: imagePath,
         purchaseDate: _purchaseDate?.toIso8601String().split('T')[0], // Convert DateTime to String
