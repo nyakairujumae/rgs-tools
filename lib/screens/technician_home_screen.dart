@@ -374,41 +374,47 @@ class TechnicianDashboardScreen extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            Column(
                               children: [
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const TechnicianAddToolScreen(),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.add),
-                                  label: Text('Add My Tools'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const TechnicianAddToolScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.add),
+                                    label: Text('Add My Tools'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    ),
                                   ),
                                 ),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    // Contact supervisor action
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Contact your supervisor for tool assignments'),
-                                        backgroundColor: Colors.blue,
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.contact_support),
-                                  label: Text('Contact Supervisor'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.blue,
-                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      // Contact supervisor action
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Contact your supervisor for tool assignments'),
+                                          backgroundColor: Colors.blue,
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.contact_support),
+                                    label: Text('Contact Supervisor'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.blue,
+                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    ),
                                   ),
                                 ),
                               ],
