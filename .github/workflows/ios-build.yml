@@ -42,14 +42,14 @@ jobs:
         rm -rf ios/Pods/
         rm -rf ios/Podfile.lock
         
+    - name: Flutter pub get
+      run: flutter pub get
+        
     - name: Install CocoaPods
       run: |
         cd ios
         sudo gem install cocoapods
         pod install --verbose
-        
-    - name: Flutter pub get
-      run: flutter pub get
       
     - name: Build iOS app
       run: flutter build ios --release --no-codesign --verbose
