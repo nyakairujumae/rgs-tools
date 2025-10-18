@@ -490,7 +490,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   void _showAddMaintenanceDialog() {
     showDialog(
       context: context,
-      builder: (context) => _AddMaintenanceDialog(),
+      builder: (context) => _AddMaintenanceDialog(
+        onMaintenanceAdded: (maintenance) {
+          setState(() {
+            _maintenanceItems.add(maintenance);
+          });
+        },
+      ),
     );
   }
 
@@ -542,6 +548,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
 }
 
 class _AddMaintenanceDialog extends StatefulWidget {
+  final Function(MaintenanceSchedule) onMaintenanceAdded;
+  
+  const _AddMaintenanceDialog({
+    required this.onMaintenanceAdded,
+  });
+
   @override
   _AddMaintenanceDialogState createState() => _AddMaintenanceDialogState();
 }
@@ -897,10 +909,8 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
             : null,
       );
       
-      // Add to maintenance list
-      setState(() {
-        _maintenanceItems.add(maintenance);
-      });
+      // Add to maintenance list via callback
+      widget.onMaintenanceAdded(maintenance);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
