@@ -16,7 +16,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.35.2'
+        flutter-version: '3.24.0'
         channel: 'stable'
         cache: true
         
@@ -49,25 +49,11 @@ jobs:
       run: |
         cd ios
         sudo gem install cocoapods
-        pod install --verbose
-        
-    - name: Check iOS configuration
-      run: |
-        flutter config --list
-        flutter devices
-        
-    - name: Check iOS project configuration
-      run: |
-        echo "Checking iOS project configuration..."
-        cat ios/Podfile
-        echo "---"
-        grep -r "IPHONEOS_DEPLOYMENT_TARGET" ios/Runner.xcodeproj/project.pbxproj
-        echo "---"
-        ls -la ios/
+        pod install
         
     - name: Build iOS app for AltStore
       run: |
-        flutter build ios --release --no-codesign --target-platform ios-arm64
+        flutter build ios --release --no-codesign
         echo "iOS build completed for AltStore sideloading"
         
     - name: List build artifacts
