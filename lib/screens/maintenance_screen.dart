@@ -197,112 +197,155 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
 
   Widget _buildMaintenanceCard(MaintenanceSchedule item) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.toolName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).cardColor,
+              Theme.of(context).cardColor.withOpacity(0.8),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Tool Image
+              Row(
+                children: [
+                  // Tool Image Placeholder
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.build,
+                      color: AppTheme.primaryColor,
+                      size: 24,
                     ),
                   ),
-                ),
-                StatusChip(status: item.status),
-              ],
-            ),
-            
-            SizedBox(height: 8),
-            
-            // Maintenance Type and Priority
-            Row(
-              children: [
-                Icon(
-                  Icons.build,
-                  size: 16,
-                  color: AppTheme.textSecondary,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  item.maintenanceType,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(item.priority).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    item.priority,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _getPriorityColor(item.priority),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.toolName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          item.maintenanceType,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            
-            SizedBox(height: 8),
-            
-            // Description
-            Text(
-              item.description,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
+                  StatusChip(status: item.status),
+                ],
               ),
-            ),
             
-            SizedBox(height: 12),
-            
-            // Date and Status Info
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color: AppTheme.textSecondary,
-                ),
-                SizedBox(width: 4),
+              
+              SizedBox(height: 16),
+              
+              // Description
+              if (item.description.isNotEmpty) ...[
                 Text(
-                  _formatDate(item.scheduledDate),
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  item.description,
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
+                    height: 1.4,
                   ),
                 ),
-                SizedBox(width: 16),
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: AppTheme.textSecondary,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  item.dueStatus,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: item.isOverdue ? AppTheme.errorColor : AppTheme.textSecondary,
-                    fontWeight: item.isOverdue ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
+                SizedBox(height: 12),
               ],
-            ),
+              
+              // Priority and Date Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      Icons.flag,
+                      'Priority',
+                      item.priority,
+                      _getPriorityColor(item.priority),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildInfoChip(
+                      Icons.calendar_today,
+                      'Due Date',
+                      _formatDate(item.scheduledDate),
+                      AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            
+              
+              SizedBox(height: 16),
+              
+              // Additional Info Row
+              Row(
+                children: [
+                  if (item.assignedTo != null) ...[
+                    Expanded(
+                      child: _buildInfoChip(
+                        Icons.person,
+                        'Assigned To',
+                        item.assignedTo!,
+                        AppTheme.primaryColor,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                  ],
+                  if (item.estimatedCost != null) ...[
+                    Expanded(
+                      child: _buildInfoChip(
+                        Icons.attach_money,
+                        'Est. Cost',
+                        '\$${item.estimatedCost!.toStringAsFixed(0)}',
+                        Colors.green,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             
             if (item.assignedTo != null) ...[
               SizedBox(height: 8),
@@ -545,6 +588,48 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       ),
     );
   }
+
+  Widget _buildInfoChip(IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AddMaintenanceDialog extends StatefulWidget {
@@ -569,6 +654,7 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
   String _selectedPriority = 'Medium';
   DateTime _selectedDate = DateTime.now().add(Duration(days: 7));
   String? _selectedTechnician;
+  String? _selectedImagePath;
 
   final List<String> _maintenanceTypes = [
     'Calibration',
@@ -596,31 +682,55 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
     return Dialog(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        constraints: BoxConstraints(maxWidth: 600),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.schedule, color: AppTheme.primaryColor, size: 28),
-                      SizedBox(width: 12),
-                      Text(
-                        'Schedule Maintenance',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                        ),
+                  Icon(Icons.schedule, color: AppTheme.primaryColor, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Schedule Maintenance',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
                       ),
-                    ],
+                    ),
                   ),
-                  SizedBox(height: 24),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: AppTheme.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            // Form Content
+            Flexible(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   
                   // Tool Selection
                   Text(
@@ -718,6 +828,58 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
                       }
                       return null;
                     },
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Image Picker
+                  Text(
+                    'Maintenance Image (Optional)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: _selectedImagePath != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _selectedImagePath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildImagePlaceholder();
+                              },
+                            ),
+                          )
+                        : _buildImagePlaceholder(),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickImage,
+                          icon: Icon(Icons.camera_alt, size: 16),
+                          label: Text('Take Photo'),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickImageFromGallery,
+                          icon: Icon(Icons.photo_library, size: 16),
+                          label: Text('Choose from Gallery'),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 16),
                   
@@ -837,32 +999,53 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
                     ),
                     maxLines: 2,
                   ),
-                  SizedBox(height: 24),
-                  
-                  // Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Action Buttons (Fixed at bottom)
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                  ),
+                  SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _saveMaintenance,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _saveMaintenance,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        ),
-                        child: Text('Schedule Maintenance'),
-                      ),
-                    ],
+                    ),
+                    child: Text('Schedule Maintenance'),
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -921,5 +1104,54 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
       
       Navigator.pop(context);
     }
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image,
+            size: 40,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 8),
+          Text(
+            'No image selected',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    // TODO: Implement camera image picker
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Camera functionality will be implemented'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    // TODO: Implement gallery image picker
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Gallery functionality will be implemented'),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 }
