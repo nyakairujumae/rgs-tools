@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 import "../../providers/supabase_tool_provider.dart";
 import '../../providers/supabase_technician_provider.dart';
 import '../../models/tool.dart';
-import 'permanent_assignment_screen.dart';
+import '../permanent_assignment_screen.dart';
 
 class WebAssignToolScreen extends StatefulWidget {
   const WebAssignToolScreen({super.key});
