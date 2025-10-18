@@ -22,6 +22,15 @@ class _WebMyToolsScreenState extends State<WebMyToolsScreen> {
   String _selectedCategory = 'All';
 
   @override
+  void initState() {
+    super.initState();
+    // Load tools to ensure we have the latest data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseToolProvider>().loadTools();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer2<SupabaseToolProvider, AuthProvider>(
       builder: (context, toolProvider, authProvider, child) {

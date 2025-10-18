@@ -25,6 +25,10 @@ class _WebToolsScreenState extends State<WebToolsScreen> {
   void initState() {
     super.initState();
     _selectedStatus = widget.initialStatusFilter ?? 'All';
+    // Load tools to ensure we have the latest data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseToolProvider>().loadTools();
+    });
   }
 
   @override
