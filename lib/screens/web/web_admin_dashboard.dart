@@ -19,6 +19,7 @@ import 'web_add_tool_screen.dart';
 import 'web_add_technician_screen.dart';
 import 'web_assign_tool_screen.dart';
 import '../maintenance_screen.dart';
+import '../approval_workflows_screen.dart';
 
 class WebAdminDashboard extends StatefulWidget {
   const WebAdminDashboard({super.key});
@@ -543,6 +544,9 @@ class DashboardPage extends StatelessWidget {
                       }),
                       _buildQuickActionCard('Maintenance', Icons.build, const Color(0xFFF97316), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const MaintenanceScreen()));
+                      }),
+                      _buildQuickActionCard('Approvals', Icons.approval, const Color(0xFFF59E0B), () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ApprovalWorkflowsScreen()));
                       }),
                       _buildQuickActionCard('Reports', Icons.analytics, const Color(0xFF8B5CF6), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const WebReportsScreen()));

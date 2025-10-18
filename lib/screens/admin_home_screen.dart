@@ -783,6 +783,40 @@ class DashboardScreen extends StatelessWidget {
                       context,
                     ),
                   ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      'Approvals',
+                      Icons.approval,
+                      Colors.amber,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ApprovalWorkflowsScreen(),
+                        ),
+                      ),
+                      context,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      'Maintenance Schedule',
+                      Icons.schedule,
+                      Colors.teal,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MaintenanceScreen(),
+                        ),
+                      ),
+                      context,
+                    ),
+                  ),
                 ],
               ),
                 ],
