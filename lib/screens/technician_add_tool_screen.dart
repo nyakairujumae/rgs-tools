@@ -430,8 +430,9 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
       
       // Upload image if selected
       if (_selectedImage != null) {
-        final imageUploadService = ImageUploadService();
-        imagePath = await imageUploadService.uploadImage(_selectedImage!);
+        // Generate a temporary tool ID for image upload
+        final tempToolId = DateTime.now().millisecondsSinceEpoch.toString();
+        imagePath = await ImageUploadService.uploadImage(_selectedImage!, tempToolId);
       }
 
       final tool = Tool(
@@ -446,7 +447,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         toolType: 'inventory', // Set as inventory tool
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         imagePath: imagePath,
-        purchaseDate: _purchaseDate,
+        purchaseDate: _purchaseDate?.toIso8601String().split('T')[0], // Convert DateTime to String
         purchasePrice: _purchasePriceController.text.trim().isEmpty ? null : double.tryParse(_purchasePriceController.text.trim()),
         currentValue: _currentValueController.text.trim().isEmpty ? null : double.tryParse(_currentValueController.text.trim()),
       );
