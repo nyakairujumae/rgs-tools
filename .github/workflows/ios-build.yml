@@ -1,4 +1,4 @@
-name: Build iOS 18+ IPA
+name: Build iOS IPA
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '15.4'
+        xcode-version: '15.0'
         
     - name: Xcode version
       run: xcodebuild -version
@@ -56,16 +56,10 @@ jobs:
         flutter config --list
         flutter devices
         
-    - name: Verify iOS 18+ deployment target
+    - name: Build iOS app
       run: |
-        echo "Checking iOS deployment target..."
-        grep -r "IPHONEOS_DEPLOYMENT_TARGET" ios/Runner.xcodeproj/project.pbxproj
-        echo "iOS 18+ deployment target verified"
-        
-    - name: Build iOS app for iOS 18+
-      run: |
-        flutter build ios --release --no-codesign --target-platform ios-arm64
-        echo "iOS 18+ build completed"
+        flutter build ios --release --no-codesign
+        echo "iOS build completed"
         
     - name: List build artifacts
       run: |
