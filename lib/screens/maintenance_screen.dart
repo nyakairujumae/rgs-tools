@@ -369,7 +369,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                     SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _showMaintenanceDetails(item),
+                      onPressed: () => _viewMaintenanceDetails(item),
                       icon: Icon(Icons.info_outline, size: 16),
                       label: Text('Details'),
                       style: OutlinedButton.styleFrom(
