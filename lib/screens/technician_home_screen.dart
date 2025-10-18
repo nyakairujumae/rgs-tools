@@ -14,6 +14,7 @@ import 'web/checkin_screen_web.dart';
 import 'tool_detail_screen.dart';
 import 'settings_screen.dart';
 import 'add_tool_issue_screen.dart';
+import 'technician_add_tool_screen.dart';
 import '../models/tool.dart';
 import '../widgets/common/rgs_logo.dart';
 
@@ -366,11 +367,51 @@ class TechnicianDashboardScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 8),
                             Text(
-                              'Contact your supervisor to get tools assigned',
+                              'Add your existing tools or contact your supervisor',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.grey[500],
                               ),
                               textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const TechnicianAddToolScreen(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(Icons.add),
+                                  label: Text('Add My Tools'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  ),
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    // Contact supervisor action
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Contact your supervisor for tool assignments'),
+                                        backgroundColor: Colors.blue,
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(Icons.contact_support),
+                                  label: Text('Contact Supervisor'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.blue,
+                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
