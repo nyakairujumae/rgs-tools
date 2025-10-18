@@ -487,14 +487,16 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   void _showAddMaintenanceDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _AddMaintenanceDialog(
-        onMaintenanceAdded: (maintenance) {
-          setState(() {
-            _maintenanceItems.add(maintenance);
-          });
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _AddMaintenancePage(
+          onMaintenanceAdded: (maintenance) {
+            setState(() {
+              _maintenanceItems.add(maintenance);
+            });
+          },
+        ),
       ),
     );
   }
@@ -588,18 +590,18 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 }
 
-class _AddMaintenanceDialog extends StatefulWidget {
+class _AddMaintenancePage extends StatefulWidget {
   final Function(MaintenanceSchedule) onMaintenanceAdded;
   
-  const _AddMaintenanceDialog({
+  const _AddMaintenancePage({
     required this.onMaintenanceAdded,
   });
 
   @override
-  _AddMaintenanceDialogState createState() => _AddMaintenanceDialogState();
+  _AddMaintenancePageState createState() => _AddMaintenancePageState();
 }
 
-class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
+class _AddMaintenancePageState extends State<_AddMaintenancePage> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _notesController = TextEditingController();
@@ -635,58 +637,30 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        constraints: BoxConstraints(
-          maxWidth: 600,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
           children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.schedule, color: AppTheme.primaryColor, size: 28),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Schedule Maintenance',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: AppTheme.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            // Form Content
-            Flexible(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+            Icon(Icons.schedule, color: AppTheme.primaryColor, size: 24),
+            SizedBox(width: 8),
+            Text('Schedule Maintenance'),
+          ],
+        ),
+        backgroundColor: AppTheme.backgroundColor,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                   
                   // Tool Selection
                   Text(
@@ -955,54 +929,16 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
                     ),
                     maxLines: 2,
                   ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Action Buttons (Fixed at bottom)
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
-                  ),
-                  SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _saveMaintenance,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text('Schedule Maintenance'),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _saveMaintenance,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        icon: Icon(Icons.schedule),
+        label: Text('Schedule Maintenance'),
       ),
     );
   }
