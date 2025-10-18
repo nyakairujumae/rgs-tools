@@ -39,8 +39,13 @@ class ThemeProvider with ChangeNotifier {
   }
 
   ThemeProvider() {
-    _loadTheme();
+    _initializeTheme();
     _listenToSystemBrightness();
+  }
+
+  // Initialize theme properly
+  Future<void> _initializeTheme() async {
+    await _loadTheme();
   }
 
   // Load theme from SharedPreferences
@@ -79,20 +84,29 @@ class ThemeProvider with ChangeNotifier {
         break;
       case ThemeMode.system:
         // For system mode, check the current system brightness
-        final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-        _isDarkMode = brightness == Brightness.dark;
+        try {
+          final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+          _isDarkMode = brightness == Brightness.dark;
+        } catch (e) {
+          // Fallback to light mode if there's an error
+          _isDarkMode = false;
+        }
         break;
     }
   }
 
   // Listen to system brightness changes
   void _listenToSystemBrightness() {
+    // Use a more robust approach to listen to system brightness changes
     WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = () {
       if (_themeMode == ThemeMode.system) {
         _updateDarkMode();
         notifyListeners();
       }
     };
+    
+    // Also listen to app lifecycle changes to catch system theme changes
+    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(this));
   }
 
   // Change theme mode
@@ -105,5 +119,34 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  // Force refresh theme (useful for debugging or manual refresh)
+  void refreshTheme() {
+    _updateDarkMode();
+    notifyListeners();
+  }
 
+  // Check if theme is properly initialized
+  bool get isInitialized => _themeMode != null;
+
+  // Dispose method to clean up observers
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(this));
+    super.dispose();
+  }
+}
+
+// App lifecycle observer to catch system theme changes
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  final ThemeProvider _themeProvider;
+  
+  _AppLifecycleObserver(this._themeProvider);
+  
+  @override
+  void didChangePlatformBrightness() {
+    if (_themeProvider._themeMode == ThemeMode.system) {
+      _themeProvider._updateDarkMode();
+      _themeProvider.notifyListeners();
+    }
+  }
 }
