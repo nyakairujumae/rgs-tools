@@ -27,45 +27,50 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   void _loadSampleData() {
-    // Sample maintenance data
-    _maintenanceItems = [
-      MaintenanceSchedule(
-        id: 1,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        maintenanceType: 'Calibration',
-        description: 'Annual calibration check for accuracy',
-        scheduledDate: DateTime.now().add(Duration(days: 4)),
-        priority: 'High',
-        assignedTo: 'Ahmed Hassan',
-        estimatedCost: 50.0,
-        status: 'Scheduled',
-      ),
-      MaintenanceSchedule(
-        id: 2,
-        toolId: 2,
-        toolName: 'Pressure Gauge',
-        maintenanceType: 'Inspection',
-        description: 'Check for leaks and accuracy',
-        scheduledDate: DateTime.now().subtract(Duration(days: 2)),
-        priority: 'Medium',
-        assignedTo: 'Mohammed Ali',
-        estimatedCost: 25.0,
-        status: 'Overdue',
-      ),
-      MaintenanceSchedule(
-        id: 3,
-        toolId: 3,
-        toolName: 'Vacuum Pump',
-        maintenanceType: 'Cleaning',
-        description: 'Clean and lubricate pump components',
-        scheduledDate: DateTime.now().subtract(Duration(days: 1)),
-        priority: 'Low',
-        assignedTo: 'Omar Al-Rashid',
-        estimatedCost: 15.0,
-        status: 'In Progress',
-      ),
-    ];
+    try {
+      // Sample maintenance data
+      _maintenanceItems = [
+        MaintenanceSchedule(
+          id: 1,
+          toolId: 1,
+          toolName: 'Digital Multimeter',
+          maintenanceType: 'Calibration',
+          description: 'Annual calibration check for accuracy',
+          scheduledDate: DateTime.now().add(Duration(days: 4)),
+          priority: 'High',
+          assignedTo: 'Ahmed Hassan',
+          estimatedCost: 50.0,
+          status: 'Scheduled',
+        ),
+        MaintenanceSchedule(
+          id: 2,
+          toolId: 2,
+          toolName: 'Pressure Gauge',
+          maintenanceType: 'Inspection',
+          description: 'Check for leaks and accuracy',
+          scheduledDate: DateTime.now().subtract(Duration(days: 2)),
+          priority: 'Medium',
+          assignedTo: 'Mohammed Ali',
+          estimatedCost: 25.0,
+          status: 'Overdue',
+        ),
+        MaintenanceSchedule(
+          id: 3,
+          toolId: 3,
+          toolName: 'Vacuum Pump',
+          maintenanceType: 'Cleaning',
+          description: 'Clean and lubricate pump components',
+          scheduledDate: DateTime.now().subtract(Duration(days: 1)),
+          priority: 'Low',
+          assignedTo: 'Omar Al-Rashid',
+          estimatedCost: 15.0,
+          status: 'In Progress',
+        ),
+      ];
+    } catch (e) {
+      debugPrint('Error loading sample data: $e');
+      _maintenanceItems = [];
+    }
   }
 
   @override
@@ -962,39 +967,52 @@ class _AddMaintenancePageState extends State<_AddMaintenancePage> {
   }
 
   void _saveMaintenance() {
-    if (_formKey.currentState!.validate()) {
-      // Get the selected tool name
-      final toolProvider = context.read<SupabaseToolProvider>();
-      final selectedTool = toolProvider.tools.firstWhere(
-        (tool) => tool.id == _selectedTool,
-      );
-      
-      final maintenance = MaintenanceSchedule(
-        toolId: int.parse(_selectedTool),
-        toolName: selectedTool.name,
-        maintenanceType: _selectedType,
-        description: _descriptionController.text.trim(),
-        scheduledDate: _selectedDate,
-        priority: _selectedPriority,
-        estimatedCost: _estimatedCostController.text.isNotEmpty 
-            ? double.tryParse(_estimatedCostController.text) 
-            : null,
-        notes: _notesController.text.trim().isNotEmpty 
-            ? _notesController.text.trim() 
-            : null,
-      );
-      
-      // Add to maintenance list via callback
-      widget.onMaintenanceAdded(maintenance);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Maintenance scheduled for ${selectedTool.name}'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      Navigator.pop(context);
+    if (_formKey.currentState?.validate() ?? false) {
+      try {
+        // Get the selected tool name
+        final toolProvider = context.read<SupabaseToolProvider>();
+        final selectedTool = toolProvider.tools.firstWhere(
+          (tool) => tool.id == _selectedTool,
+        );
+        
+        final maintenance = MaintenanceSchedule(
+          toolId: int.parse(_selectedTool),
+          toolName: selectedTool.name,
+          maintenanceType: _selectedType,
+          description: _descriptionController.text.trim(),
+          scheduledDate: _selectedDate,
+          priority: _selectedPriority,
+          estimatedCost: _estimatedCostController.text.isNotEmpty 
+              ? double.tryParse(_estimatedCostController.text) 
+              : null,
+          notes: _notesController.text.trim().isNotEmpty 
+              ? _notesController.text.trim() 
+              : null,
+        );
+        
+        // Add to maintenance list via callback
+        widget.onMaintenanceAdded(maintenance);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Maintenance scheduled for ${selectedTool.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error scheduling maintenance: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
