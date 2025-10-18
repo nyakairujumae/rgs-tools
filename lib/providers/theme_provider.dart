@@ -46,6 +46,8 @@ class ThemeProvider with ChangeNotifier {
   // Initialize theme properly
   Future<void> _initializeTheme() async {
     await _loadTheme();
+    // Force system theme for all users (automatic adaptation)
+    await forceSystemTheme();
   }
 
   // Load theme from SharedPreferences
@@ -55,11 +57,21 @@ class ThemeProvider with ChangeNotifier {
       final themeIndex = prefs.getInt(_themeKey) ?? 2; // Default to system (index 2)
       _themeMode = ThemeMode.values[themeIndex];
       
+      // Always ensure system theme is the default for new users
+      if (!prefs.containsKey(_themeKey)) {
+        _themeMode = ThemeMode.system;
+        await _saveTheme();
+      }
+      
       // Update dark mode based on theme mode
       _updateDarkMode();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading theme: $e');
+      // Fallback to system theme
+      _themeMode = ThemeMode.system;
+      _updateDarkMode();
+      notifyListeners();
     }
   }
 
@@ -122,6 +134,14 @@ class ThemeProvider with ChangeNotifier {
   // Force refresh theme (useful for debugging or manual refresh)
   void refreshTheme() {
     _updateDarkMode();
+    notifyListeners();
+  }
+
+  // Force app to always use system theme (removes any user overrides)
+  Future<void> forceSystemTheme() async {
+    _themeMode = ThemeMode.system;
+    _updateDarkMode();
+    await _saveTheme();
     notifyListeners();
   }
 
