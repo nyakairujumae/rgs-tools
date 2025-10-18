@@ -346,83 +346,40 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   ],
                 ],
               ),
-            
-            if (item.assignedTo != null) ...[
-              SizedBox(height: 8),
+              
+              SizedBox(height: 16),
+              
+              // Action Buttons
               Row(
                 children: [
-                  Icon(
-                    Icons.person,
-                    size: 16,
-                    color: AppTheme.textSecondary,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Assigned to: ${item.assignedTo}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
+                  if (item.status == 'Scheduled' || item.status == 'Overdue')
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _startMaintenance(item),
+                        icon: Icon(Icons.play_arrow, size: 16),
+                        label: Text('Start'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  if (item.status == 'Scheduled' || item.status == 'Overdue')
+                    SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showMaintenanceDetails(item),
+                      icon: Icon(Icons.info_outline, size: 16),
+                      label: Text('Details'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.textSecondary,
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-            
-            if (item.estimatedCost != null) ...[
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.attach_money,
-                    size: 16,
-                    color: AppTheme.textSecondary,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Est. Cost: \$${item.estimatedCost!.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            
-            SizedBox(height: 12),
-            
-            // Action Buttons
-            Row(
-              children: [
-                if (item.status == 'Scheduled' || item.status == 'Overdue')
-                  TextButton.icon(
-                    onPressed: () => _startMaintenance(item),
-                    icon: Icon(Icons.play_arrow, size: 16),
-                    label: Text('Start'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
-                    ),
-                  ),
-                if (item.status == 'In Progress')
-                  TextButton.icon(
-                    onPressed: () => _completeMaintenance(item),
-                    icon: Icon(Icons.check, size: 16),
-                    label: Text('Complete'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.successColor,
-                    ),
-                  ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => _viewMaintenanceDetails(item),
-                  icon: Icon(Icons.info_outline, size: 16),
-                  label: Text('Details'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
