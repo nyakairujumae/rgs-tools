@@ -490,7 +490,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        tool.name,
+                        tool['name'] ?? 'Unknown Tool',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textPrimary,
@@ -498,7 +498,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                       ),
                     ),
                     Text(
-                      '\$${tool.depreciation.toStringAsFixed(2)}',
+                      '\$${(tool['depreciation'] ?? 0.0).toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
