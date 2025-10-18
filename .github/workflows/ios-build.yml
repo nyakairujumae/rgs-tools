@@ -16,7 +16,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        flutter-version: '3.35.2'
         channel: 'stable'
         cache: true
         
@@ -49,12 +49,21 @@ jobs:
       run: |
         cd ios
         sudo gem install cocoapods
-        pod install
+        pod install --verbose
         
     - name: Check iOS configuration
       run: |
         flutter config --list
         flutter devices
+        
+    - name: Check iOS project configuration
+      run: |
+        echo "Checking iOS project configuration..."
+        cat ios/Podfile
+        echo "---"
+        grep -r "IPHONEOS_DEPLOYMENT_TARGET" ios/Runner.xcodeproj/project.pbxproj
+        echo "---"
+        ls -la ios/
         
     - name: Build iOS app
       run: |
