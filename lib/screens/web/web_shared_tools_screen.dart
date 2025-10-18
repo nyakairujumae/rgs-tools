@@ -5,7 +5,7 @@ import 'dart:io';
 import "../../providers/supabase_tool_provider.dart";
 import '../../providers/auth_provider.dart';
 import '../../models/tool.dart';
-import 'tool_detail_screen.dart';
+import '../tool_detail_screen.dart';
 import 'checkout_screen_web.dart';
 
 class WebSharedToolsScreen extends StatefulWidget {
