@@ -37,7 +37,9 @@ class _BulkAssignmentScreenState extends State<BulkAssignmentScreen> with ErrorH
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   @override
