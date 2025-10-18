@@ -268,7 +268,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   StatusChip(status: item.status),
                 ],
               ),
-            
               
               SizedBox(height: 16),
               
@@ -316,7 +315,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   ),
                 ],
               ),
-            
               
               SizedBox(height: 16),
               
@@ -380,7 +378,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                   ),
                 ],
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
