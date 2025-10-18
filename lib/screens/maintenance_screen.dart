@@ -18,6 +18,55 @@ class MaintenanceScreen extends StatefulWidget {
 class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlingMixin {
   String _selectedFilter = 'All';
   bool _isLoading = false;
+  List<MaintenanceSchedule> _maintenanceItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSampleData();
+  }
+
+  void _loadSampleData() {
+    // Sample maintenance data
+    _maintenanceItems = [
+      MaintenanceSchedule(
+        id: 1,
+        toolId: 1,
+        toolName: 'Digital Multimeter',
+        maintenanceType: 'Calibration',
+        description: 'Annual calibration check for accuracy',
+        scheduledDate: DateTime.now().add(Duration(days: 4)),
+        priority: 'High',
+        assignedTo: 'Ahmed Hassan',
+        estimatedCost: 50.0,
+        status: 'Scheduled',
+      ),
+      MaintenanceSchedule(
+        id: 2,
+        toolId: 2,
+        toolName: 'Pressure Gauge',
+        maintenanceType: 'Inspection',
+        description: 'Check for leaks and accuracy',
+        scheduledDate: DateTime.now().subtract(Duration(days: 2)),
+        priority: 'Medium',
+        assignedTo: 'Mohammed Ali',
+        estimatedCost: 25.0,
+        status: 'Overdue',
+      ),
+      MaintenanceSchedule(
+        id: 3,
+        toolId: 3,
+        toolName: 'Vacuum Pump',
+        maintenanceType: 'Cleaning',
+        description: 'Clean and lubricate pump components',
+        scheduledDate: DateTime.now().subtract(Duration(days: 1)),
+        priority: 'Low',
+        assignedTo: 'Omar Al-Rashid',
+        estimatedCost: 15.0,
+        status: 'In Progress',
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,23 +138,18 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   Widget _buildMaintenanceList() {
-    return Consumer<SupabaseToolProvider>(
-      builder: (context, toolProvider, child) {
-        final maintenanceItems = _getMockMaintenanceData();
-        final filteredItems = _filterMaintenanceItems(maintenanceItems);
+    final filteredItems = _filterMaintenanceItems(_maintenanceItems);
 
-        if (filteredItems.isEmpty) {
-          return _buildEmptyState();
-        }
+    if (filteredItems.isEmpty) {
+      return _buildEmptyState();
+    }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: filteredItems.length,
-          itemBuilder: (context, index) {
-            final item = filteredItems[index];
-            return _buildMaintenanceCard(item);
-          },
-        );
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredItems.length,
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        return _buildMaintenanceCard(item);
       },
     );
   }
@@ -446,16 +490,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   void _showAddMaintenanceDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Schedule Maintenance'),
-        content: Text('Maintenance scheduling feature will be implemented in the next phase.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
-      ),
+      builder: (context) => _AddMaintenanceDialog(),
     );
   }
 
@@ -503,5 +538,378 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
         ],
       ),
     );
+  }
+}
+
+class _AddMaintenanceDialog extends StatefulWidget {
+  @override
+  _AddMaintenanceDialogState createState() => _AddMaintenanceDialogState();
+}
+
+class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _descriptionController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _estimatedCostController = TextEditingController();
+  
+  String _selectedTool = '';
+  String _selectedType = 'Calibration';
+  String _selectedPriority = 'Medium';
+  DateTime _selectedDate = DateTime.now().add(Duration(days: 7));
+  String? _selectedTechnician;
+
+  final List<String> _maintenanceTypes = [
+    'Calibration',
+    'Cleaning',
+    'Inspection',
+    'Repair',
+    'Replacement',
+    'Lubrication',
+    'Testing',
+    'Other'
+  ];
+
+  final List<String> _priorities = ['Low', 'Medium', 'High', 'Critical'];
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _notesController.dispose();
+    _estimatedCostController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        constraints: BoxConstraints(maxWidth: 600),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, color: AppTheme.primaryColor, size: 28),
+                      SizedBox(width: 12),
+                      Text(
+                        'Schedule Maintenance',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  
+                  // Tool Selection
+                  Text(
+                    'Select Tool',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Consumer<SupabaseToolProvider>(
+                    builder: (context, toolProvider, child) {
+                      final tools = toolProvider.tools;
+                      return DropdownButtonFormField<String>(
+                        value: _selectedTool.isEmpty ? null : _selectedTool,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        hint: Text('Choose a tool'),
+                        items: tools.map((tool) {
+                          return DropdownMenuItem<String>(
+                            value: tool.id,
+                            child: Text(tool.name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedTool = value ?? '';
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select a tool';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Maintenance Type
+                  Text(
+                    'Maintenance Type',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedType,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: _maintenanceTypes.map((type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedType = value ?? 'Calibration';
+                      });
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Description
+                  Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      hintText: 'Describe the maintenance task',
+                    ),
+                    maxLines: 3,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a description';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Priority and Date Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Priority',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedPriority,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                              items: _priorities.map((priority) {
+                                return DropdownMenuItem<String>(
+                                  value: priority,
+                                  child: Text(priority),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPriority = value ?? 'Medium';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Scheduled Date',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            InkWell(
+                              onTap: _selectDate,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(_formatDate(_selectedDate)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Estimated Cost
+                  Text(
+                    'Estimated Cost (Optional)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextFormField(
+                    controller: _estimatedCostController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      hintText: '0.00',
+                      prefixText: '\$ ',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 16),
+                  
+                  // Notes
+                  Text(
+                    'Notes (Optional)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextFormField(
+                    controller: _notesController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      hintText: 'Additional notes or instructions',
+                    ),
+                    maxLines: 2,
+                  ),
+                  SizedBox(height: 24),
+                  
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: _saveMaintenance,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                        child: Text('Schedule Maintenance'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Future<void> _selectDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
+    );
+    if (date != null) {
+      setState(() {
+        _selectedDate = date;
+      });
+    }
+  }
+
+  void _saveMaintenance() {
+    if (_formKey.currentState!.validate()) {
+      // Get the selected tool name
+      final toolProvider = context.read<SupabaseToolProvider>();
+      final selectedTool = toolProvider.tools.firstWhere(
+        (tool) => tool.id == _selectedTool,
+      );
+      
+      final maintenance = MaintenanceSchedule(
+        toolId: int.parse(_selectedTool),
+        toolName: selectedTool.name,
+        maintenanceType: _selectedType,
+        description: _descriptionController.text.trim(),
+        scheduledDate: _selectedDate,
+        priority: _selectedPriority,
+        estimatedCost: _estimatedCostController.text.isNotEmpty 
+            ? double.tryParse(_estimatedCostController.text) 
+            : null,
+        notes: _notesController.text.trim().isNotEmpty 
+            ? _notesController.text.trim() 
+            : null,
+      );
+      
+      // Add to maintenance list
+      setState(() {
+        _maintenanceItems.add(maintenance);
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Maintenance scheduled for ${selectedTool.name}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      Navigator.pop(context);
+    }
   }
 }
