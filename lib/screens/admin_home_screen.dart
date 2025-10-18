@@ -150,17 +150,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         title: const RGSLogo(),
         centerTitle: true,
         actions: [
-          // Settings button
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SettingsScreen(),
-              ),
-            ),
-            tooltip: 'Settings',
-          ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               // Don't render PopupMenuButton during logout to prevent widget tree issues
