@@ -245,7 +245,8 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
             ),
             SizedBox(height: 16),
             ...categoryBreakdown.entries.map((entry) {
-              final percentage = (entry.value / _calculateTotalValue(filteredTools)) * 100;
+              final totalValue = _calculateTotalValue(filteredTools);
+              final percentage = totalValue > 0 ? (entry.value / totalValue) * 100 : 0.0;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Column(
@@ -263,7 +264,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                           ),
                         ),
                         Text(
-                          '\$${entry.value.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)',
+                          '\$${entry.value.toStringAsFixed(2)} (${percentage.isFinite ? percentage.toStringAsFixed(1) : '0.0'}%)',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.textSecondary,
@@ -273,7 +274,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     ),
                     SizedBox(height: 4),
                     LinearProgressIndicator(
-                      value: percentage / 100,
+                      value: percentage.isFinite ? (percentage / 100).clamp(0.0, 1.0) : 0.0,
                       backgroundColor: Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _getCategoryColor(entry.key),
@@ -555,11 +556,13 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
   }
 
   double _calculateTotalValue(List<Tool> tools) {
-    return tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0.0));
+    final total = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0.0));
+    return total.isFinite ? total : 0.0;
   }
 
   double _calculateTotalPurchaseCost(List<Tool> tools) {
-    return tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0.0));
+    final total = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0.0));
+    return total.isFinite ? total : 0.0;
   }
 
   Map<String, double> _getCategoryBreakdown(List<Tool> tools) {
