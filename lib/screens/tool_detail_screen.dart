@@ -427,51 +427,56 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildActionButtons() {
-    return Column(
-      children: [
-        // Primary Action Button
-        if (_currentTool.status == 'Available')
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AssignToolScreen(),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Check if this tool is already assigned to the current user
+        final isAssignedToCurrentUser = _currentTool.assignedTo == authProvider.userId;
+        
+        return Column(
+          children: [
+            // Primary Action Button - Only show if tool is available AND not assigned to current user
+            if (_currentTool.status == 'Available' && !isAssignedToCurrentUser)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AssignToolScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.person_add),
+                  label: Text('Assign to Technician'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                );
-              },
-              icon: Icon(Icons.person_add),
-              label: Text('Assign to Technician'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          )
-        else if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ReassignToolScreen(tool: _currentTool),
+                ),
+              )
+            else if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReassignToolScreen(tool: _currentTool),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.swap_horiz),
+                  label: Text('Reassign Tool'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                );
-              },
-              icon: Icon(Icons.swap_horiz),
-              label: Text('Reassign Tool'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accentColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
-            ),
-          ),
         
         SizedBox(height: 12),
         
@@ -553,7 +558,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
             ),
           ),
-      ],
+        ],
+      );
+      },
     );
   }
 
