@@ -382,18 +382,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color,
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color, width: 1),
       ),
       child: Text(
         status,
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
         ),
+        maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
     );
@@ -422,18 +424,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color,
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color, width: 1),
       ),
       child: Text(
         condition,
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
         ),
+        maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
     );
