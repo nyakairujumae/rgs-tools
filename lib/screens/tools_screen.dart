@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed to prevent overflow
+              // Content Section - Final fix for 5.3px overflow
               Container(
-                height: 80, // Reduced to 80px to eliminate 25px overflow
+                height: 70, // Reduced to 70px to eliminate 5.3px overflow
                 padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
