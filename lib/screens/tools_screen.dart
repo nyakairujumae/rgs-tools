@@ -243,9 +243,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Section - Positioned higher for better visual balance
+              // Image Section - Takes 3/4 of the card (75%)
               SizedBox(
-                height: 180, // Increased from 170 to 180 and moved up
+                height: 188, // 3/4 of 250px = 187.5px, rounded to 188px
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Final adjustment to eliminate overflow
+              // Content Section - Takes 1/4 of the card (25%)
               Container(
-                height: 45, // Reduced to 45 to eliminate the 5.3px overflow
+                height: 62, // 1/4 of 250px = 62.5px, rounded to 62px
                 padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
