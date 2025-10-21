@@ -274,8 +274,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
               
               // Content Section - Fixed height to prevent overflow
               Container(
-                height: 70, // Reduced to 70 to prevent 25px overflow
-                padding: const EdgeInsets.all(8.0), // Reduced padding for tighter layout
+                height: 60, // Reduced to 60 to prevent 15px overflow
+                padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
