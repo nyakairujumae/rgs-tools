@@ -484,6 +484,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
           }
         }
       }
+      
+      // Reload tools to refresh all screens
+      await context.read<SupabaseToolProvider>().loadTools();
+      
+      debugPrint('✅ Admin tool added - ID: ${addedTool.id}');
+      debugPrint('✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
+      debugPrint('✅ AssignedTo: ${addedTool.assignedTo}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

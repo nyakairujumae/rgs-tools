@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/rgs_logo.dart';
+import '../../config/app_config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -110,6 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                         if (!value.contains('@')) {
                           return 'Please enter a valid email';
+                        }
+                        if (!AppConfig.isEmailDomainAllowed(value)) {
+                          return 'Email domain not allowed. Use @mekar.ae or other approved domains';
                         }
                         return null;
                       },

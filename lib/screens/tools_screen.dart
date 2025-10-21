@@ -4,7 +4,6 @@ import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import 'tool_detail_screen.dart';
-import 'add_tool_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
@@ -16,7 +15,7 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'Category';
   late String _selectedStatus;
   String _searchQuery = '';
 
@@ -35,7 +34,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
     return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
         final tools = toolProvider.tools;
-        final categories = ['All', ...toolProvider.getCategories()];
+        final categories = ['Category', ...toolProvider.getCategories()];
+        
+        debugPrint('🔍 Admin Tools Screen - Total tools: ${tools.length}');
         
         // Filter tools based on search and filters
         final filteredTools = tools.where((tool) {
@@ -43,11 +44,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
               tool.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               (tool.brand?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
           
-          final matchesCategory = _selectedCategory == 'All' || tool.category == _selectedCategory;
+          final matchesCategory = _selectedCategory == 'Category' || tool.category == _selectedCategory;
           final matchesStatus = _selectedStatus == 'All' || tool.status == _selectedStatus;
           
           return matchesSearch && matchesCategory && matchesStatus;
         }).toList();
+        
+        debugPrint('🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}');
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -132,7 +135,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   fontSize: 14,
                                 ),
                                 items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('All')),
+                                  DropdownMenuItem(value: 'All', child: Text('Status')),
                                   DropdownMenuItem(value: 'Available', child: Text('Available')),
                                   DropdownMenuItem(value: 'In Use', child: Text('In Use')),
                                   DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
@@ -208,196 +211,124 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   Widget _buildToolCard(Tool tool) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Main Tool Card - Clean and minimal
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ToolDetailScreen(tool: tool),
+            ),
+          );
+        },
+        onLongPress: () => _showToolActions(context, tool),
+        child: Container(
+          height: 200, // Fixed height to prevent layout issues
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).cardTheme.color ?? Colors.white,
+                (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
+              ],
+            ),
           ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ToolDetailScreen(tool: tool),
-                ),
-              );
-            },
-            onLongPress: () => _showToolActions(context, tool),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).cardTheme.color ?? Colors.white,
-                    (Theme.of(context).cardTheme.color ?? Colors.white).withOpacity(0.8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section - Fixed height
+              SizedBox(
+                height: 120,
+                width: double.infinity,
+                child: tool.imagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        child: tool.imagePath!.startsWith('http')
+                            ? Image.network(
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              )
+                            : Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              ),
+                      )
+                    : _buildPlaceholderImage(),
+              ),
+              
+              // Content Section - Fixed height
+              Container(
+                height: 80,
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Tool Name
+                    Text(
+                      tool.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    SizedBox(height: 3),
+                    
+                    // Brand and Category
+                    Text(
+                      '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    SizedBox(height: 6),
+                    
+                    // Status and Condition Chips
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatusChip(tool.status),
+                        ),
+                        SizedBox(width: 3),
+                        Expanded(
+                          child: _buildConditionChip(tool.condition),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image Section
-                  Expanded(
-                    flex: 3,
-                    child: tool.imagePath != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            child: tool.imagePath!.startsWith('http')
-                                ? Image.network(
-                                    tool.imagePath!,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                                  )
-                                : Image.file(
-                                    File(tool.imagePath!),
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                                  ),
-                          )
-                        : _buildPlaceholderImage(),
-                  ),
-                  
-                  // Content Section - Only essential info
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Tool Name
-                          Flexible(
-                            child: Text(
-                              tool.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          
-                          SizedBox(height: 3),
-                          
-                          // Brand and Category
-                          Flexible(
-                            child: Text(
-                              '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          
-                          SizedBox(height: 6),
-                          
-                          // Status and Condition Chips
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatusChip(tool.status),
-                              ),
-                              SizedBox(width: 3),
-                              Expanded(
-                                child: _buildConditionChip(tool.condition),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
-        
-        // Details below card - Clean and professional
-        const SizedBox(height: 6),
-        _buildToolDetailsBelow(tool),
-      ],
+      ),
     );
   }
 
-  Widget _buildToolDetailsBelow(Tool tool) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color?.withOpacity(0.5) ?? Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Price
-          if (tool.currentValue != null)
-            Row(
-              children: [
-                Icon(
-                  Icons.attach_money,
-                  size: 12,
-                  color: Colors.green,
-                ),
-                SizedBox(width: 2),
-                Text(
-                  'AED ${tool.currentValue!.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          
-          // Tool Type
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: _getToolTypeColor(tool.toolType),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                tool.toolType.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 7,
-                  fontWeight: FontWeight.bold,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPlaceholderImage() {
     return Container(
@@ -508,33 +439,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Available':
-        return Colors.green;
-      case 'In Use':
-        return Colors.blue;
-      case 'Maintenance':
-        return Colors.orange;
-      case 'Retired':
-        return Colors.grey;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getToolTypeColor(String toolType) {
-    switch (toolType) {
-      case 'inventory':
-        return Colors.grey;
-      case 'shared':
-        return Colors.blue;
-      case 'assigned':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
 
   void _showToolActions(BuildContext context, Tool tool) {
     showModalBottomSheet(

@@ -289,7 +289,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: (_selectedIndex == 1 || _selectedIndex == 2)
+      floatingActionButton: (_selectedIndex == 1)
           ? FloatingActionButton(
               onPressed: () {
                 Navigator.push(

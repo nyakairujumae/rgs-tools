@@ -436,7 +436,7 @@ class _WebToolsScreenState extends State<WebToolsScreen> {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 20,
             mainAxisSpacing: 20,
-            childAspectRatio: 0.75, // Increased to prevent layout issues
+            childAspectRatio: 0.8, // Adjusted to prevent layout issues
           ),
           itemCount: tools.length,
           itemBuilder: (context, index) {

@@ -12,7 +12,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _autoBackup = true;
   String _selectedLanguage = 'English';
-  String _selectedCurrency = 'USD';
+  String _selectedCurrency = 'AED';
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +86,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildCurrencyCard() {
     return Card(
       child: ListTile(
-        leading: Icon(Icons.attach_money, color: AppTheme.primaryColor),
+        leading: Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          child: Text(
+            'د.إ',
+            style: TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         title: Text('Currency'),
         subtitle: Text(_selectedCurrency),
         trailing: Icon(Icons.arrow_forward_ios, size: 16),

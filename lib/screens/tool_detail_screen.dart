@@ -323,9 +323,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   SizedBox(height: 4),
                   Flexible(
                     child: ConditionChip(condition: _currentTool.condition),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -821,59 +821,35 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(context); // Close confirmation dialog
               
-              // Show loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => AlertDialog(
-                  content: Row(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: 16),
-                      Text('Deleting tool...'),
-                    ],
-                  ),
-                ),
-              );
+              setState(() {
+                _isLoading = true;
+              });
               
               try {
+                final toolName = _currentTool.name;
                 await context.read<SupabaseToolProvider>().deleteTool(_currentTool.id!);
-                if (mounted) {
-                  // Close loading dialog
-                  Navigator.pop(context);
-                  
-                  // Show success dialog
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => AlertDialog(
-                      title: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green, size: 28),
-                          SizedBox(width: 12),
-                          Text('Success!'),
-                        ],
+                
+                // Force navigation back immediately
+                Navigator.of(context).pop();
+                
+                // Show success message
+                Future.delayed(Duration(milliseconds: 100), () {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Tool "$toolName" deleted successfully'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
                       ),
-                      content: Text('Tool "${_currentTool.name}" has been deleted successfully.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Close dialog
-                            Navigator.pop(context); // Go back to tools list
-                          },
-                          child: Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                    );
+                  }
+                });
               } catch (e) {
+                debugPrint('❌ Error deleting tool: $e');
+                
                 if (mounted) {
-                  // Close loading dialog
-                  Navigator.pop(context);
-                  
                   String errorMessage = 'Failed to delete tool. ';
                   if (e.toString().contains('active assignments')) {
                     errorMessage += 'This tool is currently assigned to a technician. Please return it first.';
@@ -881,8 +857,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     errorMessage += 'You do not have permission to delete this tool.';
                   } else if (e.toString().contains('network')) {
                     errorMessage += 'Network error. Please check your connection.';
+                  } else if (e.toString().contains('timeout')) {
+                    errorMessage += 'Request timed out. Please check your connection and try again.';
                   } else {
-                    errorMessage += 'Please try again.';
+                    errorMessage += 'Please try again. Error: ${e.toString()}';
                   }
                   
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -894,11 +872,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   );
                 }
               } finally {
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                  });
-                }
+                // Don't reset loading state if we successfully deleted and navigated away
+                // The setState would cause an error since we've popped the screen
+                debugPrint('🔧 Finally block - cleaning up');
               }
             },
             child: Text('Delete', style: TextStyle(color: Colors.red)),

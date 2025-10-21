@@ -89,6 +89,21 @@ class AppConfig {
   static RegExp get emailRegex => RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   static RegExp get phoneRegex => RegExp(r'^\+?[\d\s\-\(\)]+$');
   
+  // Allowed email domains
+  static List<String> get allowedEmailDomains => [
+    'mekar.ae',
+    'gmail.com',
+    'outlook.com',
+    'yahoo.com',
+    'hotmail.com',
+  ];
+  
+  // Check if email domain is allowed
+  static bool isEmailDomainAllowed(String email) {
+    final domain = email.split('@').last.toLowerCase();
+    return allowedEmailDomains.contains(domain);
+  }
+  
   // Export configuration
   static List<String> get supportedExportFormats => ['csv', 'pdf', 'excel'];
   static int get maxExportRecords => 10000;

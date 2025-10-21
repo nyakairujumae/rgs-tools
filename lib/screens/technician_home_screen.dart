@@ -12,7 +12,6 @@ import 'shared_tools_screen.dart';
 import 'checkin_screen.dart';
 import 'web/checkin_screen_web.dart';
 import 'tool_detail_screen.dart';
-import 'settings_screen.dart';
 import 'add_tool_issue_screen.dart';
 import 'technician_add_tool_screen.dart';
 import '../models/tool.dart';
@@ -32,6 +31,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   List<Widget> get _screens => [
     TechnicianDashboardScreen(
       key: ValueKey('tech_dashboard_${DateTime.now().millisecondsSinceEpoch}'),
+      onNavigateToTab: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
     ),
     const SharedToolsScreen(),
     const MyToolsScreen(),
@@ -212,14 +216,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
 // Technician Dashboard Screen
 class TechnicianDashboardScreen extends StatelessWidget {
-  const TechnicianDashboardScreen({super.key});
+  final Function(int) onNavigateToTab;
+  
+  const TechnicianDashboardScreen({
+    super.key,
+    required this.onNavigateToTab,
+  });
 
   void _navigateToTab(int index, BuildContext context) {
-    final technicianHomeState = context.findAncestorStateOfType<_TechnicianHomeScreenState>();
-    if (technicianHomeState != null && technicianHomeState.mounted) {
-      technicianHomeState._selectedIndex = index;
-      technicianHomeState.setState(() {});
-    }
+    onNavigateToTab(index);
   }
 
   @override
@@ -232,7 +237,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
         // Get tools assigned to this technician
         final myTools = tools.where((tool) => tool.assignedTo == userId).toList();
         final availableSharedTools = tools.where((tool) => 
-          tool.status == 'Available' && tool.assignedTo == null).toList();
+          tool.status == 'Available' && tool.toolType == 'shared').toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -301,41 +306,41 @@ class TechnicianDashboardScreen extends StatelessWidget {
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'My Assigned Tools',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'My Assigned Tools',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${myTools.length}',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${myTools.length}',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 16),
                     if (myTools.isEmpty)
                       Container(
@@ -413,7 +418,129 @@ class TechnicianDashboardScreen extends StatelessWidget {
                       )
                     else
                       Column(
-                        children: myTools.take(3).map((tool) => _buildToolItem(tool, context)).toList(),
+                        children: [
+                          // Show first 3 tools
+                          ...myTools.take(3).map((tool) => _buildToolItem(tool, context)),
+                          
+                          // Show "Add More Tools" section when technician has tools
+                          Container(
+                            margin: const EdgeInsets.only(top: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Continue adding your tools',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${myTools.length} added',
+                                        style: TextStyle(
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => const TechnicianAddToolScreen(),
+                                            ),
+                                          );
+                                        },
+                                        icon: Icon(Icons.add, size: 18),
+                                        label: Text('Add More Tools'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          // Show confirmation dialog before finishing setup
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: Row(
+                                                children: [
+                                                  Icon(Icons.check_circle, color: Colors.green),
+                                                  SizedBox(width: 8),
+                                                  Text('Finish Setup?'),
+                                                ],
+                                              ),
+                                              content: Text(
+                                                'Have you added all your tools?\n\nYou can always add more tools later from the "My Tools" tab.',
+                                                style: TextStyle(height: 1.5),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context),
+                                                  child: Text('Not Yet'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Setup complete! You can always add more tools later.'),
+                                                        backgroundColor: Colors.green,
+                                                      ),
+                                                    );
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.green,
+                                                    foregroundColor: Colors.white,
+                                                  ),
+                                                  child: Text('Yes, Finish'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                        icon: Icon(Icons.check_circle, size: 18),
+                                        label: Text('Finish Setup'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.green,
+                                          side: BorderSide(color: Colors.green),
+                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     if (myTools.length > 3)
                       Padding(
@@ -434,7 +561,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-              ),
+                ),
               ),
 
               SizedBox(height: 24),
@@ -447,41 +574,41 @@ class TechnicianDashboardScreen extends StatelessWidget {
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Available Shared Tools',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Available Shared Tools',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${availableSharedTools.length}',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${availableSharedTools.length}',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 16),
                     if (availableSharedTools.isEmpty)
                       Container(
@@ -526,7 +653,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
                       ),
                   ],
                 ),
-              ),
+                ),
               ),
 
               SizedBox(height: 24),

@@ -257,8 +257,8 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   _buildStatCard(
                     'Total Value',
-                    '\$${totalValue.toStringAsFixed(0)}',
-                    Icons.attach_money,
+                    'AED ${totalValue.toStringAsFixed(0)}',
+                    Icons.attach_money, // Will be replaced with custom icon
                     Colors.orange,
                     context,
                     () => onNavigateToTab(3), // Navigate to Reports tab
@@ -634,7 +634,10 @@ class DashboardScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 24, color: color),
+              // Custom Dirham icon for Total Value, regular icon for others
+              title == 'Total Value' 
+                ? _buildDirhamIcon(color)
+                : Icon(icon, size: 24, color: color),
               SizedBox(height: 6),
               Text(
                 value,
@@ -661,6 +664,16 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     ));
+  }
+
+  Widget _buildDirhamIcon(Color color) {
+    return Container(
+      width: 24,
+      height: 24,
+      child: CustomPaint(
+        painter: DirhamIconPainter(color),
+      ),
+    );
   }
 
   Widget _buildStatusRow(String status, int count, Color color) {
@@ -807,5 +820,75 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class DirhamIconPainter extends CustomPainter {
+  final Color color;
+
+  DirhamIconPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final radius = size.width * 0.3;
+
+    // Draw the letter D
+    // Left vertical line
+    canvas.drawLine(
+      Offset(centerX - radius, centerY - radius),
+      Offset(centerX - radius, centerY + radius),
+      paint,
+    );
+
+    // Top horizontal line
+    canvas.drawLine(
+      Offset(centerX - radius, centerY - radius),
+      Offset(centerX + radius * 0.3, centerY - radius),
+      paint,
+    );
+
+    // Bottom horizontal line
+    canvas.drawLine(
+      Offset(centerX - radius, centerY + radius),
+      Offset(centerX + radius * 0.3, centerY + radius),
+      paint,
+    );
+
+    // Curved part of D
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(centerX - radius, centerY), radius: radius),
+      -1.57, // -90 degrees
+      3.14, // 180 degrees
+      false,
+      paint,
+    );
+
+    // Draw two vertical lines crossing the D (Dirham symbol)
+    final lineSpacing = radius * 0.4;
+    
+    // First vertical line
+    canvas.drawLine(
+      Offset(centerX - radius * 0.2, centerY - radius),
+      Offset(centerX - radius * 0.2, centerY + radius),
+      paint,
+    );
+
+    // Second vertical line
+    canvas.drawLine(
+      Offset(centerX + radius * 0.2, centerY - radius),
+      Offset(centerX + radius * 0.2, centerY + radius),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 

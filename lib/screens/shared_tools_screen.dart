@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import '../models/tool.dart';
+import '../models/user_role.dart';
+import 'tools_screen.dart';
 
 class SharedToolsScreen extends StatefulWidget {
   const SharedToolsScreen({super.key});
@@ -60,16 +63,17 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search Section
-          _buildSearchSection(),
-          
-          // Filter Chips
-          _buildFilterChips(),
-          
-          // Tools List
-          Expanded(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Search Section
+            _buildSearchSection(),
+            
+            // Filter Chips
+            _buildFilterChips(),
+            
+            // Tools List
+            Expanded(
             child: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
               builder: (context, toolProvider, technicianProvider, child) {
                 final tools = _getFilteredTools(toolProvider.tools);
@@ -83,12 +87,31 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 }
 
                 if (tools.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.share,
-                    title: _selectedFilter == 'All' ? 'No Shared Tools' : 'No Tools Found',
-                    subtitle: _selectedFilter == 'All' 
-                        ? 'Tools need to be marked as "Shared" in the All Tools inventory to appear here'
-                        : 'Try adjusting your filters or search terms',
+                  // Check if user is admin to show "Go to Tools" button
+                  return Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      final isAdmin = authProvider.userRole == UserRole.admin;
+                      
+                      return EmptyState(
+                        icon: Icons.share,
+                        title: _selectedFilter == 'All' ? 'No Shared Tools' : 'No Tools Found',
+                        subtitle: _selectedFilter == 'All' 
+                            ? (isAdmin 
+                                ? 'Go to All Tools to mark tools as "Shared" so they appear here'
+                                : 'No shared tools available. Contact your admin to share tools.')
+                            : 'Try adjusting your filters or search terms',
+                        actionText: isAdmin ? 'Go to Tools' : null,
+                        onAction: isAdmin ? () {
+                          // Navigate to Admin Home with Tools tab selected
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/admin',
+                            (route) => false,
+                            arguments: {'initialTab': 1}, // Tools tab
+                          );
+                        } : null,
+                      );
+                    },
                   );
                 }
 
@@ -110,44 +133,47 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               },
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSearchSection() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-        decoration: InputDecoration(
-          hintText: 'Search shared tools...',
-          hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey[400]),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                    });
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+          decoration: InputDecoration(
+            hintText: 'Search shared tools...',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: Icon(Icons.clear, color: Colors.grey[400]),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
         ),
       ),
     );
@@ -367,9 +393,12 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   List<Tool> _getFilteredTools(List<Tool> tools) {
+    debugPrint('🔍 Shared Tools Filter - Total tools: ${tools.length}');
+    
     var filteredTools = tools.where((tool) {
-      // Only show tools that are marked as 'shared' or 'assigned' (available for checkout)
-      if (tool.toolType != 'shared' && tool.toolType != 'assigned') {
+      // Only show tools that are marked as 'shared' (available for checkout by any technician)
+      // Do NOT show 'assigned' tools (technician's personal tools) or 'inventory' tools
+      if (tool.toolType != 'shared') {
         return false;
       }
 

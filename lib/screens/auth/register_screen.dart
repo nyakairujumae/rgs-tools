@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/user_role.dart';
+import '../../config/app_config.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -163,6 +164,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                         if (!value.contains('@')) {
                           return 'Please enter a valid email';
+                        }
+                        if (!AppConfig.isEmailDomainAllowed(value)) {
+                          return 'Email domain not allowed. Use @mekar.ae or other approved domains';
                         }
                         return null;
                       },
@@ -400,10 +404,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         fullName: _nameController.text.trim(),
+        role: _selectedRole,
       );
-
-      // Set user role after successful signup
-      await authProvider.updateUserRole(_selectedRole);
       
       if (mounted) {
         // Check if user is already confirmed or if email confirmation is disabled

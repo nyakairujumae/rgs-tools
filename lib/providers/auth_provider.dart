@@ -64,6 +64,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     String? fullName,
+    UserRole? role,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -72,15 +73,13 @@ class AuthProvider with ChangeNotifier {
       final response = await SupabaseService.client.auth.signUp(
         email: email,
         password: password,
-        data: fullName != null ? {'full_name': fullName} : null,
-        emailRedirectTo: null, // Disable email confirmation redirect
+        data: {
+          'full_name': fullName,
+          'role': role?.value ?? 'technician',
+        },
       );
 
-      // If user is immediately confirmed (email confirmation disabled), set as current user
-      if (response.user != null && response.session != null) {
-        _user = response.user;
-        await _loadUserRole();
-      } else if (response.user != null) {
+      if (response.user != null) {
         _user = response.user;
         await _loadUserRole();
       }
@@ -169,60 +168,26 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> _loadUserRole() async {
     if (_user == null) {
-      debugPrint('🔍 _loadUserRole: No user found, setting default role');
       _userRole = UserRole.technician;
       return;
     }
 
-    debugPrint('🔍 _loadUserRole: Loading role for user ${_user!.id}');
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      // First try to get role from user metadata
-      final roleFromMetadata = _user?.userMetadata?['role'] as String?;
-      if (roleFromMetadata != null) {
-        _userRole = UserRoleExtension.fromString(roleFromMetadata);
-        debugPrint('✅ Role loaded from metadata: $_userRole');
-        return;
-      }
-
-      debugPrint('🔍 No role in metadata, checking users table...');
-
-      // If not in metadata, try to get from users table in Supabase
-      // Add timeout to prevent hanging
+      // Get role from users table
       final response = await SupabaseService.client
           .from('users')
           .select('role')
           .eq('id', _user!.id)
-          .single()
-          .timeout(Duration(seconds: 5)); // 5 second timeout
+          .single();
 
       if (response['role'] != null) {
         _userRole = UserRoleExtension.fromString(response['role']);
-        debugPrint('✅ Role loaded from database: $_userRole');
       } else {
-        // If user doesn't exist in users table, create them with default role
-        debugPrint('🔍 User not found in users table, creating with default role');
-        await SupabaseService.client
-            .from('users')
-            .insert({
-              'id': _user!.id,
-              'email': _user!.email,
-              'full_name': _user!.userMetadata?['full_name'],
-              'role': 'technician',
-            });
         _userRole = UserRole.technician;
-        debugPrint('✅ User created with default technician role');
       }
     } catch (e) {
-      debugPrint('❌ Error loading user role: $e');
-      // Default to technician for security
+      debugPrint('Error loading user role: $e');
       _userRole = UserRole.technician;
-      debugPrint('⚠️ Defaulting to technician role due to error');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -230,6 +195,8 @@ class AuthProvider with ChangeNotifier {
     if (_user == null) return;
 
     try {
+      debugPrint('🔧 Updating user role to: $newRole');
+      
       // Update in Supabase users table
       await SupabaseService.client
           .from('users')
@@ -243,12 +210,14 @@ class AuthProvider with ChangeNotifier {
 
       // Update local role
       _userRole = newRole;
+      debugPrint('✅ User role updated successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('Error updating user role: $e');
+      debugPrint('❌ Error updating user role: $e');
       rethrow;
     }
   }
+
 
   // Permission check methods
   bool hasPermission(String permission) {

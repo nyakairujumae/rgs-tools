@@ -69,30 +69,27 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<void> deleteTool(String toolId) async {
     try {
-      // Add timeout to prevent hanging
-      await Future.any([
-        _performDeletion(toolId),
-        Future.delayed(Duration(seconds: 3), () => throw Exception('Deletion timeout - please try again')),
-      ]);
+      debugPrint('🗑️ Provider: Deleting tool from database: $toolId');
+      
+      // Delete from database
+      await SupabaseService.client
+          .from('tools')
+          .delete()
+          .eq('id', toolId);
+
+      debugPrint('✅ Provider: Tool deleted from database');
+      
+      // Update local state
+      _tools.removeWhere((tool) => tool.id == toolId);
+      debugPrint('✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
+      
+      notifyListeners();
+      debugPrint('✅ Provider: Notified listeners');
+      
     } catch (e) {
-      debugPrint('Error deleting tool: $e');
+      debugPrint('❌ Provider: Error deleting tool: $e');
       rethrow;
     }
-  }
-
-  Future<void> _performDeletion(String toolId) async {
-    // Simple deletion - just delete the tool directly
-    // Let the database handle foreign key constraints
-    await SupabaseService.client
-        .from('tools')
-        .delete()
-        .eq('id', toolId);
-
-    // Update local state
-    _tools.removeWhere((tool) => tool.id == toolId);
-    notifyListeners();
-    
-    debugPrint('Tool deleted successfully: $toolId');
   }
 
 

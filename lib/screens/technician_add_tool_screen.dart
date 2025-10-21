@@ -440,6 +440,9 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
       final authProvider = context.read<AuthProvider>();
       final currentUserId = authProvider.user?.id;
 
+      debugPrint('🔍 Current User ID: $currentUserId');
+      debugPrint('🔍 Current User Email: ${authProvider.userEmail}');
+
       final tool = Tool(
         name: _nameController.text.trim(),
         category: _selectedCategory,
@@ -448,8 +451,8 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         serialNumber: _serialNumberController.text.trim().isEmpty ? null : _serialNumberController.text.trim(),
         condition: _condition,
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-        status: _status,
-        toolType: 'inventory', // Set as inventory tool
+        status: 'In Use', // Set status to 'In Use' since it's assigned to technician
+        toolType: 'inventory', // Set as inventory tool (technician's personal tool)
         assignedTo: currentUserId, // Assign to current technician
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         imagePath: imagePath,
@@ -458,7 +461,14 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         currentValue: _currentValueController.text.trim().isEmpty ? null : double.tryParse(_currentValueController.text.trim()),
       );
 
+      debugPrint('🔍 Tool being saved: ${tool.toMap()}');
+
       await context.read<SupabaseToolProvider>().addTool(tool);
+      
+      // Reload tools to refresh the UI
+      await context.read<SupabaseToolProvider>().loadTools();
+      
+      debugPrint('✅ Tool added and tools reloaded');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

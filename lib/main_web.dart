@@ -3,8 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'no_backend_web.dart';
 import 'screens/web/web_login_screen.dart';
-import 'screens/web/web_admin_home_screen.dart';
-import 'screens/web/web_technician_home_screen.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
