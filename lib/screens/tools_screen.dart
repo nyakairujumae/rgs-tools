@@ -243,9 +243,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Section - Much larger for better visual impact
+              // Image Section - Positioned higher for better visual balance
               SizedBox(
-                height: 170, // Increased from 140 to 170 for more prominent images
+                height: 180, // Increased from 170 to 180 and moved up
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed height to prevent overflow
+              // Content Section - Reduced to accommodate larger image
               Container(
-                height: 60, // Reduced to 60 to prevent 15px overflow
+                height: 50, // Reduced to 50 to make room for larger image
                 padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
