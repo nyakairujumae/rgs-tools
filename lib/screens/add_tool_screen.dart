@@ -65,7 +65,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     super.dispose();
   }
 
-  Future<void> _scanBarcode() async {
+  Future<void> _scanBarcode(TextEditingController controller, String fieldName) async {
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(
@@ -75,13 +75,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
     if (result != null) {
       setState(() {
-        _serialNumberController.text = result;
+        controller.text = result;
       });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Scanned: $result'),
+            content: Text('$fieldName scanned: $result'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -245,10 +245,15 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _modelController,
-                      decoration: const InputDecoration(
-                        labelText: 'Model',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Model Number',
+                        border: const OutlineInputBorder(),
                         hintText: 'e.g., 87V',
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
+                          tooltip: 'Scan Model Number',
+                          onPressed: () => _scanBarcode(_modelController, 'Model number'),
+                        ),
                       ),
                     ),
                   ),
@@ -259,9 +264,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
               TextFormField(
                 controller: _serialNumberController,
                 decoration: InputDecoration(
-                  labelText: 'Serial Number / ID',
+                  labelText: 'Serial Number',
                   border: const OutlineInputBorder(),
-                  hintText: 'Enter, scan, or generate',
+                  hintText: 'Scan or enter manually',
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -272,8 +277,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                        tooltip: 'Scan Barcode',
-                        onPressed: _scanBarcode,
+                        tooltip: 'Scan Serial Number',
+                        onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
                       ),
                     ],
                   ),
@@ -283,7 +288,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               Padding(
                 padding: const EdgeInsets.only(left: 12),
                 child: Text(
-                  'Generate a unique ID for tools without serial numbers',
+                  'Scan barcode/QR code or generate ID for tools without serial numbers',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
