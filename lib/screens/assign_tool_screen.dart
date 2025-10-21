@@ -180,7 +180,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         children: [
           // Tool Image Card
           Container(
-            height: 180,
+            height: 150, // Reduced from 180 to 150 to prevent overflow
             decoration: BoxDecoration(
               color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(12),
@@ -191,9 +191,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                 // Tool Image
                 Center(
                   child: Container(
-                    height: 120,
+                    height: 100, // Reduced from 120 to 100 to fit better
                     width: double.infinity,
-                    margin: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.all(8), // Reduced margin from 10 to 8
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(8),
@@ -257,9 +257,10 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           ),
           // Tool Info
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), // Added vertical padding
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Added to prevent overflow
               children: [
                 Text(
                   tool.name,
