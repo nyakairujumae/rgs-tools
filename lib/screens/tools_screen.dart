@@ -274,7 +274,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
               
               // Content Section - Reduced height
               Container(
-                height: 60, // Reduced from 80 to 60 for more image space
+                height: 65, // Slightly increased from 60 to 65 to prevent overflow
                 padding: const EdgeInsets.all(8.0), // Reduced padding for tighter layout
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
