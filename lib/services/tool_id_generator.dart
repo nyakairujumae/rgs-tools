@@ -12,6 +12,27 @@ class ToolIdGenerator {
     return 'RGS-$year-$shortId';
   }
   
+  /// Generate a model number in format: MDL-XXXX
+  /// Example: MDL-A1B2
+  static String generateModelNumber() {
+    final shortId = _uuid.v4().substring(0, 4).toUpperCase();
+    return 'MDL-$shortId';
+  }
+  
+  /// Generate both serial number and model number
+  /// Returns a map with 'serial' and 'model' keys
+  static Map<String, String> generateBoth() {
+    final year = DateTime.now().year;
+    final baseId = _uuid.v4().substring(0, 8).toUpperCase();
+    final serialPart = baseId.substring(0, 6);
+    final modelPart = baseId.substring(6, 8);
+    
+    return {
+      'serial': 'RGS-$year-$serialPart',
+      'model': 'MDL-$year$modelPart',
+    };
+  }
+  
   /// Generate a sequential tool ID with timestamp
   /// Example: TOOL-20241021-143052-A1B
   static String generateSequentialId() {

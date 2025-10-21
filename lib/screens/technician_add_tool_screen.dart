@@ -102,8 +102,38 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Generated unique ID'),
+        content: Text('Generated unique serial number'),
         backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _generateModelNumber() {
+    setState(() {
+      _modelController.text = ToolIdGenerator.generateModelNumber();
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generated unique model number'),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _generateBothIds() {
+    final ids = ToolIdGenerator.generateBoth();
+    setState(() {
+      _modelController.text = ids['model']!;
+      _serialNumberController.text = ids['serial']!;
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generated model and serial numbers'),
+        backgroundColor: Colors.green,
         duration: Duration(seconds: 2),
       ),
     );
@@ -215,15 +245,41 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                       decoration: InputDecoration(
                         labelText: 'Model Number',
                         border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                          tooltip: 'Scan Model Number',
-                          onPressed: () => _scanBarcode(_modelController, 'Model number'),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.auto_awesome, color: Colors.blue),
+                              tooltip: 'Generate Model Number',
+                              onPressed: _generateModelNumber,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
+                              tooltip: 'Scan Model Number',
+                              onPressed: () => _scanBarcode(_modelController, 'Model number'),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ],
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Generate Both Button
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: _generateBothIds,
+                  icon: const Icon(Icons.flash_on, color: Colors.orange),
+                  label: const Text('Generate Both Model & Serial Numbers'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    side: const BorderSide(color: Colors.orange),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
               ),
               
               SizedBox(height: 16),
