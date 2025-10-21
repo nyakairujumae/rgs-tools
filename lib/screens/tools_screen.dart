@@ -272,10 +272,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Optimized height
+              // Content Section - Reduced height
               Container(
-                height: 80, // Keep same height for content
-                padding: const EdgeInsets.all(12.0), // Increased padding for better spacing
+                height: 60, // Reduced from 80 to 60 for more image space
+                padding: const EdgeInsets.all(8.0), // Reduced padding for tighter layout
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -288,11 +288,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         fontSize: 13,
                         color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
-                      maxLines: 2,
+                      maxLines: 1, // Reduced from 2 to 1 for tighter layout
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 3),
+                    SizedBox(height: 2), // Reduced from 3 to 2
                     
                     // Brand and Category
                     Text(
@@ -305,7 +305,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 6),
+                    SizedBox(height: 4), // Reduced from 6 to 4
                     
                     // Status and Condition Chips
                     Row(
