@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Optimized height
+              // Content Section - Fixed height to prevent overflow
               Container(
-                height: 80, // Increased to 80 to match the larger card and fill space better
+                height: 70, // Reduced to 70 to prevent 25px overflow
                 padding: const EdgeInsets.all(8.0), // Reduced padding for tighter layout
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +292,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 2), // Reduced from 3 to 2
+                    SizedBox(height: 1), // Further reduced spacing
                     
                     // Brand and Category
                     Text(
@@ -305,7 +305,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 4), // Reduced from 6 to 4
+                    SizedBox(height: 2), // Further reduced spacing
                     
                     // Status and Condition Chips
                     Row(
