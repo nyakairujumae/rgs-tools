@@ -45,103 +45,159 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             return matchesSearch && matchesCategory && matchesStatus;
           }).toList();
           
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Search Bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          return Column(
+            children: [
+              // Modern Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  height: 40, // Smaller, more modern height
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[700]!),
+                    borderRadius: BorderRadius.circular(20), // More rounded for modern look
+                    border: Border.all(color: Colors.grey[300]!, width: 1),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey[400], size: 20),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-                          decoration: InputDecoration(
-                            hintText: 'Search tools...',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
-                            border: InputBorder.none,
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
-                        ),
+                  child: TextField(
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 14, // Smaller font for modern look
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search tools...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
                       ),
-                    ],
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[400],
+                        size: 18, // Smaller icon
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
                 ),
-                SizedBox(height: 24),
-                
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+              ),
+              
+              // Content with proper spacing
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildFilterChip('All', _selectedCategory, (value) {
-                        setState(() {
-                          _selectedCategory = value;
-                        });
-                      }),
-                      SizedBox(width: 8),
-                      _buildFilterChip('Available', _selectedStatus, (value) {
-                        setState(() {
-                          _selectedStatus = value;
-                        });
-                      }),
-                      SizedBox(width: 8),
-                      _buildFilterChip('In Use', _selectedStatus, (value) {
-                        setState(() {
-                          _selectedStatus = value;
-                        });
-                      }),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24),
-                
-                // Tools Grid
-                filteredTools.isEmpty
-                    ? Center(
-                        child: Column(
+                      SizedBox(height: 16),
+                      
+                      // Filter Chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
                           children: [
-                            Icon(Icons.build, size: 64, color: Colors.grey[600]),
-                            SizedBox(height: 16),
-                            Text(
-                              'No tools found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            _buildFilterChip('All', _selectedCategory, (value) {
+                              setState(() {
+                                _selectedCategory = value;
+                              });
+                            }),
+                            SizedBox(width: 8),
+                            _buildFilterChip('Available', _selectedStatus, (value) {
+                              setState(() {
+                                _selectedStatus = value;
+                              });
+                            }),
+                            SizedBox(width: 8),
+                            _buildFilterChip('In Use', _selectedStatus, (value) {
+                              setState(() {
+                                _selectedStatus = value;
+                              });
+                            }),
                           ],
                         ),
-                      )
-                    : GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.75,
-                        children: filteredTools.map((tool) {
-                          return _buildToolCard(context, tool);
-                        }).toList(),
                       ),
-              ],
-            ),
+                      SizedBox(height: 16),
+                      
+                      // Tools Grid
+                      filteredTools.isEmpty
+                          ? Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.build, size: 64, color: Colors.grey[600]),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No tools found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[400],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.75,
+                              children: filteredTools.map((tool) {
+                                return _buildToolCard(context, tool);
+                              }).toList(),
+                            ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        currentIndex: 1, // Tools tab is selected
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false, arguments: {'initialTab': 0});
+              break;
+            case 1:
+              // Already on tools screen
+              break;
+            case 2:
+              Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false, arguments: {'initialTab': 2});
+              break;
+            case 3:
+              Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false, arguments: {'initialTab': 3});
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.build),
+            label: 'Tools',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.share),
+            label: 'Shared',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Technicians',
+          ),
+        ],
       ),
     );
   }
