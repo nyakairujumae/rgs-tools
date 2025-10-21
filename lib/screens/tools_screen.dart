@@ -192,7 +192,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             padding: const EdgeInsets.all(16.0),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              childAspectRatio: 0.65, // Adjusted for details below cards
+                              childAspectRatio: 0.75, // Increased from 0.65 to 0.75 for taller cards
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                             ),
@@ -228,7 +228,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         },
         onLongPress: () => _showToolActions(context, tool),
         child: Container(
-          height: 220, // Increased height for better proportions
+          height: 250, // Increased height to fill more space and look more substantial
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
@@ -243,9 +243,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Section - Larger height for better visual impact
+              // Image Section - Much larger for better visual impact
               SizedBox(
-                height: 140, // Increased from 120 to 140
+                height: 170, // Increased from 140 to 170 for more prominent images
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Reduced height
+              // Content Section - Optimized height
               Container(
-                height: 65, // Slightly increased from 60 to 65 to prevent overflow
+                height: 80, // Increased to 80 to match the larger card and fill space better
                 padding: const EdgeInsets.all(8.0), // Reduced padding for tighter layout
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
