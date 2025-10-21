@@ -226,9 +226,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Same as all tools cards
+              // Content Section - Fixed to eliminate 0.667px overflow
               Container(
-                height: 70,
+                height: 68, // Reduced from 70px to 68px to eliminate 0.667px overflow
                 padding: const EdgeInsets.all(6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
