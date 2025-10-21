@@ -228,7 +228,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         },
         onLongPress: () => _showToolActions(context, tool),
         child: Container(
-          height: 200, // Fixed height to prevent layout issues
+          height: 220, // Increased height for better proportions
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
@@ -243,9 +243,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Section - Fixed height
+              // Image Section - Larger height for better visual impact
               SizedBox(
-                height: 120,
+                height: 140, // Increased from 120 to 140
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -258,24 +258,24 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 tool.imagePath!,
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.cover, // This ensures the image fills the entire space
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               )
                             : Image.file(
                                 File(tool.imagePath!),
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.cover, // This ensures the image fills the entire space
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               ),
                       )
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed height
+              // Content Section - Optimized height
               Container(
-                height: 80,
-                padding: const EdgeInsets.all(8.0),
+                height: 80, // Keep same height for content
+                padding: const EdgeInsets.all(12.0), // Increased padding for better spacing
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -346,10 +346,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
         children: [
           Icon(
             Icons.build,
-            size: 40,
+            size: 50, // Increased from 40 to 50 for better visibility
             color: Colors.grey[400],
           ),
-          SizedBox(height: 4),
+          SizedBox(height: 6), // Increased spacing
           Text(
             'No Image',
             style: TextStyle(
