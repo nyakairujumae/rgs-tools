@@ -7,6 +7,8 @@ import '../providers/auth_provider.dart';
 import '../models/tool.dart';
 import '../models/user_role.dart';
 import '../services/image_upload_service.dart';
+import '../services/tool_id_generator.dart';
+import 'barcode_scanner_screen.dart';
 
 class TechnicianAddToolScreen extends StatefulWidget {
   const TechnicianAddToolScreen({super.key});
@@ -66,6 +68,45 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     _locationController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _scanBarcode() async {
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BarcodeScannerScreen(),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _serialNumberController.text = result;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Scanned: $result'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _generateToolId() {
+    setState(() {
+      _serialNumberController.text = ToolIdGenerator.generateToolId();
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generated unique ID'),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -185,9 +226,25 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
               // Serial number
               TextFormField(
                 controller: _serialNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Serial Number',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'Serial Number / ID',
+                  border: const OutlineInputBorder(),
+                  hintText: 'Enter, scan, or generate',
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.auto_awesome, color: Colors.blue),
+                        tooltip: 'Generate Unique ID',
+                        onPressed: _generateToolId,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
+                        tooltip: 'Scan Barcode',
+                        onPressed: _scanBarcode,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               
