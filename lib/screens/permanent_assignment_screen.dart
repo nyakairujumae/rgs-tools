@@ -274,19 +274,31 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
               items: activeTechnicians.map((technician) {
                 return DropdownMenuItem(
                   value: technician,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(technician.name),
-                      if (technician.department != null)
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: 50, // Fixed height to prevent overflow
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min, // Prevent overflow
+                      children: [
                         Text(
-                          technician.department!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
+                          technician.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                    ],
+                        if (technician.department != null)
+                          Text(
+                            technician.department!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
