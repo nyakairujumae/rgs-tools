@@ -272,9 +272,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Takes 1/4 of the card (25%)
+              // Content Section - Fixed to prevent overflow
               Container(
-                height: 62, // 1/4 of 250px = 62.5px, rounded to 62px
+                height: 50, // Reduced to 50px to eliminate 25px overflow
                 padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
