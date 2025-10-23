@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
+import '../services/supabase_service.dart';
 
 class AddTechnicianScreen extends StatefulWidget {
   final Technician? technician;
@@ -23,6 +26,8 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
   String _status = 'Active';
   DateTime? _hireDate;
   bool _isLoading = false;
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -161,6 +166,10 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    SizedBox(height: 16),
+
+                    // Profile Picture Section
+                    _buildProfilePictureSection(),
                     SizedBox(height: 16),
 
                     // Name (Required)
@@ -402,6 +411,12 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
     });
 
     try {
+      String? profilePictureUrl;
+      if (_profileImage != null) {
+        // Upload image to Supabase storage
+        profilePictureUrl = await _uploadProfileImage();
+      }
+
       final technician = Technician(
         id: widget.technician?.id,
         name: _nameController.text.trim(),
@@ -411,6 +426,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
         department: _departmentController.text.trim().isEmpty ? null : _departmentController.text.trim(),
         hireDate: _hireDate?.toIso8601String().split('T')[0],
         status: _status,
+        profilePictureUrl: profilePictureUrl,
       );
 
       if (widget.technician == null) {
@@ -459,6 +475,231 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Widget _buildProfilePictureSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Profile Picture (Optional)',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              // Profile Picture Preview
+              GestureDetector(
+                onTap: _selectProfileImage,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: _profileImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(40),
+                          child: Image.file(
+                            _profileImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.grey[600],
+                        ),
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add Profile Picture',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap to select from gallery or camera',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _selectProfileImage,
+                          icon: Icon(Icons.photo_library, size: 16),
+                          label: Text('Gallery'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: _takeProfileImage,
+                          icon: Icon(Icons.camera_alt, size: 16),
+                          label: Text('Camera'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (_profileImage != null)
+                IconButton(
+                  onPressed: _removeProfileImage,
+                  icon: Icon(Icons.close, color: Colors.red),
+                  tooltip: 'Remove image',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selectProfileImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to select image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _takeProfileImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to take photo: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeProfileImage() {
+    setState(() {
+      _profileImage = null;
+    });
+  }
+
+  Future<String?> _uploadProfileImage() async {
+    try {
+      if (_profileImage == null) return null;
+
+      // Generate unique filename
+      final fileName = 'technician_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final filePath = 'profile-pictures/$fileName';
+
+      // Upload to Supabase storage
+      final response = await SupabaseService.client.storage
+          .from('technician-images')
+          .upload(filePath, _profileImage!);
+
+      if (response.isNotEmpty) {
+        // Get public URL
+        final publicUrl = SupabaseService.client.storage
+            .from('technician-images')
+            .getPublicUrl(filePath);
+        return publicUrl;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error uploading profile image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload profile picture: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: EdgeInsets.all(16),
+          ),
+        );
+      }
+      return null;
     }
   }
 }

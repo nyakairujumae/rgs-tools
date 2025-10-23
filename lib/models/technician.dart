@@ -7,6 +7,7 @@ class Technician {
   final String? department;
   final String? hireDate;
   final String status;
+  final String? profilePictureUrl;
   final String? createdAt;
 
   Technician({
@@ -18,6 +19,7 @@ class Technician {
     this.department,
     this.hireDate,
     this.status = 'Active',
+    this.profilePictureUrl,
     this.createdAt,
   });
 
@@ -30,6 +32,7 @@ class Technician {
       'department': department,
       'hire_date': hireDate,
       'status': status,
+      'profile_picture_url': profilePictureUrl,
     };
     
     // Only include id and created_at if they're not null (for updates)
@@ -53,6 +56,7 @@ class Technician {
       department: map['department'],
       hireDate: map['hire_date'],
       status: map['status'],
+      profilePictureUrl: map['profile_picture_url'],
       createdAt: map['created_at'],
     );
   }
@@ -66,6 +70,7 @@ class Technician {
     String? department,
     String? hireDate,
     String? status,
+    String? profilePictureUrl,
     String? createdAt,
   }) {
     return Technician(
@@ -77,6 +82,7 @@ class Technician {
       department: department ?? this.department,
       hireDate: hireDate ?? this.hireDate,
       status: status ?? this.status,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -112,16 +112,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       margin: const EdgeInsets.only(bottom: 12.0),
       color: Theme.of(context).cardTheme.color,
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: technician.status == 'Active' ? Colors.green : Colors.grey,
-          child: Text(
-            technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+        leading: _buildProfilePicture(technician),
         title: Text(
           technician.name,
           style: TextStyle(
@@ -186,6 +177,26 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildProfilePicture(Technician technician) {
+    return CircleAvatar(
+      radius: 25,
+      backgroundColor: technician.status == 'Active' ? Colors.green : Colors.grey,
+      backgroundImage: technician.profilePictureUrl != null
+          ? NetworkImage(technician.profilePictureUrl!)
+          : null,
+      child: technician.profilePictureUrl == null
+          ? Text(
+              technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            )
+          : null,
     );
   }
 
