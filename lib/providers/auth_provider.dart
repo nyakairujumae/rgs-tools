@@ -173,6 +173,22 @@ class AuthProvider with ChangeNotifier {
     }
 
     try {
+      // Check if session is expired and refresh if needed
+      final session = SupabaseService.client.auth.currentSession;
+      if (session != null && session.isExpired) {
+        debugPrint('Session expired, attempting to refresh...');
+        try {
+          await SupabaseService.client.auth.refreshSession();
+        } catch (e) {
+          debugPrint('Failed to refresh session: $e');
+          // If refresh fails, user needs to log in again
+          _user = null;
+          _userRole = UserRole.technician;
+          notifyListeners();
+          return;
+        }
+      }
+
       // Get role from users table
       final response = await SupabaseService.client
           .from('users')

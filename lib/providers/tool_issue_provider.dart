@@ -34,6 +34,19 @@ class ToolIssueProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Check if user is authenticated
+      final session = SupabaseService.client.auth.currentSession;
+      if (session == null) {
+        _error = 'Please log in to view tool issues';
+        return;
+      }
+
+      // Check if session is expired
+      if (session.isExpired) {
+        _error = 'Session expired. Please log in again';
+        return;
+      }
+
       final response = await SupabaseService.client
           .from('tool_issues')
           .select()
@@ -43,7 +56,13 @@ class ToolIssueProvider with ChangeNotifier {
           .map((json) => ToolIssue.fromJson(json))
           .toList();
     } catch (e) {
-      _error = 'Failed to load issues: $e';
+      if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
+        _error = 'Session expired. Please log in again';
+      } else if (e.toString().contains('PGRST204')) {
+        _error = 'Tool issues table not found. Please contact administrator';
+      } else {
+        _error = 'Failed to load issues: $e';
+      }
       debugPrint('Error loading tool issues: $e');
     } finally {
       _isLoading = false;

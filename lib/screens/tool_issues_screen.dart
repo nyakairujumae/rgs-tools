@@ -100,9 +100,34 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => issueProvider.loadIssues(),
-                    child: Text('Retry'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => issueProvider.loadIssues(),
+                        child: Text('Retry'),
+                      ),
+                      if (issueProvider.error!.contains('Session expired') || 
+                          issueProvider.error!.contains('Please log in'))
+                        SizedBox(width: 16),
+                      if (issueProvider.error!.contains('Session expired') || 
+                          issueProvider.error!.contains('Please log in'))
+                        ElevatedButton(
+                          onPressed: () {
+                            // Navigate to login screen
+                            Navigator.pushNamedAndRemoveUntil(
+                              context, 
+                              '/login', 
+                              (route) => false
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text('Login'),
+                        ),
+                    ],
                   ),
                 ],
               ),
