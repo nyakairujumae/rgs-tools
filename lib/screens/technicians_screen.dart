@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
 import 'add_technician_screen.dart';
+import 'technician_detail_screen.dart';
 
 class TechniciansScreen extends StatefulWidget {
   const TechniciansScreen({super.key});
@@ -120,6 +121,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TechnicianDetailScreen(technician: technician),
+            ),
+          );
+        },
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
