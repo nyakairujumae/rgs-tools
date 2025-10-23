@@ -176,11 +176,21 @@ class AuthProvider with ChangeNotifier {
       // Check if session is expired and refresh if needed
       final session = SupabaseService.client.auth.currentSession;
       if (session != null && session.isExpired) {
-        debugPrint('Session expired, attempting to refresh...');
+        debugPrint('🔄 Session expired, attempting to refresh...');
         try {
-          await SupabaseService.client.auth.refreshSession();
+          final refreshResponse = await SupabaseService.client.auth.refreshSession();
+          if (refreshResponse.session != null) {
+            debugPrint('✅ Session refreshed successfully');
+            _user = refreshResponse.session!.user;
+          } else {
+            debugPrint('❌ Session refresh failed - no new session');
+            _user = null;
+            _userRole = UserRole.technician;
+            notifyListeners();
+            return;
+          }
         } catch (e) {
-          debugPrint('Failed to refresh session: $e');
+          debugPrint('❌ Failed to refresh session: $e');
           // If refresh fails, user needs to log in again
           _user = null;
           _userRole = UserRole.technician;
@@ -189,21 +199,58 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // Get role from users table
-      final response = await SupabaseService.client
-          .from('users')
-          .select('role')
-          .eq('id', _user!.id)
-          .single();
+      // Get role from users table with retry mechanism
+      int retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          final response = await SupabaseService.client
+              .from('users')
+              .select('role')
+              .eq('id', _user!.id)
+              .single();
 
-      if (response['role'] != null) {
-        _userRole = UserRoleExtension.fromString(response['role']);
-      } else {
-        _userRole = UserRole.technician;
+          if (response['role'] != null) {
+            _userRole = UserRoleExtension.fromString(response['role']);
+            debugPrint('✅ User role loaded: ${_userRole.value}');
+            return;
+          } else {
+            debugPrint('⚠️ No role found in database, defaulting to technician');
+            _userRole = UserRole.technician;
+            return;
+          }
+        } catch (e) {
+          retryCount++;
+          debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
+          
+          if (retryCount >= maxRetries) {
+            debugPrint('❌ Max retries reached, defaulting to technician');
+            _userRole = UserRole.technician;
+            return;
+          }
+          
+          // Wait before retry
+          await Future.delayed(Duration(seconds: 1));
+        }
       }
     } catch (e) {
-      debugPrint('Error loading user role: $e');
+      debugPrint('❌ Critical error in _loadUserRole: $e');
       _userRole = UserRole.technician;
+    }
+  }
+
+  Future<void> forceReAuthentication() async {
+    debugPrint('🔄 Forcing re-authentication...');
+    _user = null;
+    _userRole = UserRole.technician;
+    notifyListeners();
+    
+    // Clear Supabase session
+    try {
+      await SupabaseService.client.auth.signOut();
+    } catch (e) {
+      debugPrint('Error during force logout: $e');
     }
   }
 
