@@ -43,7 +43,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         title: Text(
-          'Tool Issues',
+          'Tool Issues Management',
           style: TextStyle(
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
@@ -155,7 +155,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
           );
         },
         icon: Icon(Icons.add),
-        label: Text('Report Issue'),
+        label: Text('Report New Issue'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
