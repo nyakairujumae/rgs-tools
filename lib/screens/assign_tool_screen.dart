@@ -145,7 +145,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 0.75,
+                              childAspectRatio: 0.8, // Adjusted for increased content height
                               children: filteredTools.map((tool) {
                                 return _buildToolCard(context, tool);
                               }).toList(),
@@ -282,9 +282,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed to eliminate 0.667px overflow
+              // Content Section - Fixed to prevent overflow
               Container(
-                height: 68, // Reduced from 70px to 68px to eliminate 0.667px overflow
+                height: 90, // Increased height to accommodate content
                 padding: const EdgeInsets.all(6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +302,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 1),
+                    SizedBox(height: 2),
                     
                     // Brand and Category
                     Text(
@@ -315,18 +315,19 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 2),
+                    SizedBox(height: 4),
                     
                     // Status and Condition Chips
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatusChip(tool.status),
-                        ),
-                        SizedBox(width: 3),
-                        Expanded(
-                          child: _buildConditionChip(tool.condition),
-                        ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatusChip(tool.status),
+                          ),
+                          SizedBox(width: 4),
+                          Expanded(
+                            child: _buildConditionChip(tool.condition),
+                          ),
                       ],
                     ),
                   ],
