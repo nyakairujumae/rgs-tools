@@ -453,10 +453,16 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         (tool) => tool.id == _selectedToolId,
       );
 
+      // Get technician info for proper reporting
+      final technicianName = authProvider.userFullName ?? 'Unknown Technician';
+      final technicianId = authProvider.userId ?? 'unknown';
+      final reportedByInfo = '$technicianName (ID: $technicianId)';
+
       final issue = ToolIssue(
         toolId: _selectedToolId,
         toolName: selectedTool.name,
-        reportedBy: authProvider.userFullName ?? authProvider.userEmail ?? 'Unknown',
+        reportedBy: reportedByInfo,
+        reportedByUserId: technicianId,
         issueType: _selectedIssueType,
         description: _descriptionController.text.trim(),
         priority: _selectedPriority,

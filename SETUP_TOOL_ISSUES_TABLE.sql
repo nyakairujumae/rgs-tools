@@ -6,12 +6,14 @@ CREATE TABLE IF NOT EXISTS public.tool_issues (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tool_id UUID NOT NULL REFERENCES public.tools(id) ON DELETE CASCADE,
   tool_name TEXT NOT NULL,
-  reported_by TEXT NOT NULL,
+  reported_by TEXT NOT NULL, -- Technician name and ID
+  reported_by_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL, -- Link to user account
   issue_type TEXT NOT NULL CHECK (issue_type IN ('Faulty', 'Lost', 'Damaged', 'Missing Parts', 'Other')),
   description TEXT NOT NULL,
   priority TEXT NOT NULL CHECK (priority IN ('Low', 'Medium', 'High', 'Critical')),
   status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'In Progress', 'Resolved', 'Closed')),
   assigned_to TEXT,
+  assigned_to_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL, -- Link to assigned user
   resolution TEXT,
   reported_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   resolved_at TIMESTAMP WITH TIME ZONE,
@@ -28,6 +30,8 @@ CREATE INDEX IF NOT EXISTS idx_tool_issues_status ON public.tool_issues(status);
 CREATE INDEX IF NOT EXISTS idx_tool_issues_priority ON public.tool_issues(priority);
 CREATE INDEX IF NOT EXISTS idx_tool_issues_reported_at ON public.tool_issues(reported_at);
 CREATE INDEX IF NOT EXISTS idx_tool_issues_reported_by ON public.tool_issues(reported_by);
+CREATE INDEX IF NOT EXISTS idx_tool_issues_reported_by_user_id ON public.tool_issues(reported_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_tool_issues_assigned_to_user_id ON public.tool_issues(assigned_to_user_id);
 CREATE INDEX IF NOT EXISTS idx_tool_issues_issue_type ON public.tool_issues(issue_type);
 
 -- Enable Row Level Security

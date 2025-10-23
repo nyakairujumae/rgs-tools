@@ -2,12 +2,14 @@ class ToolIssue {
   final String? id;
   final String toolId;
   final String toolName;
-  final String reportedBy; // Technician ID or name
+  final String reportedBy; // Technician name and ID
+  final String? reportedByUserId; // User ID of the reporter
   final String issueType; // 'Faulty', 'Lost', 'Damaged', 'Missing Parts', 'Other'
   final String description;
   final String priority; // 'Low', 'Medium', 'High', 'Critical'
   final String status; // 'Open', 'In Progress', 'Resolved', 'Closed'
   final String? assignedTo; // Admin or technician handling the issue
+  final String? assignedToUserId; // User ID of the assigned person
   final String? resolution;
   final DateTime reportedAt;
   final DateTime? resolvedAt;
@@ -20,11 +22,13 @@ class ToolIssue {
     required this.toolId,
     required this.toolName,
     required this.reportedBy,
+    this.reportedByUserId,
     required this.issueType,
     required this.description,
     required this.priority,
     required this.status,
     this.assignedTo,
+    this.assignedToUserId,
     this.resolution,
     required this.reportedAt,
     this.resolvedAt,
@@ -38,11 +42,13 @@ class ToolIssue {
       'tool_id': toolId,
       'tool_name': toolName,
       'reported_by': reportedBy,
+      'reported_by_user_id': reportedByUserId,
       'issue_type': issueType,
       'description': description,
       'priority': priority,
       'status': status,
       'assigned_to': assignedTo,
+      'assigned_to_user_id': assignedToUserId,
       'resolution': resolution,
       'reported_at': reportedAt.toIso8601String(),
       'resolved_at': resolvedAt?.toIso8601String(),
@@ -65,11 +71,13 @@ class ToolIssue {
       toolId: json['tool_id'],
       toolName: json['tool_name'],
       reportedBy: json['reported_by'],
+      reportedByUserId: json['reported_by_user_id'],
       issueType: json['issue_type'],
       description: json['description'],
       priority: json['priority'],
       status: json['status'],
       assignedTo: json['assigned_to'],
+      assignedToUserId: json['assigned_to_user_id'],
       resolution: json['resolution'],
       reportedAt: DateTime.parse(json['reported_at']),
       resolvedAt: json['resolved_at'] != null ? DateTime.parse(json['resolved_at']) : null,
@@ -84,11 +92,13 @@ class ToolIssue {
     String? toolId,
     String? toolName,
     String? reportedBy,
+    String? reportedByUserId,
     String? issueType,
     String? description,
     String? priority,
     String? status,
     String? assignedTo,
+    String? assignedToUserId,
     String? resolution,
     DateTime? reportedAt,
     DateTime? resolvedAt,
@@ -101,11 +111,13 @@ class ToolIssue {
       toolId: toolId ?? this.toolId,
       toolName: toolName ?? this.toolName,
       reportedBy: reportedBy ?? this.reportedBy,
+      reportedByUserId: reportedByUserId ?? this.reportedByUserId,
       issueType: issueType ?? this.issueType,
       description: description ?? this.description,
       priority: priority ?? this.priority,
       status: status ?? this.status,
       assignedTo: assignedTo ?? this.assignedTo,
+      assignedToUserId: assignedToUserId ?? this.assignedToUserId,
       resolution: resolution ?? this.resolution,
       reportedAt: reportedAt ?? this.reportedAt,
       resolvedAt: resolvedAt ?? this.resolvedAt,
