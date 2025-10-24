@@ -145,7 +145,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                              childAspectRatio: 0.7, // More space for content to prevent overflow
+                              childAspectRatio: 0.65, // Even more space for content to prevent overflow
                         children: filteredTools.map((tool) {
                           return _buildToolCard(context, tool);
                         }).toList(),
@@ -253,9 +253,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-              // Image Section - Same as all tools cards
+              // Image Section - Reduced height to prevent overflow
               SizedBox(
-                height: 150, // 60% of 250px = 150px
+                height: 120, // Reduced from 150px to 120px
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -294,27 +294,27 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       tool.name,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: 12,
                         color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 2),
+                    SizedBox(height: 1),
                     
                     // Brand and Category
                     Text(
                       '${tool.brand ?? 'Unknown'} • ${tool.category}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         color: Colors.grey[600],
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 2),
+                    SizedBox(height: 1),
                     
                     // Status and Condition Chips
                     Row(
