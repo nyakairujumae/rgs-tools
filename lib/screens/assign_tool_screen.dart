@@ -18,6 +18,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedStatus = 'Available';
+  Set<String> _selectedTools = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -254,18 +255,34 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
       onTap: () {
-        _showAssignDialog(context, tool);
+        setState(() {
+          if (_selectedTools.contains(tool.id)) {
+            _selectedTools.remove(tool.id);
+          } else {
+            _selectedTools.add(tool.id);
+          }
+        });
       },
         child: Container(
           height: 250, // Same as all tools cards
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _selectedTools.contains(tool.id) 
+                  ? Theme.of(context).primaryColor 
+                  : Colors.grey.withValues(alpha: 0.3),
+              width: _selectedTools.contains(tool.id) ? 2 : 1,
+            ),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Theme.of(context).cardTheme.color ?? Colors.white,
-                (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
+                _selectedTools.contains(tool.id)
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                    : Theme.of(context).cardTheme.color ?? Colors.white,
+                _selectedTools.contains(tool.id)
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
+                    : (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
               ],
             ),
           ),
