@@ -46,7 +46,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           }).toList();
           
           return Column(
-            children: [
+              children: [
               // Modern Search Bar
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -57,13 +57,13 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     borderRadius: BorderRadius.circular(20), // More rounded for modern look
                     border: Border.all(color: Colors.grey[300]!, width: 1),
                   ),
-                  child: TextField(
+                        child: TextField(
                     style: TextStyle(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                       fontSize: 14, // Smaller font for modern look
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Search tools...',
+                          decoration: InputDecoration(
+                            hintText: 'Search tools...',
                       hintStyle: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 14,
@@ -73,16 +73,16 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         color: Colors.grey[400],
                         size: 18, // Smaller icon
                       ),
-                      border: InputBorder.none,
+                            border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                  ),
-                ),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                      ),
               ),
               
               // Content with proper spacing
@@ -93,65 +93,65 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 16),
-                      
-                      // Filter Chips
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip('All', _selectedCategory, (value) {
-                              setState(() {
-                                _selectedCategory = value;
-                              });
-                            }),
-                            SizedBox(width: 8),
-                            _buildFilterChip('Available', _selectedStatus, (value) {
-                              setState(() {
-                                _selectedStatus = value;
-                              });
-                            }),
-                            SizedBox(width: 8),
-                            _buildFilterChip('In Use', _selectedStatus, (value) {
-                              setState(() {
-                                _selectedStatus = value;
-                              });
-                            }),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      
-                      // Tools Grid
-                      filteredTools.isEmpty
-                          ? Center(
-                              child: Column(
-                                children: [
-                                  Icon(Icons.build, size: 64, color: Colors.grey[600]),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No tools found',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey[400],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.8, // Adjusted for increased content height
-                              children: filteredTools.map((tool) {
-                                return _buildToolCard(context, tool);
-                              }).toList(),
-                            ),
+                
+                // Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All', _selectedCategory, (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Available', _selectedStatus, (value) {
+                        setState(() {
+                          _selectedStatus = value;
+                        });
+                      }),
+                      SizedBox(width: 8),
+                      _buildFilterChip('In Use', _selectedStatus, (value) {
+                        setState(() {
+                          _selectedStatus = value;
+                        });
+                      }),
                     ],
                   ),
+                ),
+                      SizedBox(height: 16),
+                
+                // Tools Grid
+                filteredTools.isEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.build, size: 64, color: Colors.grey[600]),
+                            SizedBox(height: 16),
+                            Text(
+                              'No tools found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                              childAspectRatio: 0.7, // More space for content to prevent overflow
+                        children: filteredTools.map((tool) {
+                          return _buildToolCard(context, tool);
+                        }).toList(),
+                      ),
+              ],
+            ),
                 ),
               ),
             ],
@@ -234,9 +234,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          _showAssignDialog(context, tool);
-        },
+      onTap: () {
+        _showAssignDialog(context, tool);
+      },
         child: Container(
           height: 250, // Same as all tools cards
           decoration: BoxDecoration(
@@ -250,9 +250,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               ],
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
               // Image Section - Same as all tools cards
               SizedBox(
                 height: 150, // 60% of 250px = 150px
@@ -266,25 +266,24 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         child: tool.imagePath!.startsWith('http')
                             ? Image.network(
                                 tool.imagePath!,
-                                width: double.infinity,
+                    width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               )
                             : Image.file(
-                                File(tool.imagePath!),
+                              File(tool.imagePath!),
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover,
+                              fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               ),
                       )
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed to prevent overflow
+              // Content Section - Flexible to prevent overflow
               Container(
-                height: 90, // Increased height to accommodate content
                 padding: const EdgeInsets.all(6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,25 +314,23 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 4),
+                    SizedBox(height: 2),
                     
                     // Status and Condition Chips
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatusChip(tool.status),
-                          ),
-                          SizedBox(width: 4),
-                          Expanded(
-                            child: _buildConditionChip(tool.condition),
-                          ),
-                        ],
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatusChip(tool.status),
+                        ),
+                        SizedBox(width: 2),
+                        Expanded(
+                          child: _buildConditionChip(tool.condition),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+              ],
+            ),
+          ),
             ],
           ),
         ),
@@ -352,20 +349,20 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         ),
         color: Colors.grey[200],
       ),
-      child: Column(
+            child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+              children: [
           Icon(
             Icons.build,
             size: 50, // Increased from 40 to 50 for better visibility
-            color: Colors.grey[400],
-          ),
+                    color: Colors.grey[400],
+                  ),
           SizedBox(height: 6), // Increased spacing
-          Text(
+                  Text(
             'No Image',
-            style: TextStyle(
+                    style: TextStyle(
               color: Colors.grey[500],
-              fontSize: 12,
+                      fontSize: 12,
             ),
           ),
         ],
@@ -375,17 +372,17 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
 
   Widget _buildStatusChip(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: _getStatusColor(status).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _getStatusColor(status), width: 1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: _getStatusColor(status), width: 0.5),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: _getStatusColor(status),
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w500,
         ),
         maxLines: 1,
@@ -396,17 +393,17 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
 
   Widget _buildConditionChip(String condition) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: _getConditionColor(condition).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _getConditionColor(condition), width: 1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: _getConditionColor(condition), width: 0.5),
       ),
       child: Text(
         condition,
         style: TextStyle(
           color: _getConditionColor(condition),
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w500,
         ),
         maxLines: 1,
