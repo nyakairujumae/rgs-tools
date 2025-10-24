@@ -354,7 +354,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String selectedValue, Function(String) onSelected)) {
+  Widget _buildFilterChip(String label, String selectedValue, Function(String) onSelected) {
     final isSelected = selectedValue == label;
     return FilterChip(
       label: Text(label),
