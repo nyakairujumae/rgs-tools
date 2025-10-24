@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
-import '../providers/supabase_technician_provider.dart';
 import '../models/tool.dart';
-import '../models/technician.dart';
 import 'permanent_assignment_screen.dart';
 
 class AssignToolScreen extends StatefulWidget {
@@ -256,10 +254,12 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         borderRadius: BorderRadius.circular(16),
       onTap: () {
         setState(() {
-          if (_selectedTools.contains(tool.id)) {
-            _selectedTools.remove(tool.id);
-          } else {
-            _selectedTools.add(tool.id);
+          if (tool.id != null) {
+            if (_selectedTools.contains(tool.id!)) {
+              _selectedTools.remove(tool.id!);
+            } else {
+              _selectedTools.add(tool.id!);
+            }
           }
         });
       },
@@ -268,19 +268,19 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _selectedTools.contains(tool.id) 
+              color: (tool.id != null && _selectedTools.contains(tool.id!)) 
                   ? Theme.of(context).primaryColor 
                   : Colors.grey.withValues(alpha: 0.3),
-              width: _selectedTools.contains(tool.id) ? 2 : 1,
+              width: (tool.id != null && _selectedTools.contains(tool.id!)) ? 2 : 1,
             ),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _selectedTools.contains(tool.id)
+                (tool.id != null && _selectedTools.contains(tool.id!))
                     ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                     : Theme.of(context).cardTheme.color ?? Colors.white,
-                _selectedTools.contains(tool.id)
+                (tool.id != null && _selectedTools.contains(tool.id!))
                     ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                     : (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
               ],
@@ -478,13 +478,4 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
     }
   }
 
-  void _showAssignDialog(BuildContext context, Tool tool) {
-    // Navigate directly to the assignment form
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PermanentAssignmentScreen(tool: tool),
-      ),
-    );
-  }
 }
