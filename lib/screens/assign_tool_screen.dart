@@ -121,34 +121,49 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                 ),
                       SizedBox(height: 16),
                 
-                // Tools Grid
-                filteredTools.isEmpty
-                    ? Center(
+                      // Simplified Assignment Button
+                      Center(
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.build, size: 64, color: Colors.grey[600]),
-                            SizedBox(height: 16),
+                            Icon(
+                              Icons.assignment_ind,
+                              size: 80,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            SizedBox(height: 24),
                             Text(
-                              'No tools found',
+                              'Assign Tools to Technicians',
                               style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.w500,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'Select technicians and assign tools to them',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 32),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/technicians');
+                              },
+                              icon: Icon(Icons.people),
+                              label: Text('Go to Technicians'),
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
                         ),
-                      )
-                    : GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                              childAspectRatio: 0.65, // Even more space for content to prevent overflow
-                        children: filteredTools.map((tool) {
-                          return _buildToolCard(context, tool);
-                        }).toList(),
                       ),
               ],
             ),
