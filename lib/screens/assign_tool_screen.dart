@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
-import 'permanent_assignment_screen.dart';
 
 class AssignToolScreen extends StatefulWidget {
   const AssignToolScreen({super.key});
@@ -44,54 +43,26 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             return matchesSearch && matchesCategory && matchesStatus;
           }).toList();
           
-          return Column(
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
               children: [
-              // Modern Search Bar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                  height: 40, // Smaller, more modern height
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(20), // More rounded for modern look
-                    border: Border.all(color: Colors.grey[300]!, width: 1),
-                  ),
-                        child: TextField(
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 14, // Smaller font for modern look
+                // Search Bar
+                TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search tools...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                          decoration: InputDecoration(
-                            hintText: 'Search tools...',
-                      hintStyle: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 14,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.grey[400],
-                        size: 18, // Smaller icon
-                      ),
-                            border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
-                        ),
-                      ),
-              ),
-              
-              // Content with proper spacing
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 16),
+                  ),
+                ),
+                SizedBox(height: 16),
                 
                 // Filter Chips
                 SingleChildScrollView(
@@ -99,6 +70,24 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                   child: Row(
                     children: [
                       _buildFilterChip('All', _selectedCategory, (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Electrical', _selectedCategory, (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Plumbing', _selectedCategory, (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      }),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Testing Equipment', _selectedCategory, (value) {
                         setState(() {
                           _selectedCategory = value;
                         });
@@ -118,61 +107,57 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     ],
                   ),
                 ),
-                      SizedBox(height: 16),
+                SizedBox(height: 16),
                 
-                      // Tools Grid - Keep tool selection
-                      filteredTools.isEmpty
-                          ? Center(
-                              child: Column(
-                                children: [
-                                  Icon(Icons.build, size: 64, color: Colors.grey[600]),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No tools found',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey[400],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                // Tools Grid
+                filteredTools.isEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.build, size: 64, color: Colors.grey[600]),
+                            SizedBox(height: 16),
+                            Text(
+                              'No tools found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.w500,
                               ),
-                            )
-                          : GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.8, // More space for content
-                              children: filteredTools.map((tool) {
-                                return _buildToolCard(context, tool);
-                              }).toList(),
                             ),
-                      SizedBox(height: 20),
-                      
-                      // Assign To Button
-                      if (_selectedTools.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/technicians');
-                            },
-                            icon: Icon(Icons.people),
-                            label: Text('Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} to Technicians'),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ),
+                          ],
                         ),
+                      )
+                    : GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.8,
+                        children: filteredTools.map((tool) {
+                          return _buildToolCard(context, tool);
+                        }).toList(),
+                      ),
+                SizedBox(height: 20),
+                
+                // Assign To Button
+                if (_selectedTools.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/technicians');
+                      },
+                      icon: Icon(Icons.people),
+                      label: Text('Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} to Technicians'),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
               ],
             ),
-                ),
-              ),
-            ],
           );
         },
       ),
@@ -220,30 +205,6 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String selectedValue, Function(String) onTap) {
-    final isSelected = label == selectedValue;
-    return GestureDetector(
-      onTap: () => onTap(label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey[700]!,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[400],
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildToolCard(BuildContext context, Tool tool) {
     return Card(
       elevation: 4,
@@ -252,19 +213,19 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        setState(() {
-          if (tool.id != null) {
-            if (_selectedTools.contains(tool.id!)) {
-              _selectedTools.remove(tool.id!);
-            } else {
-              _selectedTools.add(tool.id!);
+        onTap: () {
+          setState(() {
+            if (tool.id != null) {
+              if (_selectedTools.contains(tool.id!)) {
+                _selectedTools.remove(tool.id!);
+              } else {
+                _selectedTools.add(tool.id!);
+              }
             }
-          }
-        });
-      },
+          });
+        },
         child: Container(
-          height: 250, // Same as all tools cards
+          height: 250,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -286,12 +247,12 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               ],
             ),
           ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-              // Image Section - Reduced height to prevent overflow
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
               SizedBox(
-                height: 120, // Reduced from 150px to 120px
+                height: 120,
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -302,23 +263,23 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         child: tool.imagePath!.startsWith('http')
                             ? Image.network(
                                 tool.imagePath!,
-                    width: double.infinity,
+                                width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               )
                             : Image.file(
-                              File(tool.imagePath!),
+                                File(tool.imagePath!),
                                 width: double.infinity,
                                 height: double.infinity,
-                              fit: BoxFit.cover,
+                                fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               ),
                       )
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Flexible to prevent overflow
+              // Content Section
               Container(
                 padding: const EdgeInsets.all(6.0),
                 child: Column(
@@ -364,9 +325,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         ),
                       ],
                     ),
-              ],
-            ),
-          ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -379,30 +340,30 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
+        color: Colors.grey[200],
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
           topRight: Radius.circular(16),
         ),
-        color: Colors.grey[200],
       ),
-            child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-          Icon(
-            Icons.build,
-            size: 50, // Increased from 40 to 50 for better visibility
-                    color: Colors.grey[400],
-                  ),
-          SizedBox(height: 6), // Increased spacing
-                  Text(
-            'No Image',
-                    style: TextStyle(
-              color: Colors.grey[500],
-                      fontSize: 12,
-            ),
-          ),
-        ],
+      child: Icon(
+        Icons.build,
+        size: 40,
+        color: Colors.grey[400],
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String selectedValue, Function(String) onSelected)) {
+    final isSelected = selectedValue == label;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        onSelected(label);
+      },
+      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+      checkmarkColor: Theme.of(context).primaryColor,
     );
   }
 
@@ -453,9 +414,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       case 'available':
         return Colors.green;
       case 'in use':
-        return Colors.blue;
-      case 'maintenance':
         return Colors.orange;
+      case 'maintenance':
+        return Colors.red;
       case 'retired':
         return Colors.grey;
       default:
@@ -477,5 +438,4 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         return Colors.grey;
     }
   }
-
 }
