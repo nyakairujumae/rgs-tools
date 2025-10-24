@@ -92,6 +92,7 @@ class AppConfig {
   // Allowed email domains
   static List<String> get allowedEmailDomains => [
     'mekar.ae',
+    'royalgulf.ae',
     'gmail.com',
     'outlook.com',
     'yahoo.com',
