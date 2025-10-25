@@ -611,7 +611,7 @@ class DashboardScreen extends StatelessWidget {
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: 14, // Further reduced from 18
+                      fontSize: 12, // Match Tool Status Overview size
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
