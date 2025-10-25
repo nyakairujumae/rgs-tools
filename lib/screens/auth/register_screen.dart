@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/user_role.dart';
 import '../../config/app_config.dart';
+import '../../utils/auth_error_handler.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -411,11 +412,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // Check if user is already confirmed or if email confirmation is disabled
         if (response.user?.emailConfirmedAt != null || response.session != null) {
           // User is automatically signed in
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Account created successfully! Welcome to RGS HVAC Services.'),
-              backgroundColor: Colors.green,
-            ),
+          AuthErrorHandler.showSuccessSnackBar(
+            context, 
+            '🎉 Account created successfully! Welcome to RGS HVAC Services.'
           );
           
           // Navigate to appropriate screen based on role
@@ -426,11 +425,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
         } else {
           // Email confirmation required
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Account created! Please check your email to verify your account.'),
-              backgroundColor: Colors.orange,
-            ),
+          AuthErrorHandler.showInfoSnackBar(
+            context, 
+            '📧 Account created! Please check your email to verify your account.'
           );
           
           // Go back to login screen
@@ -439,33 +436,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Oops! Something went wrong. Please try again.';
-        
-        // Parse error message to show user-friendly text
-        String errorString = e.toString().toLowerCase();
-        if (errorString.contains('email already registered') || 
-            errorString.contains('user already exists')) {
-          errorMessage = 'Oh! It looks like you already have an account.';
-        } else if (errorString.contains('invalid email')) {
-          errorMessage = 'Hmm, that email doesn\'t look quite right.';
-        } else if (errorString.contains('password') && errorString.contains('weak')) {
-          errorMessage = 'Ah, your password needs to be a bit stronger.';
-        } else if (errorString.contains('network') || errorString.contains('connection')) {
-          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.blue, // Changed to blue
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     }
   }

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/rgs_logo.dart';
+import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -322,33 +323,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Oops! Something went wrong. Please try again.';
-        
-        // Parse error message to show user-friendly text
-        String errorString = e.toString().toLowerCase();
-        if (errorString.contains('invalid login credentials') || 
-            errorString.contains('invalid_credentials')) {
-          errorMessage = 'Hmm, that email or password doesn\'t look right.';
-        } else if (errorString.contains('user not found')) {
-          errorMessage = 'Sorry, we couldn\'t find an account with that email.';
-        } else if (errorString.contains('network') || errorString.contains('connection')) {
-          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
-        } else if (errorString.contains('too many requests')) {
-          errorMessage = 'Whoa! Too many attempts. Take a quick break.';
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.blue, // Changed to blue
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     }
   }
@@ -369,39 +345,15 @@ class _LoginScreenState extends State<LoginScreen> {
       await authProvider.resetPassword(_emailController.text.trim());
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset email sent!'),
-            backgroundColor: Colors.green,
-          ),
+        AuthErrorHandler.showSuccessSnackBar(
+          context, 
+          '📧 Password reset email sent! Check your inbox.'
         );
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Oops! Couldn\'t send the reset email.';
-        
-        // Parse error message to show user-friendly text
-        String errorString = e.toString().toLowerCase();
-        if (errorString.contains('user not found') || errorString.contains('invalid email')) {
-          errorMessage = 'Sorry, we couldn\'t find an account with that email.';
-        } else if (errorString.contains('network') || errorString.contains('connection')) {
-          errorMessage = 'Oh no! Looks like there\'s a connection issue.';
-        } else if (errorString.contains('too many requests')) {
-          errorMessage = 'Whoa! Too many requests. Take a quick break.';
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.blue, // Changed to blue
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     }
   }
