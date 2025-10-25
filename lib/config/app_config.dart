@@ -89,20 +89,13 @@ class AppConfig {
   static RegExp get emailRegex => RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   static RegExp get phoneRegex => RegExp(r'^\+?[\d\s\-\(\)]+$');
   
-  // Allowed email domains
-  static List<String> get allowedEmailDomains => [
-    'mekar.ae',
-    'royalgulf.ae',
-    'gmail.com',
-    'outlook.com',
-    'yahoo.com',
-    'hotmail.com',
-  ];
+  // Allow all email domains - no restrictions
+  static List<String> get allowedEmailDomains => [];
   
-  // Check if email domain is allowed
+  // Check if email domain is allowed - always return true for any domain
   static bool isEmailDomainAllowed(String email) {
-    final domain = email.split('@').last.toLowerCase();
-    return allowedEmailDomains.contains(domain);
+    // Allow any email domain - no restrictions
+    return true;
   }
   
   // Export configuration

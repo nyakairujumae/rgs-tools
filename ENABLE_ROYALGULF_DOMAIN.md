@@ -1,21 +1,21 @@
-# Enable royalgulf.ae Domain for RGS HVAC Tools Management
+# Enable All Email Domains for RGS HVAC Tools Management
 
-This guide explains how to enable `royalgulf.ae` as an allowed domain for your RGS HVAC Tools Management app.
+This guide explains how the app now allows ALL email domains for user registration and authentication.
 
 ## ✅ App Configuration (Already Done)
 
-The app configuration has been updated to include `royalgulf.ae` in the allowed email domains:
+The app configuration has been updated to allow ALL email domains with no restrictions:
 
 ```dart
 // lib/config/app_config.dart
-static List<String> get allowedEmailDomains => [
-  'mekar.ae',
-  'royalgulf.ae',  // ✅ Added
-  'gmail.com',
-  'outlook.com',
-  'yahoo.com',
-  'hotmail.com',
-];
+// Allow all email domains - no restrictions
+static List<String> get allowedEmailDomains => [];
+
+// Check if email domain is allowed - always return true for any domain
+static bool isEmailDomainAllowed(String email) {
+  // Allow any email domain - no restrictions
+  return true;
+}
 ```
 
 ## 🔧 Supabase Dashboard Configuration Required
@@ -67,63 +67,67 @@ If you want to restrict signups to specific domains:
 
 ## 🚀 What This Enables
 
-After configuration, users with `@royalgulf.ae` email addresses can:
+Now users with ANY email domain can:
 
-- ✅ **Sign up** for new accounts
+- ✅ **Sign up** for new accounts (gmail.com, yahoo.com, mekar.ae, royalgulf.ae, etc.)
 - ✅ **Sign in** to existing accounts  
-- ✅ **Access the app** from royalgulf.ae domain
+- ✅ **Access the app** from any domain
 - ✅ **Receive authentication emails** (if email confirmation is enabled)
-- ✅ **Use all app features** with royalgulf.ae email
+- ✅ **Use all app features** with any email domain
 
 ## 🔍 Testing the Configuration
 
 1. **Test Email Domain Validation:**
    ```dart
-   // This should return true
+   // These should all return true
+   AppConfig.isEmailDomainAllowed('user@gmail.com')
+   AppConfig.isEmailDomainAllowed('user@yahoo.com')
+   AppConfig.isEmailDomainAllowed('user@mekar.ae')
    AppConfig.isEmailDomainAllowed('user@royalgulf.ae')
+   AppConfig.isEmailDomainAllowed('user@anydomain.com')
    ```
 
 2. **Test User Registration:**
-   - Try signing up with a `@royalgulf.ae` email
-   - Should work without domain restrictions
+   - Try signing up with any email domain (gmail, yahoo, mekar.ae, royalgulf.ae, etc.)
+   - Should work without any domain restrictions
 
 3. **Test Authentication Flow:**
-   - Sign in with royalgulf.ae email
+   - Sign in with any email domain
    - Should authenticate successfully
 
 ## 📱 App Features Available
 
-With royalgulf.ae domain enabled:
+With all domains enabled:
 
-- **User Registration**: Users can sign up with @royalgulf.ae emails
-- **Authentication**: Seamless login with royalgulf.ae accounts
-- **Role Management**: Admin can assign roles to royalgulf.ae users
+- **User Registration**: Users can sign up with ANY email domain (gmail, yahoo, mekar.ae, royalgulf.ae, etc.)
+- **Authentication**: Seamless login with any email domain
+- **Role Management**: Admin can assign roles to users with any email domain
 - **Tool Management**: Full access to HVAC tools management features
 - **Issue Reporting**: Can report tool issues and track them
 - **Profile Management**: Can update profiles and settings
 
 ## 🔒 Security Considerations
 
-- **Domain Validation**: Only @royalgulf.ae emails are allowed for registration
+- **Domain Validation**: ALL email domains are allowed for registration (no restrictions)
 - **Role-based Access**: Users get appropriate permissions based on their role
 - **Session Management**: Secure authentication with JWT tokens
 - **Data Protection**: All data is encrypted and secure
 
 ## 🆘 Troubleshooting
 
-If royalgulf.ae domain doesn't work:
+If any email domain doesn't work:
 
 1. **Check Supabase Settings:**
-   - Verify Site URL includes royalgulf.ae
+   - Verify Site URL includes your domain
    - Check Redirect URLs are properly configured
    - Ensure CORS origins include the domain
 
 2. **Check App Configuration:**
-   - Verify `royalgulf.ae` is in `allowedEmailDomains`
-   - Test with `AppConfig.isEmailDomainAllowed('test@royalgulf.ae')`
+   - Verify `isEmailDomainAllowed()` returns `true` for any domain
+   - Test with `AppConfig.isEmailDomainAllowed('test@anydomain.com')`
 
 3. **Check Network:**
-   - Ensure royalgulf.ae domain is accessible
+   - Ensure domain is accessible
    - Verify SSL certificate is valid
    - Check DNS resolution
 
@@ -136,4 +140,4 @@ If you need help with the configuration:
 
 ---
 
-**Status**: ✅ App configuration updated, ⏳ Supabase dashboard configuration required
+**Status**: ✅ App configuration updated to allow ALL domains, ⏳ Supabase dashboard configuration required
