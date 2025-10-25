@@ -652,7 +652,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 16),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildStatusItem(
                           'Available',
@@ -894,38 +894,47 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatusItem(String status, String count, Color color, BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.1),
-          width: 1,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), // Reduced padding
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12), // Smaller border radius
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            count,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 28,
-              letterSpacing: -0.5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              count,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 20, // Reduced from 28
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            status,
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
+            const SizedBox(height: 4), // Reduced spacing
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+                    fontSize: 12, // Reduced from 14
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
