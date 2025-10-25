@@ -72,7 +72,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 8. Create index for better performance with any email domain
-CREATE INDEX IF NOT EXISTS idx_users_email_domain ON users USING gin (split_part(email, '@', 2));
+CREATE INDEX IF NOT EXISTS idx_users_email_domain ON users (split_part(email, '@', 2));
 
 -- 9. Update authentication settings (these would typically be done in dashboard)
 -- But we can create a function to validate the settings
