@@ -602,7 +602,7 @@ class DashboardScreen extends StatelessWidget {
               // Custom Dirham icon for Total Value, regular icon for others
               title == 'Total Value' 
                 ? _buildDirhamIcon(color)
-                : Icon(icon, size: 20, color: color), // Reduced icon size
+                : Icon(icon, size: 18, color: color), // Further reduced icon size
               SizedBox(height: 4), // Reduced spacing
               // Value text with better responsive sizing
               Flexible(
@@ -611,7 +611,7 @@ class DashboardScreen extends StatelessWidget {
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: 18, // Reduced from 20
+                      fontSize: 14, // Further reduced from 18
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -647,8 +647,8 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildDirhamIcon(Color color) {
     return SizedBox(
-      width: 24,
-      height: 24,
+      width: 18, // Reduced from 24
+      height: 18, // Reduced from 24
       child: CustomPaint(
         painter: DirhamIconPainter(color),
       ),
