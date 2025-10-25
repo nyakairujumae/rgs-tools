@@ -11,9 +11,7 @@ import 'tools_screen.dart';
 import 'technicians_screen.dart';
 import 'add_tool_screen.dart';
 import 'assign_tool_screen.dart';
-import 'checkout_screen.dart';
 import 'checkin_screen.dart';
-import 'reports_screen.dart';
 import 'permanent_assignment_screen.dart';
 import 'bulk_import_screen.dart';
 import 'maintenance_screen.dart';
@@ -688,11 +686,11 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildDirhamIcon(Color color) {
-    return Container(
+    return SizedBox(
       width: 24,
       height: 24,
       child: CustomPaint(
@@ -789,76 +787,6 @@ class DashboardScreen extends StatelessWidget {
     }
   }
 
-  void _showToolSelectionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: Text('Select Tool to Assign'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: Consumer<SupabaseToolProvider>(
-            builder: (dialogContext, toolProvider, child) {
-              final availableTools = toolProvider.tools
-                  .where((tool) => tool.status == 'Available')
-                  .toList();
-
-              if (availableTools.isEmpty) {
-                return const EmptyState(
-                  title: 'No Available Tools',
-                  subtitle: 'All tools are currently assigned or in maintenance',
-                  icon: Icons.build,
-                );
-              }
-
-              return ListView.builder(
-                itemCount: availableTools.length,
-                itemBuilder: (context, index) {
-                  final tool = availableTools[index];
-                  return ListTile(
-                    leading: Icon(
-                      Icons.build,
-                      color: AppTheme.primaryColor,
-                    ),
-                    title: Text(tool.name),
-                    subtitle: Text('${tool.category} • ${tool.brand ?? 'Unknown'}'),
-                    trailing: StatusChip(status: tool.status),
-                    onTap: () {
-                      Navigator.pop(dialogContext);
-                      Navigator.push(
-                        dialogContext,
-                        MaterialPageRoute(
-                          builder: (context) => PermanentAssignmentScreen(tool: tool),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AssignToolScreen(),
-                ),
-              );
-            },
-            child: Text('Browse All Tools'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class DirhamIconPainter extends CustomPainter {
@@ -910,7 +838,6 @@ class DirhamIconPainter extends CustomPainter {
     );
 
     // Draw two vertical lines crossing the D (Dirham symbol)
-    final lineSpacing = radius * 0.4;
     
     // First vertical line
     canvas.drawLine(
