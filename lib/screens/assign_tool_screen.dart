@@ -281,8 +281,8 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               
               // Content Section - Fixed height to prevent overflow
               Container(
-                height: 60, // Fixed height to prevent overflow
-                padding: const EdgeInsets.all(4.0), // Reduced padding
+                height: 50, // Further reduced height to account for selection border
+                padding: const EdgeInsets.all(3.0), // Further reduced padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -293,7 +293,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         tool.name,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 11, // Reduced from 12
+                          fontSize: 10, // Further reduced from 11
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                         maxLines: 1,
@@ -308,7 +308,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       child: Text(
                         '${tool.brand ?? 'Unknown'} • ${tool.category}',
                         style: TextStyle(
-                          fontSize: 9, // Reduced from 10
+                          fontSize: 8, // Further reduced from 9
                           color: Colors.grey[600],
                         ),
                         maxLines: 1,
