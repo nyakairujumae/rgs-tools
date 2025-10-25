@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/supabase_service.dart';
 import '../models/user_role.dart';
 
@@ -130,6 +131,9 @@ class AuthProvider with ChangeNotifier {
     try {
       debugPrint('🚪 AuthProvider: Starting signOut process...');
       
+      // Clear saved user role from local storage
+      await _clearSavedUserRole();
+      
       // Clear user data first to prevent widget tree issues
       _user = null;
       _userRole = UserRole.technician;
@@ -138,7 +142,7 @@ class AuthProvider with ChangeNotifier {
       // Then sign out from Supabase
       await SupabaseService.client.auth.signOut();
       debugPrint('✅ AuthProvider: Supabase signOut successful');
-      debugPrint('✅ AuthProvider: User data cleared');
+      debugPrint('✅ AuthProvider: User data and saved role cleared');
     } catch (e) {
       debugPrint('❌ AuthProvider: Error during signOut: $e');
       debugPrint('❌ AuthProvider: Error type: ${e.runtimeType}');
@@ -146,7 +150,7 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       _userRole = UserRole.technician;
     } finally {
-      _isLoading = false;
+_isLoading = false;
       _isLoggingOut = false;
       notifyListeners();
       debugPrint('✅ AuthProvider: signOut process completed');
@@ -173,6 +177,14 @@ class AuthProvider with ChangeNotifier {
     }
 
     try {
+      // First, try to load role from local storage (for offline/restart scenarios)
+      final savedRole = await _getSavedUserRole();
+      if (savedRole != null) {
+        _userRole = savedRole;
+        debugPrint('✅ User role loaded from local storage: ${_userRole.value}');
+        notifyListeners();
+      }
+
       // Check if session is expired and refresh if needed
       final session = SupabaseService.client.auth.currentSession;
       if (session != null && session.isExpired) {
@@ -196,7 +208,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // Get role from users table with retry mechanism
+      // Try to get role from database (online)
       int retryCount = 0;
       const maxRetries = 3;
       
@@ -209,12 +221,15 @@ class AuthProvider with ChangeNotifier {
               .single();
 
           if (response['role'] != null) {
-            _userRole = UserRoleExtension.fromString(response['role']);
-            debugPrint('✅ User role loaded: ${_userRole.value}');
+            final newRole = UserRoleExtension.fromString(response['role']);
+            _userRole = newRole;
+            // Save role to local storage for future offline use
+            await _saveUserRole(newRole);
+            debugPrint('✅ User role loaded from database: ${_userRole.value}');
+            notifyListeners();
             return;
           } else {
-            debugPrint('⚠️ No role found in database, defaulting to technician');
-            _userRole = UserRole.technician;
+            debugPrint('⚠️ No role found in database, keeping current role: ${_userRole.value}');
             return;
           }
         } catch (e) {
@@ -222,8 +237,7 @@ class AuthProvider with ChangeNotifier {
           debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
           
           if (retryCount >= maxRetries) {
-            debugPrint('❌ Max retries reached, defaulting to technician');
-            _userRole = UserRole.technician;
+            debugPrint('❌ Max retries reached, keeping current role: ${_userRole.value}');
             return;
           }
           
@@ -233,7 +247,8 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ Critical error in _loadUserRole: $e');
-      _userRole = UserRole.technician;
+      // Don't change role on error, keep current role
+      debugPrint('🔄 Keeping current role due to error: ${_userRole.value}');
     }
   }
 
@@ -296,6 +311,42 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('❌ Session maintenance error: $e');
       // Don't clear user data on error
+    }
+  }
+
+  // Save user role to local storage for offline persistence
+  Future<void> _saveUserRole(UserRole role) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_role_${_user?.id}', role.value);
+      debugPrint('✅ User role saved to local storage: ${role.value}');
+    } catch (e) {
+      debugPrint('❌ Error saving user role: $e');
+    }
+  }
+
+  // Load user role from local storage
+  Future<UserRole?> _getSavedUserRole() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedRole = prefs.getString('user_role_${_user?.id}');
+      if (savedRole != null) {
+        return UserRoleExtension.fromString(savedRole);
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading saved user role: $e');
+    }
+    return null;
+  }
+
+  // Clear saved user role (called on logout)
+  Future<void> _clearSavedUserRole() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_role_${_user?.id}');
+      debugPrint('✅ Saved user role cleared');
+    } catch (e) {
+      debugPrint('❌ Error clearing saved user role: $e');
     }
   }
 
