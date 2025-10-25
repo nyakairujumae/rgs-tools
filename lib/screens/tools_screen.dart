@@ -322,7 +322,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           Expanded(
                             child: _buildConditionChip(tool.condition),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
