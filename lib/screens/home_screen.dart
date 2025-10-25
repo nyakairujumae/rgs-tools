@@ -239,9 +239,9 @@ class DashboardScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.3, // Increased to give more space for text
+                crossAxisSpacing: 12, // Reduced spacing
+                mainAxisSpacing: 12, // Reduced spacing
+                childAspectRatio: 1.1, // Reduced to give more height for content
                 children: [
                   _buildStatCard(
                     'Total Tools',
@@ -594,7 +594,7 @@ class DashboardScreen extends StatelessWidget {
       child: Card(
         color: Theme.of(context).cardTheme.color,
         child: Container(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(8.0), // Reduced padding
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -602,30 +602,34 @@ class DashboardScreen extends StatelessWidget {
               // Custom Dirham icon for Total Value, regular icon for others
               title == 'Total Value' 
                 ? _buildDirhamIcon(color)
-                : Icon(icon, size: 24, color: color),
-              SizedBox(height: 6),
-              // Value text with responsive sizing
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                : Icon(icon, size: 20, color: color), // Reduced icon size
+              SizedBox(height: 4), // Reduced spacing
+              // Value text with better responsive sizing
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 18, // Reduced from 20
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 4),
-              // Title with responsive sizing and proper overflow handling
+              SizedBox(height: 2), // Reduced spacing
+              // Title with better responsive sizing
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 10, // Reduced from 12
                       color: Colors.grey,
                     ),
                     textAlign: TextAlign.center,
