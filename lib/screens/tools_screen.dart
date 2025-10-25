@@ -272,51 +272,56 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Matches Assign Tool cards
+              // Content Section - Optimized to prevent overflow
               Container(
-                height: 68, // Same as assign tool cards
-                padding: const EdgeInsets.all(6.0), // Further reduced padding to prevent overflow
+                height: 60, // Reduced from 68 to prevent overflow
+                padding: const EdgeInsets.all(4.0), // Further reduced padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Tool Name
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                    Flexible(
+                      child: Text(
+                        tool.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12, // Reduced from 13
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1, // Reduced from 2 to 1 for tighter layout
-                      overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 1), // Further reduced spacing
+                    SizedBox(height: 1),
                     
                     // Brand and Category
-                    Text(
-                      '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
+                    Flexible(
+                      child: Text(
+                        '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                        style: TextStyle(
+                          fontSize: 10, // Reduced from 11
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 2), // Further reduced spacing
+                    SizedBox(height: 2),
                     
                     // Status and Condition Chips
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatusChip(tool.status),
-                        ),
-                        SizedBox(width: 3),
-                        Expanded(
-                          child: _buildConditionChip(tool.condition),
-                        ),
+                    Flexible(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatusChip(tool.status),
+                          ),
+                          SizedBox(width: 3),
+                          Expanded(
+                            child: _buildConditionChip(tool.condition),
+                          ),
                       ],
                     ),
                   ],
