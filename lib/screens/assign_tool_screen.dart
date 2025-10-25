@@ -133,7 +133,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.8,
+                        childAspectRatio: 0.9, // Increased to make cards shorter
                         children: filteredTools.map((tool) {
                           return _buildToolCard(context, tool);
                         }).toList(),
@@ -225,7 +225,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           });
         },
         child: Container(
-          height: 250,
+          height: 220, // Reduced from 250 to make cards smaller
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -252,7 +252,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             children: [
               // Image Section
               SizedBox(
-                height: 120,
+                height: 100, // Reduced from 120 to make cards smaller
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
