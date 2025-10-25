@@ -277,7 +277,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 16), // Reduced spacing
 
               // Status Overview
               FittedBox(
@@ -305,9 +305,9 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 16), // Reduced spacing
 
-              // Quick Actions
+              // Quick Actions - Compact Grid Layout
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
@@ -320,229 +320,181 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 16),
-              Row(
+              // Use a more compact grid layout for Quick Actions
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 2.5, // More compact aspect ratio
                 children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Assign Tool',
-                      Icons.person_add,
-                      AppTheme.primaryColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AssignToolScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
+                  _buildQuickActionCard(
+                    'Assign Tool',
+                    Icons.person_add,
+                    AppTheme.primaryColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AssignToolScreen(),
+                        ),
+                      );
+                    },
+                    context,
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Return Tool',
-                      Icons.assignment_return,
-                      AppTheme.secondaryColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CheckinScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
+                  _buildQuickActionCard(
+                    'Return Tool',
+                    Icons.assignment_return,
+                    AppTheme.secondaryColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CheckinScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Add Tool',
+                    Icons.add,
+                    AppTheme.accentColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddToolScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Add Technician',
+                    Icons.person_add,
+                    AppTheme.successColor,
+                    () {
+                      // Navigate to add technician
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Bulk Import',
+                    Icons.upload_file,
+                    AppTheme.warningColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BulkImportScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Cost Analytics',
+                    Icons.analytics,
+                    AppTheme.accentColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CostAnalyticsScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Favorites',
+                    Icons.favorite,
+                    AppTheme.errorColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritesScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Search',
+                    Icons.search,
+                    AppTheme.accentColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdvancedSearchScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Maintenance',
+                    Icons.build,
+                    AppTheme.warningColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MaintenanceScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Compliance',
+                    Icons.verified_user,
+                    AppTheme.successColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ComplianceScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Approvals',
+                    Icons.approval,
+                    AppTheme.primaryColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ApprovalWorkflowsScreen(),
+                        ),
+                      );
+                    },
+                    context,
+                  ),
+                  _buildQuickActionCard(
+                    'Settings',
+                    Icons.settings,
+                    AppTheme.textSecondary,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                    context,
                   ),
                 ],
               ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Add Tool',
-                      Icons.add,
-                      AppTheme.accentColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddToolScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Add Technician',
-                      Icons.person_add,
-                      AppTheme.successColor,
-                      () {
-                        // Navigate to add technician
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Bulk Import',
-                      Icons.upload_file,
-                      AppTheme.warningColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BulkImportScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Cost Analytics',
-                      Icons.analytics,
-                      AppTheme.accentColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CostAnalyticsScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Favorites',
-                      Icons.favorite,
-                      AppTheme.errorColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FavoritesScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Search',
-                      Icons.search,
-                      AppTheme.accentColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AdvancedSearchScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Maintenance',
-                      Icons.build,
-                      AppTheme.warningColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MaintenanceScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Compliance',
-                      Icons.verified_user,
-                      AppTheme.successColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ComplianceScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Approvals',
-                      Icons.approval,
-                      AppTheme.primaryColor,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ApprovalWorkflowsScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Settings',
-                      Icons.settings,
-                      AppTheme.textSecondary,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
+              SizedBox(height: 16), // Reduced spacing
 
               // Recent Tools
               FittedBox(
@@ -744,12 +696,13 @@ class DashboardScreen extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0), // Reduced padding
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 32, color: color),
-              SizedBox(height: 8),
+              Icon(icon, size: 24, color: color), // Reduced icon size
+              SizedBox(height: 6), // Reduced spacing
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -757,6 +710,7 @@ class DashboardScreen extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
+                      fontSize: 12, // Smaller font size
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                     textAlign: TextAlign.center,
