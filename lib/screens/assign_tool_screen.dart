@@ -279,51 +279,58 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section
+              // Content Section - Fixed height to prevent overflow
               Container(
-                padding: const EdgeInsets.all(6.0),
+                height: 60, // Fixed height to prevent overflow
+                padding: const EdgeInsets.all(4.0), // Reduced padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Tool Name
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                    Flexible(
+                      child: Text(
+                        tool.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11, // Reduced from 12
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     
                     SizedBox(height: 1),
                     
                     // Brand and Category
-                    Text(
-                      '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
+                    Flexible(
+                      child: Text(
+                        '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                        style: TextStyle(
+                          fontSize: 9, // Reduced from 10
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     
-                    SizedBox(height: 1),
+                    SizedBox(height: 2),
                     
                     // Status and Condition Chips
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatusChip(tool.status),
-                        ),
-                        SizedBox(width: 2),
-                        Expanded(
-                          child: _buildConditionChip(tool.condition),
-                        ),
-                      ],
+                    Flexible(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatusChip(tool.status),
+                          ),
+                          SizedBox(width: 2),
+                          Expanded(
+                            child: _buildConditionChip(tool.condition),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
