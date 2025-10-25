@@ -234,14 +234,21 @@ class DashboardScreen extends StatelessWidget {
               ),
               SizedBox(height: 24),
 
-              // Stats Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 12, // Reduced spacing
-                mainAxisSpacing: 12, // Reduced spacing
-                childAspectRatio: 1.1, // Reduced to give more height for content
+              // Stats Grid - More responsive layout
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Use different layouts based on screen width
+                  final screenWidth = constraints.maxWidth;
+                  final crossAxisCount = screenWidth < 400 ? 2 : 2; // Keep 2 columns for small screens
+                  final childAspectRatio = screenWidth < 400 ? 1.3 : 1.1; // Taller cards for small screens
+                  
+                  return GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 8, // Reduced spacing for small screens
+                    mainAxisSpacing: 8, // Reduced spacing for small screens
+                    childAspectRatio: childAspectRatio,
                 children: [
                   _buildStatCard(
                     'Total Tools',
@@ -276,26 +283,28 @@ class DashboardScreen extends StatelessWidget {
                     () => onNavigateToTab(1), // Navigate to Tools tab (can filter by maintenance)
                   ),
                 ],
+                  );
+                },
               ),
               SizedBox(height: 16), // Reduced spacing
 
-              // Status Overview
+              // Status Overview - More responsive
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'Tool Status',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18, // Reduced font size
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12), // Reduced spacing
               Card(
                 color: Theme.of(context).cardTheme.color,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(12.0), // Reduced padding
                   child: Column(
                     children: [
                       _buildStatusRow('Available', availableTools, AppTheme.statusAvailable),
@@ -594,7 +603,7 @@ class DashboardScreen extends StatelessWidget {
       child: Card(
         color: Theme.of(context).cardTheme.color,
         child: Container(
-          padding: const EdgeInsets.all(8.0), // Reduced padding
+          padding: const EdgeInsets.all(6.0), // Further reduced padding
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -602,16 +611,16 @@ class DashboardScreen extends StatelessWidget {
               // Custom Dirham icon for Total Value, regular icon for others
               title == 'Total Value' 
                 ? _buildDirhamIcon(color)
-                : Icon(icon, size: 18, color: color), // Further reduced icon size
-              SizedBox(height: 4), // Reduced spacing
+                : Icon(icon, size: 16, color: color), // Further reduced icon size
+              SizedBox(height: 2), // Minimal spacing
               // Value text with better responsive sizing
-              Flexible(
+              Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: 12, // Match Tool Status Overview size
+                      fontSize: 10, // Much smaller font size
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -621,15 +630,15 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 2), // Reduced spacing
+              SizedBox(height: 1), // Minimal spacing
               // Title with better responsive sizing
-              Flexible(
+              Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 10, // Reduced from 12
+                      fontSize: 8, // Much smaller font size
                       color: Colors.grey,
                     ),
                     textAlign: TextAlign.center,
@@ -647,8 +656,8 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildDirhamIcon(Color color) {
     return SizedBox(
-      width: 18, // Reduced from 24
-      height: 18, // Reduced from 24
+      width: 16, // Further reduced
+      height: 16, // Further reduced
       child: CustomPaint(
         painter: DirhamIconPainter(color),
       ),
@@ -657,25 +666,28 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStatusRow(String status, int count, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 3.0), // Reduced padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
-            child: Text(
-              status,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                status,
+                style: TextStyle(
+                  fontSize: 14, // Reduced font size
+                  color: Colors.grey,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Reduced padding
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8), // Smaller border radius
             ),
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -684,6 +696,7 @@ class DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 12, // Smaller font size
                 ),
               ),
             ),
