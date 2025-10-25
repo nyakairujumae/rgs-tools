@@ -212,20 +212,26 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ),
               SizedBox(height: 8),
-              Text(
-                'RGS tools Overview',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'RGS tools Overview',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -237,7 +243,7 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
+                childAspectRatio: 1.3, // Increased to give more space for text
                 children: [
                   _buildStatCard(
                     'Total Tools',
@@ -276,12 +282,15 @@ class DashboardScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               // Status Overview
-              Text(
-                'Tool Status',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Tool Status',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -301,12 +310,15 @@ class DashboardScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               // Quick Actions
-              Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Quick Actions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -535,12 +547,15 @@ class DashboardScreen extends StatelessWidget {
               SizedBox(height: 24),
 
               // Recent Tools
-              Text(
-                'Recent Tools',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Recent Tools',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -628,7 +643,7 @@ class DashboardScreen extends StatelessWidget {
       onTap: onTap,
       child: Card(
         color: Theme.of(context).cardTheme.color,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(12.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -639,28 +654,38 @@ class DashboardScreen extends StatelessWidget {
                 ? _buildDirhamIcon(color)
                 : Icon(icon, size: 24, color: color),
               SizedBox(height: 6),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              // Value text with responsive sizing
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               SizedBox(height: 4),
+              // Title with responsive sizing and proper overflow handling
               Flexible(
-                child: Text(
-                title,
-                style: TextStyle(
-                    fontSize: 12,
-                  color: Colors.grey,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ));
@@ -682,11 +707,14 @@ class DashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
+          Flexible(
+            child: Text(
+              status,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Container(
@@ -695,11 +723,14 @@ class DashboardScreen extends StatelessWidget {
               color: color,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              count.toString(),
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -717,16 +748,24 @@ class DashboardScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 32, color: color),
               SizedBox(height: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
