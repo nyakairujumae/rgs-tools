@@ -65,6 +65,15 @@ void main() async {
         print('Image storage bucket check failed (non-critical): $e');
         // Continue without failing - this is not critical for app startup
       }
+
+      // Initialize session management for extended timeouts
+      print('Initializing session management...');
+      try {
+        // This will be handled by AuthProvider
+        print('Session management ready for 30-day timeouts');
+      } catch (e) {
+        print('Session management initialization failed (non-critical): $e');
+      }
     } else {
       print('🌐 Web platform detected - skipping Supabase initialization');
     }

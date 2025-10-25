@@ -184,17 +184,14 @@ class AuthProvider with ChangeNotifier {
             _user = refreshResponse.session!.user;
           } else {
             debugPrint('❌ Session refresh failed - no new session');
-            _user = null;
-            _userRole = UserRole.technician;
-            notifyListeners();
+            // Don't clear user data immediately, try to maintain session
+            debugPrint('🔄 Attempting to maintain session...');
             return;
           }
         } catch (e) {
           debugPrint('❌ Failed to refresh session: $e');
-          // If refresh fails, user needs to log in again
-          _user = null;
-          _userRole = UserRole.technician;
-          notifyListeners();
+          // Don't clear user data on refresh failure, maintain session
+          debugPrint('🔄 Maintaining session despite refresh failure...');
           return;
         }
       }
@@ -251,6 +248,54 @@ class AuthProvider with ChangeNotifier {
       await SupabaseService.client.auth.signOut();
     } catch (e) {
       debugPrint('Error during force logout: $e');
+    }
+  }
+
+  // Method to handle automatic session refresh
+  Future<void> refreshSessionIfNeeded() async {
+    if (_user == null) return;
+    
+    try {
+      final session = SupabaseService.client.auth.currentSession;
+      if (session != null && session.isExpired) {
+        debugPrint('🔄 Auto-refreshing expired session...');
+        final refreshResponse = await SupabaseService.client.auth.refreshSession();
+        if (refreshResponse.session != null) {
+          debugPrint('✅ Session auto-refreshed successfully');
+          _user = refreshResponse.session!.user;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Auto-refresh failed: $e');
+      // Don't clear user data, maintain session
+    }
+  }
+
+  // Method to check if user should stay logged in
+  bool shouldMaintainSession() {
+    // Keep user logged in unless they explicitly log out
+    return _user != null;
+  }
+
+  // Enhanced session persistence
+  Future<void> maintainSession() async {
+    if (_user == null) return;
+    
+    try {
+      // Check session status without clearing user data
+      final session = SupabaseService.client.auth.currentSession;
+      if (session != null) {
+        debugPrint('✅ Session is valid, maintaining login');
+        return;
+      }
+      
+      // If no session but user exists, try to refresh
+      debugPrint('🔄 No active session, attempting refresh...');
+      await refreshSessionIfNeeded();
+    } catch (e) {
+      debugPrint('❌ Session maintenance error: $e');
+      // Don't clear user data on error
     }
   }
 

@@ -74,7 +74,7 @@ class AppConfig {
   
   // Security configuration
   static bool get enableBiometricAuth => environment != 'development';
-  static Duration get sessionTimeout => const Duration(hours: 8);
+  static Duration get sessionTimeout => const Duration(days: 30); // 30 days instead of 8 hours
   static int get maxLoginAttempts => 5;
   
   // Performance configuration
