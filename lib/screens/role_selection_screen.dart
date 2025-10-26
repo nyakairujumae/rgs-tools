@@ -115,6 +115,18 @@ class RoleSelectionScreen extends StatelessWidget {
                         
                         const SizedBox(height: 8),
                         
+                        // Have account text
+                        Text(
+                          'Already have an account?',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 4),
+                        
                         // Admin Sign In Button
                         SizedBox(
                           width: double.infinity,
@@ -195,6 +207,18 @@ class RoleSelectionScreen extends StatelessWidget {
                         ),
                         
                         const SizedBox(height: 8),
+                        
+                        // Have account text
+                        Text(
+                          'Already have an account?',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 4),
                         
                         // Technician Sign In Button
                         SizedBox(
