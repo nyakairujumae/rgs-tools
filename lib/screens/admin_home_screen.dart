@@ -438,8 +438,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             ),
           ),
           _buildDrawerItem(
-            icon: Icons.approval,
-            title: 'User Approvals',
+            icon: Icons.verified_user,
+            title: 'Authorize Users',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(

@@ -58,7 +58,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   Consumer<PendingApprovalsProvider>(
                     builder: (context, provider, child) {
                       final count = provider.pendingCount;
-                      return Text('Pending${count > 0 ? ' ($count)' : ''}');
+                      return Text('Awaiting Authorization${count > 0 ? ' ($count)' : ''}');
                     },
                   ),
                 ],
@@ -73,7 +73,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   Consumer<PendingApprovalsProvider>(
                     builder: (context, provider, child) {
                       final count = provider.approvedCount;
-                      return Text('Approved${count > 0 ? ' ($count)' : ''}');
+                      return Text('Authorized${count > 0 ? ' ($count)' : ''}');
                     },
                   ),
                 ],
@@ -141,14 +141,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'No Pending Approvals',
+                  'No Users Awaiting Authorization',
                   style: AppTheme.heading3.copyWith(
                     color: Colors.grey[400],
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'New technician registrations will appear here',
+                  'New technician registrations will appear here for authorization',
                   style: AppTheme.bodyMedium.copyWith(
                     color: Colors.grey[500],
                   ),
@@ -188,14 +188,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'No Approved Users',
+                  'No Authorized Users',
                   style: AppTheme.heading3.copyWith(
                     color: Colors.grey[400],
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Approved technician registrations will appear here',
+                  'Authorized technician registrations will appear here',
                   style: AppTheme.bodyMedium.copyWith(
                     color: Colors.grey[500],
                   ),
@@ -444,7 +444,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     child: ElevatedButton.icon(
                       onPressed: () => _approveUser(approval),
                       icon: Icon(Icons.check, size: 18),
-                      label: Text('Approve'),
+                      label: Text('Authorize'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -546,11 +546,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
-          'Approve User',
+          'Authorize User',
           style: AppTheme.heading3.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
-          'Are you sure you want to approve ${approval.fullName ?? approval.email} as a technician?',
+          'Are you sure you want to authorize ${approval.fullName ?? approval.email} as a technician?',
           style: AppTheme.bodyMedium.copyWith(color: Colors.grey[300]),
         ),
         actions: [
@@ -561,7 +561,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: Text('Approve'),
+            child: Text('Authorize'),
           ),
         ],
       ),
@@ -574,14 +574,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('User approved successfully'),
+            content: Text('User authorized successfully'),
             backgroundColor: Colors.green,
           ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to approve user: ${provider.error}'),
+            content: Text('Failed to authorize user: ${provider.error}'),
             backgroundColor: Colors.red,
           ),
         );
