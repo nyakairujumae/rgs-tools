@@ -51,9 +51,9 @@ This repository includes GitHub Actions workflows to automatically build iOS IPA
 
 - **iOS Deployment Target:** 18.0
 - **Flutter Version:** 3.24.0
-- **Xcode Version:** 15.4
 - **Bundle ID:** com.rgsapp.hvacToolsManager
 - **Build Type:** Release (optimized for performance)
+- **Build Environment:** GitHub Actions (macOS runner)
 
 ## AltStore Limitations
 
@@ -89,9 +89,11 @@ This repository includes GitHub Actions workflows to automatically build iOS IPA
 
 ## Benefits of This Setup
 
-- ✅ **No Xcode required** on your local machine
+- ✅ **No Xcode required** anywhere (GitHub Actions handles everything)
 - ✅ **No Apple Developer account** needed
+- ✅ **No local development setup** required
 - ✅ **Automatic builds** on code changes
 - ✅ **Easy sideloading** with AltStore
 - ✅ **iOS 18 compatibility** built-in
 - ✅ **Release builds** for better performance
+- ✅ **Pure GitHub + AltStore** workflow
