@@ -14,7 +14,6 @@ import 'web_tools_screen.dart';
 import 'web_technicians_screen.dart';
 import 'web_reports_screen.dart';
 import 'web_settings_screen.dart';
-import '../bulk_assignment_screen.dart';
 import 'web_add_tool_screen.dart';
 import 'web_add_technician_screen.dart';
 import 'web_assign_tool_screen.dart';
@@ -538,9 +537,6 @@ class DashboardPage extends StatelessWidget {
                       }),
                       _buildQuickActionCard('Assign Tool', Icons.person_add, const Color(0xFFF59E0B), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const WebAssignToolScreen()));
-                      }),
-                      _buildQuickActionCard('Bulk Assign', Icons.group_add, const Color(0xFF8B5CF6), () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const BulkAssignmentScreen()));
                       }),
                       _buildQuickActionCard('Maintenance', Icons.build, const Color(0xFFF97316), () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const MaintenanceScreen()));
