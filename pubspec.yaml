@@ -50,6 +50,7 @@ dependencies:
   
   # Image handling
   image_picker: ^1.0.4
+  video_player: ^2.8.0
   
   # Backend
   supabase_flutter: ^2.3.4
