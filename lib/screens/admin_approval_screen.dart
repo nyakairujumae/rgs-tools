@@ -142,14 +142,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 SizedBox(height: 16),
                 Text(
                   'No Users Awaiting Authorization',
-                  style: Theme.of(context).textTheme.headlineSmall.copyWith(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Colors.grey[400],
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'New technician registrations will appear here for authorization',
-                  style: Theme.of(context).textTheme.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[500],
                   ),
                   textAlign: TextAlign.center,
@@ -189,14 +189,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 SizedBox(height: 16),
                 Text(
                   'No Authorized Users',
-                  style: Theme.of(context).textTheme.headlineSmall.copyWith(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Colors.grey[400],
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Authorized technician registrations will appear here',
-                  style: Theme.of(context).textTheme.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[500],
                   ),
                   textAlign: TextAlign.center,
@@ -236,14 +236,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 SizedBox(height: 16),
                 Text(
                   'No Rejected Users',
-                  style: Theme.of(context).textTheme.headlineSmall.copyWith(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Colors.grey[400],
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Rejected technician registrations will appear here',
-                  style: Theme.of(context).textTheme.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey[500],
                   ),
                   textAlign: TextAlign.center,
@@ -547,11 +547,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Authorize User',
-          style: Theme.of(context).textTheme.headlineSmall.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
           'Are you sure you want to authorize ${approval.fullName ?? approval.email} as a technician?',
-          style: Theme.of(context).textTheme.bodyMedium.copyWith(color: Colors.grey[300]),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[300]),
         ),
         actions: [
           TextButton(
@@ -598,7 +598,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Reject User',
-          style: Theme.of(context).textTheme.headlineSmall.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -606,7 +606,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           children: [
             Text(
               'Reject ${approval.fullName ?? approval.email}?',
-              style: Theme.of(context).textTheme.bodyMedium.copyWith(color: Colors.grey[300]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[300]),
             ),
             SizedBox(height: 16),
             Text(
