@@ -20,62 +20,124 @@ class RoleSelectionScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Role Selection Buttons - Centered and Simple
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Admin Button
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AdminRegistrationScreen(),
+              // Branding Section - Takes up about half the screen
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // RGS Branding - Larger and more prominent
+                    Column(
+                      children: [
+                        Text(
+                          'RGS',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            letterSpacing: 1.0,
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.admin_panel_settings, size: 20),
-                    label: const Text('Admin'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      minimumSize: const Size(120, 50),
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 24),
-                  
-                  // Technician Button
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TechnicianRegistrationScreen(),
+                        const SizedBox(height: 8),
+                        Text(
+                          'HVAC SERVICES',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.build, size: 20),
-                    label: const Text('Technician'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      minimumSize: const Size(120, 50),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Not your ordinary HVAC company.',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              
+              // Role Selection Buttons - Vertical layout with pill shapes
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Admin Button - Green like the "Book Online" button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AdminRegistrationScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28), // Pill shape
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Admin Registration',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Technician Button - Black like the "Learn More" button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TechnicianRegistrationScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28), // Pill shape
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Technician Registration',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
