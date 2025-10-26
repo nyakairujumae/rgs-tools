@@ -271,9 +271,10 @@ class TechnicianDashboardScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 16),
-                        Expanded(
+                        Flexible(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Flexible(
                                 child: FittedBox(
@@ -826,9 +827,10 @@ class TechnicianDashboardScreen extends StatelessWidget {
                     ),
             ),
           SizedBox(width: 12),
-          Expanded(
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   tool.name,
@@ -1042,9 +1044,10 @@ class MyToolsScreen extends StatelessWidget {
               SizedBox(width: 16),
               
               // Tool Info
-              Expanded(
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       tool.name,

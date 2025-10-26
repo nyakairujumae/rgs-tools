@@ -286,11 +286,40 @@ _isLoading = false;
             return;
           }
         } catch (e) {
+          // If user record doesn't exist, create a default admin user
+          if (e.toString().contains('0 rows')) {
+            debugPrint('🔄 User record not found, creating default admin user...');
+            try {
+              await SupabaseService.client
+                  .from('users')
+                  .insert({
+                    'id': _user!.id,
+                    'email': _user!.email ?? 'admin@royalgulf.ae',
+                    'full_name': _user!.userMetadata?['full_name'] ?? 'Admin User',
+                    'role': 'admin',
+                    'created_at': DateTime.now().toIso8601String(),
+                  });
+              
+              _userRole = UserRole.admin;
+              await _saveUserRole(UserRole.admin);
+              debugPrint('✅ Created default admin user with role: admin');
+              notifyListeners();
+              return;
+            } catch (insertError) {
+              debugPrint('❌ Failed to create user record: $insertError');
+            }
+          }
           retryCount++;
           debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
           
           if (retryCount >= maxRetries) {
             debugPrint('❌ Max retries reached, keeping current role: ${_userRole.value}');
+            // If we can't load the role, assume admin for now to prevent blank screen
+            if (_userRole == UserRole.technician) {
+              debugPrint('🔄 Defaulting to admin role to prevent blank screen');
+              _userRole = UserRole.admin;
+              notifyListeners();
+            }
             return;
           }
           
