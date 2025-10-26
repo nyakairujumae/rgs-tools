@@ -133,7 +133,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.9, // Increased to make cards shorter
+                        childAspectRatio: 1.1, // Much taller aspect ratio to prevent overflow
                         children: filteredTools.map((tool) {
                           return _buildToolCard(context, tool);
                         }).toList(),
@@ -225,7 +225,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           });
         },
         child: Container(
-          height: 220, // Reduced from 250 to make cards smaller
+          height: 180, // Much smaller height to prevent overflow
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -252,7 +252,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             children: [
               // Image Section
               SizedBox(
-                height: 100, // Reduced from 120 to make cards smaller
+                height: 80, // Much smaller image height
                 width: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
@@ -279,21 +279,21 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Fixed height to prevent overflow
+              // Content Section - Much smaller to prevent overflow
               Container(
-                height: 50, // Further reduced height to account for selection border
-                padding: const EdgeInsets.all(3.0), // Further reduced padding
+                height: 40, // Much smaller height to prevent overflow
+                padding: const EdgeInsets.all(2.0), // Minimal padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Tool Name
-                    Flexible(
+                    Expanded(
                       child: Text(
                         tool.name,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 10, // Further reduced from 11
+                          fontSize: 9, // Even smaller font
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                         maxLines: 1,
@@ -301,14 +301,12 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       ),
                     ),
                     
-                    SizedBox(height: 1),
-                    
                     // Brand and Category
-                    Flexible(
+                    Expanded(
                       child: Text(
                         '${tool.brand ?? 'Unknown'} • ${tool.category}',
                         style: TextStyle(
-                          fontSize: 8, // Further reduced from 9
+                          fontSize: 7, // Even smaller font
                           color: Colors.grey[600],
                         ),
                         maxLines: 1,
@@ -316,16 +314,14 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       ),
                     ),
                     
-                    SizedBox(height: 2),
-                    
-                    // Status and Condition Chips
-                    Flexible(
+                    // Status and Condition Chips - Much smaller
+                    Expanded(
                       child: Row(
                         children: [
                           Expanded(
                             child: _buildStatusChip(tool.status),
                           ),
-                          SizedBox(width: 2),
+                          SizedBox(width: 1),
                           Expanded(
                             child: _buildConditionChip(tool.condition),
                           ),
@@ -376,17 +372,17 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
 
   Widget _buildStatusChip(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
       decoration: BoxDecoration(
         color: _getStatusColor(status).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: _getStatusColor(status), width: 0.5),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: _getStatusColor(status),
-          fontSize: 9,
+          fontSize: 6, // Much smaller font
           fontWeight: FontWeight.w500,
         ),
         maxLines: 1,
@@ -397,17 +393,17 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
 
   Widget _buildConditionChip(String condition) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
       decoration: BoxDecoration(
         color: _getConditionColor(condition).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: _getConditionColor(condition), width: 0.5),
       ),
       child: Text(
         condition,
         style: TextStyle(
           color: _getConditionColor(condition),
-          fontSize: 9,
+          fontSize: 6, // Much smaller font
           fontWeight: FontWeight.w500,
         ),
         maxLines: 1,
