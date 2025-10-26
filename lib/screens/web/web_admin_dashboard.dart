@@ -283,7 +283,7 @@ class _WebAdminDashboardState extends State<WebAdminDashboard> with ErrorHandlin
               onPressed: () {
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (context) => const LoginScreen(),
+                    builder: (context) => const WebLoginScreen(),
                   ),
                 );
               },

@@ -289,7 +289,7 @@ class _WebTechnicianDashboardState extends State<WebTechnicianDashboard> {
                     // Navigate back to login
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder: (context) => const WebLoginScreen(),
                       ),
                     );
                   },
