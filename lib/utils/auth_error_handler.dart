@@ -26,19 +26,19 @@ class AuthErrorHandler {
         errorString.contains('invalid_credentials') ||
         errorString.contains('wrong password') ||
         errorString.contains('incorrect password')) {
-      return '🔐 Invalid email or password. Please check your credentials and try again.';
+      return '🔐 Sorry, your email or password is incorrect. Please try again.';
     }
     
     if (errorString.contains('user not found') ||
         errorString.contains('account not found') ||
         errorString.contains('email not found')) {
-      return '👤 Account not found. Please check your email or sign up for a new account.';
+      return '👤 Sorry, we couldn\'t find an account with this email. Please check your email or create a new account.';
     }
     
     if (errorString.contains('email not confirmed') ||
         errorString.contains('unconfirmed email') ||
         errorString.contains('verify your email')) {
-      return '📧 Please check your email and verify your account before signing in.';
+      return '📧 Please check your email and click the verification link before signing in.';
     }
     
     // Registration errors
@@ -46,7 +46,7 @@ class AuthErrorHandler {
         errorString.contains('user already exists') ||
         errorString.contains('email already exists') ||
         errorString.contains('already registered')) {
-      return '📧 This email is already registered. Please sign in or use a different email.';
+      return '📧 This email is already registered. Please sign in or use a different email address.';
     }
     
     if (errorString.contains('invalid email') ||
@@ -55,10 +55,17 @@ class AuthErrorHandler {
       return '📧 Please enter a valid email address.';
     }
     
+    // Admin domain restrictions
+    if (errorString.contains('invalid email domain for admin registration') ||
+        errorString.contains('invalid admin credentials') ||
+        errorString.contains('access denied')) {
+      return '🚫 Sorry, your email cannot sign up as an admin. Please contact support if you believe this is an error.';
+    }
+    
     if (errorString.contains('password') && errorString.contains('weak') ||
         errorString.contains('password too short') ||
         errorString.contains('password requirements')) {
-      return '🔒 Password must be at least 8 characters long and include letters and numbers.';
+      return '🔒 Password must be at least 6 characters long.';
     }
     
     // Rate limiting errors
@@ -76,7 +83,7 @@ class AuthErrorHandler {
         errorString.contains('500') ||
         errorString.contains('502') ||
         errorString.contains('503')) {
-      return '🔧 Server is temporarily unavailable. Please try again in a few minutes.';
+      return '🔧 Our servers are temporarily down. Please try again in a few minutes.';
     }
     
     // Database errors
@@ -84,7 +91,7 @@ class AuthErrorHandler {
         errorString.contains('database connection') ||
         errorString.contains('postgres') ||
         errorString.contains('supabase')) {
-      return '🗄️ Database connection issue. Please try again in a moment.';
+      return '🗄️ We\'re having trouble connecting to our database. Please try again in a moment.';
     }
     
     // JWT and session errors
@@ -92,7 +99,7 @@ class AuthErrorHandler {
         errorString.contains('token') ||
         errorString.contains('session') ||
         errorString.contains('expired')) {
-      return '🔑 Session expired. Please sign in again.';
+      return '🔑 Your session has expired. Please sign in again.';
     }
     
     // Generic fallback
