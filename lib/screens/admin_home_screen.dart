@@ -778,13 +778,13 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _buildQuickActionCard(
-                      'Reports',
-                      Icons.analytics,
-                      Colors.purple,
+                      'Settings',
+                      Icons.settings,
+                      Colors.grey,
                       () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ReportsScreen(),
+                          builder: (context) => const SettingsScreen(),
                         ),
                       ),
                       context,

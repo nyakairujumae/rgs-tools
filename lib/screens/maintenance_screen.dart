@@ -78,8 +78,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     return Scaffold(
       appBar: AppBar(
         title: Text('Maintenance Schedule'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         actions: [
           IconButton(
