@@ -52,18 +52,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
             elevation: 0,
-            actions: [
-              if (_selectedTools != null && _selectedTechnicians.isNotEmpty)
-                TextButton(
-                  onPressed: () {
-                    _assignToolsToTechnicians();
-                  },
-                  child: Text(
-                    'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} Technician${_selectedTechnicians.length > 1 ? 's' : ''}',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-            ],
+            actions: [],
           ),
           body: Column(
             children: [
@@ -164,14 +153,27 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              _showAddTechnicianDialog();
-            },
-            icon: Icon(Icons.add),
-            label: Text('Add'),
-            backgroundColor: Colors.blue,
-          ),
+          floatingActionButton: _selectedTools != null 
+              ? FloatingActionButton.extended(
+                  onPressed: _selectedTechnicians.isNotEmpty ? () {
+                    _assignToolsToTechnicians();
+                  } : null,
+                  icon: Icon(Icons.assignment_turned_in),
+                  label: Text(_selectedTechnicians.isNotEmpty 
+                      ? 'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} Technician${_selectedTechnicians.length > 1 ? 's' : ''}'
+                      : 'Select Technicians First'),
+                  backgroundColor: _selectedTechnicians.isNotEmpty 
+                      ? Colors.green 
+                      : Colors.grey,
+                )
+              : FloatingActionButton.extended(
+                  onPressed: () {
+                    _showAddTechnicianDialog();
+                  },
+                  icon: Icon(Icons.add),
+                  label: Text('Add'),
+                  backgroundColor: Colors.blue,
+                ),
         );
       },
     );
