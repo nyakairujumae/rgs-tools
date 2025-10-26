@@ -164,7 +164,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 2)),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         selectedItemColor: Colors.green,

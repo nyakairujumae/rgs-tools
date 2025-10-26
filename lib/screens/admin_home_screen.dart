@@ -114,7 +114,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialTab;
+    _selectedIndex = widget.initialTab.clamp(0, 3); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
@@ -264,7 +264,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 3)),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         selectedItemColor: Colors.blue,
