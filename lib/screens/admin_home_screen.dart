@@ -29,6 +29,7 @@ import 'compliance_screen.dart';
 import 'approval_workflows_screen.dart';
 import 'shared_tools_screen.dart';
 import 'admin_role_management_screen.dart';
+import 'admin_approval_screen.dart';
 import 'tool_issues_screen.dart';
 import '../widgets/common/rgs_logo.dart';
 
@@ -433,6 +434,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => const AdminRoleManagementScreen(),
+              ),
+            ),
+          ),
+          _buildDrawerItem(
+            icon: Icons.approval,
+            title: 'User Approvals',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminApprovalScreen(),
               ),
             ),
           ),

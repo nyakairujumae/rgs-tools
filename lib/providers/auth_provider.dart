@@ -127,6 +127,7 @@ class AuthProvider with ChangeNotifier {
     String? hireDate,
     File? profileImage,
   ) async {
+    // First, create the auth user
     await signUp(
       email: email,
       password: password,
@@ -134,9 +135,28 @@ class AuthProvider with ChangeNotifier {
       role: UserRole.technician,
     );
     
-    // The technician record will be automatically created in the technicians table
-    // via the database trigger when the user record is created
-    // Additional fields like employeeId, phone, department can be updated later by admin
+    // Then submit for admin approval instead of directly creating technician record
+    if (_user != null) {
+      try {
+        await SupabaseService.client
+            .from('pending_user_approvals')
+            .insert({
+              'user_id': _user!.id,
+              'email': email,
+              'full_name': name,
+              'employee_id': employeeId,
+              'phone': phone,
+              'department': department,
+              'hire_date': hireDate,
+              'status': 'pending',
+            });
+        
+        debugPrint('✅ Pending approval submitted for technician: $email');
+      } catch (e) {
+        debugPrint('❌ Error submitting pending approval: $e');
+        // Don't throw error here, user is already created
+      }
+    }
   }
 
   Future<AuthResponse> signIn({

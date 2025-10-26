@@ -21,6 +21,7 @@ import 'providers/auth_provider.dart';
 import 'providers/supabase_tool_provider.dart';
 import 'providers/supabase_technician_provider.dart';
 import 'providers/tool_issue_provider.dart';
+import 'providers/pending_approvals_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
@@ -233,6 +234,7 @@ class HvacToolsManagerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SupabaseTechnicianProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ToolIssueProvider()),
+        ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, child) {

@@ -469,10 +469,10 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
       if (mounted) {
         AuthErrorHandler.showSuccessSnackBar(
           context,
-          '🎉 Registration successful! You can now sign in with your credentials.',
+          '🎉 Registration submitted! Your account is pending admin approval. You will be notified once approved.',
         );
         
-        // Navigate back to login screen so they can sign in
+        // Navigate back to login screen so they can sign in later
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
