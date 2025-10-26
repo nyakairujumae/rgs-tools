@@ -14,6 +14,7 @@ import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
 import 'providers/auth_provider.dart';
@@ -254,6 +255,7 @@ class HvacToolsManagerApp extends StatelessWidget {
             },
             routes: {
               '/role-selection': (context) => const RoleSelectionScreen(),
+              '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;

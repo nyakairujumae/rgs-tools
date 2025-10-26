@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
+import 'auth/login_screen.dart';
 
 class AdminRegistrationScreen extends StatefulWidget {
   const AdminRegistrationScreen({super.key});
@@ -236,15 +237,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 const SizedBox(height: 16),
                 
                 // Login Link
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RoleSelectionScreen(),
-                      ),
-                    );
-                  },
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
+                      );
+                    },
                   child: Text(
                     'Already have an account? Sign In',
                     style: TextStyle(

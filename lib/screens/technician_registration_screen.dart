@@ -7,6 +7,7 @@ import '../utils/auth_error_handler.dart';
 import '../services/supabase_service.dart';
 import 'technician_home_screen.dart';
 import 'role_selection_screen.dart';
+import 'auth/login_screen.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
@@ -292,15 +293,15 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
                 const SizedBox(height: 16),
                 
                 // Login Link
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RoleSelectionScreen(),
-                      ),
-                    );
-                  },
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
+                      );
+                    },
                   child: Text(
                     'Already have an account? Sign In',
                     style: TextStyle(
