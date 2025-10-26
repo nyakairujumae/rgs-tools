@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/tool.dart';
 import 'tools_screen.dart';
+import 'technicians_screen.dart';
 
 class AssignToolScreen extends StatefulWidget {
   const AssignToolScreen({super.key});
@@ -28,10 +29,14 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             TextButton(
               onPressed: () {
                 // Navigate to technicians screen with selected tools
-                Navigator.pushNamed(
+                Navigator.push(
                   context,
-                  '/technicians',
-                  arguments: {'selectedTools': _selectedTools.toList()},
+                  MaterialPageRoute(
+                    builder: (context) => TechniciansScreen(),
+                    settings: RouteSettings(
+                      arguments: {'selectedTools': _selectedTools.toList()},
+                    ),
+                  ),
                 );
               },
               child: Text(
