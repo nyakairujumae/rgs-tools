@@ -11,10 +11,11 @@ class RoleSelectionScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Diagonal dots pattern background
+          // Background image
           Positioned.fill(
-            child: CustomPaint(
-              painter: DiagonalDotsPainter(),
+            child: Image.asset(
+              'assets/images/dot.png',
+              fit: BoxFit.cover,
             ),
           ),
           
@@ -150,52 +151,4 @@ class RoleSelectionScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class DiagonalDotsPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black.withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-
-    const double dotSize = 8.0;
-    
-    // Create many random dots across the upper half
-    final int totalDots = 80; // Increased total number of dots
-    
-    for (int i = 0; i < totalDots; i++) {
-      // Generate random positions in upper half
-      final double x = (i * 37.0 + (i * 13.0) % 23.0) % size.width;
-      final double y = (i * 29.0 + (i * 17.0) % 19.0) % (size.height * 0.5);
-      
-      // Add some variation to make it more organic
-      final double offsetX = (i % 7) * 3.0;
-      final double offsetY = (i % 11) * 2.0;
-      
-      final double finalX = (x + offsetX) % size.width;
-      final double finalY = (y + offsetY) % (size.height * 0.5);
-      
-      canvas.drawCircle(
-        Offset(finalX, finalY),
-        dotSize / 2,
-        paint,
-      );
-    }
-    
-    // Add some additional scattered dots for more density
-    for (int i = 0; i < 40; i++) {
-      final double x = (i * 43.0 + (i * 7.0) % 31.0) % size.width;
-      final double y = (i * 31.0 + (i * 19.0) % 23.0) % (size.height * 0.5);
-      
-      canvas.drawCircle(
-        Offset(x, y),
-        dotSize / 2,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
