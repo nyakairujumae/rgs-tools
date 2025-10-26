@@ -632,7 +632,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               onPressed: () {
                 Navigator.pop(context); // Close add tool screen
                 // Navigate to All Tools screen (index 1 in the bottom navigation)
-                // We need to find the parent HomeScreen and set the selected index
+                // Navigate to All Tools screen
                 _navigateToAllTools(context);
               },
             ),

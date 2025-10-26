@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import '../providers/auth_provider.dart';
+import 'admin_home_screen.dart';
+import 'technician_home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -307,9 +310,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _completeOnboarding() {
+    // Navigate to appropriate screen based on user role
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => const HomeScreen(),
+        builder: (context) {
+          if (authProvider.isAdmin) {
+            return AdminHomeScreenErrorBoundary(
+              child: AdminHomeScreen(),
+            );
+          } else {
+            return const TechnicianHomeScreen();
+          }
+        },
       ),
     );
   }
