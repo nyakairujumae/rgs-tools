@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 import '../services/supabase_service.dart';
 import '../models/user_role.dart';
 
@@ -93,6 +94,48 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Admin registration method
+  Future<void> registerAdmin(
+    String name,
+    String email,
+    String password,
+    String position,
+  ) async {
+    // Validate email domain
+    if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
+      throw Exception('Admin registration is only available for @royalgulf.ae and @mekar.ae domains');
+    }
+
+    await signUp(
+      email: email,
+      password: password,
+      fullName: name,
+      role: UserRole.admin,
+    );
+  }
+
+  // Technician registration method
+  Future<void> registerTechnician(
+    String name,
+    String email,
+    String password,
+    String? employeeId,
+    String? phone,
+    String? department,
+    String? hireDate,
+    File? profileImage,
+  ) async {
+    await signUp(
+      email: email,
+      password: password,
+      fullName: name,
+      role: UserRole.technician,
+    );
+    
+    // TODO: Save additional technician data (employeeId, phone, department, hireDate, profileImage)
+    // This will be implemented in Phase 3 when we update the database schema
   }
 
   Future<AuthResponse> signIn({
