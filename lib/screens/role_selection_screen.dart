@@ -156,12 +156,12 @@ class DiagonalDotsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
+      ..color = Colors.black.withOpacity(0.7) // Much darker - near black
       ..style = PaintingStyle.fill;
 
-    // Create diagonal pattern of dots
+    // Create diagonal pattern of dots - doubled the density
     const double dotSize = 8.0;
-    const double spacing = 40.0;
+    const double spacing = 20.0; // Reduced from 40.0 to 20.0 (doubled density)
     
     // Calculate how many dots we need diagonally
     final double diagonalLength = size.width + size.height;
@@ -181,10 +181,10 @@ class DiagonalDotsPainter extends CustomPainter {
       }
     }
     
-    // Add some random variation for more organic look
-    for (int i = 0; i < 15; i++) {
-      final double x = (i * 60.0) % size.width;
-      final double y = (i * 45.0) % (size.height * 0.5);
+    // Add more random variation for more organic look - doubled the count
+    for (int i = 0; i < 30; i++) { // Increased from 15 to 30
+      final double x = (i * 30.0) % size.width; // Reduced spacing from 60 to 30
+      final double y = (i * 22.5) % (size.height * 0.5); // Reduced spacing from 45 to 22.5
       
       canvas.drawCircle(
         Offset(x, y),
