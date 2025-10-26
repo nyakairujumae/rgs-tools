@@ -199,7 +199,7 @@ class ErrorBoundary extends StatelessWidget {
                       onPressed: () {
                         // Try to navigate to login screen
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
                           (route) => false,
                         );
                       },

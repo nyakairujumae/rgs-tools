@@ -5,7 +5,7 @@ import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
-import 'auth/login_screen.dart';
+import 'role_selection_screen.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import 'shared_tools_screen.dart';
@@ -95,7 +95,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       if (mounted) {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
                           (route) => false,
                         );
                       }

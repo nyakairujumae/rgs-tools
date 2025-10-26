@@ -5,7 +5,7 @@ import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
-import 'auth/login_screen.dart';
+import 'role_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -80,7 +80,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         await authProvider.signOut();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
                             (route) => false,
                           );
                         });
@@ -88,7 +88,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         // Silent error handling
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
                             (route) => false,
                           );
                         });

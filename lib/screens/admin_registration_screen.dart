@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import 'admin_home_screen.dart';
-import 'login_screen.dart';
+import 'role_selection_screen.dart';
 
 class AdminRegistrationScreen extends StatefulWidget {
   const AdminRegistrationScreen({super.key});
@@ -239,7 +239,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder: (context) => const RoleSelectionScreen(),
                       ),
                     );
                   },

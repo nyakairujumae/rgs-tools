@@ -6,7 +6,7 @@ import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../services/supabase_service.dart';
 import 'technician_home_screen.dart';
-import 'login_screen.dart';
+import 'role_selection_screen.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
@@ -295,7 +295,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder: (context) => const RoleSelectionScreen(),
                       ),
                     );
                   },
