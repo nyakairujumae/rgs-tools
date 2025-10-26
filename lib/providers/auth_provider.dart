@@ -134,8 +134,9 @@ class AuthProvider with ChangeNotifier {
       role: UserRole.technician,
     );
     
-    // TODO: Save additional technician data (employeeId, phone, department, hireDate, profileImage)
-    // This will be implemented in Phase 3 when we update the database schema
+    // The technician record will be automatically created in the technicians table
+    // via the database trigger when the user record is created
+    // Additional fields like employeeId, phone, department can be updated later by admin
   }
 
   Future<AuthResponse> signIn({

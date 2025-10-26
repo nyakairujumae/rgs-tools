@@ -469,16 +469,15 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
       if (mounted) {
         AuthErrorHandler.showSuccessSnackBar(
           context,
-          '🎉 Technician registration submitted! An administrator will review your application.',
+          '🎉 Registration successful! You can now sign in with your credentials.',
         );
         
-        // Navigate to technician home screen (or waiting screen)
-        Navigator.pushAndRemoveUntil(
+        // Navigate back to login screen so they can sign in
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const TechnicianHomeScreen(),
+            builder: (context) => const LoginScreen(),
           ),
-          (route) => false,
         );
       }
     } catch (e) {
