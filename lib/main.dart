@@ -15,8 +15,10 @@ import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
+import 'models/user_role.dart';
 import 'providers/auth_provider.dart';
 import 'providers/supabase_tool_provider.dart';
 import 'providers/supabase_technician_provider.dart';
@@ -339,6 +341,8 @@ class HvacToolsManagerApp extends StatelessWidget {
               key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
             ),
           );
+        } else if (authProvider.userRole == UserRole.pending) {
+          return const PendingApprovalScreen();
         } else {
           return TechnicianHomeScreen(
             key: ValueKey('tech_home_${DateTime.now().millisecondsSinceEpoch}'),

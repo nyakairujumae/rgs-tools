@@ -1,6 +1,7 @@
 enum UserRole {
   admin,
   technician,
+  pending,
 }
 
 extension UserRoleExtension on UserRole {
@@ -10,6 +11,8 @@ extension UserRoleExtension on UserRole {
         return 'Admin';
       case UserRole.technician:
         return 'Technician';
+      case UserRole.pending:
+        return 'Pending Approval';
     }
   }
 
@@ -19,6 +22,8 @@ extension UserRoleExtension on UserRole {
         return 'admin';
       case UserRole.technician:
         return 'technician';
+      case UserRole.pending:
+        return 'pending';
     }
   }
 
@@ -28,8 +33,10 @@ extension UserRoleExtension on UserRole {
         return UserRole.admin;
       case 'technician':
         return UserRole.technician;
+      case 'pending':
+        return UserRole.pending;
       default:
-        return UserRole.technician; // Default to technician for security
+        return UserRole.pending; // Default to pending for new registrations
     }
   }
 

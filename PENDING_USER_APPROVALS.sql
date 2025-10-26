@@ -104,9 +104,14 @@ BEGIN
         'technician',
         NOW()
     )
-    ON CONFLICT (id) DO UPDATE SET 
+    ON CONFLICT (id) DO UPDATE SET
         role = 'technician',
         updated_at = NOW();
+    
+    -- Update the auth.users metadata to change role from 'pending' to 'technician'
+    UPDATE auth.users 
+    SET raw_user_meta_data = raw_user_meta_data || '{"role": "technician"}'::jsonb
+    WHERE id = approval_record.user_id;
     
     -- Create technician record
     INSERT INTO technicians (id, name, email, employee_id, phone, department, hire_date, status, created_at)

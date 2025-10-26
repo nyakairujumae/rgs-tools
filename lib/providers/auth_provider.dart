@@ -77,7 +77,7 @@ class AuthProvider with ChangeNotifier {
         password: password,
         data: {
           'full_name': fullName,
-          'role': role?.value ?? 'technician',
+          'role': role?.value ?? 'pending', // Default to 'pending' for new registrations
         },
       );
 
@@ -127,12 +127,12 @@ class AuthProvider with ChangeNotifier {
     String? hireDate,
     File? profileImage,
   ) async {
-    // First, create the auth user
+    // First, create the auth user with 'pending' role
     await signUp(
       email: email,
       password: password,
       fullName: name,
-      role: UserRole.technician,
+      role: null, // Let it default to 'pending'
     );
     
     // Then submit for admin approval instead of directly creating technician record
