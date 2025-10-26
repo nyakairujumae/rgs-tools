@@ -190,34 +190,37 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Login Button
                           Consumer<AuthProvider>(
                             builder: (context, authProvider, child) {
-                              return ElevatedButton(
-                                onPressed: authProvider.isLoading ? null : _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                              return SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: authProvider.isLoading ? null : _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    elevation: 3,
+                                    shadowColor: Colors.black.withOpacity(0.2),
                                   ),
-                                  elevation: 3,
-                                  shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+                                  child: authProvider.isLoading
+                                      ? SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Sign In',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                 ),
-                                child: authProvider.isLoading
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white),
-                                        ),
-                                      )
-                                    : Text(
-                                        'Sign In',
-                                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
                               );
                             },
                           ),
@@ -226,17 +229,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           // Forgot Password
                           Center(
-                            child: TextButton(
-                              onPressed: _handleForgotPassword,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: _handleForgotPassword,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.primaryColor,
+                                  side: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
@@ -246,19 +255,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           // Back to Role Selection
                           Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: Text(
-                                '← Back to Role Selection',
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.primaryColor,
+                                  side: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '← Back to Role Selection',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ),
