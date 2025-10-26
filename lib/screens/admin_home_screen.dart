@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/pending_approvals_provider.dart';
 import '../providers/theme_provider.dart';
 import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -129,6 +130,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
+      context.read<PendingApprovalsProvider>().loadPendingApprovals();
     });
   }
 
@@ -735,6 +737,46 @@ class DashboardScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
+                    child: Consumer<PendingApprovalsProvider>(
+                      builder: (context, provider, child) {
+                        final pendingCount = provider.pendingCount;
+                        return _buildQuickActionCardWithBadge(
+                          'Authorize Users',
+                          Icons.verified_user,
+                          Colors.blue,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AdminApprovalScreen(),
+                            ),
+                          ),
+                          context,
+                          badgeCount: pendingCount,
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      'Reports',
+                      Icons.analytics,
+                      Colors.purple,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportsScreen(),
+                        ),
+                      ),
+                      context,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
                     child: _buildQuickActionCard(
                       'Reports',
                       Icons.analytics,
@@ -934,6 +976,72 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildQuickActionCardWithBadge(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+    BuildContext context, {
+    int badgeCount = 0,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Icon(icon, color: color, size: 24),
+                SizedBox(height: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            if (badgeCount > 0)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : badgeCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildQuickActionCard(
     String title,
     IconData icon,
@@ -964,6 +1072,72 @@ class DashboardScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCardWithBadge(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+    BuildContext context, {
+    int badgeCount = 0,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Icon(icon, color: color, size: 24),
+                SizedBox(height: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            if (badgeCount > 0)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : badgeCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
