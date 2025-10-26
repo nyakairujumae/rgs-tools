@@ -6,7 +6,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common/rgs_logo.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
-import '../role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -230,31 +229,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     SizedBox(height: 24),
                     
-                    // Sign Up Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Don\'t have an account? ',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                    // Back to Role Selection
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: Text(
+                          '← Back to Role Selection',
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        TextButton(
-                          onPressed: _handleSignUp,
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          ),
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     
                     SizedBox(height: 16),
@@ -357,14 +349,5 @@ class _LoginScreenState extends State<LoginScreen> {
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     }
-  }
-
-  void _handleSignUp() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const RoleSelectionScreen(),
-      ),
-    );
   }
 }
