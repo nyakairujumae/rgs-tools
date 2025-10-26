@@ -1,122 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:video_player/video_player.dart';
 import 'admin_registration_screen.dart';
 import 'technician_registration_screen.dart';
 
-class RoleSelectionScreen extends StatefulWidget {
+class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
-
-  @override
-  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
-}
-
-class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
-  late VideoPlayerController _videoController;
-  bool _isVideoInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeVideo();
-  }
-
-  Future<void> _initializeVideo() async {
-    try {
-      // Skip video on web and some platforms where it's not supported
-      if (kIsWeb) {
-        print('🌐 Web platform detected, skipping video background');
-        if (mounted) {
-          setState(() {
-            _isVideoInitialized = false;
-          });
-        }
-        return;
-      }
-      
-      print('🎬 Initializing video...');
-      _videoController = VideoPlayerController.asset('assets/images/crystal_bg.mp4');
-      await _videoController.initialize();
-      print('🎬 Video initialized successfully');
-      print('🎬 Video size: ${_videoController.value.size}');
-      print('🎬 Video duration: ${_videoController.value.duration}');
-      
-      _videoController.setLooping(true);
-      _videoController.setVolume(0.0); // Mute the video
-      _videoController.play();
-      print('🎬 Video started playing');
-      
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-      }
-    } catch (e) {
-      print('❌ Error initializing video: $e');
-      print('🎨 Using fallback gradient background instead');
-      // If video fails to load, continue without it
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = false;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_isVideoInitialized) {
-      _videoController.dispose();
-    }
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Fallback background
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Fallback background (crystal-like gradient)
-          if (!_isVideoInitialized)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.deepPurple.withOpacity(0.9),
-                    Colors.indigo.withOpacity(0.8),
-                    Colors.blue.withOpacity(0.7),
-                    Colors.cyan.withOpacity(0.8),
-                    Colors.teal.withOpacity(0.9),
-                  ],
-                  stops: [0.0, 0.25, 0.5, 0.75, 1.0],
-                ),
-              ),
+          // Diagonal dots pattern background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: DiagonalDotsPainter(),
             ),
-          
-          // Video Background
-          if (_isVideoInitialized)
-            Positioned.fill(
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.center,
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.width / _videoController.value.aspectRatio,
-                      child: VideoPlayer(_videoController),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          
-          // Dark overlay for better text readability
-          Container(
-            color: Colors.black.withOpacity(0.3),
           ),
           
           // Main Content
@@ -139,15 +38,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               style: TextStyle(
                                 fontSize: 48,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                                color: Colors.black,
                                 letterSpacing: 1.0,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(2, 2),
-                                    blurRadius: 4,
-                                    color: Colors.black.withOpacity(0.5),
-                                  ),
-                                ],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -156,15 +48,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: Colors.black,
                                 letterSpacing: 0.5,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(1, 1),
-                                    blurRadius: 2,
-                                    color: Colors.black.withOpacity(0.5),
-                                  ),
-                                ],
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -173,14 +58,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(1, 1),
-                                    blurRadius: 2,
-                                    color: Colors.black.withOpacity(0.5),
-                                  ),
-                                ],
+                                color: Colors.black87,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -272,4 +150,50 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       ),
     );
   }
+}
+
+class DiagonalDotsPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+
+    // Create diagonal pattern of dots
+    const double dotSize = 8.0;
+    const double spacing = 40.0;
+    
+    // Calculate how many dots we need diagonally
+    final double diagonalLength = size.width + size.height;
+    final int dotsCount = (diagonalLength / spacing).ceil();
+    
+    for (int i = 0; i < dotsCount; i++) {
+      final double x = i * spacing * 0.7; // Diagonal movement
+      final double y = i * spacing * 0.7; // Diagonal movement
+      
+      // Only draw dots in the upper half of the screen
+      if (y < size.height * 0.5 && x < size.width) {
+        canvas.drawCircle(
+          Offset(x, y),
+          dotSize / 2,
+          paint,
+        );
+      }
+    }
+    
+    // Add some random variation for more organic look
+    for (int i = 0; i < 15; i++) {
+      final double x = (i * 60.0) % size.width;
+      final double y = (i * 45.0) % (size.height * 0.5);
+      
+      canvas.drawCircle(
+        Offset(x, y),
+        dotSize / 2,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
