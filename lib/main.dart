@@ -12,6 +12,7 @@ import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
+import 'screens/role_selection_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/tool_detail_screen.dart';
@@ -294,10 +295,10 @@ class HvacToolsManagerApp extends StatelessWidget {
     print('🔍 isAuthenticated: ${authProvider.isAuthenticated}');
     
     try {
-      // For web, show login screen initially (no backend for now)
+      // For web, show role selection screen initially (no backend for now)
       if (kIsWeb) {
-        print('🔍 Web platform detected, showing LoginScreen');
-        return const LoginScreen();
+        print('🔍 Web platform detected, showing RoleSelectionScreen');
+        return const RoleSelectionScreen();
       }
       
       // Show loading screen during initialization or any loading state
@@ -341,14 +342,14 @@ class HvacToolsManagerApp extends StatelessWidget {
           );
         }
       } else {
-        print('🔍 User not authenticated, showing login screen');
-        return const LoginScreen();
+        print('🔍 User not authenticated, showing role selection screen');
+        return const RoleSelectionScreen();
       }
     } catch (e, stackTrace) {
-      // Always fallback to login screen on any error
+      // Always fallback to role selection screen on any error
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
-      return const LoginScreen();
+      return const RoleSelectionScreen();
     }
   }
 }
