@@ -22,11 +22,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   Future<void> _initializeVideo() async {
     try {
+      print('🎬 Initializing video...');
       _videoController = VideoPlayerController.asset('assets/images/crystal_bg.mp4');
       await _videoController.initialize();
+      print('🎬 Video initialized successfully');
+      print('🎬 Video size: ${_videoController.value.size}');
+      print('🎬 Video duration: ${_videoController.value.duration}');
+      
       _videoController.setLooping(true);
       _videoController.setVolume(0.0); // Mute the video
       _videoController.play();
+      print('🎬 Video started playing');
       
       if (mounted) {
         setState(() {
@@ -34,7 +40,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
         });
       }
     } catch (e) {
-      print('Error initializing video: $e');
+      print('❌ Error initializing video: $e');
       // If video fails to load, continue without it
       if (mounted) {
         setState(() {
@@ -53,18 +59,39 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.black, // Fallback background
       body: Stack(
         children: [
+          // Fallback background (gradient)
+          if (!_isVideoInitialized)
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.purple.withOpacity(0.8),
+                    Colors.blue.withOpacity(0.8),
+                    Colors.teal.withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+          
           // Video Background
           if (_isVideoInitialized)
             Positioned.fill(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _videoController.value.size.width,
-                  height: _videoController.value.size.height,
-                  child: VideoPlayer(_videoController),
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.center,
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.width / _videoController.value.aspectRatio,
+                      child: VideoPlayer(_videoController),
+                    ),
+                  ),
                 ),
               ),
             ),
