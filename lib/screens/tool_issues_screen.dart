@@ -114,10 +114,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                           issueProvider.error!.contains('Please log in'))
                         ElevatedButton(
                           onPressed: () {
-                            // Navigate to login screen
+                            // Navigate to role selection screen
                             Navigator.pushNamedAndRemoveUntil(
                               context, 
-                              '/login', 
+                              '/role-selection', 
                               (route) => false
                             );
                           },
@@ -125,7 +125,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                           ),
-                          child: Text('Login'),
+                          child: Text('Sign In'),
                         ),
                     ],
                   ),

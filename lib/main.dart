@@ -13,7 +13,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
-import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
@@ -254,7 +253,7 @@ class HvacToolsManagerApp extends StatelessWidget {
               );
             },
             routes: {
-              '/login': (context) => const LoginScreen(),
+              '/role-selection': (context) => const RoleSelectionScreen(),
               '/register': (context) => const RegisterScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
