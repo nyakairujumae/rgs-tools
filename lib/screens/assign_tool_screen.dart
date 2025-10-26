@@ -24,27 +24,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
-        actions: [
-          if (_selectedTools.isNotEmpty)
-            TextButton(
-              onPressed: () {
-                // Navigate to technicians screen with selected tools
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TechniciansScreen(),
-                    settings: RouteSettings(
-                      arguments: {'selectedTools': _selectedTools.toList()},
-                    ),
-                  ),
-                );
-              },
-              child: Text(
-                'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''}',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-        ],
+        actions: [],
       ),
       body: Consumer<SupabaseToolProvider>(
         builder: (context, toolProvider, child) {
@@ -129,6 +109,41 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     children: tools.map((tool) {
                       return _buildToolCard(context, tool);
                     }).toList(),
+                  ),
+                ),
+              ),
+              
+              // Assignment Button - Always visible at bottom
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _selectedTools.isNotEmpty ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TechniciansScreen(),
+                          settings: RouteSettings(
+                            arguments: {'selectedTools': _selectedTools.toList()},
+                          ),
+                        ),
+                      );
+                    } : null,
+                    icon: Icon(Icons.people),
+                    label: Text(_selectedTools.isNotEmpty 
+                        ? 'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} to Technicians'
+                        : 'Select Tools First'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _selectedTools.isNotEmpty 
+                          ? Theme.of(context).primaryColor 
+                          : Colors.grey,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
               ),
