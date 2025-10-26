@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 import 'admin_registration_screen.dart';
 import 'technician_registration_screen.dart';
@@ -22,6 +23,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   Future<void> _initializeVideo() async {
     try {
+      // Skip video on web and some platforms where it's not supported
+      if (kIsWeb) {
+        print('🌐 Web platform detected, skipping video background');
+        if (mounted) {
+          setState(() {
+            _isVideoInitialized = false;
+          });
+        }
+        return;
+      }
+      
       print('🎬 Initializing video...');
       _videoController = VideoPlayerController.asset('assets/images/crystal_bg.mp4');
       await _videoController.initialize();
@@ -41,6 +53,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       }
     } catch (e) {
       print('❌ Error initializing video: $e');
+      print('🎨 Using fallback gradient background instead');
       // If video fails to load, continue without it
       if (mounted) {
         setState(() {
@@ -52,7 +65,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   @override
   void dispose() {
-    _videoController.dispose();
+    if (_isVideoInitialized) {
+      _videoController.dispose();
+    }
     super.dispose();
   }
 
@@ -62,7 +77,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       backgroundColor: Colors.black, // Fallback background
       body: Stack(
         children: [
-          // Fallback background (gradient)
+          // Fallback background (crystal-like gradient)
           if (!_isVideoInitialized)
             Container(
               decoration: BoxDecoration(
@@ -70,10 +85,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.purple.withOpacity(0.8),
-                    Colors.blue.withOpacity(0.8),
-                    Colors.teal.withOpacity(0.8),
+                    Colors.deepPurple.withOpacity(0.9),
+                    Colors.indigo.withOpacity(0.8),
+                    Colors.blue.withOpacity(0.7),
+                    Colors.cyan.withOpacity(0.8),
+                    Colors.teal.withOpacity(0.9),
                   ],
+                  stops: [0.0, 0.25, 0.5, 0.75, 1.0],
                 ),
               ),
             ),
