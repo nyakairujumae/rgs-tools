@@ -20,7 +20,6 @@ import 'web/checkout_screen_web.dart';
 import 'web/checkin_screen_web.dart';
 import 'reports_screen.dart';
 import 'permanent_assignment_screen.dart';
-import 'bulk_assignment_screen.dart';
 import 'maintenance_screen.dart';
 import 'cost_analytics_screen.dart';
 import 'settings_screen.dart';
@@ -724,21 +723,6 @@ class DashboardScreen extends StatelessWidget {
               SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Bulk Assign',
-                      Icons.group_add,
-                      Colors.purple,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BulkAssignmentScreen(),
-                        ),
-                      ),
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickActionCard(
                       'Reports',
