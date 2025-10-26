@@ -154,6 +154,15 @@ class AuthProvider with ChangeNotifier {
       if (response.user != null) {
         _user = response.user;
         await _loadUserRole();
+        
+        // Validate admin domain restrictions
+        if (_userRole == UserRole.admin) {
+          if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
+            // User has admin role but doesn't have admin domain - revoke access
+            await signOut();
+            throw Exception('Admin access is restricted to @royalgulf.ae and @mekar.ae domains');
+          }
+        }
       }
 
       return response;

@@ -291,6 +291,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
+        // Check if user is trying to access admin with non-admin domain
+        if (authProvider.isAdmin) {
+          final email = _emailController.text.trim();
+          if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
+            // User has admin role but doesn't have admin domain - this shouldn't happen
+            // but let's handle it gracefully
+            AuthErrorHandler.showErrorSnackBar(
+              context,
+              'Access denied: Admin access is restricted to @royalgulf.ae and @mekar.ae domains',
+            );
+            await authProvider.signOut();
+            return;
+          }
+        }
+
         AuthErrorHandler.showSuccessSnackBar(
           context,
           '🎉 Welcome back! Successfully signed in.',
