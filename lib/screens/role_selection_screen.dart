@@ -9,19 +9,8 @@ class RoleSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Background image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/dot.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-          
-          // Main Content
-          SafeArea(
-            child: Padding(
+      body: SafeArea(
+        child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
@@ -147,8 +136,6 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
     );
   }
 }
