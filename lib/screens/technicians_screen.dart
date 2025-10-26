@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_technician_provider.dart';
+import '../providers/supabase_tool_provider.dart';
 import '../models/technician.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
@@ -400,9 +401,31 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         ),
       );
 
-      // Here you would implement the actual assignment logic
-      // For now, we'll just simulate the assignment
-      await Future.delayed(Duration(seconds: 2));
+      // Get technician provider and tool provider
+      final technicianProvider = context.read<SupabaseTechnicianProvider>();
+      final toolProvider = context.read<SupabaseToolProvider>();
+      
+      // Get technician details for each selected technician
+      final technicians = technicianProvider.technicians.where((tech) => 
+        tech.id != null && _selectedTechnicians.contains(tech.id!)
+      ).toList();
+
+      // Assign each tool to each selected technician
+      for (final toolId in _selectedTools!) {
+        for (final technician in technicians) {
+          // Use technician name as the assigned_to value
+          await toolProvider.updateTool(
+            toolProvider.tools.firstWhere((tool) => tool.id == toolId).copyWith(
+              assignedTo: technician.name,
+              status: 'Assigned',
+              toolType: 'assigned',
+            )
+          );
+        }
+      }
+
+      // Refresh tools to get updated data
+      await toolProvider.loadTools();
 
       // Close loading dialog
       Navigator.pop(context);
