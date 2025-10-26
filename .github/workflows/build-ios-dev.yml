@@ -1,0 +1,72 @@
+name: Build iOS Development IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios-dev:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run Flutter analyze
+      run: flutter analyze
+      
+    - name: Build iOS app (Debug)
+      run: |
+        flutter build ios --debug --no-codesign
+        
+    - name: Create IPA for development
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ../../../RGS-HVAC-Tools-dev.ipa Payload
+        rm -rf Payload
+        
+    - name: Upload Development IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-development-ipa
+        path: RGS-HVAC-Tools-dev.ipa
+        retention-days: 7
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: RGS-HVAC-Tools-dev.ipa
+        tag_name: dev-${{ github.run_number }}
+        name: Development Build ${{ github.run_number }}
+        body: |
+          Development build of RGS HVAC Tools Manager
+          
+          **Installation:**
+          1. Download the IPA file
+          2. Install via Xcode or Apple Configurator 2
+          3. Trust the developer certificate in Settings > General > VPN & Device Management
+          
+          **Build Info:**
+          - Commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
+          - Build: ${{ github.run_number }}
+        draft: false
+        prerelease: true
