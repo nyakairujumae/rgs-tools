@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common/rgs_logo.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
+import '../role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -359,6 +360,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleSignUp() {
-    Navigator.pushNamed(context, '/register');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RoleSelectionScreen(),
+      ),
+    );
   }
 }
