@@ -9,7 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_handler.dart';
 import '../../widgets/common/status_chip.dart';
 import '../../widgets/common/rgs_logo.dart';
-import '../auth/login_screen.dart';
+import 'web_login_screen.dart';
 import 'web_tools_screen.dart';
 import 'web_technicians_screen.dart';
 import 'web_reports_screen.dart';

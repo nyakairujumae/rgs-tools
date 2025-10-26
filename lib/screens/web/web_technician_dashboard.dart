@@ -7,7 +7,7 @@ import "../../providers/supabase_tool_provider.dart";
 import '../../providers/supabase_technician_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../auth/login_screen.dart';
+import 'web_login_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/status_chip.dart';
 import '../../widgets/common/empty_state.dart';
