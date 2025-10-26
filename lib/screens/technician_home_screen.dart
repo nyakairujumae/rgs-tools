@@ -275,16 +275,33 @@ class TechnicianDashboardScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${_getGreeting()}, ${authProvider.userFullName ?? 'Technician'}!',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '${_getGreeting()}, ${authProvider.userFullName ?? 'Technician'}!',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                'Manage your tools and access shared resources',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[400],
+                              SizedBox(height: 4),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Manage your tools and access shared resources',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.grey[400],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
                             ],

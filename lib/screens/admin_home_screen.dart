@@ -562,16 +562,33 @@ class DashboardScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${_getGreeting()}, ${authProvider.userFullName ?? 'Admin'}!',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '${_getGreeting()}, ${authProvider.userFullName ?? 'Admin'}!',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                'Manage your HVAC tools and technicians',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[400],
+                              SizedBox(height: 4),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Manage your HVAC tools and technicians',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.grey[400],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
                             ],
@@ -802,6 +819,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context, VoidCallback? onTap) {
+    final mediaQuery = MediaQuery.of(context);
+    final textScaleFactor = mediaQuery.textScaleFactor;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -826,25 +846,28 @@ class DashboardScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Large value at the top
+            // Large value at the top - responsive font size
             Flexible(
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28,
-                  letterSpacing: -0.5,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: (28 / textScaleFactor).clamp(16.0, 32.0), // Responsive font size
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
-            // Icon in the middle
+            SizedBox(height: (8 / textScaleFactor).clamp(4.0, 12.0)),
+            // Icon in the middle - responsive size
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all((8 / textScaleFactor).clamp(4.0, 12.0)),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -852,23 +875,26 @@ class DashboardScreen extends StatelessWidget {
               child: Icon(
                 icon, 
                 color: color, 
-                size: 20,
+                size: (20 / textScaleFactor).clamp(16.0, 24.0), // Responsive icon size
               ),
             ),
-            const SizedBox(height: 8),
-            // Title at the bottom
+            SizedBox(height: (8 / textScaleFactor).clamp(4.0, 12.0)),
+            // Title at the bottom - responsive font size
             Flexible(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+                    fontSize: (12 / textScaleFactor).clamp(10.0, 16.0), // Responsive font size
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -878,12 +904,18 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatusItem(String status, String count, Color color, BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final textScaleFactor = mediaQuery.textScaleFactor;
+    
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), // Reduced padding
+        padding: EdgeInsets.symmetric(
+          vertical: (12 / textScaleFactor).clamp(8.0, 16.0), 
+          horizontal: (8 / textScaleFactor).clamp(4.0, 12.0)
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12), // Smaller border radius
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.grey.withValues(alpha: 0.1),
             width: 1,
@@ -892,16 +924,21 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              count,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 20, // Reduced from 28
-                letterSpacing: -0.5,
+            // Count - responsive font size
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                count,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: (20 / textScaleFactor).clamp(14.0, 28.0), // Responsive font size
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
-            const SizedBox(height: 4), // Reduced spacing
+            SizedBox(height: (4 / textScaleFactor).clamp(2.0, 8.0)),
+            // Status label - responsive font size
             Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -909,11 +946,13 @@ class DashboardScreen extends StatelessWidget {
                   status,
                   style: TextStyle(
                     color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-                    fontSize: 12, // Reduced from 14
+                    fontSize: (12 / textScaleFactor).clamp(8.0, 16.0), // Responsive font size
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
