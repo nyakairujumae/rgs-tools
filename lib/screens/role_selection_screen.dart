@@ -156,35 +156,37 @@ class DiagonalDotsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.7) // Much darker - near black
+      ..color = Colors.black.withOpacity(0.7)
       ..style = PaintingStyle.fill;
 
-    // Create diagonal pattern of dots - doubled the density
     const double dotSize = 8.0;
-    const double spacing = 20.0; // Reduced from 40.0 to 20.0 (doubled density)
     
-    // Calculate how many dots we need diagonally
-    final double diagonalLength = size.width + size.height;
-    final int dotsCount = (diagonalLength / spacing).ceil();
+    // Create many random dots across the upper half
+    final int totalDots = 80; // Increased total number of dots
     
-    for (int i = 0; i < dotsCount; i++) {
-      final double x = i * spacing * 0.7; // Diagonal movement
-      final double y = i * spacing * 0.7; // Diagonal movement
+    for (int i = 0; i < totalDots; i++) {
+      // Generate random positions in upper half
+      final double x = (i * 37.0 + (i * 13.0) % 23.0) % size.width;
+      final double y = (i * 29.0 + (i * 17.0) % 19.0) % (size.height * 0.5);
       
-      // Only draw dots in the upper half of the screen
-      if (y < size.height * 0.5 && x < size.width) {
-        canvas.drawCircle(
-          Offset(x, y),
-          dotSize / 2,
-          paint,
-        );
-      }
+      // Add some variation to make it more organic
+      final double offsetX = (i % 7) * 3.0;
+      final double offsetY = (i % 11) * 2.0;
+      
+      final double finalX = (x + offsetX) % size.width;
+      final double finalY = (y + offsetY) % (size.height * 0.5);
+      
+      canvas.drawCircle(
+        Offset(finalX, finalY),
+        dotSize / 2,
+        paint,
+      );
     }
     
-    // Add more random variation for more organic look - doubled the count
-    for (int i = 0; i < 30; i++) { // Increased from 15 to 30
-      final double x = (i * 30.0) % size.width; // Reduced spacing from 60 to 30
-      final double y = (i * 22.5) % (size.height * 0.5); // Reduced spacing from 45 to 22.5
+    // Add some additional scattered dots for more density
+    for (int i = 0; i < 40; i++) {
+      final double x = (i * 43.0 + (i * 7.0) % 31.0) % size.width;
+      final double y = (i * 31.0 + (i * 19.0) % 23.0) % (size.height * 0.5);
       
       canvas.drawCircle(
         Offset(x, y),
