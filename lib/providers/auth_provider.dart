@@ -105,7 +105,7 @@ class AuthProvider with ChangeNotifier {
   ) async {
     // Validate email domain
     if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
-      throw Exception('Admin registration is only available for @royalgulf.ae and @mekar.ae domains');
+      throw Exception('Invalid email domain for admin registration');
     }
 
     await signUp(
@@ -160,7 +160,7 @@ class AuthProvider with ChangeNotifier {
           if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
             // User has admin role but doesn't have admin domain - revoke access
             await signOut();
-            throw Exception('Admin access is restricted to @royalgulf.ae and @mekar.ae domains');
+            throw Exception('Access denied: Invalid admin credentials');
           }
         }
       }

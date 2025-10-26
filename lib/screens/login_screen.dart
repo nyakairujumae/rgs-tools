@@ -299,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // but let's handle it gracefully
             AuthErrorHandler.showErrorSnackBar(
               context,
-              'Access denied: Admin access is restricted to @royalgulf.ae and @mekar.ae domains',
+              'Access denied: Invalid admin credentials',
             );
             await authProvider.signOut();
             return;

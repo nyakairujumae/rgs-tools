@@ -113,14 +113,13 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     labelText: 'Email Address',
                     prefixIcon: Icon(Icons.email),
                     border: OutlineInputBorder(),
-                    helperText: 'Must be @royalgulf.ae or @mekar.ae',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email address';
                     }
                     if (!value.contains('@royalgulf.ae') && !value.contains('@mekar.ae')) {
-                      return 'Admin registration is only available for @royalgulf.ae and @mekar.ae domains';
+                      return 'Invalid email domain for admin registration';
                     }
                     return null;
                   },
