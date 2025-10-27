@@ -1,15 +1,15 @@
 {
   "project_info": {
-    "project_number": "YOUR_PROJECT_NUMBER",
-    "project_id": "rgs-hvac-tools",
-    "storage_bucket": "rgs-hvac-tools.appspot.com"
+    "project_number": "258248380025",
+    "project_id": "rgstools",
+    "storage_bucket": "rgstools.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_APP_ID_HERE",
+        "mobilesdk_app_id": "1:258248380025:android:YOUR_ANDROID_APP_ID",
         "android_client_info": {
-          "package_name": "com.royalgulf.hvactools"
+          "package_name": "com.rgs.app"
         }
       },
       "oauth_client": [
@@ -20,7 +20,7 @@
       ],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY_HERE"
+          "current_key": "AIzaSyATWy2PehsPtOm4alZ7TAdtAy9ybAP8ipo"
         }
       ],
       "services": {

@@ -1,9 +1,9 @@
 class FirebaseConfig {
   // Firebase project configuration
-  static const String projectId = 'rgs-hvac-tools';
-  static const String apiKey = 'YOUR_API_KEY_HERE';
-  static const String appId = 'YOUR_APP_ID_HERE';
-  static const String messagingSenderId = 'YOUR_SENDER_ID_HERE';
+  static const String projectId = 'rgstools';
+  static const String apiKey = 'AIzaSyATWy2PehsPtOm4alZ7TAdtAy9ybAP8ipo';
+  static const String appId = '1:258248380025:ios:f4eab4df948f333d3e4ea8';
+  static const String messagingSenderId = '258248380025';
   
   // FCM topics
   static const String adminTopic = 'admin_notifications';
