@@ -5,18 +5,18 @@ class RGSLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RGS text - bigger and bold
+    // RGS text - smaller to fit in app bar
     final rgsStyle = TextStyle(
-      fontSize: 36, // Increased from 28
+      fontSize: 24, // Reduced from 36 to fit better in app bar
       fontWeight: FontWeight.w800,
       color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
       letterSpacing: 0.5,
     );
     const rgsText = 'RGS';
 
-    // HVAC SERVICES text - bigger, positioned below RGS
+    // HVAC SERVICES text - smaller to fit in app bar
     final hvacStyle = TextStyle(
-      fontSize: 12, // Increased from 10
+      fontSize: 10, // Reduced from 12 to fit better in app bar
       fontWeight: FontWeight.w500,
       color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
       letterSpacing: 0.1,

@@ -65,7 +65,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         toolbarHeight: 80,
-        title: const RGSLogo(),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: const RGSLogo(),
+        ),
         centerTitle: true,
         actions: [
           Consumer<AuthProvider>(
