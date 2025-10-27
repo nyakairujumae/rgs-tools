@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/web/web_login_screen.dart';
 import 'screens/web/web_admin_dashboard.dart';
 import 'screens/web/web_technician_dashboard.dart';
@@ -27,6 +29,7 @@ import 'providers/pending_approvals_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
+import 'services/firebase_messaging_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +44,20 @@ void main() async {
   };
 
   try {
+    // Initialize Firebase (skip on web for now to avoid issues)
+    if (!kIsWeb) {
+      print('Initializing Firebase...');
+      await Firebase.initializeApp();
+      print('Firebase initialized successfully');
+      
+      // Set up Firebase Messaging background handler
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      
+      // Initialize Firebase Messaging
+      await FirebaseMessagingService.initialize();
+      print('Firebase Messaging initialized successfully');
+    }
+
     // Initialize Supabase (skip on web for now to avoid issues)
     if (!kIsWeb) {
       print('Initializing Supabase...');
@@ -359,4 +376,11 @@ class HvacToolsManagerApp extends StatelessWidget {
       return const RoleSelectionScreen();
     }
   }
+}
+
+/// Background message handler (must be top-level function)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('🔥 Background message handler: ${message.messageId}');
+  print('🔥 Message data: ${message.data}');
 }
