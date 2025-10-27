@@ -72,7 +72,7 @@ class FirebaseMessagingService {
   /// Set up message handlers
   static void _setupMessageHandlers() {
     // Handle messages when app is in foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    _messaging.onMessage.listen((RemoteMessage message) {
       debugPrint('🔥 Received foreground message: ${message.messageId}');
       debugPrint('🔥 Message data: ${message.data}');
       debugPrint('🔥 Message notification: ${message.notification?.title}');
@@ -82,13 +82,13 @@ class FirebaseMessagingService {
     });
 
     // Handle messages when app is opened from background
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _messaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('🔥 App opened from background message: ${message.messageId}');
       _handleBackgroundMessage(message);
     });
 
     // Handle messages when app is terminated
-    FirebaseMessaging.getInitialMessage().then((RemoteMessage? message) {
+    _messaging.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
         debugPrint('🔥 App opened from terminated state: ${message.messageId}');
         _handleBackgroundMessage(message);
