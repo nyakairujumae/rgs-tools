@@ -1,6 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/firebase_config.dart';
 
@@ -72,7 +71,7 @@ class FirebaseMessagingService {
   /// Set up message handlers
   static void _setupMessageHandlers() {
     // Handle messages when app is in foreground
-    _messaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('🔥 Received foreground message: ${message.messageId}');
       debugPrint('🔥 Message data: ${message.data}');
       debugPrint('🔥 Message notification: ${message.notification?.title}');
@@ -82,13 +81,13 @@ class FirebaseMessagingService {
     });
 
     // Handle messages when app is opened from background
-    _messaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('🔥 App opened from background message: ${message.messageId}');
       _handleBackgroundMessage(message);
     });
 
     // Handle messages when app is terminated
-    _messaging.getInitialMessage().then((RemoteMessage? message) {
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
         debugPrint('🔥 App opened from terminated state: ${message.messageId}');
         _handleBackgroundMessage(message);
