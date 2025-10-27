@@ -1,8 +1,8 @@
 class FirebaseConfig {
   // Firebase project configuration
   static const String projectId = 'rgstools';
-  static const String apiKey = 'AIzaSyATWy2PehsPtOm4alZ7TAdtAy9ybAP8ipo';
-  static const String appId = '1:258248380025:ios:f4eab4df948f333d3e4ea8';
+  static const String apiKey = 'AIzaSyAa6G0Q32pKH-S5_hW-ASS815S1_QyPgH4';
+  static const String appId = '1:258248380025:android:288b94751360ed603e4ea8';
   static const String messagingSenderId = '258248380025';
   
   // FCM topics

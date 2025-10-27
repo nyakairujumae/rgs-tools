@@ -7,30 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:258248380025:android:YOUR_ANDROID_APP_ID",
+        "mobilesdk_app_id": "1:258248380025:android:288b94751360ed603e4ea8",
         "android_client_info": {
           "package_name": "com.rgs.app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "YOUR_CLIENT_ID_HERE",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyATWy2PehsPtOm4alZ7TAdtAy9ybAP8ipo"
+          "current_key": "AIzaSyAa6G0Q32pKH-S5_hW-ASS815S1_QyPgH4"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "YOUR_CLIENT_ID_HERE",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
