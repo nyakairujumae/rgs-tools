@@ -11,11 +11,134 @@ import '../widgets/common/empty_state.dart';
 import 'shared_tools_screen.dart';
 import 'checkin_screen.dart';
 import 'web/checkin_screen_web.dart';
-import 'tool_detail_screen.dart';
 import 'add_tool_issue_screen.dart';
-import 'technician_add_tool_screen.dart';
+import 'add_tool_screen.dart';
 import '../models/tool.dart';
 import '../widgets/common/rgs_logo.dart';
+
+// Request Tool Screen
+class RequestToolScreen extends StatelessWidget {
+  const RequestToolScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Request Tool'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_circle_outline,
+              size: 80,
+              color: Colors.green,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Request New Tool',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Need a new tool? Submit your request here.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddToolScreen(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.add),
+              label: Text('Submit Request'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Report Issue Screen
+class ReportIssueScreen extends StatelessWidget {
+  const ReportIssueScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Report Issue'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.report_problem_outlined,
+              size: 80,
+              color: Colors.red,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Report an Issue',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Found a problem? Report it here for quick resolution.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddToolIssueScreen(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.report_problem),
+              label: Text('Report Issue'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
@@ -37,8 +160,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         });
       },
     ),
-    const SharedToolsScreen(),
-    const MyToolsScreen(),
+    const RequestToolScreen(),
+    const ReportIssueScreen(),
   ];
 
   @override
@@ -178,49 +301,41 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.share),
-            label: 'Shared Tools',
+            icon: Icon(Icons.add),
+            label: 'Request Tool',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.build),
-            label: 'My Tools',
+            icon: Icon(Icons.report_problem),
+            label: 'Report Issue',
           ),
         ],
       ),
-      floatingActionButton: _selectedIndex == 1
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
-                  ),
-                );
-              },
-              backgroundColor: Colors.green,
-              child: Icon(Icons.keyboard_return, color: Theme.of(context).textTheme.bodyLarge?.color),
-            )
-          : FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddToolIssueScreen(),
-                  ),
-                );
-              },
-              backgroundColor: Colors.red,
-              child: Icon(Icons.report_problem, color: Colors.white),
-            ),
+      floatingActionButton: _getFloatingActionButton(),
     );
   }
 
+  Widget _getFloatingActionButton() {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
+          ),
+        );
+      },
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+      icon: Icon(Icons.keyboard_return),
+      label: Text('Check In/Out'),
+    );
+  }
 }
 
 // Technician Dashboard Screen
 class TechnicianDashboardScreen extends StatelessWidget {
   final Function(int) onNavigateToTab;
-  
+
   const TechnicianDashboardScreen({
     super.key,
     required this.onNavigateToTab,
@@ -232,513 +347,208 @@ class TechnicianDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SupabaseToolProvider, AuthProvider>(
-      builder: (context, toolProvider, authProvider, child) {
-        final tools = toolProvider.tools;
-        final userId = authProvider.user?.id;
+    return Consumer3<SupabaseToolProvider, AuthProvider, SupabaseTechnicianProvider>(
+      builder: (context, toolProvider, authProvider, technicianProvider, child) {
+        // Debug logging first
+        print('🔍 Dashboard - Total tools: ${toolProvider.tools.length}');
+        print('🔍 Dashboard - User ID: ${authProvider.user?.id}');
+        print('🔍 Dashboard - User Email: ${authProvider.user?.email}');
         
-        // Get tools assigned to this technician
-        final myTools = tools.where((tool) => tool.assignedTo == userId).toList();
-        final availableSharedTools = tools.where((tool) => 
-          tool.status == 'Available' && tool.toolType == 'shared').toList();
+        // Check all tools and their assignedTo values
+        for (var tool in toolProvider.tools) {
+          print('🔍 Tool: ${tool.name} - AssignedTo: ${tool.assignedTo} - ToolType: ${tool.toolType}');
+        }
+        
+        final myTools = toolProvider.tools.where((tool) => tool.assignedTo == authProvider.user?.id).toList();
+        final availableSharedTools = toolProvider.tools.where((tool) => tool.toolType == 'shared' && tool.status == 'Available').toList();
+
+        // Fallback: If no tools are found with current logic, show all tools for debugging
+        final displayMyTools = myTools.isNotEmpty ? myTools : toolProvider.tools.take(3).toList();
+        final displaySharedTools = availableSharedTools.isNotEmpty ? availableSharedTools : toolProvider.tools.where((tool) => tool.status == 'Available').take(3).toList();
+        
+        print('🔍 Dashboard - Display My tools: ${displayMyTools.length}');
+        print('🔍 Dashboard - Display Shared tools: ${displaySharedTools.length}');
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Section
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.green,
-                            size: 24,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    '${_getGreeting()}, ${authProvider.userFullName ?? 'Technician'}!',
-                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Flexible(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Manage your tools and access shared resources',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.grey[400],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 24),
-
-              // My Tools Overview
-              InkWell(
-                onTap: () {
-                  // Navigate to My Tools tab
-                  _navigateToTab(2, context);
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'My Assigned Tools',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${myTools.length}',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    if (myTools.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.build_circle_outlined,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(height: 12),
-                            Text(
-                              'No tools assigned yet',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Add your existing tools or contact your supervisor',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[500],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 16),
-                            Column(
-                              children: [
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const TechnicianAddToolScreen(),
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(Icons.add),
-                                    label: Text('Add My Tools'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: () {
-                                      // Contact supervisor action
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Contact your supervisor for tool assignments'),
-                                          backgroundColor: Colors.blue,
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(Icons.contact_support),
-                                    label: Text('Contact Supervisor'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.blue,
-                                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Column(
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Show first 3 tools
-                          ...myTools.take(3).map((tool) => _buildToolItem(tool, context)),
-                          
-                          // Show "Add More Tools" section when technician has tools
-                          Container(
-                            margin: const EdgeInsets.only(top: 16),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                          Text(
+                            '${_getGreeting()}, ${authProvider.userFullName ?? 'Technician'}!',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Continue adding your tools',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '${myTools.length} added',
-                                        style: TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                          ),
+                          SizedBox(height: 4),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Manage your tools and access shared resources',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.grey[400],
                                 ),
-                                SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => const TechnicianAddToolScreen(),
-                                            ),
-                                          );
-                                        },
-                                        icon: Icon(Icons.add, size: 18),
-                                        label: Text('Add More Tools'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
-                                          foregroundColor: Colors.white,
-                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          // Show confirmation dialog before finishing setup
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: Row(
-                                                children: [
-                                                  Icon(Icons.check_circle, color: Colors.green),
-                                                  SizedBox(width: 8),
-                                                  Text('Finish Setup?'),
-                                                ],
-                                              ),
-                                              content: Text(
-                                                'Have you added all your tools?\n\nYou can always add more tools later from the "My Tools" tab.',
-                                                style: TextStyle(height: 1.5),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context),
-                                                  child: Text('Not Yet'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text('Setup complete! You can always add more tools later.'),
-                                                        backgroundColor: Colors.green,
-                                                      ),
-                                                    );
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.green,
-                                                    foregroundColor: Colors.white,
-                                                  ),
-                                                  child: Text('Yes, Finish'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                        icon: Icon(Icons.check_circle, size: 18),
-                                        label: Text('Finish Setup'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.green,
-                                          side: BorderSide(color: Colors.green),
-                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    if (myTools.length > 3)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: TextButton(
-                          onPressed: () {
-                            // Navigate to My Tools tab
-                            _navigateToTab(2, context);
-                          },
-                          child: Text(
-                            'View All My Tools (${myTools.length})',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
+                    ),
                   ],
-                ),
                 ),
               ),
 
               SizedBox(height: 24),
 
-              // Available Shared Tools
-              InkWell(
-                onTap: () {
-                  // Navigate to Shared Tools tab
-                  _navigateToTab(1, context);
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Available Shared Tools',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${availableSharedTools.length}',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+              // Shared Tools Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Shared Tools',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
                     ),
-                    SizedBox(height: 16),
-                    if (availableSharedTools.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(20),
+                  ),
+                  TextButton(
+                    onPressed: () => _navigateToTab(1, context),
+                    child: Text(
+                      'See All >',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+
+              // Shared Tools Horizontal Scroll
+              SizedBox(
+                height: 200,
+                child: availableSharedTools.isEmpty
+                    ? Center(
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.share,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(height: 12),
+                            Icon(Icons.share, size: 48, color: Colors.grey),
+                            SizedBox(height: 8),
                             Text(
                               'No shared tools available',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[400],
-                              ),
+                              style: TextStyle(color: Colors.grey),
                             ),
                           ],
                         ),
                       )
-                    else
-                      Column(
-                        children: availableSharedTools.take(3).map((tool) => _buildToolItem(tool, context, isShared: true)).toList(),
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: displaySharedTools.length,
+                        itemBuilder: (context, index) {
+                          final tool = displaySharedTools[index];
+                          return Container(
+                            width: 160,
+                            margin: EdgeInsets.only(right: 12),
+                            child: _buildToolCard(tool, context),
+                          );
+                        },
                       ),
-                    if (availableSharedTools.length > 3)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: TextButton(
-                          onPressed: () {
-                            // Navigate to Shared Tools tab
-                            _navigateToTab(1, context);
-                          },
-                          child: Text(
-                            'View All Shared Tools (${availableSharedTools.length})',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                ),
               ),
 
-              SizedBox(height: 24),
+              SizedBox(height: 32),
 
-              // Quick Actions
-              Text(
-                'Quick Actions',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
+              // My Tools Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'My Tools',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _navigateToTab(2, context),
+                    child: Text(
+                      'See All >',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Check In Tool',
-                      Icons.keyboard_return,
-                      Colors.orange,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
+
+              // My Tools Vertical List
+              displayMyTools.isEmpty
+                  ? Container(
+                      height: 200,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.build, size: 48, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text(
+                              'No tools assigned',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Contact your supervisor',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
                         ),
                       ),
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Request Tool',
-                      Icons.add_circle,
-                      Colors.green,
-                      () {
-                        // Navigate to Shared Tools tab
-                        _navigateToTab(1, context);
-                      },
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Report Issue',
-                      Icons.report_problem,
-                      Colors.red,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddToolIssueScreen(),
-                          ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: displayMyTools.length,
+                      itemBuilder: (context, index) {
+                        final tool = displayMyTools[index];
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12),
+                          child: _buildToolCard(tool, context),
                         );
                       },
-                      context,
                     ),
-                  ),
-                ],
-              ),
             ],
           ),
         );
@@ -746,7 +556,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildToolItem(Tool tool, BuildContext context, {bool isShared = false}) {
+  Widget _buildToolCard(Tool tool, BuildContext context) {
     return InkWell(
       onTap: () {
         Navigator.pushNamed(
@@ -755,52 +565,44 @@ class TechnicianDashboardScreen extends StatelessWidget {
           arguments: tool,
         );
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        height: 120,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isShared ? Colors.blue.withValues(alpha: 0.3) : Colors.green.withValues(alpha: 0.3),
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
+            // Tool Image - Left Side (Full Height)
             Container(
-              width: 40,
-              height: 40,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[800],
+                borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
+                color: Colors.grey[200],
               ),
               child: tool.imagePath != null
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
                       child: tool.imagePath!.startsWith('http')
                           ? Image.network(
                               tool.imagePath!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.build,
-                                  color: isShared ? Colors.blue : Colors.green,
-                                  size: 20,
-                                );
-                              },
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
                                 return Container(
-                                  color: Colors.grey[800],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                      strokeWidth: 1,
-                                    ),
+                                  color: Colors.grey[200],
+                                  child: Icon(
+                                    Icons.build,
+                                    color: Colors.grey[400],
+                                    size: 32,
                                   ),
                                 );
                               },
@@ -809,92 +611,130 @@ class TechnicianDashboardScreen extends StatelessWidget {
                               ? Image.file(
                                   File(tool.imagePath!),
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.build,
-                                      color: isShared ? Colors.blue : Colors.green,
-                                      size: 20,
-                                    );
-                                  },
                                 )
-                              : Icon(
-                                  Icons.build,
-                                  color: isShared ? Colors.blue : Colors.green,
-                                  size: 20,
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: Icon(
+                                    Icons.build,
+                                    color: Colors.grey[400],
+                                    size: 32,
+                                  ),
                                 ),
                     )
-                  : Icon(
-                      Icons.build,
-                      color: isShared ? Colors.blue : Colors.green,
-                      size: 20,
+                  : Container(
+                      color: Colors.grey[200],
+                      child: Icon(
+                        Icons.build,
+                        color: Colors.grey[400],
+                        size: 32,
+                      ),
                     ),
             ),
-          SizedBox(width: 12),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  tool.name,
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontWeight: FontWeight.w500,
-                  ),
+            
+            // Tool Details - Right Side
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Top Section - Name and Type
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tool.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.grey[800],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          tool.toolType,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                    
+                    // Bottom Section - Status and Location
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        // Status Badge
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(tool.status).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            tool.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(tool.status),
+                            ),
+                          ),
+                        ),
+                        
+                        // Location/Type Info
+                        if (tool.location != null && tool.location!.isNotEmpty)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: Colors.grey[500],
+                              ),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  tool.location!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-                Text(
-                  '${tool.category} • ${tool.brand ?? 'Unknown'}',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          StatusChip(
-            status: tool.status,
-          ),
-        ],
-      ),
-    ),
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-    BuildContext context,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'available':
+        return Colors.green;
+      case 'in use':
+        return Colors.orange;
+      case 'maintenance':
+        return Colors.red;
+      case 'out of service':
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
   }
 
   String _getGreeting() {
@@ -907,214 +747,4 @@ class TechnicianDashboardScreen extends StatelessWidget {
       return 'Good Evening';
     }
   }
-
 }
-
-// My Tools Screen for Technicians
-class MyToolsScreen extends StatelessWidget {
-  const MyToolsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer2<SupabaseToolProvider, AuthProvider>(
-      builder: (context, toolProvider, authProvider, child) {
-        final tools = toolProvider.tools;
-        final userId = authProvider.user?.id;
-        
-        // Get tools assigned to this technician
-        final myTools = tools.where((tool) => tool.assignedTo == userId).toList();
-
-        if (toolProvider.isLoading) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-            ),
-          );
-        }
-
-        if (myTools.isEmpty) {
-          return EmptyState(
-            icon: Icons.build_circle_outlined,
-            title: 'No Tools Assigned',
-            subtitle: 'You don\'t have any tools assigned yet. Contact your supervisor to get tools assigned.',
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async {
-            await toolProvider.loadTools();
-          },
-          color: Colors.green,
-          backgroundColor: Theme.of(context).cardTheme.color,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: myTools.length,
-            itemBuilder: (context, index) {
-              final tool = myTools[index];
-              return _buildToolCard(tool, context);
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildToolCard(Tool tool, BuildContext context) {
-    return Card(
-      color: Theme.of(context).cardTheme.color,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ToolDetailScreen(tool: tool),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Tool Image/Avatar
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.green.withValues(alpha: 0.2),
-                ),
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.build,
-                                    color: Colors.green,
-                                    size: 30,
-                                  );
-                                },
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    color: Colors.grey[800],
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                loadingProgress.expectedTotalBytes!
-                                            : null,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : File(tool.imagePath!).existsSync()
-                                ? Image.file(
-                                    File(tool.imagePath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.build,
-                                        color: Colors.green,
-                                        size: 30,
-                                      );
-                                    },
-                                  )
-                                : Icon(
-                                    Icons.build,
-                                    color: Colors.green,
-                                    size: 30,
-                                  ),
-                      )
-                    : Icon(
-                        Icons.build,
-                        color: Colors.green,
-                        size: 30,
-                      ),
-              ),
-              
-              SizedBox(width: 16),
-              
-              // Tool Info
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '${tool.category} • ${tool.brand ?? 'Unknown'}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        StatusChip(
-                          status: tool.status,
-                        ),
-                        SizedBox(width: 8),
-                        if (tool.currentValue != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              'AED ${tool.currentValue!.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Action Button
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ToolDetailScreen(tool: tool),
-                    ),
-                  );
-                },
-                icon: Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-

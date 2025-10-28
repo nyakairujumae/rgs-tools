@@ -77,7 +77,7 @@ class AuthProvider with ChangeNotifier {
         password: password,
         data: {
           'full_name': fullName,
-          'role': role?.value ?? 'pending', // Default to 'pending' for new registrations
+          'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
         },
       );
 
@@ -127,12 +127,12 @@ class AuthProvider with ChangeNotifier {
     String? hireDate,
     File? profileImage,
   ) async {
-    // First, create the auth user with 'pending' role
+    // First, create the auth user with 'technician' role
     await signUp(
       email: email,
       password: password,
       fullName: name,
-      role: null, // Let it default to 'pending'
+      role: UserRole.technician, // Explicitly set as technician
     );
     
     // Then submit for admin approval instead of directly creating technician record
@@ -306,23 +306,54 @@ _isLoading = false;
             return;
           }
         } catch (e) {
-          // If user record doesn't exist, create a default admin user
+          // If user record doesn't exist, check if this is a new registration
           if (e.toString().contains('0 rows')) {
-            debugPrint('🔄 User record not found, creating default admin user...');
+            debugPrint('🔄 User record not found, checking if this is a new registration...');
+            
+            // Check if user has pending approval (new technician registration)
             try {
+              final pendingApproval = await SupabaseService.client
+                  .from('pending_user_approvals')
+                  .select('*')
+                  .eq('user_id', _user!.id)
+                  .single();
+              
+              if (pendingApproval != null) {
+                debugPrint('🔍 Found pending approval for new technician registration');
+                _userRole = UserRole.technician; // Set as technician for pending approval
+                await _saveUserRole(_userRole);
+                debugPrint('✅ Set role to technician for pending approval');
+                notifyListeners();
+                return;
+              }
+            } catch (pendingError) {
+              debugPrint('🔍 No pending approval found: $pendingError');
+            }
+            
+            // Only create admin users for specific domains, otherwise default to technician
+            try {
+              String role = 'technician'; // Default to technician
+              if (_user!.email != null && 
+                  (_user!.email!.endsWith('@royalgulf.ae') || _user!.email!.endsWith('@mekar.ae'))) {
+                role = 'admin';
+                debugPrint('🔍 Admin domain detected, creating admin user');
+              } else {
+                debugPrint('🔍 Non-admin domain, creating technician user');
+              }
+              
               await SupabaseService.client
                   .from('users')
                   .insert({
                     'id': _user!.id,
-                    'email': _user!.email ?? 'admin@royalgulf.ae',
-                    'full_name': _user!.userMetadata?['full_name'] ?? 'Admin User',
-                    'role': 'admin',
+                    'email': _user!.email ?? 'user@example.com',
+                    'full_name': _user!.userMetadata?['full_name'] ?? 'User',
+                    'role': role,
                     'created_at': DateTime.now().toIso8601String(),
                   });
               
-              _userRole = UserRole.admin;
-              await _saveUserRole(UserRole.admin);
-              debugPrint('✅ Created default admin user with role: admin');
+              _userRole = UserRoleExtension.fromString(role);
+              await _saveUserRole(_userRole);
+              debugPrint('✅ Created user with role: $role');
               notifyListeners();
               return;
             } catch (insertError) {
@@ -334,10 +365,11 @@ _isLoading = false;
           
           if (retryCount >= maxRetries) {
             debugPrint('❌ Max retries reached, keeping current role: ${_userRole.value}');
-            // If we can't load the role, assume admin for now to prevent blank screen
+            // Conservative approach: only assign admin role if explicitly confirmed
+            // For now, default to technician for all failed cases to prevent role mixing
             if (_userRole == UserRole.technician) {
-              debugPrint('🔄 Defaulting to admin role to prevent blank screen');
-              _userRole = UserRole.admin;
+              debugPrint('🔄 Keeping technician role as safe default');
+              _userRole = UserRole.technician;
               notifyListeners();
             }
             return;
