@@ -6,6 +6,7 @@ import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/admin_notification_provider.dart';
 import 'auth/login_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
@@ -31,6 +32,7 @@ import 'approval_workflows_screen.dart';
 import 'shared_tools_screen.dart';
 import 'admin_role_management_screen.dart';
 import 'admin_approval_screen.dart';
+import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
 import '../widgets/common/rgs_logo.dart';
 
@@ -155,6 +157,51 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ),
         centerTitle: true,
         actions: [
+          // Notification button
+          Consumer<AdminNotificationProvider>(
+            builder: (context, notificationProvider, child) {
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.notifications),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminNotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (notificationProvider.unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '${notificationProvider.unreadCount}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               // Don't render PopupMenuButton during logout to prevent widget tree issues
