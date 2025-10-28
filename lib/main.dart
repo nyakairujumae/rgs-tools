@@ -47,25 +47,37 @@ void main() async {
     // Initialize Firebase (skip on web for now to avoid issues)
     if (!kIsWeb) {
       print('Initializing Firebase...');
-      await Firebase.initializeApp();
-      print('Firebase initialized successfully');
-      
-      // Set up Firebase Messaging background handler
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      
-      // Initialize Firebase Messaging
-      await FirebaseMessagingService.initialize();
-      print('Firebase Messaging initialized successfully');
+      try {
+        await Firebase.initializeApp();
+        print('Firebase initialized successfully');
+        
+        // Set up Firebase Messaging background handler
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        
+        // Initialize Firebase Messaging
+        await FirebaseMessagingService.initialize();
+        print('Firebase Messaging initialized successfully');
+      } catch (firebaseError) {
+        print('Firebase initialization failed: $firebaseError');
+        // Continue without Firebase - this is not critical for basic app functionality
+        print('Continuing without Firebase...');
+      }
     }
 
     // Initialize Supabase (skip on web for now to avoid issues)
     if (!kIsWeb) {
       print('Initializing Supabase...');
-      await Supabase.initialize(
-        url: SupabaseConfig.url,
-        anonKey: SupabaseConfig.anonKey,
-      );
-      print('Supabase initialized successfully');
+      try {
+        await Supabase.initialize(
+          url: SupabaseConfig.url,
+          anonKey: SupabaseConfig.anonKey,
+        );
+        print('Supabase initialized successfully');
+      } catch (supabaseError) {
+        print('Supabase initialization failed: $supabaseError');
+        // Continue without Supabase - this is not critical for basic app functionality
+        print('Continuing without Supabase...');
+      }
 
       // Initialize local database (for offline support) - skip on web
       try {
