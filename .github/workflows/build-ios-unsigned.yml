@@ -1,0 +1,68 @@
+name: Build iOS Unsigned IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build iOS app (unsigned)
+      run: flutter build ios --release --no-codesign
+      
+    - name: Create Payload directory
+      run: mkdir -p Payload
+      
+    - name: Copy Runner.app to Payload
+      run: cp -r build/ios/Release-iphoneos/Runner.app Payload/
+      
+    - name: Create unsigned IPA
+      run: zip -r RGS_Tools_Unsigned.ipa Payload/
+      
+    - name: Upload unsigned IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: RGS_Tools_Unsigned_IPA
+        path: RGS_Tools_Unsigned.ipa
+        retention-days: 30
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: RGS_Tools_Unsigned.ipa
+        tag_name: v${{ github.run_number }}
+        name: RGS Tools Unsigned IPA v${{ github.run_number }}
+        body: |
+          ## RGS Tools Unsigned IPA
+          
+          This is an unsigned IPA file for sideloading with AltStore.
+          
+          ### Installation Instructions:
+          1. Download the IPA file
+          2. Install AltStore on your iOS device
+          3. Use AltStore to sideload this IPA
+          
+          ### Build Info:
+          - Commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
+          - Build Number: ${{ github.run_number }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
