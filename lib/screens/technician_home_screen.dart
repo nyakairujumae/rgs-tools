@@ -356,18 +356,76 @@ class TechnicianDashboardScreen extends StatelessWidget {
         
         // Check all tools and their assignedTo values
         for (var tool in toolProvider.tools) {
-          print('🔍 Tool: ${tool.name} - AssignedTo: ${tool.assignedTo} - ToolType: ${tool.toolType}');
+          print('🔍 Tool: ${tool.name} - AssignedTo: ${tool.assignedTo} - ToolType: ${tool.toolType} - Status: ${tool.status}');
         }
         
-        final myTools = toolProvider.tools.where((tool) => tool.assignedTo == authProvider.user?.id).toList();
-        final availableSharedTools = toolProvider.tools.where((tool) => tool.toolType == 'shared' && tool.status == 'Available').toList();
-
-        // Fallback: If no tools are found with current logic, show all tools for debugging
-        final displayMyTools = myTools.isNotEmpty ? myTools : toolProvider.tools.take(3).toList();
-        final displaySharedTools = availableSharedTools.isNotEmpty ? availableSharedTools : toolProvider.tools.where((tool) => tool.status == 'Available').take(3).toList();
+        // Fix the filtering logic - use correct field names and logic
+        final myTools = toolProvider.tools.where((tool) => 
+          tool.assignedTo == authProvider.user?.id && 
+          tool.status == 'Assigned'
+        ).toList();
         
+        final availableSharedTools = toolProvider.tools.where((tool) => 
+          tool.toolType == 'shared' && 
+          tool.status == 'Available'
+        ).toList();
+
+        // For debugging: Show all available tools if no specific tools found
+        final allAvailableTools = toolProvider.tools.where((tool) => tool.status == 'Available').toList();
+        
+        // Use fallback logic for display
+        final displayMyTools = myTools.isNotEmpty ? myTools : allAvailableTools.take(3).toList();
+        final displaySharedTools = availableSharedTools.isNotEmpty ? availableSharedTools : allAvailableTools.take(3).toList();
+        
+        print('🔍 Dashboard - My tools (assigned to me): ${myTools.length}');
+        print('🔍 Dashboard - Available shared tools: ${availableSharedTools.length}');
+        print('🔍 Dashboard - All available tools: ${allAvailableTools.length}');
         print('🔍 Dashboard - Display My tools: ${displayMyTools.length}');
         print('🔍 Dashboard - Display Shared tools: ${displaySharedTools.length}');
+
+        // Show loading state if tools are still loading
+        if (toolProvider.isLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading tools...'),
+              ],
+            ),
+          );
+        }
+
+        // Show error state if no tools are loaded
+        if (toolProvider.tools.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'No tools available',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Contact your administrator to add tools to the system.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    toolProvider.loadTools();
+                  },
+                  child: Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -459,7 +517,7 @@ class TechnicianDashboardScreen extends StatelessWidget {
               // Shared Tools Horizontal Scroll
               SizedBox(
                 height: 200,
-                child: availableSharedTools.isEmpty
+                child: displaySharedTools.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
