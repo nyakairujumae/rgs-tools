@@ -4,6 +4,7 @@ import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import 'tool_detail_screen.dart';
+import '../theme/app_theme.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
@@ -188,14 +189,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ],
                             ),
                           )
-                        : GridView.builder(
+                        : ListView.builder(
                             padding: const EdgeInsets.all(16.0),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.75, // Increased from 0.65 to 0.75 for taller cards
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
                             itemCount: filteredTools.length,
                             itemBuilder: (context, index) {
                               final tool = filteredTools[index];
@@ -212,6 +207,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
   Widget _buildToolCard(Tool tool) {
     return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -228,7 +224,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         },
         onLongPress: () => _showToolActions(context, tool),
         child: Container(
-          height: 250, // Increased height to fill more space and look more substantial
+          height: 120, // Fixed height for horizontal cards
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
@@ -240,92 +236,110 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ],
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              // Image Section - Matches Assign Tool cards (60%)
-              SizedBox(
-                height: 150, // Same as assign tool cards
-                width: double.infinity,
+              // Image Section - Left Side (40% of card width)
+              Container(
+                width: 120, // Fixed width for image
+                height: double.infinity,
                 child: tool.imagePath != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
                         ),
                         child: tool.imagePath!.startsWith('http')
                             ? Image.network(
                                 tool.imagePath!,
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover, // This ensures the image fills the entire space
+                                fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               )
                             : Image.file(
                                 File(tool.imagePath!),
                                 width: double.infinity,
                                 height: double.infinity,
-                                fit: BoxFit.cover, // This ensures the image fills the entire space
+                                fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                               ),
                       )
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Optimized to prevent overflow
-              Container(
-                height: 60, // Reduced from 68 to prevent overflow
-                padding: const EdgeInsets.all(4.0), // Further reduced padding
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Tool Name
-                    Flexible(
-                      child: Text(
-                        tool.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12, // Reduced from 13
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    
-                    SizedBox(height: 1),
-                    
-                    // Brand and Category
-                    Flexible(
-                      child: Text(
-                        '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                        style: TextStyle(
-                          fontSize: 10, // Reduced from 11
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    
-                    SizedBox(height: 2),
-                    
-                    // Status and Condition Chips
-                    Flexible(
-                      child: Row(
+              // Content Section - Right Side (60% of card width)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Section - Name and Brand
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _buildStatusChip(tool.status),
+                          Text(
+                            tool.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(width: 3),
-                          Expanded(
-                            child: _buildConditionChip(tool.condition),
+                          SizedBox(height: 4),
+                          Text(
+                            '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      
+                      // Bottom Section - Status and Action Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Status Chip
+                          _buildStatusChip(tool.status),
+                          
+                          // Action Button
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'View',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -343,7 +357,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(16),
         ),
         color: Colors.grey[200],
       ),
@@ -352,15 +366,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
         children: [
           Icon(
             Icons.build,
-            size: 50, // Increased from 40 to 50 for better visibility
+            size: 40,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 6), // Increased spacing
+          SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
+              fontSize: 10,
               color: Colors.grey[500],
-              fontSize: 12,
             ),
           ),
         ],

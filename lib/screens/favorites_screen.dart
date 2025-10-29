@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
@@ -118,82 +119,168 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildToolCard(Tool tool) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          width: 50,
-          height: 50,
+      margin: const EdgeInsets.only(bottom: 16.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _viewToolDetails(tool),
+        child: Container(
+          height: 120, // Fixed height for horizontal cards
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.build,
-            color: AppTheme.primaryColor,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          tool.name,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${tool.category} • ${tool.brand ?? 'Unknown'}',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            SizedBox(height: 4),
-            Row(
-              children: [
-                StatusChip(status: tool.status),
-                SizedBox(width: 8),
-                Text(
-                  'AED ${(tool.currentValue ?? 0.0).toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).cardTheme.color ?? Colors.white,
+                (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
               ],
             ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, tool),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'view',
-              child: Row(
-                children: [
-                  Icon(Icons.visibility, size: 16),
-                  SizedBox(width: 8),
-                  Text('View Details'),
-                ],
+          ),
+          child: Row(
+            children: [
+              // Image Section - Left Side (40% of card width)
+              Container(
+                width: 120, // Fixed width for image
+                height: double.infinity,
+                child: tool.imagePath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
+                        ),
+                        child: tool.imagePath!.startsWith('http')
+                            ? Image.network(
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              )
+                            : Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              ),
+                      )
+                    : _buildPlaceholderImage(),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'remove',
-              child: Row(
-                children: [
-                  Icon(Icons.favorite, size: 16, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Remove from Favorites'),
-                ],
+              
+              // Content Section - Right Side (60% of card width)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Section - Name and Brand
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tool.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '${tool.brand ?? 'Unknown'} • ${tool.category}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      
+                      // Bottom Section - Status and Action Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Status Chip
+                          StatusChip(status: tool.status),
+                          
+                          // Action Button
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'View',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        onTap: () => _viewToolDetails(tool),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          bottomLeft: Radius.circular(16),
+        ),
+        color: Colors.grey[200],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 40,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 4),
+          Text(
+            'No Image',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
       ),
     );
   }
