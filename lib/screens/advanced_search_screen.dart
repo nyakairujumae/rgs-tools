@@ -565,8 +565,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Right Side (60% of card width)
-              Expanded(
+              // Content Section - Right Side (Flexible)
+              Flexible(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(

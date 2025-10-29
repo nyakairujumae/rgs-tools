@@ -238,7 +238,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           ),
           child: Row(
             children: [
-              // Image Section - Left Side (40% of card width)
+              // Image Section - Left Side (Fixed width)
               Container(
                 width: 120, // Fixed width for image
                 height: double.infinity,
@@ -267,8 +267,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     : _buildPlaceholderImage(),
               ),
               
-              // Content Section - Right Side (60% of card width)
-              Expanded(
+              // Content Section - Right Side (Flexible)
+              Flexible(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
