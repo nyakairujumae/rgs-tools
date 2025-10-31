@@ -746,7 +746,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (tool.toolType == 'shared' && tool.assignedTo != null && (currentUserId != null && currentUserId != tool.assignedTo))
+                            // Show Request button for shared tools that have a holder (badged to someone)
+                            // Show for all technicians except the one who has it
+                            if (tool.toolType == 'shared' && 
+                                tool.assignedTo != null && 
+                                tool.assignedTo!.isNotEmpty &&
+                                (currentUserId == null || currentUserId != tool.assignedTo))
                               TextButton(
                                 onPressed: () => _showRequestChat(context, tool),
                                 style: TextButton.styleFrom(

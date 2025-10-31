@@ -724,6 +724,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
       await toolProvider.updateTool(updatedTool);
       
+      // Reload tools to ensure other technicians see the update
+      await toolProvider.loadTools();
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
