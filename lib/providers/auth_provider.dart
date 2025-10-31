@@ -175,7 +175,7 @@ class AuthProvider with ChangeNotifier {
           }
         } else {
           // For admins, load role normally
-          await _loadUserRole();
+        await _loadUserRole();
         }
       }
 
@@ -441,7 +441,7 @@ _isLoading = false;
                   .select('status')
                   .eq('user_id', _user!.id)
                   .maybeSingle();
-
+              
               if (pendingApproval != null) {
                 final status = pendingApproval['status'] as String?;
                 debugPrint('🔍 Found approval record with status: $status');
@@ -455,9 +455,9 @@ _isLoading = false;
                 } else if (status == 'rejected') {
                   debugPrint('❌ User approval was rejected - access denied');
                   _userRole = UserRole.pending; // Treat as pending to show rejection screen
-                  await _saveUserRole(_userRole);
-                  notifyListeners();
-                  return;
+                await _saveUserRole(_userRole);
+                notifyListeners();
+                return;
                 } else if (status == 'approved') {
                   // User is approved, role should be set in users table
                   // Continue to check users table
@@ -493,20 +493,20 @@ _isLoading = false;
                   (_user!.email!.endsWith('@royalgulf.ae') || _user!.email!.endsWith('@mekar.ae'))) {
                 role = 'admin';
                 debugPrint('🔍 Admin domain detected, creating admin user');
-                
+              
                 // Create user record for admins immediately
-                await SupabaseService.client
-                    .from('users')
-                    .insert({
-                      'id': _user!.id,
-                      'email': _user!.email ?? 'user@example.com',
-                      'full_name': _user!.userMetadata?['full_name'] ?? 'User',
-                      'role': role,
-                      'created_at': DateTime.now().toIso8601String(),
-                    });
-                
-                _userRole = UserRoleExtension.fromString(role);
-                await _saveUserRole(_userRole);
+              await SupabaseService.client
+                  .from('users')
+                  .insert({
+                    'id': _user!.id,
+                    'email': _user!.email ?? 'user@example.com',
+                    'full_name': _user!.userMetadata?['full_name'] ?? 'User',
+                    'role': role,
+                    'created_at': DateTime.now().toIso8601String(),
+                  });
+              
+              _userRole = UserRoleExtension.fromString(role);
+              await _saveUserRole(_userRole);
                 debugPrint('✅ Created admin user with role: $role');
                 notifyListeners();
                 return;
@@ -520,8 +520,8 @@ _isLoading = false;
                   debugPrint('⚠️ Technician not approved - setting role to pending');
                   _userRole = UserRole.pending;
                   await _saveUserRole(_userRole);
-                  notifyListeners();
-                  return;
+              notifyListeners();
+              return;
                 }
               }
             } catch (insertError) {

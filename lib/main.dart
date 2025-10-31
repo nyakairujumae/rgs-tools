@@ -54,8 +54,8 @@ void main() async {
         // Check if Firebase is already initialized
         if (Firebase.apps.isEmpty) {
           print('🔥 Firebase apps is empty, initializing...');
-          try {
-            await Firebase.initializeApp();
+      try {
+        await Firebase.initializeApp();
             print('✅ Firebase initialized successfully. Apps count: ${Firebase.apps.length}');
             if (Firebase.apps.isNotEmpty) {
               print('✅ Firebase app name: ${Firebase.app().name}');
@@ -74,12 +74,12 @@ void main() async {
           print('❌ Firebase initialization failed - apps still empty');
         } else {
           print('✅ Firebase verified. Setting up messaging...');
-          
-          // Set up Firebase Messaging background handler
-          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-          
-          // Initialize Firebase Messaging
-          await FirebaseMessagingService.initialize();
+        
+        // Set up Firebase Messaging background handler
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        
+        // Initialize Firebase Messaging
+        await FirebaseMessagingService.initialize();
           print('✅ Firebase Messaging initialized successfully');
         }
       } catch (firebaseError, stackTrace) {

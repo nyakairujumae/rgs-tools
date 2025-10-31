@@ -49,7 +49,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

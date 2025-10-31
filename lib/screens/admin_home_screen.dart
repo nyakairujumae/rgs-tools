@@ -108,7 +108,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
   }
 }
 
-class _AdminHomeScreenState extends State<AdminHomeScreen> {
+class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingObserver {
   late int _selectedIndex;
   bool _isDisposed = false;
   late List<Widget> _screens;
@@ -116,6 +116,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedIndex = widget.initialTab.clamp(0, 3); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
@@ -128,20 +129,59 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       const TechniciansScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SupabaseToolProvider>().loadTools();
-      context.read<SupabaseTechnicianProvider>().loadTechnicians();
-      context.read<PendingApprovalsProvider>().loadPendingApprovals();
+      _loadData();
+      _startPeriodicRefresh();
     });
+  }
+  
+  void _startPeriodicRefresh() {
+    // Refresh pending approvals every 30 seconds to catch new registrations
+    Future.delayed(Duration(seconds: 30), () {
+      if (!_isDisposed && mounted) {
+        context.read<PendingApprovalsProvider>().loadPendingApprovals();
+        _startPeriodicRefresh(); // Schedule next refresh
+      }
+    });
+  }
+  
+  Future<void> _loadData() async {
+    if (_isDisposed) return;
+    
+    try {
+      await Future.wait([
+        context.read<SupabaseToolProvider>().loadTools(),
+        context.read<SupabaseTechnicianProvider>().loadTechnicians(),
+        context.read<PendingApprovalsProvider>().loadPendingApprovals(),
+      ]);
+    } catch (e) {
+      debugPrint('Error loading admin data: $e');
+    }
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isDisposed) {
+      // Reload pending approvals when app comes back to foreground
+      _loadData();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _isDisposed = true;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Reload pending approvals when screen is built (to catch new registrations)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isDisposed) {
+        context.read<PendingApprovalsProvider>().loadPendingApprovals();
+      }
+    });
+    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -155,6 +195,56 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ),
         centerTitle: true,
         actions: [
+          // Pending Approvals button with badge
+          Consumer<PendingApprovalsProvider>(
+            builder: (context, approvalProvider, child) {
+              final pendingCount = approvalProvider.pendingCount;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.person_add),
+                    tooltip: 'Pending User Approvals',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminApprovalScreen(),
+                        ),
+                      ).then((_) {
+                        // Refresh approvals when coming back
+                        approvalProvider.loadPendingApprovals();
+                      });
+                    },
+                  ),
+                  if (pendingCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          pendingCount > 99 ? '99+' : '$pendingCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           // Notification button
           Consumer<AdminNotificationProvider>(
             builder: (context, notificationProvider, child) {

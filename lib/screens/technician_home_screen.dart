@@ -195,12 +195,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
+              builder: (context) => kIsWeb ? const CheckinScreenWeb() : const CheckinScreen(),
                   ),
                 );
               },
               backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
+        foregroundColor: Colors.white,
               icon: const Icon(Icons.keyboard_return),
               label: const Text('Check In'),
             )
@@ -248,7 +248,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
-                          ),
+      ),
                         ),
                         IconButton(
                           icon: Icon(Icons.close),
@@ -548,35 +548,35 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         _setupAutoSlide(featuredTools);
 
         return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // Welcome banner (replacing search and quick filters)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Container(
+                      child: Container(
                   padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                          decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.15)),
-                  ),
+                        ),
                   child: Row(
                     children: [
-                      Container(
+                    Container(
                         width: 56,
                         height: 56,
-                        decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                           color: Colors.blue.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14),
-                        ),
+                      ),
                         child: Icon(Icons.inventory_2, color: Colors.blue, size: 28),
                       ),
                       SizedBox(width: 16),
                       Expanded(
-                        child: Column(
+                child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                  children: [
                             Text(
                               _greeting(authProvider.userFullName),
                               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface),
@@ -600,8 +600,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                     Text('Shared Tools', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     TextButton(
                       onPressed: () {
@@ -611,9 +611,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         );
                       },
                       child: Text('See All >', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
               ),
               SizedBox(height: 16),
 
@@ -642,7 +642,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                children: [
                     Text('My Tools', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     TextButton(
                       onPressed: () => setState(() { _selectedCategoryIndex = 2; }),
@@ -708,31 +708,31 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 width: 116,
                 height: double.infinity,
                 color: Theme.of(context).colorScheme.surfaceVariant,
-                child: tool.imagePath != null
+              child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
-                        ? Image.network(
-                            tool.imagePath!,
-                            fit: BoxFit.cover,
+                          ? Image.network(
+                              tool.imagePath!,
+                              fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(true),
-                          )
-                        : File(tool.imagePath!).existsSync()
-                            ? Image.file(
-                                File(tool.imagePath!),
-                                fit: BoxFit.cover,
+                            )
+                          : File(tool.imagePath!).existsSync()
+                              ? Image.file(
+                                  File(tool.imagePath!),
+                                  fit: BoxFit.cover,
                               )
                             : _buildPlaceholderImage(true))
                     : _buildPlaceholderImage(true),
               ),
             ),
             SizedBox(width: 12),
-            Expanded(
+          Expanded(
               child: Padding(
                 padding: EdgeInsets.only(right: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
+              children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -769,8 +769,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
-                    if (tool.location != null && tool.location!.isNotEmpty)
+                        SizedBox(height: 8),
+                        if (tool.location != null && tool.location!.isNotEmpty)
                       Row(children: [Icon(Icons.location_on, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(width: 8), Expanded(child: Text(tool.location!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis))]),
                     SizedBox(height: 4),
                     Row(children: [
@@ -786,8 +786,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+                      ],
+                    ),
       ),
     );
   }
@@ -831,7 +831,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 ],
               ),
               child: Column(
-                children: [
+                      children: [
                   // Grab handle
                   const SizedBox(height: 8),
                   Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(4))),
@@ -930,12 +930,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                     },
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            ),
+          ),
+          ),
+        ],
+      ),
+    ),
                   ),
                 ],
               ),
@@ -1038,23 +1038,23 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 height: double.infinity,
                 color: Theme.of(context).colorScheme.surfaceVariant,
                 child: tool.imagePath != null
-                    ? (tool.imagePath!.startsWith('http')
-                          ? Image.network(
-                              tool.imagePath!,
-                              fit: BoxFit.cover,
+                      ? (tool.imagePath!.startsWith('http')
+                            ? Image.network(
+                                tool.imagePath!,
+                                fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(false),
-                            )
-                          : File(tool.imagePath!).existsSync()
-                              ? Image.file(
-                                  File(tool.imagePath!),
-                                  fit: BoxFit.cover,
+                              )
+                            : File(tool.imagePath!).existsSync()
+                                ? Image.file(
+                                    File(tool.imagePath!),
+                                    fit: BoxFit.cover,
                                 )
                               : _buildPlaceholderImage(false))
-                    : _buildPlaceholderImage(false),
+                      : _buildPlaceholderImage(false),
+                ),
               ),
-            ),
             SizedBox(width: 12),
-            Expanded(
+              Expanded(
               child: Padding(
                 padding: EdgeInsets.only(right: 4),
                 child: Column(
@@ -1074,7 +1074,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         SizedBox(height: 8),
                         if (tool.location != null && tool.location!.isNotEmpty)
                           Row(children: [Icon(Icons.location_on, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(width: 8), Expanded(child: Text(tool.location!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis))]),
-                        SizedBox(height: 4),
+                    SizedBox(height: 4),
                         Row(children: [
                           Icon(Icons.category, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)),
                           SizedBox(width: 8),
@@ -1090,7 +1090,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   ],
                 ),
               ),
-            ),
+              ),
             ],
           ),
         ),
