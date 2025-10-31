@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    runs-on: macos-14
     
     steps:
     - name: Checkout repository
@@ -20,28 +20,59 @@ jobs:
         channel: 'stable'
         cache: true
         
-    - name: Install CocoaPods dependencies
-      working-directory: ios
-      run: |
-        pod repo update
-        pod install --repo-update
+    - name: Flutter doctor
+      run: flutter doctor -v
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.0'
         
-    - name: Install dependencies
+    - name: Xcode version
+      run: xcodebuild -version
+      
+    - name: Clean project
+      run: |
+        flutter clean
+        rm -rf ios/build/
+        rm -rf build/
+        rm -rf ios/Pods/
+        rm -rf ios/Podfile.lock
+        
+    - name: Flutter pub get
       run: flutter pub get
       
-    - name: Build iOS app (unsigned for AltStore)
-      run: flutter build ios --release --no-codesign
-      
-    - name: Create IPA file
+    - name: Install CocoaPods
       run: |
-        echo "Creating IPA from built app..."
+        cd ios
+        sudo gem install cocoapods
+        pod install --verbose
+      
+    - name: Build iOS app
+      run: flutter build ios --release --no-codesign --verbose
+      
+    - name: List build artifacts
+      run: |
+        find build/ios -name "*.app" -o -name "*.ipa" || echo "No build artifacts found"
+        ls -la build/ios/iphoneos/ || ls -la build/ios/Release-iphoneos/ || echo "No build directory found"
+        
+    - name: Create IPA
+      run: |
+        if [ -d "build/ios/iphoneos" ]; then
+          cd build/ios/iphoneos
+        elif [ -d "build/ios/Release-iphoneos" ]; then
+          cd build/ios/Release-iphoneos
+        else
+          echo "Build directory not found!"
+          exit 1
+        fi
         mkdir -p Payload
-        cp -r build/ios/Release-iphoneos/Runner.app Payload/
-        zip -r RGS_Tools_iOS18.ipa Payload/
+        cp -r Runner.app Payload/
+        zip -r ../../../RGS_Tools_iOS18.ipa Payload/
         rm -rf Payload
         echo "IPA created successfully"
-      
-    - name: Upload IPA artifact
+        
+    - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
         name: RGS_Tools_iOS18_IPA
@@ -79,3 +110,13 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload build logs
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: ios-build-logs
+        path: |
+          build/
+          ios/
+        retention-days: 7
