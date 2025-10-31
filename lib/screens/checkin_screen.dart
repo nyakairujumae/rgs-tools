@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
+import "../providers/supabase_technician_provider.dart";
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
@@ -188,8 +189,13 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                           children: [
                             Text('${tool.category} • ${tool.brand ?? 'Unknown'}', style: TextStyle(color: Colors.grey)),
                             if (tool.assignedTo != null)
-                              Text('Assigned to: ${tool.assignedTo!}', 
-                                   style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              Consumer<SupabaseTechnicianProvider>(
+                                builder: (context, technicianProvider, child) {
+                                  final technicianName = technicianProvider.getTechnicianNameById(tool.assignedTo) ?? 'Unknown';
+                                  return Text('Assigned to: $technicianName', 
+                                       style: TextStyle(fontSize: 12, color: Colors.grey));
+                                },
+                              ),
                           ],
                         ),
                         trailing: StatusChip(status: tool.status),

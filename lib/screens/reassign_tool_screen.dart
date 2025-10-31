@@ -66,12 +66,17 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                           ],
                         ),
                         SizedBox(height: 8),
-                        Text(
-                          'Currently assigned to: ${widget.tool.assignedTo ?? 'Unknown'}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                          ),
+                        Consumer<SupabaseTechnicianProvider>(
+                          builder: (context, technicianProvider, child) {
+                            final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
+                            return Text(
+                              'Currently assigned to: $technicianName',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -235,17 +240,30 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
     });
 
     try {
-      // Update tool assignment
-      final updatedTool = widget.tool.copyWith(
-        assignedTo: _selectedTechnician!.name,
-        notes: _notesController.text.trim().isEmpty 
-            ? widget.tool.notes 
-            : '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
-      );
-
-      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+      // Update tool assignment using technician UUID
+      if (_selectedTechnician!.id != null && widget.tool.id != null) {
+        await context.read<SupabaseToolProvider>().assignTool(
+          widget.tool.id!,
+          _selectedTechnician!.id!,
+          'Permanent',
+        );
+        
+        // Update notes if provided
+        if (_notesController.text.trim().isNotEmpty) {
+          final updatedTool = widget.tool.copyWith(
+            notes: '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
+            updatedAt: DateTime.now().toIso8601String(),
+          );
+          await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+        }
+      } else {
+        throw Exception('Technician ID or Tool ID is required');
+      }
 
       if (mounted) {
+        // Refresh tools to get updated data
+        await context.read<SupabaseToolProvider>().loadTools();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${widget.tool.name} reassigned to ${_selectedTechnician!.name}'),

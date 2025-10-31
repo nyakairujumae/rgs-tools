@@ -101,4 +101,19 @@ class SupabaseTechnicianProvider with ChangeNotifier {
   List<Technician> getActiveTechniciansSync() {
     return _technicians.where((technician) => technician.status == 'Active').toList();
   }
+
+  // Get technician name by ID (returns UUID if not found, for backwards compatibility)
+  String? getTechnicianNameById(String? technicianId) {
+    if (technicianId == null) return null;
+    try {
+      final technician = _technicians.firstWhere(
+        (tech) => tech.id == technicianId,
+        orElse: () => Technician(id: null, name: technicianId), // Fallback to ID if not found
+      );
+      return technician.id == null ? technicianId : technician.name;
+    } catch (e) {
+      // If not found, return the ID (might be a name from old data)
+      return technicianId;
+    }
+  }
 }

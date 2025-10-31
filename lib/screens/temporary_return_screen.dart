@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
+import "../providers/supabase_technician_provider.dart";
 import '../models/tool.dart';
 
 class TemporaryReturnScreen extends StatefulWidget {
@@ -85,12 +86,17 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                                 ),
                               ),
                               if (widget.tool.assignedTo != null)
-                                Text(
-                                  'Currently assigned to: ${widget.tool.assignedTo}',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Consumer<SupabaseTechnicianProvider>(
+                                  builder: (context, technicianProvider, child) {
+                                    final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
+                                    return Text(
+                                      'Currently assigned to: $technicianName',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    );
+                                  },
                                 ),
                             ],
                           ),

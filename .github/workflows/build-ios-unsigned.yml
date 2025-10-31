@@ -1,4 +1,4 @@
-name: Build iOS Unsigned IPA
+name: Build iOS 18+ IPA for AltStore
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-15
     
     steps:
     - name: Checkout repository
@@ -18,47 +18,60 @@ jobs:
       with:
         flutter-version: '3.24.0'
         channel: 'stable'
+        cache: true
+        
+    - name: Install CocoaPods dependencies
+      working-directory: ios
+      run: |
+        pod repo update
+        pod install --repo-update
         
     - name: Install dependencies
       run: flutter pub get
       
-    - name: Build iOS app (unsigned)
+    - name: Build iOS app (unsigned for AltStore)
       run: flutter build ios --release --no-codesign
       
-    - name: Create Payload directory
-      run: mkdir -p Payload
+    - name: Create IPA file
+      run: |
+        echo "Creating IPA from built app..."
+        mkdir -p Payload
+        cp -r build/ios/Release-iphoneos/Runner.app Payload/
+        zip -r RGS_Tools_iOS18.ipa Payload/
+        rm -rf Payload
+        echo "IPA created successfully"
       
-    - name: Copy Runner.app to Payload
-      run: cp -r build/ios/Release-iphoneos/Runner.app Payload/
-      
-    - name: Create unsigned IPA
-      run: zip -r RGS_Tools_Unsigned.ipa Payload/
-      
-    - name: Upload unsigned IPA
+    - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
       with:
-        name: RGS_Tools_Unsigned_IPA
-        path: RGS_Tools_Unsigned.ipa
+        name: RGS_Tools_iOS18_IPA
+        path: RGS_Tools_iOS18.ipa
         retention-days: 30
         
-    - name: Create Release
+    - name: Create GitHub Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: RGS_Tools_Unsigned.ipa
-        tag_name: v${{ github.run_number }}
-        name: RGS Tools Unsigned IPA v${{ github.run_number }}
+        files: RGS_Tools_iOS18.ipa
+        tag_name: ios18-v${{ github.run_number }}
+        name: RGS Tools iOS 18+ IPA v${{ github.run_number }}
         body: |
-          ## RGS Tools Unsigned IPA
+          ## RGS Tools iOS 18+ IPA for AltStore
           
-          This is an unsigned IPA file for sideloading with AltStore.
+          This IPA targets iOS 18.0+ and is unsigned for sideloading with AltStore.
           
           ### Installation Instructions:
           1. Download the IPA file
-          2. Install AltStore on your iOS device
+          2. Install AltStore on your iOS device (iOS 18+)
           3. Use AltStore to sideload this IPA
+          4. Trust the developer certificate in Settings > General > VPN & Device Management
+          
+          ### Requirements:
+          - iOS 18.0 or later
+          - AltStore installed on your device
           
           ### Build Info:
+          - Target: iOS 18.0+
           - Commit: ${{ github.sha }}
           - Branch: ${{ github.ref_name }}
           - Build Number: ${{ github.run_number }}

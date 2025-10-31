@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
+import "../providers/supabase_technician_provider.dart";
 import "../providers/auth_provider.dart";
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
@@ -129,7 +130,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildInfoSection('Status & Assignment', [
                 _buildInfoRow('Status', _currentTool.status, statusWidget: StatusChip(status: _currentTool.status)),
                 _buildInfoRow('Condition', _currentTool.condition, statusWidget: ConditionChip(condition: _currentTool.condition)),
-                if (_currentTool.assignedTo != null) _buildInfoRow('Assigned To', _currentTool.assignedTo!),
+                if (_currentTool.assignedTo != null) 
+                  Consumer<SupabaseTechnicianProvider>(
+                    builder: (context, technicianProvider, child) {
+                      final technicianName = technicianProvider.getTechnicianNameById(_currentTool.assignedTo) ?? 'Unknown';
+                      return _buildInfoRow('Assigned To', technicianName);
+                    },
+                  ),
                 if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
                 if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
             ]),

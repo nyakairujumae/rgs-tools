@@ -567,15 +567,16 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     });
 
     try {
-      // Update tool status and assignment
-      final updatedTool = widget.tool.copyWith(
-        status: 'In Use',
-        assignedTo: _selectedTechnician!.name,
-        location: _selectedLocation?.name,
-        updatedAt: DateTime.now().toIso8601String(),
-      );
-
-      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+      // Update tool status and assignment using technician UUID
+      if (_selectedTechnician!.id != null) {
+        await context.read<SupabaseToolProvider>().assignTool(
+          widget.tool.id!,
+          _selectedTechnician!.id!,
+          _assignmentType,
+        );
+      } else {
+        throw Exception('Technician ID is required');
+      }
 
       // TODO: Create permanent assignment record in database
       // This would typically be done through a service layer
@@ -589,6 +590,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             backgroundColor: Colors.green,
           ),
         );
+        // Refresh tools to get updated data
+        await context.read<SupabaseToolProvider>().loadTools();
         Navigator.pop(context);
       }
     } catch (e) {

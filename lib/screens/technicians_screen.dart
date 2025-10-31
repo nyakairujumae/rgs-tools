@@ -38,8 +38,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       builder: (context, technicianProvider, child) {
         final technicians = technicianProvider.technicians;
         
-        // Filter technicians based on search
+        // Filter technicians based on search and status
+        // When assigning tools, only show Active technicians
         final filteredTechnicians = technicians.where((tech) {
+          // Filter by status if in assignment mode
+          if (_selectedTools != null && tech.status != 'Active') {
+            return false;
+          }
+          // Filter by search query
           return _searchQuery.isEmpty ||
               tech.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               (tech.employeeId?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
@@ -413,14 +419,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       // Assign each tool to each selected technician
       for (final toolId in _selectedTools!) {
         for (final technician in technicians) {
-          // Use technician name as the assigned_to value
-          await toolProvider.updateTool(
-            toolProvider.tools.firstWhere((tool) => tool.id == toolId).copyWith(
-              assignedTo: technician.name,
-              status: 'Assigned',
-              toolType: 'assigned',
-            )
-          );
+          if (technician.id != null) {
+            // Use technician UUID as the assigned_to value
+            await toolProvider.assignTool(
+              toolId,
+              technician.id!,
+              'Permanent',
+            );
+          }
         }
       }
 

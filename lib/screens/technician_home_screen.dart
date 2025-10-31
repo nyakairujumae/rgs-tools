@@ -692,7 +692,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       onTap: () => Navigator.pushNamed(context, '/tool-detail', arguments: tool),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        height: 140,
+        height: 148,
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -1020,7 +1020,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       onTap: () => Navigator.pushNamed(context, '/tool-detail', arguments: tool),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        height: 140,
+        height: 148,
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -1029,6 +1029,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
         ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
             // Left thumbnail (wider like Featured)
             ClipRRect(
@@ -1062,31 +1063,27 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tool.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        SizedBox(height: 6),
-                        Wrap(spacing: 8, children: [
-                          _buildOutlinedChip(context, _getStatusLabel(tool.status), Theme.of(context).colorScheme.primary),
-                          _buildOutlinedChip(context, _getConditionLabel(tool.condition), _getConditionColor(tool.condition)),
-                        ]),
-                        SizedBox(height: 8),
-                        if (tool.location != null && tool.location!.isNotEmpty)
-                          Row(children: [Icon(Icons.location_on, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(width: 8), Expanded(child: Text(tool.location!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis))]),
-                    SizedBox(height: 4),
-                        Row(children: [
-                          Icon(Icons.category, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)),
-                          SizedBox(width: 8),
-                          Expanded(child: Text(tool.category.toUpperCase(), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                          SizedBox(width: 6),
-                          Text(tool.toolType.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.green)),
-                        ]),
-                        const SizedBox(height: 4),
-                        _holderLine(context, tool, technicians),
-                      ],
-                    ),
+                    Text(tool.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    SizedBox(height: 6),
+                    Wrap(spacing: 8, runSpacing: 4, children: [
+                      _buildOutlinedChip(context, _getStatusLabel(tool.status), Theme.of(context).colorScheme.primary),
+                      _buildOutlinedChip(context, _getConditionLabel(tool.condition), _getConditionColor(tool.condition)),
+                    ]),
+                    SizedBox(height: 6),
+                    if (tool.location != null && tool.location!.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Row(children: [Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(width: 6), Expanded(child: Text(tool.location!, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis))]),
+                      ),
+                    Row(children: [
+                      Icon(Icons.category, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)),
+                      SizedBox(width: 6),
+                      Expanded(child: Text(tool.category.toUpperCase(), style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      SizedBox(width: 4),
+                      Flexible(child: Text(tool.toolType.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ]),
                     SizedBox(height: 2),
+                    _holderLine(context, tool, technicians),
                   ],
                 ),
               ),
