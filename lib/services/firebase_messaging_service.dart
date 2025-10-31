@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,12 +8,35 @@ class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
 
-  static String? get fcmToken => _fcmToken;
+  static String? get fcmToken {
+    try {
+      // Check if Firebase is initialized before accessing messaging
+      if (Firebase.apps.isEmpty) {
+        debugPrint('⚠️ Firebase not initialized, cannot get FCM token');
+        return null;
+      }
+      return _fcmToken;
+    } catch (e) {
+      debugPrint('❌ Error getting FCM token: $e');
+      return null;
+    }
+  }
 
   /// Initialize Firebase Messaging
   static Future<void> initialize() async {
     try {
       debugPrint('🔥 Initializing Firebase Messaging...');
+      
+      // Check if Firebase is initialized
+      try {
+        if (Firebase.apps.isEmpty) {
+          debugPrint('❌ Firebase not initialized. Please initialize Firebase first.');
+          return;
+        }
+      } catch (e) {
+        debugPrint('❌ Error checking Firebase initialization: $e');
+        return;
+      }
       
       // Request permission for notifications
       final settings = await _messaging.requestPermission(

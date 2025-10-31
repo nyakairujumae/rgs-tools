@@ -6,7 +6,6 @@ import "../../providers/supabase_tool_provider.dart";
 import '../../providers/auth_provider.dart';
 import '../../models/tool.dart';
 import '../tool_detail_screen.dart';
-import 'checkout_screen_web.dart';
 
 class WebSharedToolsScreen extends StatefulWidget {
   const WebSharedToolsScreen({super.key});
@@ -108,29 +107,6 @@ class _WebSharedToolsScreenState extends State<WebSharedToolsScreen> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CheckoutScreenWeb(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text(
-                          'Check Out',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                       ),
                     ],
@@ -679,22 +655,6 @@ class _WebSharedToolsScreenState extends State<WebSharedToolsScreen> {
                     // Action Buttons
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            'Check Out',
-                            Icons.logout,
-                            const Color(0xFF3B82F6),
-                            () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const CheckoutScreenWeb(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: _buildActionButton(
                             'Details',

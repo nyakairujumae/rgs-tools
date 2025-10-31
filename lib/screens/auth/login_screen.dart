@@ -323,12 +323,25 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (mounted) {
         // Wait a moment for role to be properly loaded
-        await Future.delayed(Duration(milliseconds: 100));
+        await Future.delayed(Duration(milliseconds: 300));
+        
+        // Check approval status for technicians
+        if (!authProvider.isAdmin) {
+          final isApproved = await authProvider.checkApprovalStatus();
+          if (isApproved == false) {
+            // User is pending approval or rejected
+            Navigator.pushReplacementNamed(context, '/pending-approval');
+            return;
+          }
+        }
         
         // Navigate based on role (automatically determined from database)
         if (authProvider.isAdmin) {
           Navigator.pushReplacementNamed(context, '/admin');
+        } else if (authProvider.isPendingApproval) {
+          Navigator.pushReplacementNamed(context, '/pending-approval');
         } else {
+          // Technician is approved - will check for initial setup in InitialToolSetupScreen
           Navigator.pushReplacementNamed(context, '/technician');
         }
       }

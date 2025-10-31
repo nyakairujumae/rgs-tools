@@ -411,23 +411,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         // Check if user is already confirmed or if email confirmation is disabled
         if (response.user?.emailConfirmedAt != null || response.session != null) {
-          // User is automatically signed in
-          AuthErrorHandler.showSuccessSnackBar(
-            context, 
-            '🎉 Account created successfully! Welcome to RGS HVAC Services.'
-          );
+          // Wait for role to be loaded
+          await Future.delayed(Duration(milliseconds: 500));
           
-          // Navigate to appropriate screen based on role
+          // Navigate based on role and approval status
           if (authProvider.isAdmin) {
+            AuthErrorHandler.showSuccessSnackBar(
+              context, 
+              '🎉 Account created successfully! Welcome to RGS HVAC Services.'
+            );
             Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+          } else if (authProvider.isPendingApproval) {
+            // Technician with pending approval - always show pending screen
+            AuthErrorHandler.showInfoSnackBar(
+              context, 
+              '📋 Your account is pending admin approval. You will be notified once approved.'
+            );
+            Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
           } else {
-            Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+            // Check approval status one more time
+            final isApproved = await authProvider.checkApprovalStatus();
+            if (isApproved == false || isApproved == null) {
+              // Not approved - show pending screen
+              AuthErrorHandler.showInfoSnackBar(
+                context, 
+                '📋 Your account is pending admin approval. You will be notified once approved.'
+              );
+              Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
+            } else {
+              // Approved
+              AuthErrorHandler.showSuccessSnackBar(
+                context, 
+                '🎉 Account created successfully! Welcome to RGS HVAC Services.'
+              );
+              Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+            }
           }
         } else {
           // Email confirmation required
           AuthErrorHandler.showInfoSnackBar(
             context, 
-            '📧 Account created! Please check your email to verify your account.'
+            '📧 Account created! Please check your email to verify your account. After verification, your account will be pending admin approval.'
           );
           
           // Go back to login screen

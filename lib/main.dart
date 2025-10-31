@@ -18,6 +18,7 @@ import 'screens/role_selection_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/pending_approval_screen.dart';
+import 'screens/initial_tool_setup_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
 import 'models/user_role.dart';
@@ -25,6 +26,7 @@ import 'providers/auth_provider.dart';
 import 'providers/supabase_tool_provider.dart';
 import 'providers/supabase_technician_provider.dart';
 import 'providers/tool_issue_provider.dart';
+import 'providers/request_thread_provider.dart';
 import 'providers/pending_approvals_provider.dart';
 import 'providers/admin_notification_provider.dart';
 import 'database/database_helper.dart';
@@ -47,21 +49,44 @@ void main() async {
   try {
     // Initialize Firebase (skip on web for now to avoid issues)
     if (!kIsWeb) {
-      print('Initializing Firebase...');
+      print('🔥 Initializing Firebase...');
       try {
-        await Firebase.initializeApp();
-        print('Firebase initialized successfully');
+        // Check if Firebase is already initialized
+        if (Firebase.apps.isEmpty) {
+          print('🔥 Firebase apps is empty, initializing...');
+          try {
+            await Firebase.initializeApp();
+            print('✅ Firebase initialized successfully. Apps count: ${Firebase.apps.length}');
+            if (Firebase.apps.isNotEmpty) {
+              print('✅ Firebase app name: ${Firebase.app().name}');
+            }
+          } catch (initError, stackTrace) {
+            print('❌ Firebase.initializeApp() threw error: $initError');
+            print('❌ Stack trace: $stackTrace');
+            rethrow; // Re-throw to be caught by outer catch
+          }
+        } else {
+          print('✅ Firebase already initialized. Apps: ${Firebase.apps.map((a) => a.name).join(", ")}');
+        }
         
-        // Set up Firebase Messaging background handler
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-        
-        // Initialize Firebase Messaging
-        await FirebaseMessagingService.initialize();
-        print('Firebase Messaging initialized successfully');
-      } catch (firebaseError) {
-        print('Firebase initialization failed: $firebaseError');
+        // Verify Firebase is initialized before proceeding
+        if (Firebase.apps.isEmpty) {
+          print('❌ Firebase initialization failed - apps still empty');
+        } else {
+          print('✅ Firebase verified. Setting up messaging...');
+          
+          // Set up Firebase Messaging background handler
+          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+          
+          // Initialize Firebase Messaging
+          await FirebaseMessagingService.initialize();
+          print('✅ Firebase Messaging initialized successfully');
+        }
+      } catch (firebaseError, stackTrace) {
+        print('❌ Firebase initialization failed: $firebaseError');
+        print('❌ Stack trace: $stackTrace');
         // Continue without Firebase - this is not critical for basic app functionality
-        print('Continuing without Firebase...');
+        print('⚠️ Continuing without Firebase...');
       }
     }
 
@@ -180,10 +205,6 @@ class SimpleWebApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       home: const WebLoginScreen(),
       debugShowCheckedModeBanner: false,
-      // Remove any loading screens or splash screens
-      builder: (context, child) {
-        return child!;
-      },
     );
   }
 }
@@ -267,6 +288,7 @@ class HvacToolsManagerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ToolIssueProvider()),
         ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
+        ChangeNotifierProvider(create: (_) => RequestThreadProvider()),
         ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
@@ -292,6 +314,7 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/role-selection': (context) => const RoleSelectionScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
+              '/pending-approval': (context) => const PendingApprovalScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                 final initialTab = args?['initialTab'] as int? ?? 0;
@@ -309,7 +332,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                     if (kIsWeb) {
                       return const WebTechnicianDashboard();
                     } else {
-                      return const TechnicianHomeScreen();
+                      // Check if initial setup is needed
+                      return const InitialToolSetupScreen();
                     }
                   },
               '/tool-detail': (context) {
@@ -372,12 +396,13 @@ class HvacToolsManagerApp extends StatelessWidget {
               key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
             ),
           );
-        } else if (authProvider.userRole == UserRole.pending) {
+        } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
+          // Check approval status for technicians
+          print('🔍 Technician user detected, checking approval status...');
           return const PendingApprovalScreen();
         } else {
-          return TechnicianHomeScreen(
-            key: ValueKey('tech_home_${DateTime.now().millisecondsSinceEpoch}'),
-          );
+          // Technician is approved - check if they need to complete initial tool setup
+          return InitialToolSetupScreen();
         }
       } else {
         print('🔍 User not authenticated, showing role selection screen');

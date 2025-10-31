@@ -8,7 +8,6 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_handler.dart';
 import '../../widgets/common/status_chip.dart';
 import 'checkin_screen_web.dart';
-import 'checkout_screen_web.dart';
 import '../tools_screen.dart';
 import '../reports_screen.dart';
 import '../technicians_screen.dart';
@@ -40,11 +39,6 @@ class _WebAdminHomeScreenState extends State<WebAdminHomeScreen> with ErrorHandl
       icon: Icons.login,
       label: 'Check In',
       page: const CheckinScreenWeb(),
-    ),
-    NavigationItem(
-      icon: Icons.logout,
-      label: 'Check Out',
-      page: const CheckoutScreenWeb(),
     ),
     NavigationItem(
       icon: Icons.people,

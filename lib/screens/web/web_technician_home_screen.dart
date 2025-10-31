@@ -34,11 +34,6 @@ class _WebTechnicianHomeScreenState extends State<WebTechnicianHomeScreen> with 
       label: 'Check In',
       page: const CheckInPage(),
     ),
-    NavigationItem(
-      icon: Icons.logout,
-      label: 'Check Out',
-      page: const CheckOutPage(),
-    ),
   ];
 
   @override
@@ -630,22 +625,6 @@ class CheckInPage extends StatelessWidget {
   }
 }
 
-class CheckOutPage extends StatelessWidget {
-  const CheckOutPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey[50],
-      child: const Center(
-        child: Text(
-          'Check Out - Coming Soon',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
-  }
-}
 
 
 

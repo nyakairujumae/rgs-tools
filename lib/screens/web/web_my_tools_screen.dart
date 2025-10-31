@@ -7,7 +7,6 @@ import '../../providers/auth_provider.dart';
 import '../../models/tool.dart';
 import '../tool_detail_screen.dart';
 import 'checkin_screen_web.dart';
-import 'checkout_screen_web.dart';
 
 class WebMyToolsScreen extends StatefulWidget {
   const WebMyToolsScreen({super.key});
@@ -118,29 +117,6 @@ class _WebMyToolsScreenState extends State<WebMyToolsScreen> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CheckoutScreenWeb(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text(
-                          'Check Out',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                       ),
                     ],

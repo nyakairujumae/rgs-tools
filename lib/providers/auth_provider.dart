@@ -19,7 +19,63 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _user != null;
   bool get isAdmin => _userRole == UserRole.admin;
   bool get isTechnician => _userRole == UserRole.technician;
+  bool get isPendingApproval => _userRole == UserRole.pending;
   bool get isLoggingOut => _isLoggingOut;
+  
+  /// Check if the current user has been approved
+  /// Returns null if check is in progress, true if approved, false if pending/rejected
+  Future<bool?> checkApprovalStatus() async {
+    if (_user == null) return null;
+    
+    try {
+      // First check pending approvals table - this is the source of truth for technicians
+      final approval = await SupabaseService.client
+          .from('pending_user_approvals')
+          .select('status')
+          .eq('user_id', _user!.id)
+          .maybeSingle();
+      
+      if (approval != null) {
+        final status = approval['status'] as String?;
+        if (status == 'approved') {
+          // If approved, also check if user record exists (should exist after approval)
+          final userRecord = await SupabaseService.client
+              .from('users')
+              .select('role')
+              .eq('id', _user!.id)
+              .maybeSingle();
+          return userRecord != null; // Approved and user record exists
+        } else {
+          // Status is pending or rejected
+          return false;
+        }
+      }
+      
+      // No pending approval record found - check if user exists in users table
+      // If user exists but no pending approval record, they might be an existing approved user
+      final userRecord = await SupabaseService.client
+          .from('users')
+          .select('role')
+          .eq('id', _user!.id)
+          .maybeSingle();
+      
+      if (userRecord != null && userRecord['role'] != null) {
+        // User exists in users table - check if they're admin or approved technician
+        final role = userRecord['role'] as String;
+        if (role == 'admin') {
+          return true; // Admins are always approved
+        }
+        // For technicians, if they have a user record, they were approved
+        return true;
+      }
+      
+      // No record found anywhere - treat as not approved (pending registration)
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking approval status: $e');
+      return null;
+    }
+  }
 
   Future<void> initialize() async {
     print('🔍 AuthProvider initialize called');
@@ -83,7 +139,44 @@ class AuthProvider with ChangeNotifier {
 
       if (response.user != null) {
         _user = response.user;
-        await _loadUserRole();
+        
+        // For technicians, create pending approval instead of user record
+        if (role == UserRole.technician || role == null) {
+          try {
+            // Create pending approval record
+            await SupabaseService.client
+                .from('pending_user_approvals')
+                .insert({
+                  'user_id': _user!.id,
+                  'email': email,
+                  'full_name': fullName,
+                  'status': 'pending',
+                });
+            
+            debugPrint('✅ Pending approval created for technician: $email');
+            
+            // Delete any user record created by trigger (technicians shouldn't have one until approved)
+            try {
+              await SupabaseService.client
+                  .from('users')
+                  .delete()
+                  .eq('id', _user!.id);
+              debugPrint('✅ Removed user record for pending technician');
+            } catch (deleteError) {
+              debugPrint('⚠️ Could not delete user record: $deleteError');
+            }
+            
+            // Set role to pending
+            _userRole = UserRole.pending;
+            await _saveUserRole(_userRole);
+          } catch (e) {
+            debugPrint('❌ Error creating pending approval: $e');
+            // Continue anyway - user is created
+          }
+        } else {
+          // For admins, load role normally
+          await _loadUserRole();
+        }
       }
 
       return response;
@@ -138,6 +231,7 @@ class AuthProvider with ChangeNotifier {
     // Then submit for admin approval instead of directly creating technician record
     if (_user != null) {
       try {
+        // Create pending approval record
         await SupabaseService.client
             .from('pending_user_approvals')
             .insert({
@@ -152,6 +246,23 @@ class AuthProvider with ChangeNotifier {
             });
         
         debugPrint('✅ Pending approval submitted for technician: $email');
+        
+        // IMPORTANT: Delete any user record that might have been created by the trigger
+        // Technicians should NOT have a user record until approved
+        try {
+          await SupabaseService.client
+              .from('users')
+              .delete()
+              .eq('id', _user!.id);
+          debugPrint('✅ Removed user record for pending technician (will be created on approval)');
+        } catch (deleteError) {
+          debugPrint('⚠️ Could not delete user record (might not exist): $deleteError');
+        }
+        
+        // Set role to pending
+        _userRole = UserRole.pending;
+        await _saveUserRole(_userRole);
+        notifyListeners();
       } catch (e) {
         debugPrint('❌ Error submitting pending approval: $e');
         // Don't throw error here, user is already created
@@ -182,6 +293,19 @@ class AuthProvider with ChangeNotifier {
             // User has admin role but doesn't have admin domain - revoke access
             await signOut();
             throw Exception('Access denied: Invalid admin credentials');
+          }
+        }
+        
+        // For technicians, check if they're approved before allowing access
+        if (_userRole != UserRole.admin) {
+          final isApproved = await checkApprovalStatus();
+          if (isApproved == false) {
+            // User is not approved - set role to pending to block access
+            _userRole = UserRole.pending;
+            await _saveUserRole(_userRole);
+            debugPrint('⚠️ Technician login blocked - not approved yet');
+            notifyListeners();
+            // Don't throw error, just set role to pending so UI can handle it
           }
         }
       }
@@ -314,48 +438,92 @@ _isLoading = false;
             try {
               final pendingApproval = await SupabaseService.client
                   .from('pending_user_approvals')
-                  .select('*')
+                  .select('status')
                   .eq('user_id', _user!.id)
-                  .single();
-              
+                  .maybeSingle();
+
               if (pendingApproval != null) {
-                debugPrint('🔍 Found pending approval for new technician registration');
-                _userRole = UserRole.technician; // Set as technician for pending approval
-                await _saveUserRole(_userRole);
-                debugPrint('✅ Set role to technician for pending approval');
-                notifyListeners();
-                return;
+                final status = pendingApproval['status'] as String?;
+                debugPrint('🔍 Found approval record with status: $status');
+                
+                if (status == 'pending') {
+                  debugPrint('⚠️ User has pending approval - setting role to pending');
+                  _userRole = UserRole.pending;
+                  await _saveUserRole(_userRole);
+                  notifyListeners();
+                  return;
+                } else if (status == 'rejected') {
+                  debugPrint('❌ User approval was rejected - access denied');
+                  _userRole = UserRole.pending; // Treat as pending to show rejection screen
+                  await _saveUserRole(_userRole);
+                  notifyListeners();
+                  return;
+                } else if (status == 'approved') {
+                  // User is approved, role should be set in users table
+                  // Continue to check users table
+                  debugPrint('✅ User approval was approved - checking users table');
+                }
               }
             } catch (pendingError) {
               debugPrint('🔍 No pending approval found: $pendingError');
             }
             
-            // Only create admin users for specific domains, otherwise default to technician
+            // Check if user has pending approval - if so, don't create user record yet
+            final pendingApproval = await SupabaseService.client
+                .from('pending_user_approvals')
+                .select('status')
+                .eq('user_id', _user!.id)
+                .maybeSingle();
+            
+            if (pendingApproval != null) {
+              final status = pendingApproval['status'] as String?;
+              if (status == 'pending' || status == 'rejected') {
+                debugPrint('⚠️ User has pending/rejected approval - not creating user record');
+                _userRole = UserRole.pending;
+                await _saveUserRole(_userRole);
+                notifyListeners();
+                return;
+              }
+            }
+            
+            // Only create admin users for specific domains, technicians must be approved first
             try {
               String role = 'technician'; // Default to technician
               if (_user!.email != null && 
                   (_user!.email!.endsWith('@royalgulf.ae') || _user!.email!.endsWith('@mekar.ae'))) {
                 role = 'admin';
                 debugPrint('🔍 Admin domain detected, creating admin user');
+                
+                // Create user record for admins immediately
+                await SupabaseService.client
+                    .from('users')
+                    .insert({
+                      'id': _user!.id,
+                      'email': _user!.email ?? 'user@example.com',
+                      'full_name': _user!.userMetadata?['full_name'] ?? 'User',
+                      'role': role,
+                      'created_at': DateTime.now().toIso8601String(),
+                    });
+                
+                _userRole = UserRoleExtension.fromString(role);
+                await _saveUserRole(_userRole);
+                debugPrint('✅ Created admin user with role: $role');
+                notifyListeners();
+                return;
               } else {
-                debugPrint('🔍 Non-admin domain, creating technician user');
+                // For technicians, check if they're approved
+                if (pendingApproval != null && pendingApproval['status'] == 'approved') {
+                  // Technician was approved, user record should exist from approval function
+                  debugPrint('🔍 Technician approved, checking for user record');
+                } else {
+                  // Technician not approved yet - don't create user record
+                  debugPrint('⚠️ Technician not approved - setting role to pending');
+                  _userRole = UserRole.pending;
+                  await _saveUserRole(_userRole);
+                  notifyListeners();
+                  return;
+                }
               }
-              
-              await SupabaseService.client
-                  .from('users')
-                  .insert({
-                    'id': _user!.id,
-                    'email': _user!.email ?? 'user@example.com',
-                    'full_name': _user!.userMetadata?['full_name'] ?? 'User',
-                    'role': role,
-                    'created_at': DateTime.now().toIso8601String(),
-                  });
-              
-              _userRole = UserRoleExtension.fromString(role);
-              await _saveUserRole(_userRole);
-              debugPrint('✅ Created user with role: $role');
-              notifyListeners();
-              return;
             } catch (insertError) {
               debugPrint('❌ Failed to create user record: $insertError');
             }

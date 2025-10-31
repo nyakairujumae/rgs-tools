@@ -14,7 +14,6 @@ import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/rgs_logo.dart';
 import '../tool_detail_screen.dart';
 import 'web_checkin_screen.dart';
-import 'web_checkout_screen.dart';
 import 'web_my_tools_screen.dart';
 import 'web_shared_tools_screen.dart';
 import '../../models/tool.dart';
@@ -50,11 +49,6 @@ class _WebTechnicianDashboardState extends State<WebTechnicianDashboard> {
       icon: Icons.login,
       label: 'Check In',
       page: const WebCheckinScreen(),
-    ),
-    NavigationItem(
-      icon: Icons.logout,
-      label: 'Check Out',
-      page: const WebCheckoutScreen(),
     ),
   ];
 
