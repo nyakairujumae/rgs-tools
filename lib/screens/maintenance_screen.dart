@@ -81,13 +81,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _showAddMaintenanceDialog,
-            icon: Icon(Icons.add),
-            tooltip: 'Schedule Maintenance',
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -102,8 +95,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMaintenanceDialog,
-        icon: Icon(Icons.schedule),
-        label: Text('Schedule'),
+        icon: Icon(Icons.add),
+        label: Text('New Maintenance'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -114,8 +107,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     final filters = ['All', 'Scheduled', 'Overdue', 'In Progress', 'Completed'];
     
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
@@ -124,17 +117,34 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
           final isSelected = _selectedFilter == filter;
           
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 10),
             child: FilterChip(
-              label: Text(filter),
+              label: Text(
+                filter,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected 
+                      ? Theme.of(context).textTheme.bodyLarge?.color 
+                      : Colors.grey[600],
+                ),
+              ),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
                   _selectedFilter = filter;
                 });
               },
-              selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-              checkmarkColor: AppTheme.primaryColor,
+              backgroundColor: Theme.of(context).cardTheme.color,
+              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).primaryColor,
+              side: BorderSide(
+                color: isSelected 
+                    ? Theme.of(context).primaryColor 
+                    : Colors.grey.withValues(alpha: 0.3),
+                width: isSelected ? 1.5 : 1,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           );
         },
@@ -201,191 +211,218 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   Widget _buildMaintenanceCard(MaintenanceSchedule item) {
-    return Card(
+    final statusColor = _getStatusColor(item.status);
+    final priorityColor = _getPriorityColor(item.priority);
+    final isOverdue = item.isOverdue;
+    
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).cardColor,
-              Theme.of(context).cardColor.withOpacity(0.8),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with Tool Image
-              Row(
-                children: [
-                  // Tool Image Placeholder
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppTheme.primaryColor.withOpacity(0.3),
-                        width: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Section
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Maintenance Type Icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.build_outlined,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: 12),
+                // Title and Type
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.maintenanceType,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
                       ),
-                    ),
-                    child: Icon(
-                      Icons.build,
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.toolName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                      SizedBox(height: 4),
+                      Text(
+                        item.toolName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          item.maintenanceType,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  StatusChip(status: item.status),
-                ],
-              ),
-              
-              SizedBox(height: 16),
-              
-              // Description
-              if (item.description.isNotEmpty) ...[
-                Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
+                // Status Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    item.status,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
                   ),
                 ),
-                SizedBox(height: 12),
               ],
-              
-              // Priority and Date Row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoChip(
-                      Icons.flag,
-                      'Priority',
-                      item.priority,
-                      _getPriorityColor(item.priority),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildInfoChip(
-                      Icons.calendar_today,
-                      'Due Date',
-                      _formatDate(item.scheduledDate),
-                      AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+            ),
+          ),
+          
+          // Description
+          if (item.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                item.description,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  height: 1.5,
+                ),
               ),
-              
-              SizedBox(height: 16),
-              
-              // Additional Info Row
-              Row(
-                children: [
-                  if (item.assignedTo != null) ...[
-                    Expanded(
-                      child: _buildInfoChip(
-                        Icons.person,
-                        'Assigned To',
-                        item.assignedTo!,
-                        AppTheme.primaryColor,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                  ],
-                  if (item.estimatedCost != null) ...[
-                    Expanded(
-                      child: _buildInfoChip(
-                        Icons.attach_money,
-                        'Est. Cost',
-                        '\$${item.estimatedCost!.toStringAsFixed(0)}',
-                        Colors.green,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              
-              SizedBox(height: 16),
-              
-              // Action Buttons
-              Row(
-                children: [
-                  if (item.status == 'Scheduled' || item.status == 'Overdue')
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _startMaintenance(item),
-                        icon: Icon(Icons.play_arrow, size: 16),
-                        label: Text('Start'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 8),
+            ),
+          
+          SizedBox(height: 16),
+          
+          // Info Grid
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                // Priority
+                _buildInfoBadge(
+                  Icons.flag_outlined,
+                  'Priority ${item.priority}',
+                  priorityColor,
+                ),
+                // Due Date
+                _buildInfoBadge(
+                  Icons.calendar_today_outlined,
+                  'Due Date ${_formatDate(item.scheduledDate)}',
+                  isOverdue ? Colors.red : Colors.blue,
+                ),
+                // Assigned To
+                if (item.assignedTo != null)
+                  _buildInfoBadge(
+                    Icons.person_outline,
+                    'Assigned To ${item.assignedTo!}',
+                    Theme.of(context).primaryColor,
+                  ),
+                // Estimated Cost
+                if (item.estimatedCost != null)
+                  _buildInfoBadge(
+                    Icons.attach_money,
+                    'Est. Cost \$${item.estimatedCost!.toStringAsFixed(0)}',
+                    Colors.green,
+                  ),
+              ],
+            ),
+          ),
+          
+          SizedBox(height: 16),
+          
+          // Action Buttons
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                if (item.status == 'Scheduled' || item.status == 'Overdue')
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _startMaintenance(item),
+                      icon: Icon(Icons.play_arrow, size: 18),
+                      label: Text('Start'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                  if (item.status == 'Scheduled' || item.status == 'Overdue')
-                    SizedBox(width: 8),
+                  ),
+                if (item.status == 'Scheduled' || item.status == 'Overdue')
+                  SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _viewMaintenanceDetails(item),
+                    icon: Icon(Icons.info_outline, size: 18),
+                    label: Text('Details'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                if (item.status == 'In Progress') ...[
+                  SizedBox(width: 10),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _viewMaintenanceDetails(item),
-                      icon: Icon(Icons.info_outline, size: 16),
-                      label: Text('Details'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.textSecondary,
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _completeMaintenance(item),
+                      icon: Icon(Icons.check_circle, size: 18),
+                      label: Text('Complete'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -552,46 +589,52 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, String value, Color color) {
+  Widget _buildInfoBadge(IconData icon, String text, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(icon, size: 14, color: color),
           SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
               ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
     );
+  }
+  
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'overdue':
+        return Colors.red;
+      case 'in progress':
+        return Colors.blue;
+      case 'scheduled':
+        return Colors.orange;
+      case 'completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 }
 
@@ -644,307 +687,360 @@ class _AddMaintenancePageState extends State<_AddMaintenancePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(Icons.schedule, color: AppTheme.primaryColor, size: 24),
-            SizedBox(width: 8),
-            Text('Schedule Maintenance'),
-          ],
-        ),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        title: Text('Schedule Maintenance'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back),
-        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                  
-                  // Tool Selection
-                  Text(
-                    'Select Tool',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Tool Selection
+                _buildSectionLabel('Select Tool', Icons.build_outlined),
+                SizedBox(height: 8),
+                Consumer<SupabaseToolProvider>(
+                  builder: (context, toolProvider, child) {
+                    final tools = toolProvider.tools;
+                    return DropdownButtonFormField<String>(
+                      value: _selectedTool.isEmpty ? null : _selectedTool,
+                      decoration: _buildInputDecoration(hint: 'Choose a tool'),
+                      items: tools.map((tool) {
+                        return DropdownMenuItem<String>(
+                          value: tool.id,
+                          child: Text(tool.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTool = value ?? '';
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a tool';
+                        }
+                        return null;
+                      },
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                
+                // Maintenance Type
+                _buildSectionLabel('Maintenance Type', Icons.category_outlined),
+                SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedType,
+                  decoration: _buildInputDecoration(),
+                  items: _maintenanceTypes.map((type) {
+                    return DropdownMenuItem<String>(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedType = value ?? 'Calibration';
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                
+                // Description
+                _buildSectionLabel('Description', Icons.description_outlined),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: _buildInputDecoration(
+                    hint: 'Describe the maintenance task',
                   ),
-                  SizedBox(height: 8),
-                  Consumer<SupabaseToolProvider>(
-                    builder: (context, toolProvider, child) {
-                      final tools = toolProvider.tools;
-                      return DropdownButtonFormField<String>(
-                        value: _selectedTool.isEmpty ? null : _selectedTool,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        hint: Text('Choose a tool'),
-                        items: tools.map((tool) {
-                          return DropdownMenuItem<String>(
-                            value: tool.id,
-                            child: Text(tool.name),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTool = value ?? '';
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please select a tool';
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Maintenance Type
-                  Text(
-                    'Maintenance Type',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: _selectedType,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: _maintenanceTypes.map((type) {
-                      return DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedType = value ?? 'Calibration';
-                      });
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Description
-                  Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      hintText: 'Describe the maintenance task',
-                    ),
-                    maxLines: 3,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a description';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Image Picker
-                  Text(
-                    'Maintenance Image (Optional)',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: _selectedImagePath != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _selectedImagePath!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildImagePlaceholder();
-                              },
-                            ),
-                          )
-                        : _buildImagePlaceholder(),
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _pickImage,
-                          icon: Icon(Icons.camera_alt, size: 16),
-                          label: Text('Take Photo'),
-                        ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a description';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                
+                // Image Picker
+                _buildSectionLabel('Maintenance Image (Optional)', Icons.image_outlined),
+                SizedBox(height: 8),
+                _buildImagePicker(),
+                SizedBox(height: 20),
+                
+                // Priority and Date Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('Priority', Icons.flag_outlined),
+                          SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedPriority,
+                            decoration: _buildInputDecoration(),
+                            items: _priorities.map((priority) {
+                              return DropdownMenuItem<String>(
+                                value: priority,
+                                child: Text(priority),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPriority = value ?? 'Medium';
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _pickImageFromGallery,
-                          icon: Icon(Icons.photo_library, size: 16),
-                          label: Text('Choose from Gallery'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Priority and Date Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Priority',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedPriority,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                              items: _priorities.map((priority) {
-                                return DropdownMenuItem<String>(
-                                  value: priority,
-                                  child: Text(priority),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedPriority = value ?? 'Medium';
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Scheduled Date',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            InkWell(
-                              onTap: _selectDate,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(4),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('Scheduled Date', Icons.calendar_today_outlined),
+                          SizedBox(height: 8),
+                          InkWell(
+                            onTap: _selectDate,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                border: Border.all(
+                                  color: Colors.grey.withValues(alpha: 0.3),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.calendar_today, size: 20),
-                                    SizedBox(width: 8),
-                                    Text(_formatDate(_selectedDate)),
-                                  ],
-                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 18,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    _formatDate(_selectedDate),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Estimated Cost
-                  Text(
-                    'Estimated Cost (Optional)',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                
+                // Estimated Cost
+                _buildSectionLabel('Estimated Cost (Optional)', Icons.attach_money_outlined),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: _estimatedCostController,
+                  decoration: _buildInputDecoration(
+                    hint: '0.00',
+                    prefixIcon: Icon(
+                      Icons.attach_money,
+                      size: 20,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  TextFormField(
-                    controller: _estimatedCostController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      hintText: '0.00',
-                      prefixText: '\$ ',
-                    ),
-                    keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+                SizedBox(height: 20),
+                
+                // Notes
+                _buildSectionLabel('Notes (Optional)', Icons.note_outlined),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: _notesController,
+                  decoration: _buildInputDecoration(
+                    hint: 'Additional notes or instructions',
                   ),
-                  SizedBox(height: 16),
-                  
-                  // Notes
-                  Text(
-                    'Notes (Optional)',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                  maxLines: 2,
+                ),
+                SizedBox(height: 24),
+                
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _saveMaintenance,
+                    icon: Icon(Icons.schedule, size: 20),
+                    label: Text(
+                      'Schedule Maintenance',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  TextFormField(
-                    controller: _notesController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      hintText: 'Additional notes or instructions',
-                    ),
-                    maxLines: 2,
-                  ),
-            ],
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _saveMaintenance,
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        icon: Icon(Icons.schedule),
-        label: Text('Schedule Maintenance'),
+    );
+  }
+  
+  Widget _buildSectionLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: Theme.of(context).primaryColor,
+        ),
+        SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  InputDecoration _buildInputDecoration({
+    String? hint,
+    Widget? prefixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: prefixIcon,
+      filled: true,
+      fillColor: Theme.of(context).cardTheme.color,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Colors.grey.withValues(alpha: 0.3),
+        ),
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Colors.grey.withValues(alpha: 0.3),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Theme.of(context).primaryColor,
+          width: 2,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Colors.red,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 2,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildImagePicker() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 140,
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey.withValues(alpha: 0.2),
+            ),
+          ),
+          child: _selectedImagePath != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    _selectedImagePath!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildImagePlaceholder();
+                    },
+                  ),
+                )
+              : _buildImagePlaceholder(),
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _pickImage,
+                icon: Icon(Icons.camera_alt, size: 18),
+                label: Text('Take Photo'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _pickImageFromGallery,
+                icon: Icon(Icons.photo_library, size: 18),
+                label: Text('Choose from Gallery'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1019,25 +1115,26 @@ class _AddMaintenancePageState extends State<_AddMaintenancePage> {
   Widget _buildImagePlaceholder() {
     return Container(
       width: double.infinity,
-      height: 120,
+      height: 140,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.image,
-            size: 40,
-            color: Colors.grey,
+            Icons.image_outlined,
+            size: 48,
+            color: Colors.grey[400],
           ),
           SizedBox(height: 8),
           Text(
             'No image selected',
             style: TextStyle(
-              color: Colors.grey,
+              color: Colors.grey[600],
               fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

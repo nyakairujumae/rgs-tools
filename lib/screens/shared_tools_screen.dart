@@ -10,6 +10,7 @@ import '../widgets/common/empty_state.dart';
 import '../models/tool.dart';
 import '../models/user_role.dart';
 import 'tools_screen.dart';
+import 'tool_detail_screen.dart';
 
 class SharedToolsScreen extends StatefulWidget {
   const SharedToolsScreen({super.key});
@@ -51,89 +52,88 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text('Shared Tools'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: _showFilterOptions,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Search Section
-            _buildSearchSection(),
-            
-            // Filter Chips
-            _buildFilterChips(),
-            
-            // Tools List
-            Expanded(
-            child: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
-              builder: (context, toolProvider, technicianProvider, child) {
-                final tools = _getFilteredTools(toolProvider.tools);
-                
-                if (toolProvider.isLoading) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Search Section
+              _buildSearchSection(),
+              
+              // Filter Chips
+              _buildFilterChips(),
+              
+              // Tools List
+              Expanded(
+              child: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
+                builder: (context, toolProvider, technicianProvider, child) {
+                  final tools = _getFilteredTools(toolProvider.tools);
+                  
+                  if (toolProvider.isLoading) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      ),
+                    );
+                  }
+
+                  if (tools.isEmpty) {
+                    // Check if user is admin to show "Go to Tools" button
+                    return Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final isAdmin = authProvider.userRole == UserRole.admin;
+                        
+                        return EmptyState(
+                          icon: Icons.share,
+                          title: _selectedFilter == 'All' ? 'No Shared Tools' : 'No Tools Found',
+                          subtitle: _selectedFilter == 'All' 
+                              ? (isAdmin 
+                                  ? 'Go to All Tools to mark tools as "Shared" so they appear here'
+                                  : 'No shared tools available. Contact your admin to share tools.')
+                              : 'Try adjusting your filters or search terms',
+                          actionText: isAdmin ? 'Go to Tools' : null,
+                          onAction: isAdmin ? () {
+                            // Navigate to Admin Home with Tools tab selected
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/admin',
+                              (route) => false,
+                              arguments: {'initialTab': 1}, // Tools tab
+                            );
+                          } : null,
+                        );
+                      },
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      await toolProvider.loadTools();
+                    },
+                    color: AppTheme.primaryColor,
+                    backgroundColor: Theme.of(context).cardTheme.color,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12.0,
+                        mainAxisSpacing: 16.0,
+                        childAspectRatio: 0.65, // Accounts for image card + details below
+                      ),
+                      itemCount: tools.length,
+                      itemBuilder: (context, index) {
+                        final tool = tools[index];
+                        return _buildToolCard(tool, technicianProvider);
+                      },
                     ),
                   );
-                }
-
-                if (tools.isEmpty) {
-                  // Check if user is admin to show "Go to Tools" button
-                  return Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      final isAdmin = authProvider.userRole == UserRole.admin;
-                      
-                      return EmptyState(
-                        icon: Icons.share,
-                        title: _selectedFilter == 'All' ? 'No Shared Tools' : 'No Tools Found',
-                        subtitle: _selectedFilter == 'All' 
-                            ? (isAdmin 
-                                ? 'Go to All Tools to mark tools as "Shared" so they appear here'
-                                : 'No shared tools available. Contact your admin to share tools.')
-                            : 'Try adjusting your filters or search terms',
-                        actionText: isAdmin ? 'Go to Tools' : null,
-                        onAction: isAdmin ? () {
-                          // Navigate to Admin Home with Tools tab selected
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/admin',
-                            (route) => false,
-                            arguments: {'initialTab': 1}, // Tools tab
-                          );
-                        } : null,
-                      );
-                    },
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    await toolProvider.loadTools();
-                  },
-                  color: AppTheme.primaryColor,
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: tools.length,
-                    itemBuilder: (context, index) {
-                      final tool = tools[index];
-                      return _buildToolCard(tool, technicianProvider);
-                    },
-                  ),
-                );
-              },
+                },
+              ),
             ),
+            ],
           ),
-          ],
         ),
       ),
     );
@@ -141,38 +141,50 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
 
   Widget _buildSearchSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Container(
+        height: 48,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          gradient: AppTheme.cardGradient,
+          borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
-          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-          decoration: InputDecoration(
-            hintText: 'Search shared tools...',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, color: Colors.grey[400]),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                      });
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Search shared tools...',
+              hintStyle: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[500]),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, size: 18, color: Colors.grey[500]),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
           ),
         ),
       ),
@@ -181,7 +193,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
 
   Widget _buildFilterChips() {
     return Container(
-      height: 50,
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -191,15 +203,18 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           final isSelected = _selectedFilter == filter;
           
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 6),
             child: FilterChip(
               label: Text(
                 filter,
                 style: TextStyle(
                   color: isSelected ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[400],
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 11,
                 ),
               ),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              labelPadding: EdgeInsets.symmetric(horizontal: 4),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
@@ -220,174 +235,166 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   Widget _buildToolCard(Tool tool, SupabaseTechnicianProvider technicianProvider) {
-    return Card(
-      color: Theme.of(context).cardTheme.color,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/tool-detail',
-            arguments: tool,
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Tool Image/Avatar
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[800],
-                ),
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.build,
-                                    color: Colors.grey[400],
-                                    size: 30,
-                                  );
-                                },
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    color: Colors.grey[800],
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                loadingProgress.expectedTotalBytes!
-                                            : null,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : File(tool.imagePath!).existsSync()
-                                ? Image.file(
-                                    File(tool.imagePath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.build,
-                                        color: Colors.grey[400],
-                                        size: 30,
-                                      );
-                                    },
-                                  )
-                                : Icon(
-                                    Icons.build,
-                                    color: Colors.grey[400],
-                                    size: 30,
-                                  ),
-                      )
-                    : Icon(
-                        Icons.build,
-                        color: Colors.grey[400],
-                        size: 30,
-                      ),
-              ),
-              
-              SizedBox(width: 16),
-              
-              // Tool Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '${tool.category} • ${tool.brand ?? 'Unknown'}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        StatusChip(
-                          status: tool.status,
-                        ),
-                        SizedBox(width: 8),
-                        if (tool.currentValue != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              'AED ${tool.currentValue!.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Action Buttons
-              Column(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      _showToolActions(tool, technicianProvider);
-                    },
-                    icon: Icon(Icons.more_vert, color: Colors.grey),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ToolDetailScreen(tool: tool),
+          ),
+        );
+      },
+      onLongPress: () => _showToolActions(tool, technicianProvider),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Full Image Card - Square
+          AspectRatio(
+            aspectRatio: 1.0, // Perfect square
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: AppTheme.cardGradient,
+                borderRadius: BorderRadius.circular(28), // More rounded
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                    spreadRadius: 0,
                   ),
-                  SizedBox(height: 8),
-                  if (tool.status == 'Available')
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        'Shareable',
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
+                  BoxShadow( // Second shadow for depth
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
-            ],
+              clipBehavior: Clip.antiAlias,
+              child: tool.imagePath != null
+                  ? (tool.imagePath!.startsWith('http')
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: Image.network(
+                            tool.imagePath!,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.cardGradient,
+                                ),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      : File(tool.imagePath!).existsSync()
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              ),
+                            )
+                          : _buildPlaceholderImage())
+                  : _buildPlaceholderImage(),
+            ),
           ),
-        ),
+          
+          // Details Below Card
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tool Name and Category in one line
+                Text(
+                  '${tool.name} • ${tool.category}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 6),
+                // Status and Value Pills
+                Row(
+                  children: [
+                    StatusChip(
+                      status: tool.status,
+                      showIcon: false,
+                    ),
+                    if (tool.currentValue != null) ...[
+                      SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'AED ${tool.currentValue!.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradient,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 40,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 4),
+          Text(
+            'No Image',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
       ),
     );
   }

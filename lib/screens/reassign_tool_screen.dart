@@ -71,10 +71,10 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                             final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
                             return Text(
                               'Currently assigned to: $technicianName',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black,
-                              ),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
                             );
                           },
                         ),
@@ -253,8 +253,8 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
           final updatedTool = widget.tool.copyWith(
             notes: '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
             updatedAt: DateTime.now().toIso8601String(),
-          );
-          await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+      );
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
         }
       } else {
         throw Exception('Technician ID or Tool ID is required');

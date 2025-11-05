@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       subtitle: 'Track ROI and Reduce Losses',
       description: 'Monitor tool values, track depreciation, and identify cost-saving opportunities. Replace paper-based tracking with digital insights.',
       icon: Icons.analytics,
-      color: AppTheme.successColor,
+      color: AppTheme.successColor
     ),
     OnboardingPage(
       title: 'Maintenance Scheduling',

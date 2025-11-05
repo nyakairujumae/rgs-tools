@@ -25,57 +25,93 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Notifications'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        actions: [
-          Consumer<AdminNotificationProvider>(
-            builder: (context, provider, child) {
-              if (provider.unreadCount > 0) {
-                return TextButton(
-                  onPressed: () {
-                    provider.markAllAsRead();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('All notifications marked as read'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Mark All Read',
-                    style: TextStyle(color: AppTheme.primaryColor),
-                  ),
-                );
-              }
-              return SizedBox.shrink();
-            },
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF00D4C3), // Subtle green at top
+              Color(0xFFE0F7F4), // Light green-tinted
+              Color(0xFFF5FCFB), // Very light green-tinted
+              Colors.white, // Pure white at bottom
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Filter chips
-          Container(
-            padding: EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', null),
-                  SizedBox(width: 8),
-                  ...NotificationType.values.map((type) => 
-                    Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: _buildFilterChip(type.displayName, type),
-                    ),
-                  ),
-                ],
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text(
+              'Notifications',
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
               ),
             ),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            actions: [
+              Consumer<AdminNotificationProvider>(
+                builder: (context, provider, child) {
+                  if (provider.unreadCount > 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: TextButton(
+                        onPressed: () {
+                          provider.markAllAsRead();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('All notifications marked as read'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Mark All Read',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return SizedBox.shrink();
+                },
+              ),
+            ],
           ),
+          body: Column(
+            children: [
+              // Filter chips
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All', null),
+                      const SizedBox(width: 8),
+                      ...NotificationType.values.map((type) => 
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildFilterChip(type.displayName, type),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           
           // Notifications list
           Expanded(
@@ -145,25 +181,53 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filteredNotifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = filteredNotifications[index];
-                    return _buildNotificationCard(notification, provider);
-                  },
+                return RefreshIndicator(
+                  onRefresh: () => provider.loadNotifications(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    itemCount: filteredNotifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = filteredNotifications[index];
+                      return _buildNotificationCard(notification, provider);
+                    },
+                  ),
                 );
               },
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showCreateNotificationDialog();
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: Icon(Icons.add, color: Colors.white),
+          floatingActionButton: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade600, Colors.blue.shade700],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  _showCreateNotificationDialog();
+                },
+                borderRadius: BorderRadius.circular(28),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  child: Icon(Icons.add, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -171,110 +235,198 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   Widget _buildFilterChip(String label, NotificationType? type) {
     final isSelected = _selectedFilter == type;
     
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedFilter = selected ? type : null;
-        });
-      },
-      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-      checkmarkColor: AppTheme.primaryColor,
+    return Container(
+      height: 40,
+      child: FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() {
+            _selectedFilter = selected ? type : null;
+          });
+        },
+        selectedColor: Colors.blue.withOpacity(0.15),
+        backgroundColor: AppTheme.cardGradientStart,
+        checkmarkColor: Colors.blue,
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        labelPadding: EdgeInsets.symmetric(horizontal: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
     );
   }
 
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      color: notification.isRead 
-          ? Theme.of(context).cardTheme.color
-          : AppTheme.primaryColor.withValues(alpha: 0.05),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getNotificationColor(notification.type).withValues(alpha: 0.2),
-          child: Icon(
-            _getNotificationIcon(notification.type),
-            color: _getNotificationColor(notification.type),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-        ),
-        title: Text(
-          notification.title,
-          style: TextStyle(
-            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Text(notification.message),
-            SizedBox(height: 4),
-            Row(
+        ],
+        border: notification.isRead 
+            ? null 
+            : Border.all(
+                color: Colors.blue.withOpacity(0.3),
+                width: 1.5,
+              ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (!notification.isRead) {
+              provider.markAsRead(notification.id);
+            }
+            _showNotificationDetails(notification);
+          },
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.person, size: 16, color: Colors.grey),
-                SizedBox(width: 4),
-                Text(
-                  notification.technicianName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                // Icon Container
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _getNotificationColor(notification.type).withOpacity(0.2),
+                        _getNotificationColor(notification.type).withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    _getNotificationIcon(notification.type),
+                    color: _getNotificationColor(notification.type),
+                    size: 24,
                   ),
                 ),
-                SizedBox(width: 16),
-                Icon(Icons.access_time, size: 16, color: Colors.grey),
-                SizedBox(width: 4),
-                Text(
-                  _formatTimestamp(notification.timestamp),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                const SizedBox(width: 16),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                          ),
+                          if (!notification.isRead)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        notification.message,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            notification.technicianName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTimestamp(notification.timestamp),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+                // Menu Button
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'mark_read':
+                        provider.markAsRead(notification.id);
+                        break;
+                      case 'delete':
+                        provider.removeNotification(notification.id);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'mark_read',
+                      child: Row(
+                        children: [
+                          Icon(Icons.mark_email_read, size: 18),
+                          const SizedBox(width: 8),
+                          Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'mark_read':
-                provider.markAsRead(notification.id);
-                break;
-              case 'delete':
-                provider.removeNotification(notification.id);
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'mark_read',
-              child: Row(
-                children: [
-                  Icon(Icons.mark_email_read),
-                  SizedBox(width: 8),
-                  Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        onTap: () {
-          if (!notification.isRead) {
-            provider.markAsRead(notification.id);
-          }
-          _showNotificationDetails(notification);
-        },
       ),
     );
   }

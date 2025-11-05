@@ -4,12 +4,19 @@ import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import 'tool_detail_screen.dart';
+import 'technicians_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/status_chip.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
+  final bool isSelectionMode;
   
-  const ToolsScreen({super.key, this.initialStatusFilter});
+  const ToolsScreen({
+    super.key, 
+    this.initialStatusFilter,
+    this.isSelectionMode = false,
+  });
 
   @override
   State<ToolsScreen> createState() => _ToolsScreenState();
@@ -19,6 +26,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   String _selectedCategory = 'Category';
   late String _selectedStatus;
   String _searchQuery = '';
+  Set<String> _selectedTools = <String>{};
 
   @override
   void initState() {
@@ -54,28 +62,133 @@ class _ToolsScreenState extends State<ToolsScreen> {
         debugPrint('🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}');
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Column(
+          appBar: widget.isSelectionMode
+              ? AppBar(
+                  title: Text(
+                    _selectedTools.isEmpty
+                        ? 'Select Tools'
+                        : '${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} Selected',
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                  ),
+                  actions: [
+                    if (_selectedTools.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTools.clear();
+                          });
+                        },
+                        child: const Text(
+                          'Clear',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                )
+              : null,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
+            ),
+            child: Column(
             children: [
+              if (widget.isSelectionMode && _selectedTools.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16.0),
+                  margin: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Tap tools to select them, then tap "Assign" below',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               // Search and Filter Bar
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                color: Theme.of(context).cardTheme.color,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                 child: Column(
                   children: [
-                    // Search Bar
-                    TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search tools...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    // Compact Search Bar
+                    Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.cardGradient,
+                        borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: TextField(
+                          style: TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Search tools...',
+                            hintStyle: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                            prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[500]),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(Icons.clear, size: 18, color: Colors.grey[500]),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                      ),
                     ),
                     SizedBox(height: 12),
                     
@@ -85,26 +198,95 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         // Category Filter
                         Expanded(
                           child: Container(
-                            height: 40,
+                            height: 48,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                              borderRadius: BorderRadius.circular(8),
+                              gradient: AppTheme.cardGradient,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedCategory,
                                 isExpanded: true,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  size: 20,
+                                ),
                                 style: TextStyle(
                                   color: Theme.of(context).textTheme.bodyLarge?.color,
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
+                                selectedItemBuilder: (BuildContext context) {
+                                  return categories.map((category) {
+                                    return Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            _getCategoryIcon(category),
+                                            size: 18,
+                                            color: category == 'Category' 
+                                                ? Colors.grey[400] 
+                                                : _getCategoryIconColor(category),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            category,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                                dropdownColor: AppTheme.cardGradientStart,
+                                menuMaxHeight: 300,
+                                borderRadius: BorderRadius.circular(20),
                                 items: categories.map((category) {
-                                  return DropdownMenuItem(
+                                  return DropdownMenuItem<String>(
                                     value: category,
-                                    child: Text(
-                                      category,
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            _getCategoryIcon(category),
+                                            size: 18,
+                                            color: category == 'Category' 
+                                                ? Colors.grey[400] 
+                                                : _getCategoryIconColor(category),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              category,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: category == 'Category' 
+                                                    ? FontWeight.normal 
+                                                    : FontWeight.w500,
+                                                color: category == 'Category' 
+                                                    ? Colors.grey[600] 
+                                                    : Theme.of(context).textTheme.bodyLarge?.color,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 }).toList(),
@@ -121,26 +303,128 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         // Status Filter
                         Expanded(
                           child: Container(
-                            height: 40,
+                            height: 48,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                              borderRadius: BorderRadius.circular(8),
+                              gradient: AppTheme.cardGradient,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedStatus,
                                 isExpanded: true,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  size: 20,
+                                ),
                                 style: TextStyle(
                                   color: Theme.of(context).textTheme.bodyLarge?.color,
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('Status')),
-                                  DropdownMenuItem(value: 'Available', child: Text('Available')),
-                                  DropdownMenuItem(value: 'In Use', child: Text('In Use')),
-                                  DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
-                                  DropdownMenuItem(value: 'Retired', child: Text('Retired')),
+                                dropdownColor: AppTheme.cardGradientStart,
+                                menuMaxHeight: 300,
+                                borderRadius: BorderRadius.circular(20),
+                                items: [
+                                  DropdownMenuItem<String>(
+                                    value: 'All',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.filter_list_outlined,
+                                            size: 18,
+                                            color: Colors.grey[400],
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Status',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'Available',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle_outline,
+                                            size: 18,
+                                            color: Colors.green,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text('Available'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'In Use',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.build_outlined,
+                                            size: 18,
+                                            color: Colors.blue,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text('In Use'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'Maintenance',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.warning_amber_outlined,
+                                            size: 18,
+                                            color: Colors.orange,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text('Maintenance'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'Retired',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.block_outlined,
+                                            size: 18,
+                                            color: Colors.grey,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text('Retired'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ],
                                 onChanged: (value) {
                                   setState(() {
@@ -189,8 +473,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ],
                             ),
                           )
-                        : ListView.builder(
+                        : GridView.builder(
                             padding: const EdgeInsets.all(16.0),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12.0,
+                              mainAxisSpacing: 16.0,
+                              childAspectRatio: 0.65, // Accounts for image card + details below
+                            ),
                             itemCount: filteredTools.length,
                             itemBuilder: (context, index) {
                               final tool = filteredTools[index];
@@ -200,166 +490,310 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ),
             ],
           ),
+        ),
+          floatingActionButton: widget.isSelectionMode && _selectedTools.isNotEmpty
+              ? Container(
+                  margin: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade600, Colors.blue.shade700],
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TechniciansScreen(),
+                            settings: RouteSettings(
+                              arguments: {'selectedTools': _selectedTools.toList()},
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
         );
       },
     );
   }
 
   Widget _buildToolCard(Tool tool) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
+    final isSelected = widget.isSelectionMode && tool.id != null && _selectedTools.contains(tool.id!);
+    
+    return InkWell(
+      onTap: () {
+        if (widget.isSelectionMode) {
+          setState(() {
+            if (tool.id != null) {
+              if (isSelected) {
+                _selectedTools.remove(tool.id!);
+              } else {
+                _selectedTools.add(tool.id!);
+              }
+            }
+          });
+        } else {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ToolDetailScreen(tool: tool),
             ),
           );
-        },
-        onLongPress: () => _showToolActions(context, tool),
-        child: Container(
-          height: 120, // Fixed height for horizontal cards
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).cardTheme.color ?? Colors.white,
-                (Theme.of(context).cardTheme.color ?? Colors.white).withValues(alpha: 0.8),
+        }
+      },
+      onLongPress: widget.isSelectionMode ? () {} : () => _showToolActions(context, tool),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Full Image Card - Square
+          AspectRatio(
+            aspectRatio: 1.0, // Perfect square
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: widget.isSelectionMode && isSelected
+                        ? Border.all(
+                            color: Colors.blue,
+                            width: 3,
+                          )
+                        : null,
+                  ),
+              clipBehavior: Clip.antiAlias,
+              child: tool.imagePath != null
+                    ? (tool.imagePath!.startsWith('http')
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.network(
+                              tool.imagePath!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.file(
+                              File(tool.imagePath!),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                            ),
+                          ))
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: _buildPlaceholderImage(),
+                      ),
+                ),
+                // Selection Checkbox
+                if (widget.isSelectionMode)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.blue : Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? Colors.blue : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 18,
+                            )
+                          : null,
+                    ),
+                  ),
               ],
             ),
           ),
-          child: Row(
-            children: [
-              // Image Section - Left Side (Fixed width)
-              Container(
-                width: 120, // Fixed width for image
-                height: double.infinity,
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          bottomLeft: Radius.circular(16),
-                        ),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              )
-                            : Image.file(
-                                File(tool.imagePath!),
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              ),
-                      )
-                    : _buildPlaceholderImage(),
-              ),
-              
-              // Content Section - Right Side (Flexible)
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top Section - Name and Brand
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tool.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      
-                      // Bottom Section - Status and Action Button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Status Chip
-                          _buildStatusChip(tool.status),
-                          
-                          // Action Button
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'View',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          
+          // Details Below Card
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tool Name and Type in one line
+                Text(
+                  '${tool.name} • ${tool.category}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                SizedBox(height: 6),
+                // Status and Condition Pills
+                Row(
+                  children: [
+                    StatusChip(
+                      status: tool.status,
+                      showIcon: false,
+                    ),
+                    SizedBox(width: 6),
+                    ConditionChip(condition: tool.condition),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'category':
+        return Icons.category_outlined;
+      case 'carpentry tools':
+        return Icons.hardware_outlined;
+      case 'electrical tools':
+        return Icons.electrical_services_outlined;
+      case 'fastening tools':
+        return Icons.construction_outlined;
+      case 'safety equipment':
+        return Icons.shield_outlined;
+      case 'testing equipment':
+        return Icons.science_outlined;
+      case 'hand tools':
+        return Icons.build_outlined;
+      case 'power tools':
+        return Icons.power_outlined;
+      case 'measuring tools':
+        return Icons.straighten_outlined;
+      case 'cutting tools':
+        return Icons.content_cut_outlined;
+      case 'plumbing tools':
+        return Icons.plumbing_outlined;
+      case 'automotive tools':
+        return Icons.directions_car_outlined;
+      case 'garden tools':
+        return Icons.yard_outlined;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
+  Color _getCategoryIconColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'carpentry tools':
+        return Colors.brown;
+      case 'electrical tools':
+        return Colors.amber;
+      case 'fastening tools':
+        return Colors.orange;
+      case 'safety equipment':
+        return Colors.red;
+      case 'testing equipment':
+        return Colors.purple;
+      case 'hand tools':
+        return Colors.blue;
+      case 'power tools':
+        return Colors.blueGrey;
+      case 'measuring tools':
+        return Colors.teal;
+      case 'cutting tools':
+        return Colors.deepOrange;
+      case 'plumbing tools':
+        return Colors.cyan;
+      case 'automotive tools':
+        return Colors.grey;
+      case 'garden tools':
+        return Colors.green;
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
 
   Widget _buildPlaceholderImage() {
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          bottomLeft: Radius.circular(16),
-        ),
-        color: Colors.grey[200],
+        gradient: AppTheme.cardGradient,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

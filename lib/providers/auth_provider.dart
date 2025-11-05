@@ -29,10 +29,13 @@ class AuthProvider with ChangeNotifier {
     
     try {
       // First check pending approvals table - this is the source of truth for technicians
+      // Get the most recent approval record (in case of duplicates)
       final approval = await SupabaseService.client
           .from('pending_user_approvals')
           .select('status')
           .eq('user_id', _user!.id)
+          .order('created_at', ascending: false)
+          .limit(1)
           .maybeSingle();
       
       if (approval != null) {

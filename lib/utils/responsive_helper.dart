@@ -49,7 +49,7 @@ class ResponsiveHelper {
 
   // Responsive text sizing that respects text scaling
   static double getResponsiveFontSize(BuildContext context, double baseSize) {
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final textScaler = MediaQuery.of(context).textScaler;
     final screenWidth = MediaQuery.of(context).size.width;
     
     // Base scaling
@@ -66,6 +66,7 @@ class ResponsiveHelper {
     
     // Apply text scale factor (respects user accessibility settings)
     // But cap it to prevent excessive scaling
+    final textScaleFactor = textScaler.scale(1.0);
     final cappedScaleFactor = textScaleFactor.clamp(0.8, 1.3);
     
     return (baseSize * scale * cappedScaleFactor).clamp(10.0, 32.0);
@@ -74,7 +75,7 @@ class ResponsiveHelper {
   // Responsive spacing
   static double getResponsiveSpacing(BuildContext context, double baseSpacing) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final textScaler = MediaQuery.of(context).textScaler;
     
     double scale = 1.0;
     if (screenWidth < 360) {
@@ -84,6 +85,7 @@ class ResponsiveHelper {
     }
     
     // Slightly adjust spacing based on text scale
+    final textScaleFactor = textScaler.scale(1.0);
     final adjustedScale = scale * textScaleFactor.clamp(0.9, 1.2);
     
     return baseSpacing * adjustedScale;
@@ -118,7 +120,7 @@ class ResponsiveHelper {
   // Responsive icon size
   static double getResponsiveIconSize(BuildContext context, double baseSize) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final textScaler = MediaQuery.of(context).textScaler;
     
     double scale = 1.0;
     if (screenWidth < 360) {
@@ -127,13 +129,14 @@ class ResponsiveHelper {
       scale = 1.1;
     }
     
+    final textScaleFactor = textScaler.scale(1.0);
     return baseSize * scale * textScaleFactor.clamp(0.9, 1.2);
   }
 
   // Responsive grid aspect ratio
   static double getResponsiveAspectRatio(BuildContext context, double baseRatio) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+    final textScaler = MediaQuery.of(context).textScaler;
     
     // Adjust for screen size
     double adjustment = 0.0;
@@ -144,6 +147,7 @@ class ResponsiveHelper {
     }
     
     // Adjust for text scaling (taller cards if text is larger)
+    final textScaleFactor = textScaler.scale(1.0);
     final textAdjustment = (textScaleFactor - 1.0) * 0.1;
     
     return (baseRatio + adjustment + textAdjustment).clamp(0.5, 0.9);

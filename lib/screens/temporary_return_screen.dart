@@ -91,10 +91,10 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                                     final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
                                     return Text(
                                       'Currently assigned to: $technicianName',
-                                      style: TextStyle(
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                     );
                                   },
                                 ),

@@ -19,7 +19,9 @@ import 'assign_tool_screen.dart';
 import 'checkin_screen.dart';
 import 'web/checkin_screen_web.dart';
 import 'reports_screen.dart';
+import 'report_detail_screen.dart';
 import 'permanent_assignment_screen.dart';
+import '../services/report_service.dart';
 import 'maintenance_screen.dart';
 import 'cost_analytics_screen.dart';
 import 'settings_screen.dart';
@@ -121,7 +123,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
-        onNavigateToTab: _navigateToScreen,
+        onNavigateToTab: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
         onNavigateToToolsWithFilter: _navigateToToolsWithFilter,
       ),
       const ToolsScreen(),
@@ -183,113 +189,118 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
     });
     
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        toolbarHeight: 80,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: const RGSLogo(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF00D4C3), // Subtle green at top
+              Color(0xFFE0F7F4), // Light green-tinted
+              Color(0xFFF5FCFB), // Very light green-tinted
+              Colors.white, // Pure white at bottom
+            ],
+          ),
         ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: _selectedIndex == 0 
+            ? const Color(0xFF00D4C3) // New gradient green at top
+            : Colors.white, // White for Tools, Shared, and Technicians screens
+        elevation: 0,
+        scrolledUnderElevation: 0, // Prevent elevation on scroll
+        foregroundColor: _selectedIndex == 0 
+            ? Theme.of(context).textTheme.bodyLarge?.color
+            : Colors.black87, // Dark text for white AppBar
+        toolbarHeight: 80,
+        automaticallyImplyLeading: false, // No drawer menu
+        surfaceTintColor: Colors.transparent, // Remove any tint overlay
+        systemOverlayStyle: null, // Use default system overlay
+        flexibleSpace: _selectedIndex != 0 
+            ? Container(
+                decoration: BoxDecoration(
+                  color: Colors.white, // Fully opaque white
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+              )
+            : null, // Use default for dashboard
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Consumer<AdminNotificationProvider>(
+              builder: (context, notificationProvider, child) {
+                return Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.notifications),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminNotificationScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    if (notificationProvider.unreadCount > 0)
+                      Positioned(
+                        left: 8,
+                        top: 8,
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '${notificationProvider.unreadCount}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+        title: _selectedIndex == 0
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const RGSLogo(),
+              )
+            : Text(
+                _getTabTitle(_selectedIndex),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
         centerTitle: true,
         actions: [
-          // Pending Approvals button with badge
-          Consumer<PendingApprovalsProvider>(
-            builder: (context, approvalProvider, child) {
-              final pendingCount = approvalProvider.pendingCount;
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.person_add),
-                    tooltip: 'Pending User Approvals',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AdminApprovalScreen(),
-                        ),
-                      ).then((_) {
-                        // Refresh approvals when coming back
-                        approvalProvider.loadPendingApprovals();
-                      });
-                    },
-                  ),
-                  if (pendingCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Text(
-                          pendingCount > 99 ? '99+' : '$pendingCount',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          // Notification button
-          Consumer<AdminNotificationProvider>(
-            builder: (context, notificationProvider, child) {
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.notifications),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AdminNotificationScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  if (notificationProvider.unreadCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '${notificationProvider.unreadCount}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               // Don't render PopupMenuButton during logout to prevent widget tree issues
@@ -403,31 +414,37 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 3)),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.build),
-            label: 'Tools',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.share),
-            label: 'Shared',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Technicians',
-          ),
-        ],
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 3)),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.build),
+              label: 'Tools',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.share),
+              label: 'Shared',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people),
+              label: 'Technicians',
+            ),
+          ],
+        ),
       ),
       floatingActionButton: (_selectedIndex == 1)
           ? FloatingActionButton(
@@ -443,201 +460,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
               child: Icon(Icons.add, color: Theme.of(context).textTheme.bodyLarge?.color),
             )
           : null,
-      drawer: _buildDrawer(),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: Theme.of(context).cardTheme.color,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              color: AppTheme.primaryColor,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.admin_panel_settings,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  size: 40,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Admin Panel',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                Text(
-                  'Full Access Control',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.70),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.dashboard,
-            title: 'Dashboard',
-            onTap: () => _navigateToScreen(0),
-          ),
-          _buildDrawerItem(
-            icon: Icons.build,
-            title: 'Manage Tools',
-            onTap: () => _navigateToScreen(1),
-          ),
-          _buildDrawerItem(
-            icon: Icons.share,
-            title: 'Shared Tools',
-            onTap: () => _navigateToScreen(2),
-          ),
-          _buildDrawerItem(
-            icon: Icons.people,
-            title: 'Manage Technicians',
-            onTap: () => _navigateToScreen(3),
-          ),
-          _buildDrawerItem(
-            icon: Icons.analytics,
-            title: 'Reports & Analytics',
-            onTap: () => _navigateToScreen(4),
-          ),
-          Divider(color: Colors.grey),
-          _buildDrawerItem(
-            icon: Icons.build_circle,
-            title: 'Maintenance',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MaintenanceScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.attach_money,
-            title: 'Cost Analytics',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CostAnalyticsScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.favorite,
-            title: 'Favorites',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const FavoritesScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.search,
-            title: 'Advanced Search',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdvancedSearchScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.verified_user,
-            title: 'Compliance',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ComplianceScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.approval,
-            title: 'Approval Workflows',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ApprovalWorkflowsScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.admin_panel_settings,
-            title: 'Manage User Roles',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdminRoleManagementScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.verified_user,
-            title: 'Authorize Users',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdminApprovalScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.report_problem,
-            title: 'Tool Issues',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ToolIssuesScreen(),
-              ),
-            ),
-          ),
-          _buildDrawerItem(
-            icon: Icons.settings,
-            title: 'Settings',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SettingsScreen(),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Theme.of(context).textTheme.bodyLarge?.color),
-      title: Text(
-        title,
-        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-      ),
-      onTap: () {
-        // Close drawer safely
-        if (Navigator.of(context).canPop()) {
-          Navigator.pop(context);
-        }
-        onTap();
-      },
-    );
-  }
-
-  void _navigateToScreen(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   void _navigateToToolsWithFilter(String statusFilter) {
     setState(() {
@@ -645,6 +472,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
       // Replace the ToolsScreen with a filtered version
       _screens[1] = ToolsScreen(initialStatusFilter: statusFilter);
     });
+  }
+
+  String _getTabTitle(int index) {
+    switch (index) {
+      case 0:
+        return ''; // Will show RGS logo instead
+      case 1:
+        return 'Tools';
+      case 2:
+        return 'Shared Tools';
+      case 3:
+        return 'Technicians';
+      default:
+        return '';
+    }
   }
 
 }
@@ -687,9 +529,16 @@ class DashboardScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                  gradient: AppTheme.cardGradient,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,7 +549,7 @@ class DashboardScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
                             Icons.admin_panel_settings,
@@ -767,7 +616,15 @@ class DashboardScreen extends StatelessWidget {
                     Icons.attach_money,
                     Colors.orange,
                     context,
-                    () => onNavigateToTab(4), // Navigate to Reports tab
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportDetailScreen(
+                          reportType: ReportType.financialSummary,
+                          timePeriod: 'Last 30 Days',
+                        ),
+                      ),
+                    ),
                   ),
                   _buildStatCard(
                     'Need Maintenance',
@@ -775,7 +632,12 @@ class DashboardScreen extends StatelessWidget {
                     Icons.warning,
                     Colors.red,
                     context,
-                    () => onNavigateToToolsWithFilter('Maintenance'), // Navigate to Tools tab with maintenance filter
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MaintenanceScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -787,9 +649,16 @@ class DashboardScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                  gradient: AppTheme.cardGradient,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -998,19 +867,21 @@ class DashboardScreen extends StatelessWidget {
       child: Container(
         padding: ResponsiveHelper.getCardPadding(context),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
+          gradient: AppTheme.cardGradient,
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: color.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.1),
-            width: 1,
-          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -1038,7 +909,7 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon, 
@@ -1071,14 +942,23 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildStatusItem(String status, String count, Color color, BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), // Reduced padding
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12), // Smaller border radius
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.1),
-            width: 1,
-          ),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            gradient: AppTheme.cardGradient,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1123,13 +1003,24 @@ class DashboardScreen extends StatelessWidget {
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(28),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          gradient: AppTheme.cardGradient,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -1160,13 +1051,24 @@ class DashboardScreen extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(28),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          gradient: AppTheme.cardGradient,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Stack(
           children: [

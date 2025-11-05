@@ -219,8 +219,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             // Debug: Print technician count
-            print('Total technicians: ${technicianProvider.technicians.length}');
-            print('Technician provider loading: ${technicianProvider.isLoading}');
+            debugPrint('Total technicians: ${technicianProvider.technicians.length}');
+            debugPrint('Technician provider loading: ${technicianProvider.isLoading}');
             
             if (technicianProvider.isLoading) {
               return const Center(
@@ -235,7 +235,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                 .where((tech) => tech.status == 'Active')
                 .toList();
 
-            print('Active technicians: ${activeTechnicians.length}');
+            debugPrint('Active technicians: ${activeTechnicians.length}');
 
             if (activeTechnicians.isEmpty) {
               return Container(

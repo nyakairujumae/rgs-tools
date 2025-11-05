@@ -3,18 +3,37 @@ import 'package:flutter/material.dart';
 /// Centralized theme configuration for RGS TOOLS
 /// Follows user preferences for white background and black text
 class AppTheme {
-  // Color palette
-  static const Color primaryColor = Colors.blue;
+  // Color palette - Inspired by modern gradient design
+  static const Color primaryColor = Color(0xFF2563EB); // Vibrant medium-dark blue
   static const Color secondaryColor = Colors.green;
   static const Color accentColor = Colors.orange;
   static const Color errorColor = Colors.red;
   static const Color warningColor = Colors.amber;
   static const Color successColor = Colors.green;
   
-  // Background colors (user preference: black backgrounds)
+  // Gradient background colors - Light lavender-blue to light gray-blue
+  static const Color gradientStart = Color(0xFFE8F0FE); // Light lavender-blue
+  static const Color gradientEnd = Color(0xFFF0F4F8); // Light gray-blue
+  static const Color cardGradientStart = Color(0xFFF5FCFB); // Very light green-tinted (from main gradient)
+  static const Color cardGradientEnd = Color(0xFFFFFFFF); // White
+  
+  // Background colors (for dark theme)
   static const Color backgroundColor = Color(0xFF000000);
   static const Color surfaceColor = Color(0xFF000000);
   static const Color cardColor = Color(0xFF1A1A1A);
+  
+  // Gradient helper
+  static LinearGradient get backgroundGradient => const LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [gradientStart, gradientEnd],
+  );
+  
+  static LinearGradient get cardGradient => const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [cardGradientStart, cardGradientEnd],
+  );
   
   // Text colors (user preference: white text)
   static const Color textPrimary = Colors.white;
@@ -198,8 +217,8 @@ class AppTheme {
         onError: Colors.white,
       ),
       
-      // Scaffold background
-      scaffoldBackgroundColor: const Color(0xFF000000), // Pure black
+      // Scaffold background - Will use gradient via Container decoration
+      scaffoldBackgroundColor: gradientStart, // Base color for gradient
       
       // AppBar theme
       appBarTheme: const AppBarTheme(

@@ -69,6 +69,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         toolbarHeight: 80,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: const RGSLogo(),
@@ -167,27 +173,33 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 2)),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Request Tool',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report_problem),
-            label: 'Report Issue',
-          ),
-        ],
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 2)),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          selectedItemColor: Colors.green,
+          unselectedItemColor: Colors.grey,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add),
+              label: 'Request Tool',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.report_problem),
+              label: 'Report Issue',
+            ),
+          ],
+        ),
       ),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton.extended(
@@ -980,7 +992,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            children: [
             Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             if (time != null) ...[
               const SizedBox(height: 4),
@@ -995,16 +1007,16 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _meBubble(BuildContext context, String text, {String? time}) {
     return Align(
       alignment: Alignment.centerRight,
-      child: Container(
+              child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
+                decoration: BoxDecoration(
           color: Colors.green,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
             bottomLeft: Radius.circular(16),
           ),
-        ),
+                  ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -1015,7 +1027,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               Text(time, style: const TextStyle(fontSize: 10, color: Colors.white70)),
             ]
           ],
-        ),
+                ),
       ),
     );
   }
@@ -1069,13 +1081,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(tool.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    SizedBox(height: 6),
+                        SizedBox(height: 6),
                     Wrap(spacing: 8, runSpacing: 4, children: [
                       _buildOutlinedChip(context, _getStatusLabel(tool.status), Theme.of(context).colorScheme.primary),
                       _buildOutlinedChip(context, _getConditionLabel(tool.condition), _getConditionColor(tool.condition)),
                     ]),
                     SizedBox(height: 6),
-                    if (tool.location != null && tool.location!.isNotEmpty)
+                        if (tool.location != null && tool.location!.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.only(bottom: 4),
                         child: Row(children: [Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(width: 6), Expanded(child: Text(tool.location!, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis))]),

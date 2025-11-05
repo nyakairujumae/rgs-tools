@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common/rgs_logo.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
   const AdminApprovalScreen({super.key});
@@ -38,11 +37,12 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: const RGSLogo(),
+        title: Text(
+          'Pending Approvals',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        centerTitle: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
