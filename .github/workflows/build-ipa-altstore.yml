@@ -38,63 +38,123 @@ jobs:
         flutter clean
         rm -rf ios/build/
         rm -rf build/
+        rm -rf ios/Pods/
+        rm -rf ios/.symlinks/
+        rm -rf ios/Flutter/Flutter.framework
+        rm -rf ios/Flutter/Flutter.podspec
         
     - name: Install dependencies
       run: flutter pub get
       
+    - name: Install CocoaPods
+      run: |
+        sudo gem install cocoapods
+        pod --version
+        
     - name: Install CocoaPods dependencies
       run: |
         cd ios
-        pod install --repo-update
+        pod deintegrate || true
+        pod cache clean --all || true
+        pod install --repo-update --verbose
         
     - name: Build iOS app (Release, no codesign)
       run: |
-        flutter build ios --release --no-codesign --verbose
+        flutter build ios --release --no-codesign --verbose || {
+          echo "Build failed, checking for errors..."
+          find build -type f -name "*.log" -exec cat {} \;
+          exit 1
+        }
+      
+    - name: List build artifacts
+      run: |
+        echo "=== Searching for build artifacts ==="
+        find build -type d -name "*.app" 2>/dev/null | head -5
+        find build -type d -name "iphoneos" 2>/dev/null
+        find build -type d -name "Release-iphoneos" 2>/dev/null
+        echo "=== Build directory structure ==="
+        ls -la build/ios/ 2>/dev/null || echo "build/ios/ not found"
+        ls -la build/ios/iphoneos/ 2>/dev/null || echo "build/ios/iphoneos/ not found"
+        ls -la build/ios/Release-iphoneos/ 2>/dev/null || echo "build/ios/Release-iphoneos/ not found"
       
     - name: Find build directory
       id: find-build
       run: |
-        if [ -d "build/ios/iphoneos" ]; then
+        # Try to find the app bundle
+        APP_BUNDLE=$(find build -type d -name "Runner.app" 2>/dev/null | head -1)
+        
+        if [ -n "$APP_BUNDLE" ]; then
+          BUILD_DIR=$(dirname "$APP_BUNDLE")
+          echo "✅ Found Runner.app at: $APP_BUNDLE"
+          echo "✅ Build directory: $BUILD_DIR"
+        elif [ -d "build/ios/iphoneos" ]; then
           BUILD_DIR="build/ios/iphoneos"
+          echo "✅ Using build/ios/iphoneos"
         elif [ -d "build/ios/Release-iphoneos" ]; then
           BUILD_DIR="build/ios/Release-iphoneos"
+          echo "✅ Using build/ios/Release-iphoneos"
         else
-          echo "Build directory not found!"
-          find build/ios -type d -name "*.app" | head -1
+          echo "❌ Build directory not found!"
+          echo "Searching for any .app bundles..."
+          find build -type d -name "*.app" 2>/dev/null || echo "No .app bundles found"
           exit 1
         fi
+        
         echo "build_dir=$BUILD_DIR" >> $GITHUB_OUTPUT
-        echo "Found build directory: $BUILD_DIR"
+        echo "=== Contents of build directory ==="
         ls -la "$BUILD_DIR"
         
     - name: Create IPA package
       run: |
         BUILD_DIR="${{ steps.find-build.outputs.build_dir }}"
-        cd "$BUILD_DIR"
+        echo "Using build directory: $BUILD_DIR"
+        
+        # Find the app bundle
+        if [ -d "$BUILD_DIR/Runner.app" ]; then
+          APP_BUNDLE="$BUILD_DIR/Runner.app"
+        elif [ -f "$BUILD_DIR/Runner.app" ]; then
+          APP_BUNDLE="$BUILD_DIR/Runner.app"
+        else
+          APP_BUNDLE=$(find "$BUILD_DIR" -type d -name "Runner.app" 2>/dev/null | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "❌ Runner.app not found in $BUILD_DIR"
+            echo "Directory contents:"
+            ls -la "$BUILD_DIR"
+            exit 1
+          fi
+        fi
+        
+        echo "✅ Found app bundle: $APP_BUNDLE"
+        
+        # Create temporary directory for IPA creation
+        IPA_DIR=$(mktemp -d)
+        cd "$IPA_DIR"
         
         # Create Payload directory
         mkdir -p Payload
         
         # Copy the app bundle
-        if [ -d "Runner.app" ]; then
-          cp -r Runner.app Payload/
-        else
-          echo "Runner.app not found in $BUILD_DIR"
-          ls -la
+        cp -r "$APP_BUNDLE" Payload/
+        
+        # Verify the copy
+        if [ ! -d "Payload/Runner.app" ]; then
+          echo "❌ Failed to copy app bundle"
           exit 1
         fi
         
         # Create IPA file
-        cd ../..
-        zip -r rgs-tools.ipa "$BUILD_DIR/Payload" -x "*.DS_Store"
+        zip -r "$GITHUB_WORKSPACE/rgs-tools.ipa" Payload -x "*.DS_Store" -q
         
-        # Clean up
-        rm -rf "$BUILD_DIR/Payload"
+        # Clean up temp directory
+        cd "$GITHUB_WORKSPACE"
+        rm -rf "$IPA_DIR"
         
         # Verify IPA
         if [ -f "rgs-tools.ipa" ]; then
           echo "✅ IPA created successfully"
           ls -lh rgs-tools.ipa
+          file rgs-tools.ipa
+          unzip -l rgs-tools.ipa | head -20
         else
           echo "❌ IPA creation failed"
           exit 1
