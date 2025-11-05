@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/tool.dart';
-import 'tools_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/common/status_chip.dart';
+import '../utils/responsive_helper.dart';
 import 'technicians_screen.dart';
+import 'dart:io';
 
 class AssignToolScreen extends StatefulWidget {
   const AssignToolScreen({super.key});
@@ -18,138 +21,254 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Assign Tools'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+        title: const Text(
+          'Assign Tools',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
-        actions: [],
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
       ),
-      body: Consumer<SupabaseToolProvider>(
-        builder: (context, toolProvider, child) {
-          final tools = toolProvider.tools;
-          
-          if (tools.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.build,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No tools available',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add some tools first to assign them',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              // Instructions
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: Consumer<SupabaseToolProvider>(
+          builder: (context, toolProvider, child) {
+            final tools = toolProvider.tools;
+            
+            if (tools.isEmpty) {
+              return Center(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Theme.of(context).primaryColor,
-                      size: 24,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Select tools to assign to technicians',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).primaryColor,
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.build,
+                        size: 64,
+                        color: Colors.grey[400],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                     Text(
-                      'Tap tools to select them, then tap "Assign X Tools" to continue',
+                      'No tools available',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                    Text(
+                      'Add some tools first to assign them',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
                         color: Colors.grey[600],
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-              ),
-              
-              // Tools Grid
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.8,
-                    children: tools.map((tool) {
-                      return _buildToolCard(context, tool);
-                    }).toList(),
+              );
+            }
+
+            return Column(
+              children: [
+                // Instructions
+                Container(
+                  width: double.infinity,
+                  margin: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                  padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: ResponsiveHelper.getResponsivePadding(context, all: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                        ),
+                        child: Icon(
+                          Icons.info_outline,
+                          color: Colors.blue,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                        ),
+                      ),
+                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Select tools to assign to technicians',
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[800],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                            Text(
+                              'Tap tools to select them, then tap "Assign" to continue',
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
               
-              // Assignment Button - Always visible at bottom
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _selectedTools.isNotEmpty ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TechniciansScreen(),
-                          settings: RouteSettings(
-                            arguments: {'selectedTools': _selectedTools.toList()},
+                // Tools Grid
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
+                      final spacing = ResponsiveHelper.getResponsiveGridSpacing(context, 12);
+                      final mainSpacing = ResponsiveHelper.getResponsiveGridSpacing(context, 16);
+                      final aspectRatio = ResponsiveHelper.getResponsiveAspectRatio(context, 0.65);
+                      
+                      return GridView.builder(
+                        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: spacing,
+                          mainAxisSpacing: mainSpacing,
+                          childAspectRatio: aspectRatio,
+                        ),
+                        itemCount: tools.length,
+                        itemBuilder: (context, index) {
+                          final tool = tools[index];
+                          return _buildToolCard(context, tool);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              
+                // Assignment Button
+                Container(
+                  padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: _selectedTools.isNotEmpty
+                          ? LinearGradient(
+                              colors: [Colors.blue.shade600, Colors.blue.shade700],
+                            )
+                          : null,
+                      color: _selectedTools.isEmpty ? Colors.grey[300] : null,
+                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                      boxShadow: _selectedTools.isNotEmpty
+                          ? [
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _selectedTools.isNotEmpty
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TechniciansScreen(),
+                                    settings: RouteSettings(
+                                      arguments: {'selectedTools': _selectedTools.toList()},
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 18),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people,
+                                color: _selectedTools.isNotEmpty ? Colors.white : Colors.grey[600],
+                                size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                              ),
+                              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                              Flexible(
+                                child: Text(
+                                  _selectedTools.isNotEmpty
+                                      ? 'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} to Technicians'
+                                      : 'Select Tools First',
+                                  style: TextStyle(
+                                    color: _selectedTools.isNotEmpty ? Colors.white : Colors.grey[600],
+                                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    } : null,
-                    icon: Icon(Icons.people),
-                    label: Text(_selectedTools.isNotEmpty 
-                        ? 'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} to Technicians'
-                        : 'Select Tools First'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedTools.isNotEmpty 
-                          ? Theme.of(context).primaryColor 
-                          : Colors.grey,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -157,7 +276,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
   Widget _buildToolCard(BuildContext context, Tool tool) {
     final isSelected = tool.id != null && _selectedTools.contains(tool.id!);
     
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         setState(() {
           if (tool.id != null) {
@@ -169,192 +288,165 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           }
         });
       },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected 
-                ? Theme.of(context).primaryColor 
-                : Colors.grey.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-          color: isSelected 
-              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-              : Theme.of(context).cardTheme.color,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Full Image Card - Square
+          AspectRatio(
+            aspectRatio: 1.0, // Perfect square
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: isSelected
+                        ? Border.all(
+                            color: Colors.blue,
+                            width: 3,
+                          )
+                        : null,
                   ),
-                  color: Colors.grey[200],
+                  clipBehavior: Clip.antiAlias,
+                  child: tool.imagePath != null
+                      ? (tool.imagePath!.startsWith('http')
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                              child: Image.network(
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(context),
+                              ),
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                              child: Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(context),
+                              ),
+                            ))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
+                          child: _buildPlaceholderImage(context),
+                        ),
                 ),
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              )
-                            : Image.asset(
-                                tool.imagePath!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                              ),
-                      )
-                    : _buildPlaceholderImage(),
-              ),
-            ),
-            
-            // Content Section
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                // Selection Checkbox
+                Positioned(
+                  top: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                  right: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                  child: Container(
+                    width: ResponsiveHelper.getResponsiveIconSize(context, 28),
+                    height: ResponsiveHelper.getResponsiveIconSize(context, 28),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.blue : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? Colors.blue : Colors.grey[300]!,
+                        width: 2,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${tool.brand ?? 'Unknown'} • ${tool.category}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(tool.status).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: _getStatusColor(tool.status), width: 0.5),
-                            ),
-                            child: Text(
-                              tool.status,
-                              style: TextStyle(
-                                color: _getStatusColor(tool.status),
-                                fontSize: 8,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _getConditionColor(tool.condition).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: _getConditionColor(tool.condition), width: 0.5),
-                            ),
-                            child: Text(
-                              tool.condition,
-                              style: TextStyle(
-                                color: _getConditionColor(tool.condition),
-                                fontSize: 8,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
+                    child: isSelected
+                        ? Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                          )
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Details Below Card
+          Padding(
+            padding: EdgeInsets.only(top: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tool Name and Type in one line
+                Text(
+                  '${tool.name} • ${tool.category}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    color: Colors.grey[800],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                // Status and Condition Pills
+                Wrap(
+                  spacing: ResponsiveHelper.getResponsiveSpacing(context, 6),
+                  children: [
+                    StatusChip(
+                      status: tool.status,
+                      showIcon: false,
+                    ),
+                    ConditionChip(condition: tool.condition),
                   ],
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildPlaceholderImage(BuildContext context) {
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
+        gradient: AppTheme.cardGradient,
       ),
-      child: Icon(
-        Icons.build,
-        size: 40,
-        color: Colors.grey[400],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: ResponsiveHelper.getResponsiveIconSize(context, 40),
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+          Text(
+            'No Image',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return Colors.green;
-      case 'in use':
-        return Colors.blue;
-      case 'maintenance':
-        return Colors.orange;
-      case 'retired':
-        return Colors.grey;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getConditionColor(String condition) {
-    switch (condition.toLowerCase()) {
-      case 'excellent':
-        return Colors.green;
-      case 'good':
-        return Colors.blue;
-      case 'fair':
-        return Colors.orange;
-      case 'poor':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }
