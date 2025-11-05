@@ -48,8 +48,26 @@ jobs:
         sudo gem install cocoapods
         pod install --verbose
       
+    - name: Disable code signing for build
+      run: |
+        cd ios
+        # Remove development team and disable automatic signing using sed (macOS syntax)
+        # Use perl for better cross-platform compatibility
+        perl -pi -e 's/DEVELOPMENT_TEAM = 53YWA43ZPW;/DEVELOPMENT_TEAM = "";/g' Runner.xcodeproj/project.pbxproj
+        perl -pi -e 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
+        perl -pi -e 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' Runner.xcodeproj/project.pbxproj
+        cd ..
+        
     - name: Build iOS app
-      run: flutter build ios --release --no-codesign --verbose
+      run: |
+        flutter build ios --release --no-codesign --verbose 2>&1 | tee build.log || {
+          echo "❌ Build failed. Last 100 lines of log:"
+          tail -100 build.log
+          echo ""
+          echo "=== Checking for other error logs ==="
+          find . -name "*.log" -type f | head -5 | xargs tail -50 2>/dev/null || true
+          exit 1
+        }
       
     - name: List build artifacts
       run: |
