@@ -122,10 +122,15 @@ jobs:
         BUILD_DIR="${{ steps.find-build.outputs.build_dir }}"
         echo "Using build directory: $BUILD_DIR"
         
-        # Find the app bundle
+        # Convert to absolute path
+        if [[ ! "$BUILD_DIR" = /* ]]; then
+          BUILD_DIR="$GITHUB_WORKSPACE/$BUILD_DIR"
+        fi
+        
+        echo "Absolute build directory: $BUILD_DIR"
+        
+        # Find the app bundle with absolute path
         if [ -d "$BUILD_DIR/Runner.app" ]; then
-          APP_BUNDLE="$BUILD_DIR/Runner.app"
-        elif [ -f "$BUILD_DIR/Runner.app" ]; then
           APP_BUNDLE="$BUILD_DIR/Runner.app"
         else
           APP_BUNDLE=$(find "$BUILD_DIR" -type d -name "Runner.app" 2>/dev/null | head -1)
@@ -137,25 +142,42 @@ jobs:
           fi
         fi
         
+        # Convert to absolute path if needed
+        if [[ ! "$APP_BUNDLE" = /* ]]; then
+          APP_BUNDLE="$GITHUB_WORKSPACE/$APP_BUNDLE"
+        fi
+        
         echo "✅ Found app bundle: $APP_BUNDLE"
+        echo "Verifying app bundle exists..."
+        ls -la "$APP_BUNDLE" || {
+          echo "❌ App bundle path is invalid"
+          exit 1
+        }
         
         # Create temporary directory for IPA creation
         IPA_DIR=$(mktemp -d)
+        echo "Working in: $IPA_DIR"
         cd "$IPA_DIR"
         
         # Create Payload directory
         mkdir -p Payload
         
-        # Copy the app bundle
+        # Copy the app bundle using absolute path
+        echo "Copying app bundle..."
         cp -r "$APP_BUNDLE" Payload/
         
         # Verify the copy
         if [ ! -d "Payload/Runner.app" ]; then
           echo "❌ Failed to copy app bundle"
+          echo "Contents of Payload:"
+          ls -la Payload/
           exit 1
         fi
         
-        # Create IPA file
+        echo "✅ App bundle copied successfully"
+        
+        # Create IPA file in workspace root
+        echo "Creating IPA file..."
         zip -r "$GITHUB_WORKSPACE/rgs-tools.ipa" Payload -x "*.DS_Store" -q
         
         # Clean up temp directory
