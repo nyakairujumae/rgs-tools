@@ -1,0 +1,163 @@
+name: Build IPA for AltStore Sideloading
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        cache: true
+        
+    - name: Flutter doctor
+      run: flutter doctor -v
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
+        
+    - name: Xcode version
+      run: xcodebuild -version
+      
+    - name: Clean project
+      run: |
+        flutter clean
+        rm -rf ios/build/
+        rm -rf build/
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod install --repo-update
+        
+    - name: Build iOS app (Release, no codesign)
+      run: |
+        flutter build ios --release --no-codesign --verbose
+      
+    - name: Find build directory
+      id: find-build
+      run: |
+        if [ -d "build/ios/iphoneos" ]; then
+          BUILD_DIR="build/ios/iphoneos"
+        elif [ -d "build/ios/Release-iphoneos" ]; then
+          BUILD_DIR="build/ios/Release-iphoneos"
+        else
+          echo "Build directory not found!"
+          find build/ios -type d -name "*.app" | head -1
+          exit 1
+        fi
+        echo "build_dir=$BUILD_DIR" >> $GITHUB_OUTPUT
+        echo "Found build directory: $BUILD_DIR"
+        ls -la "$BUILD_DIR"
+        
+    - name: Create IPA package
+      run: |
+        BUILD_DIR="${{ steps.find-build.outputs.build_dir }}"
+        cd "$BUILD_DIR"
+        
+        # Create Payload directory
+        mkdir -p Payload
+        
+        # Copy the app bundle
+        if [ -d "Runner.app" ]; then
+          cp -r Runner.app Payload/
+        else
+          echo "Runner.app not found in $BUILD_DIR"
+          ls -la
+          exit 1
+        fi
+        
+        # Create IPA file
+        cd ../..
+        zip -r rgs-tools.ipa "$BUILD_DIR/Payload" -x "*.DS_Store"
+        
+        # Clean up
+        rm -rf "$BUILD_DIR/Payload"
+        
+        # Verify IPA
+        if [ -f "rgs-tools.ipa" ]; then
+          echo "✅ IPA created successfully"
+          ls -lh rgs-tools.ipa
+        else
+          echo "❌ IPA creation failed"
+          exit 1
+        fi
+        
+    - name: Get version info
+      id: version
+      run: |
+        VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "App version: $VERSION"
+        
+    - name: Upload IPA as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rgs-tools-ipa
+        path: rgs-tools.ipa
+        retention-days: 90
+        
+    - name: Create GitHub Release (on tags)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: rgs-tools.ipa
+        tag_name: ${{ github.ref_name }}
+        name: RGS Tools IPA v${{ steps.version.outputs.version }}
+        body: |
+          ## RGS Tools IPA for AltStore Sideloading
+          
+          ### Installation Instructions:
+          1. Download the `rgs-tools.ipa` file from the assets below
+          2. Install [AltStore](https://altstore.io) on your iOS device
+          3. Open AltStore and tap the "+" button
+          4. Select the downloaded IPA file
+          5. Wait for installation to complete
+          6. Trust the developer certificate in Settings > General > VPN & Device Management
+          
+          ### Requirements:
+          - iOS 13.0 or later
+          - AltStore installed on your device
+          - Active AltServer connection (for refresh)
+          
+          ### Build Information:
+          - **Version:** ${{ steps.version.outputs.version }}
+          - **Commit:** ${{ github.sha }}
+          - **Build Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Notes:
+          - This is an unsigned IPA for sideloading with AltStore
+          - The app will need to be refreshed every 7 days through AltStore
+          - Make sure AltServer is running on your computer when refreshing
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload build logs (on failure)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-logs
+        path: |
+          build/
+          ios/
+        retention-days: 7
+
