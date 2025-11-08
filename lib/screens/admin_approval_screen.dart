@@ -35,86 +35,134 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Pending Approvals',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Technician Approvals',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Review and manage technician access requests',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.65),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.refresh, color: Theme.of(context).textTheme.bodyLarge?.color),
+                      onPressed: () {
+                        context.read<PendingApprovalsProvider>().loadPendingApprovals();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor: AppTheme.primaryColor,
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: Colors.grey[600],
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.pending, size: 18),
+                            const SizedBox(width: 8),
+                            Consumer<PendingApprovalsProvider>(
+                              builder: (context, provider, child) {
+                                final count = provider.pendingCount;
+                                return Text('Pending${count > 0 ? ' ($count)' : ''}');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check_circle, size: 18),
+                            const SizedBox(width: 8),
+                            Consumer<PendingApprovalsProvider>(
+                              builder: (context, provider, child) {
+                                final count = provider.approvedCount;
+                                return Text('Authorized${count > 0 ? ' ($count)' : ''}');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.cancel, size: 18),
+                            const SizedBox(width: 8),
+                            Consumer<PendingApprovalsProvider>(
+                              builder: (context, provider, child) {
+                                final count = provider.rejectedCount;
+                                return Text('Rejected${count > 0 ? ' ($count)' : ''}');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildPendingTab(),
+                    _buildApprovedTab(),
+                    _buildRejectedTab(),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Theme.of(context).primaryColor,
-          labelColor: Theme.of(context).primaryColor,
-          unselectedLabelColor: Colors.grey,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.pending, size: 18),
-                  SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.pendingCount;
-                      return Text('Pending${count > 0 ? ' ($count)' : ''}');
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle, size: 18),
-                  SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.approvedCount;
-                      return Text('Authorized${count > 0 ? ' ($count)' : ''}');
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.cancel, size: 18),
-                  SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.rejectedCount;
-                      return Text('Rejected${count > 0 ? ' ($count)' : ''}');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              context.read<PendingApprovalsProvider>().loadPendingApprovals();
-            },
-          ),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildPendingTab(),
-          _buildApprovedTab(),
-          _buildRejectedTab(),
-        ],
       ),
     );
   }
@@ -163,7 +211,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: pendingApprovals.length,
           itemBuilder: (context, index) {
             final approval = pendingApprovals[index];
@@ -257,7 +305,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: rejectedApprovals.length,
           itemBuilder: (context, index) {
             final approval = rejectedApprovals[index];
@@ -269,33 +317,63 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   }
 
   Widget _buildApprovalCard(dynamic approval, bool showActions) {
-    return Card(
-      color: Theme.of(context).cardTheme.color,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: _getStatusColor(approval.status).withValues(alpha: 0.3),
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+        border: approval.status == 'pending'
+            ? Border.all(
+                color: _getStatusColor(approval.status).withValues(alpha: 0.3),
+                width: 1.5,
+              )
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: _getStatusColor(approval.status).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(25),
+                    gradient: LinearGradient(
+                      colors: [
+                        _getStatusColor(approval.status).withValues(alpha: 0.2),
+                        _getStatusColor(approval.status).withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _getStatusColor(approval.status).withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     _getStatusIcon(approval.status),
                     color: _getStatusColor(approval.status),
-                    size: 24,
+                    size: 28,
                   ),
                 ),
                 SizedBox(width: 16),
@@ -306,55 +384,66 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       Text(
                         approval.fullName ?? 'Unknown User',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 6),
                       Text(
                         approval.email,
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: Colors.grey[600],
                           fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(approval.status).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
+                              color: _getStatusColor(approval.status).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _getStatusColor(approval.status).withValues(alpha: 0.3),
+                                width: 1,
+                              ),
                             ),
                             child: Text(
                               approval.status.toUpperCase(),
                               style: TextStyle(
                                 color: _getStatusColor(approval.status),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
-                          if (approval.rejectionCount > 0) ...[
-                            SizedBox(width: 8),
+                          if (approval.rejectionCount > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.red.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.red.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 '${approval.rejectionCount} rejections',
                                 style: TextStyle(
                                   color: Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],
@@ -364,8 +453,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             ),
             
             if (approval.employeeId != null || approval.phone != null || approval.department != null) ...[
-              SizedBox(height: 16),
-              Divider(color: Colors.grey.withValues(alpha: 0.3)),
+              SizedBox(height: 12),
+              Divider(color: Colors.grey.withValues(alpha: 0.3), height: 1),
               SizedBox(height: 8),
               _buildInfoRow('Employee ID', approval.employeeId),
               if (approval.phone != null) _buildInfoRow('Phone', approval.phone),
@@ -373,7 +462,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               if (approval.hireDate != null) _buildInfoRow('Hire Date', _formatDate(approval.hireDate)),
             ],
             
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Row(
               children: [
                 Icon(Icons.access_time, size: 16, color: Colors.grey[400]),
@@ -444,27 +533,86 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _approveUser(approval),
-                      icon: Icon(Icons.check, size: 18),
-                      label: Text('Authorize'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.green.shade600, Colors.green.shade700],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _approveUser(approval),
+                          borderRadius: BorderRadius.circular(24),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check, size: 20, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Authorize',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showRejectDialog(approval),
-                      icon: Icon(Icons.close, size: 18),
-                      label: Text('Reject'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.red, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showRejectDialog(approval),
+                          borderRadius: BorderRadius.circular(24),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.close, size: 20, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Reject',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -481,8 +629,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     if (value == null) return SizedBox.shrink();
     
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 100,
@@ -502,6 +651,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontSize: 12,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ],

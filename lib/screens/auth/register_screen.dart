@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
@@ -408,47 +409,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
         role: _selectedRole,
       );
       
-      if (mounted) {
-        // Check if user is already confirmed or if email confirmation is disabled
-        if (response.user?.emailConfirmedAt != null || response.session != null) {
-          // Wait for role to be loaded
-          await Future.delayed(Duration(milliseconds: 500));
+      if (mounted && response.user != null) {
+        // User was created - check if we have a session (email confirmation might be disabled)
+        // If no session, user needs to confirm email first
+        final hasSession = response.session != null || response.user?.emailConfirmedAt != null;
+        
+        if (hasSession) {
+          // Wait for role to be loaded and ensure pending approval is created
+          await Future.delayed(Duration(milliseconds: 1000));
+          
+          // Force reload user role to ensure it's up to date
+          await authProvider.initialize();
+          
+          // Wait a bit more for the role to be fully set
+          await Future.delayed(Duration(milliseconds: 300));
+          
+          debugPrint('🔍 Registration complete - Role: ${authProvider.userRole.value}, isPendingApproval: ${authProvider.isPendingApproval}');
           
           // Navigate based on role and approval status
           if (authProvider.isAdmin) {
-          AuthErrorHandler.showSuccessSnackBar(
-            context, 
-            '🎉 Account created successfully! Welcome to RGS HVAC Services.'
-          );
-            Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
-          } else if (authProvider.isPendingApproval) {
-            // Technician with pending approval - always show pending screen
-            AuthErrorHandler.showInfoSnackBar(
+            AuthErrorHandler.showSuccessSnackBar(
               context, 
-              '📋 Your account is pending admin approval. You will be notified once approved.'
+              '🎉 Account created successfully! Welcome to RGS HVAC Services.'
             );
-            Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
+            Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
           } else {
-            // Check approval status one more time
+            // For technicians, always check approval status
             final isApproved = await authProvider.checkApprovalStatus();
-            if (isApproved == false || isApproved == null) {
-              // Not approved - show pending screen
+            
+            debugPrint('🔍 Approval status check: isApproved=$isApproved, isPendingApproval=${authProvider.isPendingApproval}');
+            
+            // If pending approval role is set OR not approved, show pending screen
+            // Default to pending screen for technicians unless explicitly approved
+            if (_selectedRole == UserRole.technician || 
+                authProvider.isPendingApproval || 
+                authProvider.userRole == UserRole.pending ||
+                isApproved == false || 
+                isApproved == null) {
+              // Technician with pending approval - always show pending screen
+              debugPrint('🔍 Navigating to pending approval screen');
               AuthErrorHandler.showInfoSnackBar(
                 context, 
                 '📋 Your account is pending admin approval. You will be notified once approved.'
               );
               Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
             } else {
-              // Approved
+              // Approved (shouldn't happen for new registrations)
+              debugPrint('🔍 Technician already approved, navigating to home');
               AuthErrorHandler.showSuccessSnackBar(
                 context, 
                 '🎉 Account created successfully! Welcome to RGS HVAC Services.'
               );
-            Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
             }
           }
         } else {
-          // Email confirmation required
+          // Email confirmation required - but we still created the pending approval
+          // User needs to confirm email first, then they'll see pending approval on login
           AuthErrorHandler.showInfoSnackBar(
             context, 
             '📧 Account created! Please check your email to verify your account. After verification, your account will be pending admin approval.'

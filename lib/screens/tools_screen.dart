@@ -46,6 +46,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         final categories = ['Category', ...toolProvider.getCategories()];
         
         debugPrint('🔍 Admin Tools Screen - Total tools: ${tools.length}');
+
         
         // Filter tools based on search and filters
         final filteredTools = tools.where((tool) {
@@ -62,84 +63,97 @@ class _ToolsScreenState extends State<ToolsScreen> {
         debugPrint('🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}');
 
         return Scaffold(
-          appBar: widget.isSelectionMode
-              ? AppBar(
-                  title: Text(
-                    _selectedTools.isEmpty
-                        ? 'Select Tools'
-                        : '${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''} Selected',
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                  ),
-                  actions: [
-                    if (_selectedTools.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedTools.clear();
-                          });
-                        },
-                        child: const Text(
-                          'Clear',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                )
-              : null,
-          body: Container(
+          body: SafeArea(
+            bottom: false,
+            child: Container(
             decoration: BoxDecoration(
               gradient: AppTheme.backgroundGradient,
             ),
             child: Column(
             children: [
-              if (widget.isSelectionMode && _selectedTools.isNotEmpty)
+              if (widget.isSelectionMode)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16.0),
-                  margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                     gradient: AppTheme.cardGradient,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.06),
-                        blurRadius: 8,
+                        blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 18),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Tap tools to select them, then tap "Assign" below',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[700],
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedTools.isEmpty
+                                  ? 'Select tools to assign'
+                                  : '${_selectedTools.length} tool${_selectedTools.length > 1 ? 's' : ''} selected',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Tap a tool card to toggle selection, then use Assign below.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      if (_selectedTools.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedTools.clear();
+                            });
+                          },
+                          child: const Text(
+                            'Clear',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
+              // Section Heading
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Tools',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ),
+              ),
               // Search and Filter Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -474,12 +488,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             ),
                           )
                         : GridView.builder(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              crossAxisSpacing: 12.0,
-                              mainAxisSpacing: 16.0,
-                              childAspectRatio: 0.65, // Accounts for image card + details below
+                              crossAxisSpacing: 10.0,
+                              mainAxisSpacing: 12.0,
+                              childAspectRatio: 0.75, // Square image + compact details below
                             ),
                             itemCount: filteredTools.length,
                             itemBuilder: (context, index) {
@@ -491,6 +505,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ],
           ),
         ),
+          ),
           floatingActionButton: widget.isSelectionMode && _selectedTools.isNotEmpty
               ? Container(
                   margin: const EdgeInsets.all(16.0),
@@ -687,7 +702,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           
           // Details Below Card
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: 6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,

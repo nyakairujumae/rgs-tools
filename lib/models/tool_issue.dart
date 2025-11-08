@@ -42,20 +42,38 @@ class ToolIssue {
       'tool_id': toolId,
       'tool_name': toolName,
       'reported_by': reportedBy,
-      'reported_by_user_id': reportedByUserId,
       'issue_type': issueType,
       'description': description,
       'priority': priority,
       'status': status,
-      'assigned_to': assignedTo,
-      'assigned_to_user_id': assignedToUserId,
-      'resolution': resolution,
       'reported_at': reportedAt.toIso8601String(),
-      'resolved_at': resolvedAt?.toIso8601String(),
-      'attachments': attachments,
-      'location': location,
-      'estimated_cost': estimatedCost,
     };
+
+    // Only include optional fields if they're not null
+    if (reportedByUserId != null) {
+      json['reported_by_user_id'] = reportedByUserId;
+    }
+    if (assignedTo != null) {
+      json['assigned_to'] = assignedTo;
+    }
+    if (assignedToUserId != null) {
+      json['assigned_to_user_id'] = assignedToUserId;
+    }
+    if (resolution != null) {
+      json['resolution'] = resolution;
+    }
+    if (resolvedAt != null) {
+      json['resolved_at'] = resolvedAt!.toIso8601String();
+    }
+    if (attachments != null && attachments!.isNotEmpty) {
+      json['attachments'] = attachments;
+    }
+    if (location != null && location!.isNotEmpty) {
+      json['location'] = location;
+    }
+    if (estimatedCost != null) {
+      json['estimated_cost'] = estimatedCost;
+    }
 
     // Only include id if it's not null (for updates)
     if (id != null) {

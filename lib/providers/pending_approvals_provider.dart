@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../services/supabase_service.dart';
 
 class PendingApproval {
@@ -92,10 +93,14 @@ class PendingApprovalsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await SupabaseService.client
-          .from('pending_user_approvals')
-          .select('*')
-          .order('submitted_at', ascending: false);
+      final response = await _retryOperation(
+        () => SupabaseService.client
+            .from('pending_user_approvals')
+            .select('*')
+            .order('submitted_at', ascending: false),
+        maxRetries: 3,
+        operationName: 'loadPendingApprovals',
+      );
 
       _pendingApprovals = (response as List)
           .map((item) => PendingApproval.fromMap(item))
@@ -111,6 +116,44 @@ class PendingApprovalsProvider extends ChangeNotifier {
     }
   }
 
+  /// Retry operation with exponential backoff for network errors
+  Future<T> _retryOperation<T>(
+    Future<T> Function() operation, {
+    int maxRetries = 3,
+    String operationName = 'operation',
+  }) async {
+    int attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        return await operation();
+      } catch (e) {
+        attempt++;
+        final errorString = e.toString().toLowerCase();
+        
+        // Check if it's a retryable error (network/connection issues)
+        final isRetryable = errorString.contains('connection') ||
+            errorString.contains('closed') ||
+            errorString.contains('timeout') ||
+            errorString.contains('network') ||
+            errorString.contains('socket');
+        
+        if (!isRetryable || attempt >= maxRetries) {
+          // Not retryable or max retries reached, throw the error
+          rethrow;
+        }
+        
+        // Calculate exponential backoff delay (1s, 2s, 4s)
+        final delayMs = 1000 * (1 << (attempt - 1));
+        debugPrint('⚠️ $operationName failed (attempt $attempt/$maxRetries). Retrying in ${delayMs}ms...');
+        
+        await Future.delayed(Duration(milliseconds: delayMs));
+      }
+    }
+    
+    // This should never be reached, but just in case
+    throw Exception('Failed after $maxRetries attempts');
+  }
+
   Future<bool> approveUser(String approvalId) async {
     try {
       final currentUser = SupabaseService.client.auth.currentUser;
@@ -118,10 +161,14 @@ class PendingApprovalsProvider extends ChangeNotifier {
         throw Exception('User not authenticated');
       }
 
-      await SupabaseService.client.rpc('approve_pending_user', params: {
-        'approval_id': approvalId,
-        'reviewer_id': currentUser.id,
-      });
+      await _retryOperation(
+        () => SupabaseService.client.rpc('approve_pending_user', params: {
+          'approval_id': approvalId,
+          'reviewer_id': currentUser.id,
+        }),
+        maxRetries: 3,
+        operationName: 'approveUser',
+      );
 
       // Reload the approvals
       await loadPendingApprovals();
@@ -143,11 +190,15 @@ class PendingApprovalsProvider extends ChangeNotifier {
         throw Exception('User not authenticated');
       }
 
-      await SupabaseService.client.rpc('reject_pending_user', params: {
-        'approval_id': approvalId,
-        'reviewer_id': currentUser.id,
-        'reason': reason,
-      });
+      await _retryOperation(
+        () => SupabaseService.client.rpc('reject_pending_user', params: {
+          'approval_id': approvalId,
+          'reviewer_id': currentUser.id,
+          'reason': reason,
+        }),
+        maxRetries: 3,
+        operationName: 'rejectUser',
+      );
 
       // Reload the approvals
       await loadPendingApprovals();

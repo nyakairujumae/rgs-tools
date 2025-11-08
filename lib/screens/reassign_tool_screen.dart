@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../models/tool.dart';
 import '../models/technician.dart';
+import '../services/supabase_service.dart';
 
 class ReassignToolScreen extends StatefulWidget {
   final Tool tool;
@@ -240,13 +242,45 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
     });
 
     try {
-      // Update tool assignment using technician UUID
-      if (_selectedTechnician!.id != null && widget.tool.id != null) {
-        await context.read<SupabaseToolProvider>().assignTool(
-          widget.tool.id!,
-          _selectedTechnician!.id!,
-          'Permanent',
-        );
+      // Update tool assignment using user ID (check approval record first, then users table)
+      if (_selectedTechnician!.email != null && _selectedTechnician!.email!.isNotEmpty && widget.tool.id != null) {
+        final technicianEmail = _selectedTechnician!.email!.trim();
+        String? userId;
+        
+        // First, check if there's an approved pending approval record (this has the user_id)
+        final approvalRecord = await SupabaseService.client
+            .from('pending_user_approvals')
+            .select('user_id, status')
+            .eq('email', technicianEmail)
+            .eq('status', 'approved')
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        
+        if (approvalRecord != null && approvalRecord['user_id'] != null) {
+          userId = approvalRecord['user_id'] as String;
+        } else {
+          // If no approval record, try to find user in users table
+          final userResponse = await SupabaseService.client
+              .from('users')
+              .select('id')
+              .ilike('email', technicianEmail)
+              .maybeSingle();
+          
+          if (userResponse != null && userResponse['id'] != null) {
+            userId = userResponse['id'] as String;
+          }
+        }
+        
+        if (userId != null) {
+          await context.read<SupabaseToolProvider>().assignTool(
+            widget.tool.id!,
+            userId,
+            'Permanent',
+          );
+        } else {
+          throw Exception('Could not find user account for ${_selectedTechnician!.name}. Please ensure they have registered and been approved by admin.');
+        }
         
         // Update notes if provided
         if (_notesController.text.trim().isNotEmpty) {

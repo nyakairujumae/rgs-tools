@@ -7,6 +7,7 @@ import '../models/location.dart';
 import '../models/permanent_assignment.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
@@ -568,15 +569,47 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     });
 
     try {
-      // Update tool status and assignment using technician UUID
-      if (_selectedTechnician!.id != null) {
-        await context.read<SupabaseToolProvider>().assignTool(
-          widget.tool.id!,
-          _selectedTechnician!.id!,
-          _assignmentType,
-        );
+      // Update tool status and assignment using user ID (check approval record first, then users table)
+      if (_selectedTechnician!.email != null && _selectedTechnician!.email!.isNotEmpty) {
+        final technicianEmail = _selectedTechnician!.email!.trim();
+        String? userId;
+        
+        // First, check if there's an approved pending approval record (this has the user_id)
+        final approvalRecord = await SupabaseService.client
+            .from('pending_user_approvals')
+            .select('user_id, status')
+            .eq('email', technicianEmail)
+            .eq('status', 'approved')
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        
+        if (approvalRecord != null && approvalRecord['user_id'] != null) {
+          userId = approvalRecord['user_id'] as String;
+        } else {
+          // If no approval record, try to find user in users table
+          final userResponse = await SupabaseService.client
+              .from('users')
+              .select('id')
+              .ilike('email', technicianEmail)
+              .maybeSingle();
+          
+          if (userResponse != null && userResponse['id'] != null) {
+            userId = userResponse['id'] as String;
+          }
+        }
+        
+        if (userId != null) {
+          await context.read<SupabaseToolProvider>().assignTool(
+            widget.tool.id!,
+            userId,
+            _assignmentType,
+          );
+        } else {
+          throw Exception('Could not find user account for ${_selectedTechnician!.name}. Please ensure they have registered and been approved by admin.');
+        }
       } else {
-        throw Exception('Technician ID is required');
+        throw Exception('Technician email is required');
       }
 
       // TODO: Create permanent assignment record in database

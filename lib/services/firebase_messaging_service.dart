@@ -1,8 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/firebase_config.dart';
+import 'supabase_service.dart';
 
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -27,16 +29,20 @@ class FirebaseMessagingService {
     try {
       debugPrint('🔥 Initializing Firebase Messaging...');
       
-      // Check if Firebase is initialized
-      try {
-        if (Firebase.apps.isEmpty) {
-          debugPrint('❌ Firebase not initialized. Please initialize Firebase first.');
-          return;
-        }
-      } catch (e) {
-        debugPrint('❌ Error checking Firebase initialization: $e');
+      // Check if Firebase is initialized - wait a bit and retry if needed
+      int retries = 0;
+      while (Firebase.apps.isEmpty && retries < 5) {
+        debugPrint('⏳ Waiting for Firebase initialization... (attempt ${retries + 1}/5)');
+        await Future.delayed(Duration(milliseconds: 500));
+        retries++;
+      }
+      
+      if (Firebase.apps.isEmpty) {
+        debugPrint('❌ Firebase not initialized after waiting. Please check Firebase setup.');
         return;
       }
+      
+      debugPrint('✅ Firebase is initialized. Proceeding with FCM setup...');
       
       // Request permission for notifications
       final settings = await _messaging.requestPermission(
@@ -85,8 +91,37 @@ class FirebaseMessagingService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', _fcmToken ?? '');
       
-      // TODO: Send token to your backend server
-      // await _sendTokenToServer(_fcmToken);
+      // Send token to Supabase if user is authenticated
+      if (_fcmToken != null) {
+        try {
+          final currentUser = SupabaseService.client.auth.currentUser;
+          if (currentUser != null) {
+            await sendTokenToServer(_fcmToken!, currentUser.id);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not send FCM token to server (user may not be logged in): $e');
+        }
+      }
+      
+      // Listen for token refresh
+      _messaging.onTokenRefresh.listen((newToken) async {
+        debugPrint('🔥 FCM Token refreshed: $newToken');
+        _fcmToken = newToken;
+        
+        // Save to shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', newToken);
+        
+        // Send new token to server if user is authenticated
+        try {
+          final currentUser = SupabaseService.client.auth.currentUser;
+          if (currentUser != null) {
+            await sendTokenToServer(newToken, currentUser.id);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not send refreshed FCM token to server: $e');
+        }
+      });
     } catch (e) {
       debugPrint('❌ Error getting FCM token: $e');
     }
@@ -165,22 +200,25 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Send token to server (implement based on your backend)
+  /// Send token to server (Supabase)
   static Future<void> sendTokenToServer(String token, String userId) async {
     try {
-      // TODO: Implement API call to send token to your backend
       debugPrint('🔥 Sending FCM token to server for user: $userId');
       
-      // Example API call:
-      // await SupabaseService.client
-      //     .from('user_fcm_tokens')
-      //     .upsert({
-      //       'user_id': userId,
-      //       'fcm_token': token,
-      //       'updated_at': DateTime.now().toIso8601String(),
-      //     });
+      // Upsert FCM token to Supabase
+      await SupabaseService.client
+          .from('user_fcm_tokens')
+          .upsert({
+            'user_id': userId,
+            'fcm_token': token,
+            'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+            'updated_at': DateTime.now().toIso8601String(),
+          }, onConflict: 'user_id');
+      
+      debugPrint('✅ FCM token saved to Supabase successfully');
     } catch (e) {
       debugPrint('❌ Error sending FCM token to server: $e');
+      // Don't throw - this is not critical for app functionality
     }
   }
 

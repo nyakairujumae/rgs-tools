@@ -37,15 +37,52 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentTool.name),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom AppBar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cardGradient,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(28),
+                    bottomRight: Radius.circular(28),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back, color: Colors.black87),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Text(
+                        _currentTool.name,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: _handleMenuAction,
+                      icon: Icon(Icons.more_vert, color: Colors.black87),
+                      itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit',
                 child: Row(
@@ -96,15 +133,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   ],
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        loadingMessage: 'Loading tool details...',
-        child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Body Content
+              Expanded(
+                child: LoadingOverlay(
+                  isLoading: _isLoading,
+                  loadingMessage: 'Loading tool details...',
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -163,6 +203,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildActionButtons(),
             ],
           ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -171,25 +216,39 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   Widget _buildImageSection() {
     return Container(
       width: double.infinity,
-      height: 200,
+      height: 250,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: _currentTool.imagePath != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(28),
               child: _currentTool.imagePath!.startsWith('http')
                   ? Image.network(
                       _currentTool.imagePath!,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      height: 200,
+                      height: 250,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          height: 200,
-                          color: Colors.grey[300],
+                          height: 250,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.cardGradient,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -205,8 +264,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          height: 200,
-                          color: Colors.grey[300],
+                          height: 250,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.cardGradient,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
                           child: Center(
                             child: CircularProgressIndicator(
                               value: loadingProgress.expectedTotalBytes != null
@@ -223,11 +285,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                           File(_currentTool.imagePath!),
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          height: 200,
+                          height: 250,
                         )
                       : Container(
-                          height: 200,
-                          color: Colors.grey[300],
+                          height: 250,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.cardGradient,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -240,193 +305,305 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                           ),
                         ),
             )
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.build,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'No image available',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 16,
+          : Container(
+              height: 250,
+              decoration: BoxDecoration(
+                gradient: AppTheme.cardGradient,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.build,
+                    size: 64,
+                    color: Colors.grey[400],
                   ),
-                ),
-                SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _addImage,
-                  icon: Icon(Icons.camera_alt, size: 16),
-                  label: Text('Add Photo'),
-                      style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  SizedBox(height: 8),
+                  Text(
+                    'No image available',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _addImage,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text('Add Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
 
   Widget _buildQuickStatusCards() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Row(
-          children: [
+    return Row(
+      children: [
         Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.info,
-                    color: AppTheme.getStatusColor(_currentTool.status),
-                    size: 20,
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Status',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 11,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Flexible(
-                    child: StatusChip(status: _currentTool.status),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-                    Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.assessment,
-                    color: AppTheme.getConditionColor(_currentTool.condition),
-                    size: 20,
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Condition',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 11,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Flexible(
-                    child: ConditionChip(condition: _currentTool.condition),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-        Expanded(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.attach_money,
-                    color: _currentTool.currentValue != null ? Colors.green : Colors.grey,
-                    size: 20,
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Value',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 11,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    _currentTool.currentValue != null 
-                        ? 'AED ${_currentTool.currentValue!.toStringAsFixed(0)}'
-                        : 'N/A',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradient,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getStatusColor(_currentTool.status).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.info,
+                    color: AppTheme.getStatusColor(_currentTool.status),
+                    size: 24,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Status',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 6),
+                StatusChip(status: _currentTool.status),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradient,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getConditionColor(_currentTool.condition).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.assessment,
+                    color: AppTheme.getConditionColor(_currentTool.condition),
+                    size: 24,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Condition',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 6),
+                ConditionChip(condition: _currentTool.condition),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradient,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: (_currentTool.currentValue != null ? Colors.green : Colors.grey).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.attach_money,
+                    color: _currentTool.currentValue != null ? Colors.green : Colors.grey,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Value',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  _currentTool.currentValue != null 
+                      ? 'AED ${_currentTool.currentValue!.toStringAsFixed(0)}'
+                      : 'N/A',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ],
     );
-      },
-    );
   }
 
+
   Widget _buildInfoSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
-        ),
-        SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradient,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               children: children,
             ),
           ),
-        ),
-        SizedBox(height: 24),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildInfoRow(String label, String value, {Widget? statusWidget}) {
+    if (label.isEmpty) {
+      // For notes or long text without label
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            color: Colors.black87,
+            height: 1.5,
+          ),
+        ),
+      );
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 130,
             child: Text(
               label,
               style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+                fontSize: 15,
               ),
             ),
           ),
           Expanded(
             child: statusWidget ?? Text(
-                      value,
-                      style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+              value,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -443,131 +620,210 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           children: [
             // Primary Action Button - Only show if tool is available AND not assigned to current user
             if (_currentTool.status == 'Available' && !isAssignedToCurrentUser)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AssignToolScreen(),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.person_add),
-                  label: Text('Assign to Technician'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              )
-            else if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReassignToolScreen(tool: _currentTool),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.swap_horiz),
-                  label: Text('Reassign Tool'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-        
-        SizedBox(height: 12),
-        
-        // Badge System for Technicians
-        Consumer<AuthProvider>(
-          builder: (context, authProvider, child) {
-            // Show badge button for technicians when tool is available
-            if (authProvider.userRole != null && authProvider.userRole!.name == 'technician' && _currentTool.status == 'Available') {
-              return SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _badgeTool,
-                  icon: Icon(Icons.badge),
-                  label: Text('Badge Tool (I have this)'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              );
-            }
-            return SizedBox.shrink();
-          },
-        ),
-        
-        SizedBox(height: 12),
-        
-        // Secondary Action Buttons
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _scheduleMaintenance,
-                icon: Icon(Icons.build),
-                label: Text('Maintenance'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                  side: const BorderSide(color: AppTheme.primaryColor),
-                ),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _editTool,
-                icon: Icon(Icons.edit),
-                label: Text('Edit'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                  side: const BorderSide(color: AppTheme.primaryColor),
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        // Additional Actions
-        if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
+              _buildFilledActionButton(
+                label: 'Assign to Technician',
+                icon: Icons.person_add,
+                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.85)],
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => TemporaryReturnScreen(tool: _currentTool),
+                      builder: (context) => const AssignToolScreen(),
                     ),
                   );
                 },
-                icon: Icon(Icons.holiday_village),
-                label: Text('Temporary Return'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryColor,
-                  side: const BorderSide(color: AppTheme.secondaryColor),
+              )
+            else if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
+              _buildFilledActionButton(
+                label: 'Reassign Tool',
+                icon: Icons.swap_horiz,
+                colors: [AppTheme.accentColor, AppTheme.accentColor.withOpacity(0.85)],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReassignToolScreen(tool: _currentTool),
+                    ),
+                  );
+                },
+              ),
+
+            const SizedBox(height: 12),
+
+            // Badge System for Technicians
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
+                if (!isTechnician || _currentTool.status != 'Available') {
+                  return const SizedBox.shrink();
+                }
+
+                final hasBadge = _currentTool.toolType == 'shared' &&
+                    (_currentTool.assignedTo != null && _currentTool.assignedTo!.isNotEmpty);
+
+                if (!hasBadge) {
+                  return _buildFilledActionButton(
+                    label: 'Badge Tool (I have this)',
+                    icon: Icons.badge,
+                    colors: [Colors.orange.shade600, Colors.orange.shade700],
+                    onTap: _badgeTool,
+                  );
+                } else if (_currentTool.assignedTo == authProvider.userId) {
+                  return _buildFilledActionButton(
+                    label: 'Release Badge',
+                    icon: Icons.badge_outlined,
+                    colors: [Colors.grey.shade700, Colors.grey.shade500],
+                    onTap: _releaseBadge,
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Secondary Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOutlinedActionButton(
+                    label: 'Maintenance',
+                    icon: Icons.build,
+                    color: AppTheme.primaryColor,
+                    onTap: _scheduleMaintenance,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildOutlinedActionButton(
+                    label: 'Edit',
+                    icon: Icons.edit,
+                    color: AppTheme.primaryColor,
+                    onTap: _editTool,
+                  ),
+                ),
+              ],
+            ),
+
+            // Additional Actions
+            if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: _buildOutlinedActionButton(
+                  label: 'Temporary Return',
+                  icon: Icons.holiday_village,
+                  color: AppTheme.secondaryColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TemporaryReturnScreen(tool: _currentTool),
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFilledActionButton({
+    required String label,
+    required IconData icon,
+    required List<Color> colors,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
-      );
-      },
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutlinedActionButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -745,6 +1001,53 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error badging tool: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _releaseBadge() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+
+      final updatedTool = _currentTool.copyWith(
+        status: 'Available',
+        assignedTo: null,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await toolProvider.updateTool(updatedTool);
+      await toolProvider.loadTools();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Badge released. Tool is now available to others.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        setState(() {
+          _currentTool = updatedTool;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error releasing badge: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

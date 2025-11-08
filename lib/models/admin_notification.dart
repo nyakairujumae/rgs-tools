@@ -23,13 +23,15 @@ class AdminNotification {
 
   factory AdminNotification.fromJson(Map<String, dynamic> json) {
     return AdminNotification(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       technicianName: json['technician_name'] ?? '',
       technicianEmail: json['technician_email'] ?? '',
       type: NotificationType.fromString(json['type'] ?? 'access_request'),
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      timestamp: json['timestamp'] != null 
+          ? DateTime.parse(json['timestamp'].toString())
+          : DateTime.now(),
       isRead: json['is_read'] ?? false,
       data: json['data'],
     );

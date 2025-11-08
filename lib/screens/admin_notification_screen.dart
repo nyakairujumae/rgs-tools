@@ -568,20 +568,29 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               child: Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (technicianName.isNotEmpty && technicianEmail.isNotEmpty) {
-                  context.read<AdminNotificationProvider>().createMockNotification(
-                    technicianName: technicianName,
-                    technicianEmail: technicianEmail,
-                    type: selectedType,
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Test notification created'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  try {
+                    await context.read<AdminNotificationProvider>().createMockNotification(
+                      technicianName: technicianName,
+                      technicianEmail: technicianEmail,
+                      type: selectedType,
+                    );
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Test notification created'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error creating notification: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               child: Text('Create'),

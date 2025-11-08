@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import '../services/supabase_service.dart';
+import '../services/firebase_messaging_service.dart';
 import '../models/user_role.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -105,6 +107,16 @@ class AuthProvider with ChangeNotifier {
       if (_user != null) {
         print('🔍 Loading user role...');
         await _loadUserRole();
+        
+        // Send FCM token to server after initialization if available
+        try {
+          final fcmToken = await _getFCMTokenIfAvailable();
+          if (fcmToken != null) {
+            await _sendFCMTokenToServer(fcmToken, _user!.id);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not send FCM token after initialization: $e');
+        }
       } else {
         print('🔍 No user found, setting default role');
         _userRole = UserRole.technician;
@@ -169,16 +181,18 @@ class AuthProvider with ChangeNotifier {
               debugPrint('⚠️ Could not delete user record: $deleteError');
             }
             
-            // Set role to pending
+            // Set role to pending IMMEDIATELY (before notifyListeners)
             _userRole = UserRole.pending;
             await _saveUserRole(_userRole);
+            debugPrint('✅ User role set to pending: ${_userRole.value}');
+            notifyListeners(); // Notify immediately so UI can check isPendingApproval
           } catch (e) {
             debugPrint('❌ Error creating pending approval: $e');
             // Continue anyway - user is created
           }
         } else {
           // For admins, load role normally
-        await _loadUserRole();
+          await _loadUserRole();
         }
       }
 
@@ -224,6 +238,7 @@ class AuthProvider with ChangeNotifier {
     File? profileImage,
   ) async {
     // First, create the auth user with 'technician' role
+    // Note: signUp will create a basic pending approval, but we need to update it with additional details
     await signUp(
       email: email,
       password: password,
@@ -231,24 +246,48 @@ class AuthProvider with ChangeNotifier {
       role: UserRole.technician, // Explicitly set as technician
     );
     
-    // Then submit for admin approval instead of directly creating technician record
+    // Then update the pending approval with additional details if it exists
+    // OR create it if signUp didn't create one (shouldn't happen, but just in case)
     if (_user != null) {
       try {
-        // Create pending approval record
-        await SupabaseService.client
+        // Check if a pending approval already exists (created by signUp)
+        final existingApproval = await SupabaseService.client
             .from('pending_user_approvals')
-            .insert({
-              'user_id': _user!.id,
-              'email': email,
-              'full_name': name,
-              'employee_id': employeeId,
-              'phone': phone,
-              'department': department,
-              'hire_date': hireDate,
-              'status': 'pending',
-            });
+            .select('id')
+            .eq('user_id', _user!.id)
+            .eq('status', 'pending')
+            .maybeSingle();
         
-        debugPrint('✅ Pending approval submitted for technician: $email');
+        if (existingApproval != null) {
+          // Update existing approval with additional details
+          await SupabaseService.client
+              .from('pending_user_approvals')
+              .update({
+                'employee_id': employeeId,
+                'phone': phone,
+                'department': department,
+                'hire_date': hireDate,
+              })
+              .eq('id', existingApproval['id']);
+          
+          debugPrint('✅ Updated existing pending approval with additional details: $email');
+        } else {
+          // Create new pending approval if it doesn't exist (shouldn't happen normally)
+          await SupabaseService.client
+              .from('pending_user_approvals')
+              .insert({
+                'user_id': _user!.id,
+                'email': email,
+                'full_name': name,
+                'employee_id': employeeId,
+                'phone': phone,
+                'department': department,
+                'hire_date': hireDate,
+                'status': 'pending',
+              });
+          
+          debugPrint('✅ Created pending approval for technician: $email');
+        }
         
         // IMPORTANT: Delete any user record that might have been created by the trigger
         // Technicians should NOT have a user record until approved
@@ -267,7 +306,7 @@ class AuthProvider with ChangeNotifier {
         await _saveUserRole(_userRole);
         notifyListeners();
       } catch (e) {
-        debugPrint('❌ Error submitting pending approval: $e');
+        debugPrint('❌ Error updating pending approval: $e');
         // Don't throw error here, user is already created
       }
     }
@@ -289,6 +328,16 @@ class AuthProvider with ChangeNotifier {
       if (response.user != null) {
         _user = response.user;
         await _loadUserRole();
+        
+        // Send FCM token to server after successful login
+        try {
+          final fcmToken = await _getFCMTokenIfAvailable();
+          if (fcmToken != null && _user != null) {
+            await _sendFCMTokenToServer(fcmToken, _user!.id);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not send FCM token after login: $e');
+        }
         
         // Validate admin domain restrictions
         if (_userRole == UserRole.admin) {
@@ -718,6 +767,25 @@ _isLoading = false;
         return _userRole.canDeleteData;
       default:
         return false;
+    }
+  }
+
+  /// Get FCM token if available
+  Future<String?> _getFCMTokenIfAvailable() async {
+    try {
+      return FirebaseMessagingService.fcmToken;
+    } catch (e) {
+      debugPrint('⚠️ Could not get FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Send FCM token to server
+  Future<void> _sendFCMTokenToServer(String token, String userId) async {
+    try {
+      await FirebaseMessagingService.sendTokenToServer(token, userId);
+    } catch (e) {
+      debugPrint('⚠️ Could not send FCM token to server: $e');
     }
   }
 }

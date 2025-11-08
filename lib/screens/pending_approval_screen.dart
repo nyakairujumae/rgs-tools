@@ -1,9 +1,12 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_role.dart';
 import '../services/supabase_service.dart';
 import 'auth/login_screen.dart';
+import 'technician_home_screen.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
   const PendingApprovalScreen({super.key});
@@ -15,11 +18,72 @@ class PendingApprovalScreen extends StatefulWidget {
 class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   Map<String, dynamic>? _approvalStatus;
   bool _isLoading = true;
+  Timer? _pollingTimer;
   
   @override
   void initState() {
     super.initState();
     _loadApprovalStatus();
+    // Start polling for approval status every 5 seconds
+    _startPolling();
+  }
+  
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+  
+  void _startPolling() {
+    // Check approval status every 5 seconds
+    _pollingTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      if (mounted) {
+        _checkApprovalAndNavigate();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+  
+  Future<void> _checkApprovalAndNavigate() async {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.user == null) return;
+    
+    try {
+      // Check approval status
+      final isApproved = await authProvider.checkApprovalStatus();
+      
+      if (isApproved == true && mounted) {
+        // User is approved! Reload their role and navigate to technician home
+        debugPrint('✅ User approved! Navigating to technician home...');
+        
+        // Reload user role to ensure it's updated
+        await authProvider.initialize();
+        
+        if (mounted && authProvider.isAuthenticated && authProvider.isTechnician) {
+          // Cancel polling timer
+          _pollingTimer?.cancel();
+          
+          // Navigate to technician home screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const TechnicianHomeScreen()),
+            (route) => false,
+          );
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 Your account has been approved! Welcome to RGS HVAC Services.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking approval status: $e');
+    }
   }
   
   Future<void> _loadApprovalStatus() async {
@@ -30,10 +94,13 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     }
     
     try {
+      // Get the most recent approval record
       final approval = await SupabaseService.client
           .from('pending_user_approvals')
           .select('status, rejection_reason, rejection_count, reviewed_at')
           .eq('user_id', authProvider.user!.id)
+          .order('created_at', ascending: false)
+          .limit(1)
           .maybeSingle();
       
       if (mounted) {
@@ -41,6 +108,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
           _approvalStatus = approval;
           _isLoading = false;
         });
+        
+        // Check if approved and navigate if needed
+        await _checkApprovalAndNavigate();
       }
     } catch (e) {
       debugPrint('Error loading approval status: $e');
@@ -237,6 +307,54 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
               ),
               
               SizedBox(height: 32),
+              
+              // Refresh Button (for manual check when pending)
+              if (!isRejected) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : () async {
+                      setState(() => _isLoading = true);
+                      await _loadApprovalStatus();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: _isLoading 
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(Icons.refresh),
+                    label: Text(
+                      _isLoading ? 'Checking...' : 'Check Approval Status',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Status is checked automatically every 5 seconds',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16),
+              ],
               
               // Sign Out Button
               SizedBox(

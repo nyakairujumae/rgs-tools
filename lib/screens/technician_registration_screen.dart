@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../services/supabase_service.dart';
+import '../models/user_role.dart';
 import 'technician_home_screen.dart';
 import 'role_selection_screen.dart';
 import 'auth/login_screen.dart';
+import 'pending_approval_screen.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
@@ -291,17 +294,17 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
                 ),
                 
                 const SizedBox(height: 16),
-                
+
                 // Login Link
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
-                    },
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
                   child: Text(
                     'Already have an account? Sign In',
                     style: TextStyle(
@@ -409,7 +412,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
         maxHeight: 512,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         setState(() {
           _profileImage = File(image.path);
@@ -428,7 +431,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
         maxHeight: 512,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         setState(() {
           _profileImage = File(image.path);
@@ -459,26 +462,67 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
-        _employeeIdController.text.trim().isEmpty ? null : _employeeIdController.text.trim(),
-        _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        _departmentController.text.trim().isEmpty ? null : _departmentController.text.trim(),
+        _employeeIdController.text.trim().isEmpty
+            ? null
+            : _employeeIdController.text.trim(),
+        _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        _departmentController.text.trim().isEmpty
+            ? null
+            : _departmentController.text.trim(),
         null, // hireDate - will be set by admin
         _profileImage,
       );
 
       if (mounted) {
-        AuthErrorHandler.showSuccessSnackBar(
-          context,
-          '🎉 Registration submitted! Your account is pending admin approval. You will be notified once approved.',
+        // Wait for role to be set and ensure user is authenticated
+        await Future.delayed(const Duration(milliseconds: 800));
+
+        // Force reload to ensure role is up to date
+        await authProvider.initialize();
+
+        // Wait a bit more for the role to be fully set
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        debugPrint(
+          '🔍 Technician registration complete - '
+          'Role: ${authProvider.userRole.value}, '
+          'isPendingApproval: ${authProvider.isPendingApproval}, '
+          'isAuthenticated: ${authProvider.isAuthenticated}',
         );
-        
-        // Navigate back to login screen so they can sign in later
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
-        );
+
+        // Check if user is authenticated (has a session)
+        if (authProvider.isAuthenticated) {
+          // User has a session - navigate to pending approval screen
+          AuthErrorHandler.showInfoSnackBar(
+            context,
+            '📋 Your account is pending admin approval. '
+            'You will be notified once approved.',
+          );
+
+          debugPrint('🔍 Navigating to pending approval screen');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/pending-approval',
+            (route) => false,
+          );
+        } else {
+          // No session (email confirmation required) - navigate to login
+          AuthErrorHandler.showInfoSnackBar(
+            context,
+            '📧 Registration submitted! Please check your email to verify '
+            'your account. After verification, your account will be pending '
+            'admin approval.',
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

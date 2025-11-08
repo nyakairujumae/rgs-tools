@@ -181,12 +181,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    // Reload pending approvals when screen is built (to catch new registrations)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed) {
-        context.read<PendingApprovalsProvider>().loadPendingApprovals();
-      }
-    });
+    // Note: Pending approvals are loaded in initState and refreshed periodically
+    // No need to reload on every build to prevent constant refreshing
     
     return Scaffold(
       body: Container(
@@ -204,7 +200,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-      appBar: AppBar(
+      appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3)
+          ? null
+          : AppBar(
         backgroundColor: _selectedIndex == 0 
             ? const Color(0xFF00D4C3) // New gradient green at top
             : Colors.white, // White for Tools, Shared, and Technicians screens

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/technician.dart';
 import '../theme/app_theme.dart';
+import '../services/supabase_service.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
 
@@ -92,7 +94,22 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               gradient: AppTheme.backgroundGradient,
             ),
             child: Column(
-              children: [
+            children: [
+            SizedBox(height: MediaQuery.of(context).padding.top + 12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Technicians',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ),
+              ),
                 // Assignment Instructions (only show when assigning tools)
                 if (_selectedTools != null)
                   Container(
@@ -130,7 +147,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 
                 // Compact Search Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
@@ -215,18 +232,15 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                               ],
                             ),
                           )
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(16.0),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12.0,
-                              mainAxisSpacing: 16.0,
-                              childAspectRatio: 0.72, // Adjusted for card design
-                            ),
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                             itemCount: filteredTechnicians.length,
                             itemBuilder: (context, index) {
                               final technician = filteredTechnicians[index];
-                              return _buildTechnicianCard(technician);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: _buildTechnicianCard(technician),
+                              );
                             },
                           ),
               ),
@@ -270,7 +284,6 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     return InkWell(
       onTap: () {
         if (_selectedTools != null) {
-          // Assignment mode - toggle selection
           setState(() {
             if (technician.id != null) {
               if (isSelected) {
@@ -281,7 +294,6 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             }
           });
         } else {
-          // Normal mode - navigate to detail screen
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -295,207 +307,97 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           _showEditTechnicianDialog(technician);
         }
       },
+      borderRadius: BorderRadius.circular(28),
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
         decoration: BoxDecoration(
           gradient: AppTheme.cardGradient,
-          borderRadius: BorderRadius.circular(28), // More rounded
-          border: Border.all(
-            color: isSelected 
-                ? Theme.of(context).primaryColor 
-                : Colors.transparent,
-            width: isSelected ? 2 : 0,
-          ),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-              spreadRadius: 0,
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
             ),
-            BoxShadow( // Second shadow for depth
-              color: Colors.black.withValues(alpha: 0.06),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
           ],
+          border: isSelected
+              ? Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                )
+              : null,
         ),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Selection indicator and profile picture row
-            Stack(
-              alignment: Alignment.topRight,
-              children: [
-                // Profile Picture - Centered
-                Center(
-                  child: Stack(
+            _buildTechnicianAvatar(technician),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundColor: technician.status == 'Active' 
-                            ? Colors.green.withValues(alpha: 0.15)
-                            : Colors.grey.withValues(alpha: 0.15),
-                        backgroundImage: technician.profilePictureUrl != null
-                            ? NetworkImage(technician.profilePictureUrl!)
-                            : null,
-                        child: technician.profilePictureUrl == null
-                            ? Text(
-                                technician.name.isNotEmpty 
-                                    ? technician.name[0].toUpperCase() 
-                                    : '?',
-                                style: TextStyle(
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 32,
-                                ),
-                              )
-                            : null,
-                      ),
-                      // Status indicator dot
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            color: technician.status == 'Active' ? Colors.green : Colors.grey,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(context).cardTheme.color ?? Colors.white,
-                              width: 3,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              technician.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              technician.department?.isNotEmpty == true
+                                  ? technician.department!
+                                  : 'No department',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
+                      if (_selectedTools != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0, top: 4),
+                          child: Icon(
+                            isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey[400],
+                            size: 20,
+                          ),
+                        ),
+                      _buildStatusChip(technician.status),
                     ],
                   ),
-                ),
-                // Selection indicator (top right)
-                if (_selectedTools != null)
+                  const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isSelected ? Theme.of(context).primaryColor : Colors.grey[400],
-                      size: 22,
-                    ),
-                  ),
-              ],
-            ),
-            
-            SizedBox(height: 14),
-            
-            // Name
-            Text(
-              technician.name,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            
-            SizedBox(height: 8),
-            
-            // Info Row - Employee ID and Department
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              alignment: WrapAlignment.center,
-              children: [
-                if (technician.employeeId != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.badge_outlined,
-                          size: 12,
-                          color: Colors.grey[700],
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          technician.employeeId!,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (technician.department != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.work_outline,
-                          size: 12,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            technician.department!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            
-            SizedBox(height: 10),
-            
-            // Status and Tools Count Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildStatusChip(technician.status),
-                if (assignedToolsCount > 0) ...[
-                  SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.blue.withValues(alpha: 0.3),
+                        color: Theme.of(context).colorScheme.outlineVariant ??
+                            Colors.black.withValues(alpha: 0.05),
                       ),
                     ),
                     child: Row(
@@ -503,27 +405,91 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       children: [
                         Icon(
                           Icons.build,
-                          size: 13,
-                          color: Colors.blue,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         Text(
-                          '$assignedToolsCount',
+                          assignedToolsCount == 0
+                              ? 'No tools assigned'
+                              : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''} assigned',
                           style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPlaceholderAvatar(Technician technician) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Text(
+          technician.name.isNotEmpty 
+              ? technician.name[0].toUpperCase() 
+              : '?',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            fontWeight: FontWeight.bold,
+            fontSize: 32,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTechnicianAvatar(Technician technician) {
+    final statusColor = technician.status == 'Active' ? Colors.green : Colors.grey;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: 108,
+            height: 108,
+            color: statusColor.withValues(alpha: 0.15),
+            child: (technician.profilePictureUrl != null && technician.profilePictureUrl!.isNotEmpty)
+                ? Image.network(
+                    technician.profilePictureUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderAvatar(technician),
+                  )
+                : _buildPlaceholderAvatar(technician),
+          ),
+        ),
+        Positioned(
+          bottom: 6,
+          right: 6,
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -705,17 +671,105 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       ).toList();
 
       // Assign each tool to each selected technician
+      List<String> failedAssignments = [];
+      
       for (final toolId in _selectedTools!) {
         for (final technician in technicians) {
-          if (technician.id != null) {
-            // Use technician UUID as the assigned_to value
-            await toolProvider.assignTool(
-              toolId,
-              technician.id!,
-              'Permanent',
-            );
+          if (technician.email != null && technician.email!.isNotEmpty) {
+            // Look up the user ID - check approval status first, then users table
+            try {
+              final technicianEmail = technician.email!.trim();
+              debugPrint('🔍 Looking up user for technician: ${technician.name}');
+              debugPrint('   Technician email: "$technicianEmail"');
+              
+              String? userId;
+              
+              // First, check if there's an approved pending approval record (this has the user_id)
+              final approvalRecord = await SupabaseService.client
+                  .from('pending_user_approvals')
+                  .select('user_id, status')
+                  .eq('email', technicianEmail)
+                  .eq('status', 'approved')
+                  .order('created_at', ascending: false)
+                  .limit(1)
+                  .maybeSingle();
+              
+              if (approvalRecord != null && approvalRecord['user_id'] != null) {
+                userId = approvalRecord['user_id'] as String;
+                debugPrint('   ✅ Found user ID from approval record: $userId');
+              } else {
+                // If no approval record, try to find user in users table
+                debugPrint('   No approval record found, checking users table...');
+                var userResponse = await SupabaseService.client
+                    .from('users')
+                    .select('id, email')
+                    .ilike('email', technicianEmail)
+                    .maybeSingle();
+                
+                // If not found with ilike, try fetching all and matching
+                if (userResponse == null) {
+                  debugPrint('   No direct match found, searching all users...');
+                  final allUsers = await SupabaseService.client
+                      .from('users')
+                      .select('id, email');
+                  
+                  debugPrint('   Found ${(allUsers as List).length} total users');
+                  for (var user in allUsers as List) {
+                    final userEmail = (user['email'] as String?)?.toLowerCase() ?? '';
+                    if (userEmail == technicianEmail.toLowerCase()) {
+                      userResponse = user;
+                      debugPrint('   ✅ Found matching user: ${user['id']}');
+                      break;
+                    }
+                  }
+                } else {
+                  debugPrint('   ✅ Found user: ${userResponse['id']}');
+                }
+                
+                if (userResponse != null && userResponse['id'] != null) {
+                  userId = userResponse['id'] as String;
+                }
+              }
+              
+              if (userId != null) {
+                // Use the user ID (from auth.users/users table) as the assigned_to value
+                await toolProvider.assignTool(
+                  toolId,
+                  userId,
+                  'Permanent',
+                );
+              } else {
+                // No user account found - technician needs to register and be approved first
+                failedAssignments.add(technician.name);
+                debugPrint('⚠️ No user account found for technician: ${technician.name} (${technician.email})');
+                debugPrint('   Technician must register in the app and be approved by admin first.');
+              }
+            } catch (e) {
+              debugPrint('Error looking up user for technician ${technician.name}: $e');
+              failedAssignments.add(technician.name);
+            }
+          } else {
+            debugPrint('⚠️ Technician ${technician.name} has no email address');
+            failedAssignments.add(technician.name);
           }
         }
+      }
+      
+      // Show consolidated error message if any assignments failed
+      if (failedAssignments.isNotEmpty) {
+        final failedCount = failedAssignments.length;
+        final totalCount = technicians.length;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              failedCount == totalCount
+                  ? 'Could not assign tools. ${failedCount} technician${failedCount > 1 ? 's' : ''} (${failedAssignments.take(3).join(', ')}${failedCount > 3 ? '...' : ''}) need to register in the app first.'
+                  : 'Assigned tools to ${totalCount - failedCount} technician(s), but ${failedCount} technician${failedCount > 1 ? 's' : ''} need to register first.',
+            ),
+            backgroundColor: failedCount == totalCount ? Colors.red : Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
+        );
       }
 
       // Refresh tools to get updated data

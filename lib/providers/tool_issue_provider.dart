@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/tool_issue.dart';
 import '../services/supabase_service.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
 
 class ToolIssueProvider with ChangeNotifier {
   List<ToolIssue> _issues = [];
@@ -81,6 +83,58 @@ class ToolIssueProvider with ChangeNotifier {
       final newIssue = ToolIssue.fromJson(response);
       _issues.insert(0, newIssue);
       notifyListeners();
+
+      // Create notification for admins about the new issue
+      try {
+        // Get technician info from the reported_by field
+        final reportedByParts = issue.reportedBy.split('(');
+        final technicianName = reportedByParts.isNotEmpty 
+            ? reportedByParts[0].trim() 
+            : issue.reportedBy;
+        
+        // Try to get technician email from users table
+        String technicianEmail = 'Unknown';
+        if (issue.reportedByUserId != null) {
+          try {
+            final userResponse = await SupabaseService.client
+                .from('users')
+                .select('email')
+                .eq('id', issue.reportedByUserId!)
+                .maybeSingle();
+            
+            if (userResponse != null && userResponse['email'] != null) {
+              technicianEmail = userResponse['email'] as String;
+            }
+          } catch (e) {
+            debugPrint('Could not fetch technician email: $e');
+          }
+        }
+
+        // Create notification in Supabase
+        await SupabaseService.client
+            .from('admin_notifications')
+            .insert({
+              'title': 'Issue Report',
+              'message': '${technicianName} reported a ${issue.issueType.toLowerCase()} issue for ${issue.toolName}',
+              'technician_name': technicianName,
+              'technician_email': technicianEmail,
+              'type': NotificationType.issueReport.value,
+              'is_read': false,
+              'timestamp': DateTime.now().toIso8601String(),
+              'data': {
+                'issue_id': newIssue.id,
+                'tool_id': issue.toolId,
+                'tool_name': issue.toolName,
+                'issue_type': issue.issueType,
+                'priority': issue.priority,
+              },
+            });
+        
+        debugPrint('✅ Created notification for tool issue: ${newIssue.id}');
+      } catch (notificationError) {
+        // Don't fail the issue creation if notification fails
+        debugPrint('⚠️ Failed to create notification for tool issue: $notificationError');
+      }
     } catch (e) {
       _error = 'Failed to add issue: $e';
       debugPrint('Error adding tool issue: $e');

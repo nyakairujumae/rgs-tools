@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -33,6 +33,7 @@ import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
 import 'services/firebase_messaging_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,44 +51,90 @@ void main() async {
     // Initialize Firebase (skip on web for now to avoid issues)
     if (!kIsWeb) {
       print('🔥 Initializing Firebase...');
+      print('🔥 Platform: ${defaultTargetPlatform}');
+      print('🔥 Firebase apps before init: ${Firebase.apps.length}');
+      
       try {
         // Check if Firebase is already initialized
         if (Firebase.apps.isEmpty) {
           print('🔥 Firebase apps is empty, initializing...');
-      try {
-        await Firebase.initializeApp();
-            print('✅ Firebase initialized successfully. Apps count: ${Firebase.apps.length}');
-            if (Firebase.apps.isNotEmpty) {
-              print('✅ Firebase app name: ${Firebase.app().name}');
+          
+          try {
+            // Get the platform-specific options
+            final options = DefaultFirebaseOptions.currentPlatform;
+            print('🔥 Using FirebaseOptions for: ${defaultTargetPlatform}');
+            print('🔥 Project ID: ${options.projectId}');
+            print('🔥 App ID: ${options.appId}');
+            
+            await Firebase.initializeApp(
+              options: options,
+            );
+            
+            print('🔥 Firebase.initializeApp() call completed');
+            
+            // Wait and check multiple times
+            for (int i = 0; i < 10; i++) {
+              await Future.delayed(Duration(milliseconds: 200));
+              if (Firebase.apps.isNotEmpty) {
+                print('✅ Firebase initialized successfully after ${(i + 1) * 200}ms');
+                print('✅ Apps count: ${Firebase.apps.length}');
+                print('✅ Firebase app name: ${Firebase.app().name}');
+                break;
+              }
+              if (i == 9) {
+                print('❌ Firebase.initializeApp() completed but apps list is still empty after 2 seconds');
+                print('❌ This might indicate a configuration issue');
+                print('❌ Please verify:');
+                print('   1. google-services.json is in android/app/');
+                print('   2. GoogleService-Info.plist is in ios/Runner/');
+                print('   3. Firebase dependencies are properly installed');
+              }
             }
           } catch (initError, stackTrace) {
             print('❌ Firebase.initializeApp() threw error: $initError');
+            print('❌ Error type: ${initError.runtimeType}');
+            print('❌ Error details: ${initError.toString()}');
             print('❌ Stack trace: $stackTrace');
+            
+            // Check if it's a configuration error
+            if (initError.toString().contains('google-services') || 
+                initError.toString().contains('GoogleService') ||
+                initError.toString().contains('configuration')) {
+              print('⚠️ This might be a Firebase configuration file issue');
+              print('⚠️ Please verify google-services.json (Android) and GoogleService-Info.plist (iOS) are correct');
+            }
+            
             rethrow; // Re-throw to be caught by outer catch
           }
         } else {
           print('✅ Firebase already initialized. Apps: ${Firebase.apps.map((a) => a.name).join(", ")}');
         }
         
-        // Verify Firebase is initialized before proceeding
+        // Final verification before proceeding
+        print('🔥 Final check: Firebase apps count = ${Firebase.apps.length}');
+        
         if (Firebase.apps.isEmpty) {
-          print('❌ Firebase initialization failed - apps still empty');
+          print('❌ Firebase initialization failed - apps still empty after all attempts');
+          print('⚠️ Continuing without Firebase Messaging...');
         } else {
           print('✅ Firebase verified. Setting up messaging...');
-        
-        // Set up Firebase Messaging background handler
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-        
-        // Initialize Firebase Messaging
-        await FirebaseMessagingService.initialize();
+          
+          // Set up Firebase Messaging background handler
+          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+          
+          // Initialize Firebase Messaging
+          await FirebaseMessagingService.initialize();
           print('✅ Firebase Messaging initialized successfully');
         }
       } catch (firebaseError, stackTrace) {
         print('❌ Firebase initialization failed: $firebaseError');
+        print('❌ Error type: ${firebaseError.runtimeType}');
         print('❌ Stack trace: $stackTrace');
         // Continue without Firebase - this is not critical for basic app functionality
         print('⚠️ Continuing without Firebase...');
       }
+    } else {
+      print('🌐 Web platform detected - skipping Firebase initialization');
     }
 
     // Initialize Supabase (skip on web for now to avoid issues)

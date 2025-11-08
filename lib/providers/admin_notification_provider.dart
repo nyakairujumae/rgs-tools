@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/admin_notification.dart';
+import '../services/supabase_service.dart';
 
 class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> _notifications = [];
@@ -19,21 +20,44 @@ class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> getNotificationsByType(NotificationType type) =>
       _notifications.where((n) => n.type == type).toList();
 
-  /// Load notifications from local storage or API
+  /// Load notifications from Supabase
   Future<void> loadNotifications() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // For now, we'll use mock data. Later this can be replaced with API calls
-      await Future.delayed(Duration(milliseconds: 500)); // Simulate API delay
+      // Check if user is authenticated
+      final session = SupabaseService.client.auth.currentSession;
+      if (session == null) {
+        _error = 'Please log in to view notifications';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Load notifications from Supabase
+      final response = await SupabaseService.client
+          .from('admin_notifications')
+          .select()
+          .order('timestamp', ascending: false)
+          .limit(100);
+
+      _notifications = (response as List)
+          .map((json) => AdminNotification.fromJson(json))
+          .toList();
       
-      _notifications = _getMockNotifications();
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      _error = e.toString();
+      debugPrint('Error loading notifications: $e');
+      if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
+        _error = 'Session expired. Please log in again';
+      } else if (e.toString().contains('PGRST204') || e.toString().contains('relation "admin_notifications" does not exist')) {
+        _error = 'Notifications table not found. Please run the SQL script to create it.';
+      } else {
+        _error = 'Failed to load notifications: $e';
+      }
       _isLoading = false;
       notifyListeners();
     }
@@ -46,24 +70,63 @@ class AdminNotificationProvider extends ChangeNotifier {
   }
 
   /// Mark notification as read
-  void markAsRead(String notificationId) {
-    final index = _notifications.indexWhere((n) => n.id == notificationId);
-    if (index != -1) {
-      _notifications[index] = _notifications[index].copyWith(isRead: true);
-      notifyListeners();
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      await SupabaseService.client
+          .from('admin_notifications')
+          .update({'is_read': true})
+          .eq('id', notificationId);
+
+      final index = _notifications.indexWhere((n) => n.id == notificationId);
+      if (index != -1) {
+        _notifications[index] = _notifications[index].copyWith(isRead: true);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+      // Still update locally even if API call fails
+      final index = _notifications.indexWhere((n) => n.id == notificationId);
+      if (index != -1) {
+        _notifications[index] = _notifications[index].copyWith(isRead: true);
+        notifyListeners();
+      }
     }
   }
 
   /// Mark all notifications as read
-  void markAllAsRead() {
-    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
-    notifyListeners();
+  Future<void> markAllAsRead() async {
+    try {
+      await SupabaseService.client
+          .from('admin_notifications')
+          .update({'is_read': true})
+          .eq('is_read', false);
+
+      _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+      // Still update locally even if API call fails
+      _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+      notifyListeners();
+    }
   }
 
   /// Remove a notification
-  void removeNotification(String notificationId) {
-    _notifications.removeWhere((n) => n.id == notificationId);
-    notifyListeners();
+  Future<void> removeNotification(String notificationId) async {
+    try {
+      await SupabaseService.client
+          .from('admin_notifications')
+          .delete()
+          .eq('id', notificationId);
+
+      _notifications.removeWhere((n) => n.id == notificationId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error removing notification: $e');
+      // Still remove locally even if API call fails
+      _notifications.removeWhere((n) => n.id == notificationId);
+      notifyListeners();
+    }
   }
 
   /// Clear all notifications
@@ -72,25 +135,56 @@ class AdminNotificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Create a mock notification for testing
-  void createMockNotification({
+  /// Create a notification (saves to Supabase)
+  Future<void> createNotification({
+    required String technicianName,
+    required String technicianEmail,
+    required NotificationType type,
+    String? title,
+    String? message,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      final notificationData = {
+        'title': title ?? _getNotificationTitle(type, technicianName),
+        'message': message ?? _getNotificationMessage(type, technicianName),
+        'technician_name': technicianName,
+        'technician_email': technicianEmail,
+        'type': type.value,
+        'is_read': false,
+        'timestamp': DateTime.now().toIso8601String(),
+        if (data != null) 'data': data,
+      };
+
+      final response = await SupabaseService.client
+          .from('admin_notifications')
+          .insert(notificationData)
+          .select()
+          .single();
+
+      final notification = AdminNotification.fromJson(response);
+      _notifications.insert(0, notification);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error creating notification: $e');
+      rethrow;
+    }
+  }
+
+  /// Create a mock notification for testing (legacy method, now uses createNotification)
+  Future<void> createMockNotification({
     required String technicianName,
     required String technicianEmail,
     required NotificationType type,
     Map<String, dynamic>? data,
-  }) {
-    final notification = AdminNotification(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _getNotificationTitle(type, technicianName),
-      message: _getNotificationMessage(type, technicianName),
+  }) async {
+    // Use the new createNotification method
+    await createNotification(
       technicianName: technicianName,
       technicianEmail: technicianEmail,
       type: type,
-      timestamp: DateTime.now(),
       data: data,
     );
-
-    addNotification(notification);
   }
 
   String _getNotificationTitle(NotificationType type, String technicianName) {
@@ -123,59 +217,4 @@ class AdminNotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Mock data for testing
-  List<AdminNotification> _getMockNotifications() {
-    return [
-      AdminNotification(
-        id: '1',
-        title: 'Access Request',
-        message: 'Technician John Smith needs to access the RGS app',
-        technicianName: 'John Smith',
-        technicianEmail: 'john.smith@company.com',
-        type: NotificationType.accessRequest,
-        timestamp: DateTime.now().subtract(Duration(minutes: 5)),
-        isRead: false,
-      ),
-      AdminNotification(
-        id: '2',
-        title: 'Tool Request',
-        message: 'Technician Mike Johnson requested a tool',
-        technicianName: 'Mike Johnson',
-        technicianEmail: 'mike.johnson@company.com',
-        type: NotificationType.toolRequest,
-        timestamp: DateTime.now().subtract(Duration(minutes: 15)),
-        isRead: false,
-      ),
-      AdminNotification(
-        id: '3',
-        title: 'Issue Report',
-        message: 'Technician Sarah Wilson reported an issue',
-        technicianName: 'Sarah Wilson',
-        technicianEmail: 'sarah.wilson@company.com',
-        type: NotificationType.issueReport,
-        timestamp: DateTime.now().subtract(Duration(hours: 1)),
-        isRead: true,
-      ),
-      AdminNotification(
-        id: '4',
-        title: 'Maintenance Request',
-        message: 'Technician David Brown requested maintenance for a tool',
-        technicianName: 'David Brown',
-        technicianEmail: 'david.brown@company.com',
-        type: NotificationType.maintenanceRequest,
-        timestamp: DateTime.now().subtract(Duration(hours: 2)),
-        isRead: true,
-      ),
-      AdminNotification(
-        id: '5',
-        title: 'Access Request',
-        message: 'Technician Lisa Davis needs to access the RGS app',
-        technicianName: 'Lisa Davis',
-        technicianEmail: 'lisa.davis@company.com',
-        type: NotificationType.accessRequest,
-        timestamp: DateTime.now().subtract(Duration(hours: 3)),
-        isRead: true,
-      ),
-    ];
-  }
 }
