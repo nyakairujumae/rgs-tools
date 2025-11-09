@@ -24,20 +24,14 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF00D4C3), // Subtle green at top
-              Color(0xFFE0F7F4), // Light green-tinted
-              Color(0xFFF5FCFB), // Very light green-tinted
-              Colors.white, // Pure white at bottom
-            ],
-          ),
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -45,12 +39,11 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             title: const Text(
               'Notifications',
               style: TextStyle(
-                color: Colors.black87,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
+            backgroundColor: colorScheme.surface,
+            foregroundColor: colorScheme.onSurface,
             elevation: 0,
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
@@ -252,7 +245,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
           });
         },
         selectedColor: Colors.blue.withOpacity(0.15),
-        backgroundColor: AppTheme.cardGradientStart,
+        backgroundColor: AppTheme.cardSurfaceColor(context),
         checkmarkColor: Colors.blue,
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
         labelPadding: EdgeInsets.symmetric(horizontal: 4),
@@ -267,7 +260,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

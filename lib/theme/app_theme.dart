@@ -11,11 +11,17 @@ class AppTheme {
   static const Color warningColor = Colors.amber;
   static const Color successColor = Colors.green;
   
-  // Gradient background colors - Light lavender-blue to light gray-blue
+  // Gradient background colors - Light palette
   static const Color gradientStart = Color(0xFFE8F0FE); // Light lavender-blue
   static const Color gradientEnd = Color(0xFFF0F4F8); // Light gray-blue
   static const Color cardGradientStart = Color(0xFFF5FCFB); // Very light green-tinted (from main gradient)
   static const Color cardGradientEnd = Color(0xFFFFFFFF); // White
+
+  // Gradient background colors - Dark palette
+  static const Color darkGradientStart = Color(0xFF050505); // Near black
+  static const Color darkGradientEnd = Color(0xFF0F0F0F); // Charcoal black
+  static const Color darkCardGradientStart = Color(0xFF121212); // Subtle dark gray
+  static const Color darkCardGradientEnd = Color(0xFF080808); // Deep black
   
   // Background colors (for dark theme)
   static const Color backgroundColor = Color(0xFF000000);
@@ -34,6 +40,38 @@ class AppTheme {
     end: Alignment.bottomRight,
     colors: [cardGradientStart, cardGradientEnd],
   );
+
+  static LinearGradient backgroundGradientFor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [darkGradientStart, darkGradientEnd],
+          )
+        : backgroundGradient;
+  }
+
+  static LinearGradient cardGradientFor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [darkCardGradientStart, darkCardGradientEnd],
+          )
+        : cardGradient;
+  }
+
+  static Color cardSurfaceColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? darkCardGradientStart : cardGradientStart;
+  }
+
+  static Color elevatedSurfaceColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white;
+  }
   
   // Text colors (user preference: white text)
   static const Color textPrimary = Colors.white;

@@ -192,7 +192,7 @@ class AuthProvider with ChangeNotifier {
           }
         } else {
           // For admins, load role normally
-          await _loadUserRole();
+        await _loadUserRole();
         }
       }
 
@@ -273,19 +273,19 @@ class AuthProvider with ChangeNotifier {
           debugPrint('✅ Updated existing pending approval with additional details: $email');
         } else {
           // Create new pending approval if it doesn't exist (shouldn't happen normally)
-          await SupabaseService.client
-              .from('pending_user_approvals')
-              .insert({
-                'user_id': _user!.id,
-                'email': email,
-                'full_name': name,
-                'employee_id': employeeId,
-                'phone': phone,
-                'department': department,
-                'hire_date': hireDate,
-                'status': 'pending',
-              });
-          
+        await SupabaseService.client
+            .from('pending_user_approvals')
+            .insert({
+              'user_id': _user!.id,
+              'email': email,
+              'full_name': name,
+              'employee_id': employeeId,
+              'phone': phone,
+              'department': department,
+              'hire_date': hireDate,
+              'status': 'pending',
+            });
+        
           debugPrint('✅ Created pending approval for technician: $email');
         }
         

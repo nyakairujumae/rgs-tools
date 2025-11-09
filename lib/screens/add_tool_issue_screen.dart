@@ -54,7 +54,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: _isLoading
@@ -239,7 +239,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradient,
+                            gradient: AppTheme.cardGradientFor(context),
                             borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
@@ -345,7 +345,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -394,7 +394,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -446,7 +446,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -503,7 +503,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
             );
           }).toList();
         },
-        dropdownColor: AppTheme.cardGradientStart,
+        dropdownColor: AppTheme.cardSurfaceColor(context),
         borderRadius: BorderRadius.circular(20),
         menuMaxHeight: 300,
         items: items,
@@ -738,7 +738,7 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

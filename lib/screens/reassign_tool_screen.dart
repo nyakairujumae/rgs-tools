@@ -32,7 +32,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Reassign: ${widget.tool.name}'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
@@ -284,7 +284,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
         
         // Update notes if provided
         if (_notesController.text.trim().isNotEmpty) {
-          final updatedTool = widget.tool.copyWith(
+      final updatedTool = widget.tool.copyWith(
             notes: '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
             updatedAt: DateTime.now().toIso8601String(),
       );

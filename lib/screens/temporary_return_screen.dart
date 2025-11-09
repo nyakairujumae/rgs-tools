@@ -41,7 +41,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Temporary Return: ${widget.tool.name}'),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Colors.black,
         elevation: 0,
       ),

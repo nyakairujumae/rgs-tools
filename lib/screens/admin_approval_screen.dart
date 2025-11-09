@@ -38,7 +38,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: Column(
@@ -59,7 +59,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                             fontWeight: FontWeight.w800,
                             color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
-                        ),
+        ),
                         const SizedBox(height: 6),
                         Text(
                           'Review and manage technician access requests',
@@ -84,7 +84,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+                    gradient: AppTheme.cardGradientFor(context),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -95,69 +95,69 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     ],
                   ),
                   child: TabBar(
-                    controller: _tabController,
+          controller: _tabController,
                     indicatorColor: AppTheme.primaryColor,
                     labelColor: AppTheme.primaryColor,
                     unselectedLabelColor: Colors.grey[600],
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+          tabs: [
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                             const Icon(Icons.pending, size: 18),
                             const SizedBox(width: 8),
-                            Consumer<PendingApprovalsProvider>(
-                              builder: (context, provider, child) {
-                                final count = provider.pendingCount;
-                                return Text('Pending${count > 0 ? ' ($count)' : ''}');
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                  Consumer<PendingApprovalsProvider>(
+                    builder: (context, provider, child) {
+                      final count = provider.pendingCount;
+                      return Text('Pending${count > 0 ? ' ($count)' : ''}');
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                             const Icon(Icons.check_circle, size: 18),
                             const SizedBox(width: 8),
-                            Consumer<PendingApprovalsProvider>(
-                              builder: (context, provider, child) {
-                                final count = provider.approvedCount;
-                                return Text('Authorized${count > 0 ? ' ($count)' : ''}');
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                  Consumer<PendingApprovalsProvider>(
+                    builder: (context, provider, child) {
+                      final count = provider.approvedCount;
+                      return Text('Authorized${count > 0 ? ' ($count)' : ''}');
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                             const Icon(Icons.cancel, size: 18),
                             const SizedBox(width: 8),
-                            Consumer<PendingApprovalsProvider>(
-                              builder: (context, provider, child) {
-                                final count = provider.rejectedCount;
-                                return Text('Rejected${count > 0 ? ' ($count)' : ''}');
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Consumer<PendingApprovalsProvider>(
+                    builder: (context, provider, child) {
+                      final count = provider.rejectedCount;
+                      return Text('Rejected${count > 0 ? ' ($count)' : ''}');
+                    },
                   ),
+                ],
+              ),
+            ),
+          ],
+        ),
                 ),
               ),
               const SizedBox(height: 12),
               Expanded(
                 child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildPendingTab(),
-                    _buildApprovedTab(),
-                    _buildRejectedTab(),
-                  ],
+        controller: _tabController,
+        children: [
+          _buildPendingTab(),
+          _buildApprovedTab(),
+          _buildRejectedTab(),
+        ],
                 ),
               ),
             ],
@@ -320,7 +320,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -338,7 +338,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         ],
         border: approval.status == 'pending'
             ? Border.all(
-                color: _getStatusColor(approval.status).withValues(alpha: 0.3),
+          color: _getStatusColor(approval.status).withValues(alpha: 0.3),
                 width: 1.5,
               )
             : null,
@@ -364,7 +364,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: _getStatusColor(approval.status).withValues(alpha: 0.2),
+                    color: _getStatusColor(approval.status).withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

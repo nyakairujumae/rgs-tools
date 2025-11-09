@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../services/supabase_service.dart';
+import '../providers/auth_provider.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
 
 class RequestNewToolScreen extends StatefulWidget {
   const RequestNewToolScreen({super.key});
@@ -21,6 +26,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
   DateTime? _neededBy;
   String _priority = 'Normal';
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -40,7 +46,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -55,7 +61,13 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                     children: [
                       IconButton(
                         icon: Icon(Icons.arrow_back, color: Colors.black87),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/technician',
+                            (route) => false,
+                          );
+                        },
                       ),
                       Expanded(
                         child: Text(
@@ -212,20 +224,26 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: _submit,
+                        onTap: _isSubmitting ? null : _submit,
                         borderRadius: BorderRadius.circular(28),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           alignment: Alignment.center,
-                          child: Text(
-                            'Submit Request',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                )
+                              : const Text(
+                                  'Submit Request',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -251,7 +269,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -299,7 +317,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -348,7 +366,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -383,7 +401,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
             value: value,
             isExpanded: true,
             style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
-            dropdownColor: AppTheme.cardGradientStart,
+            dropdownColor: AppTheme.cardSurfaceColor(context),
             borderRadius: BorderRadius.circular(20),
             menuMaxHeight: 300,
             onChanged: onChanged,
@@ -398,7 +416,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     final text = value == null ? 'Select date' : '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -450,12 +468,93 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     );
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request prepared (UI only). Hook backend next.')),
-    );
-    Navigator.pop(context);
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate() || _isSubmitting) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final adminNotificationProvider = context.read<AdminNotificationProvider>();
+    final user = authProvider.user;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final requestData = {
+        'tool_name': _nameCtrl.text.trim(),
+        'category': _categoryCtrl.text.trim(),
+        'brand': _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
+        'model': _modelCtrl.text.trim().isEmpty ? null : _modelCtrl.text.trim(),
+        'quantity': int.parse(_quantityCtrl.text.trim()),
+        'priority': _priority,
+        'needed_by': _neededBy?.toIso8601String(),
+        'site': _siteCtrl.text.trim().isEmpty ? null : _siteCtrl.text.trim(),
+        'reason': _reasonCtrl.text.trim(),
+        'status': 'pending',
+        'requested_by': user?.id,
+        'requested_by_email': user?.email,
+        'requested_by_name': authProvider.userFullName,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      await SupabaseService.client.from('tool_requests').insert(requestData);
+
+      try {
+        await adminNotificationProvider.createNotification(
+          technicianName: authProvider.userFullName ?? (user?.email ?? 'Technician'),
+          technicianEmail: user?.email ?? 'unknown@technician',
+          type: NotificationType.toolRequest,
+          title: 'Tool Request: ${_nameCtrl.text.trim()}',
+          message: '${authProvider.userFullName ?? 'A technician'} requested ${_quantityCtrl.text.trim()} x ${_nameCtrl.text.trim()}',
+          data: {
+            'tool_name': _nameCtrl.text.trim(),
+            'quantity': _quantityCtrl.text.trim(),
+            'priority': _priority,
+          },
+        );
+      } catch (e) {
+        debugPrint('Failed to create admin notification: $e');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tool request submitted. Admin will review it soon.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      _resetForm();
+    } catch (e) {
+      debugPrint('Error submitting tool request: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit request: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _nameCtrl.clear();
+    _categoryCtrl.clear();
+    _brandCtrl.clear();
+    _modelCtrl.clear();
+    _quantityCtrl.text = '1';
+    _siteCtrl.clear();
+    _reasonCtrl.clear();
+    setState(() {
+      _priority = 'Normal';
+      _neededBy = null;
+    });
   }
 }
 
@@ -470,7 +569,7 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

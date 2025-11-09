@@ -428,10 +428,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           
           // Navigate based on role and approval status
           if (authProvider.isAdmin) {
-            AuthErrorHandler.showSuccessSnackBar(
-              context, 
-              '🎉 Account created successfully! Welcome to RGS HVAC Services.'
-            );
+          AuthErrorHandler.showSuccessSnackBar(
+            context, 
+            '🎉 Account created successfully! Welcome to RGS HVAC Services.'
+          );
             Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
           } else {
             // For technicians, always check approval status
@@ -460,7 +460,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 context, 
                 '🎉 Account created successfully! Welcome to RGS HVAC Services.'
               );
-              Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+            Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
             }
           }
         } else {

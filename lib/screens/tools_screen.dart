@@ -67,7 +67,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             bottom: false,
             child: Container(
             decoration: BoxDecoration(
-              gradient: AppTheme.backgroundGradient,
+              gradient: AppTheme.backgroundGradientFor(context),
             ),
             child: Column(
             children: [
@@ -76,7 +76,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+                    gradient: AppTheme.cardGradientFor(context),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -91,10 +91,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.12),
+                          color: AppTheme.primaryColor.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 18),
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          color: AppTheme.primaryColor,
+                          size: 18,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -105,18 +109,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               _selectedTools.isEmpty
                                   ? 'Select tools to assign'
                                   : '${_selectedTools.length} tool${_selectedTools.length > 1 ? 's' : ''} selected',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Tap a tool card to toggle selection, then use Assign below.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  ),
                             ),
                           ],
                         ),
@@ -128,10 +132,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               _selectedTools.clear();
                             });
                           },
-                          child: const Text(
+                          child: Text(
                             'Clear',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: AppTheme.primaryColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -163,7 +167,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     Container(
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
                         boxShadow: [
                           BoxShadow(
@@ -176,14 +180,28 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: TextField(
-                          style: TextStyle(fontSize: 14),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Search tools...',
-                            hintStyle: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                            prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[500]),
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                            ),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
-                                    icon: Icon(Icons.clear, size: 18, color: Colors.grey[500]),
+                                    icon: Icon(
+                                      Icons.clear,
+                                      size: 18,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         _searchQuery = '';
@@ -195,12 +213,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
                         ),
                       ),
                     ),
@@ -214,7 +232,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -231,7 +249,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 icon: Icon(
                                   Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   size: 20,
                                 ),
                                 style: TextStyle(
@@ -248,8 +266,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                           Icon(
                                             _getCategoryIcon(category),
                                             size: 18,
-                                            color: category == 'Category' 
-                                                ? Colors.grey[400] 
+                                            color: category == 'Category'
+                                                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
                                                 : _getCategoryIconColor(category),
                                           ),
                                           SizedBox(width: 8),
@@ -258,7 +276,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
-                                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                         ],
@@ -266,7 +284,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                     );
                                   }).toList();
                                 },
-                                dropdownColor: AppTheme.cardGradientStart,
+                                dropdownColor: AppTheme.cardSurfaceColor(context),
                                 menuMaxHeight: 300,
                                 borderRadius: BorderRadius.circular(20),
                                 items: categories.map((category) {
@@ -280,22 +298,22 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             _getCategoryIcon(category),
                                             size: 18,
                                             color: category == 'Category' 
-                                                ? Colors.grey[400] 
+                                                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.35)
                                                 : _getCategoryIconColor(category),
                                           ),
                                           SizedBox(width: 12),
                                           Expanded(
-                                            child: Text(
-                                              category,
-                                              overflow: TextOverflow.ellipsis,
+                                    child: Text(
+                                      category,
+                                      overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontSize: 14,
-                                                fontWeight: category == 'Category' 
+                                                fontWeight: category == 'Category'
                                                     ? FontWeight.normal 
                                                     : FontWeight.w500,
                                                 color: category == 'Category' 
-                                                    ? Colors.grey[600] 
-                                                    : Theme.of(context).textTheme.bodyLarge?.color,
+                                                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.6)
+                                                    : Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                           ),
@@ -319,7 +337,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -336,7 +354,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 icon: Icon(
                                   Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   size: 20,
                                 ),
                                 style: TextStyle(
@@ -344,7 +362,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
-                                dropdownColor: AppTheme.cardGradientStart,
+                                dropdownColor: AppTheme.cardSurfaceColor(context),
                                 menuMaxHeight: 300,
                                 borderRadius: BorderRadius.circular(20),
                                 items: [
@@ -357,14 +375,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                           Icon(
                                             Icons.filter_list_outlined,
                                             size: 18,
-                                            color: Colors.grey[400],
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
                                           ),
                                           SizedBox(width: 12),
                                           Text(
                                             'Status',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[600],
+                                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                             ),
                                           ),
                                         ],
@@ -431,7 +449,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                           Icon(
                                             Icons.block_outlined,
                                             size: 18,
-                                            color: Colors.grey,
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
                                           ),
                                           SizedBox(width: 12),
                                           Text('Retired'),
@@ -467,21 +485,21 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 Icon(
                                   Icons.build,
                                   size: 64,
-                                  color: Colors.grey,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
                                 ),
                                 SizedBox(height: 16),
                                 Text(
                                   'No tools found',
                                   style: TextStyle(
                                     fontSize: 18,
-                                    color: Colors.grey,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
                                   ),
                                 ),
                                 SizedBox(height: 8),
                                 Text(
                                   'Add your first tool to get started',
-                                  style: TextStyle(
-                                    color: Colors.grey,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ],
@@ -511,7 +529,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   margin: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue.shade600, Colors.blue.shade700],
+                      colors: [
+                        AppTheme.primaryColor,
+                        AppTheme.primaryColor.withOpacity(0.85),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
@@ -553,12 +574,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             const SizedBox(width: 12),
                             Text(
                               'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
                             ),
                             const SizedBox(width: 8),
                             Icon(
@@ -582,7 +603,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final isSelected = widget.isSelectionMode && tool.id != null && _selectedTools.contains(tool.id!);
     
     return InkWell(
-      onTap: () {
+        onTap: () {
         if (widget.isSelectionMode) {
           setState(() {
             if (tool.id != null) {
@@ -613,8 +634,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
             child: Stack(
               children: [
                 Container(
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+          decoration: BoxDecoration(
+                    gradient: AppTheme.cardGradientFor(context),
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
@@ -631,33 +652,33 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     ],
                     border: widget.isSelectionMode && isSelected
                         ? Border.all(
-                            color: Colors.blue,
+                            color: AppTheme.primaryColor,
                             width: 3,
                           )
                         : null,
                   ),
               clipBehavior: Clip.antiAlias,
-              child: tool.imagePath != null
+                child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
-                        ? ClipRRect(
+                    ? ClipRRect(
                             borderRadius: BorderRadius.circular(28),
                             child: Image.network(
-                              tool.imagePath!,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
                             ),
-                          )
+                              )
                         : ClipRRect(
                             borderRadius: BorderRadius.circular(28),
                             child: Image.file(
-                              File(tool.imagePath!),
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
-                            ),
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+                              ),
                           ))
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(28),
@@ -673,10 +694,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Colors.white,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(context).colorScheme.surface,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? Colors.blue : Colors.grey[300]!,
+                          color: isSelected
+                              ? AppTheme.primaryColor
+                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.25),
                           width: 2,
                         ),
                         boxShadow: [
@@ -690,15 +715,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: isSelected
                           ? Icon(
                               Icons.check,
-                              color: Colors.white,
+                                  color: Colors.white,
                               size: 18,
                             )
                           : null,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
           
           // Details Below Card
           Padding(
@@ -729,10 +754,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     SizedBox(width: 6),
                     ConditionChip(condition: tool.condition),
                   ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
         ],
       ),
     );
@@ -795,7 +820,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       case 'plumbing tools':
         return Colors.cyan;
       case 'automotive tools':
-        return Colors.grey;
+        return AppTheme.textSecondary;
       case 'garden tools':
         return Colors.green;
       default:
@@ -808,7 +833,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -816,14 +841,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
           Icon(
             Icons.build,
             size: 40,
-            color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
           ),
           SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
             ),
           ),
         ],
@@ -832,23 +857,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   Widget _buildStatusChip(String status) {
-    Color color;
-    switch (status) {
-      case 'Available':
-        color = Colors.green;
-        break;
-      case 'In Use':
-        color = Colors.blue;
-        break;
-      case 'Maintenance':
-        color = Colors.orange;
-        break;
-      case 'Retired':
-        color = Colors.grey;
-        break;
-      default:
-        color = Colors.grey;
-    }
+    final color = AppTheme.getStatusColor(status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -874,22 +883,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
     Color color;
     switch (condition) {
       case 'Excellent':
-        color = Colors.green;
+        color = AppTheme.conditionExcellent;
         break;
       case 'Good':
-        color = Colors.blue;
+        color = AppTheme.conditionGood;
         break;
       case 'Fair':
-        color = Colors.yellow;
+        color = AppTheme.conditionFair;
         break;
       case 'Poor':
-        color = Colors.orange;
-        break;
       case 'Needs Repair':
-        color = Colors.red;
+        color = AppTheme.conditionNeedsRepair;
         break;
       default:
-        color = Colors.grey;
+        color = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     }
 
     return Container(
@@ -935,7 +942,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
             SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.share, color: Colors.blue),
+              leading: Icon(Icons.share, color: AppTheme.primaryColor),
               title: Text(
                 tool.toolType == 'inventory' 
                     ? 'Make Shared Tool' 
@@ -958,7 +965,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
             if (tool.toolType == 'shared')
               ListTile(
-                leading: Icon(Icons.inventory, color: Colors.grey),
+                leading: Icon(
+                  Icons.inventory,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                ),
                 title: Text(
                   'Move to Inventory',
                   style: TextStyle(

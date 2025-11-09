@@ -91,8 +91,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Container(
             decoration: BoxDecoration(
-              gradient: AppTheme.backgroundGradient,
-            ),
+              gradient: AppTheme.backgroundGradientFor(context),
+          ),
             child: Column(
             children: [
             SizedBox(height: MediaQuery.of(context).padding.top + 12),
@@ -110,48 +110,48 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   ),
                 ),
               ),
-                // Assignment Instructions (only show when assigning tools)
-                if (_selectedTools != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
+              // Assignment Instructions (only show when assigning tools)
+              if (_selectedTools != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16.0),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).primaryColor,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to Technicians',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           color: Theme.of(context).primaryColor,
-                          size: 24,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to Technicians',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Select one or more technicians to assign the tools to',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Select one or more technicians to assign the tools to',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                
+                ),
+              
                 // Compact Search Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradient,
+                      gradient: AppTheme.cardGradientFor(context),
                       borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
                       boxShadow: [
                         BoxShadow(
@@ -163,13 +163,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: TextField(
+                child: TextField(
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Search technicians...',
+                    hintText: 'Search technicians...',
                           hintStyle: TextStyle(fontSize: 14, color: Colors.grey[500]),
                           prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[500]),
                           suffixIcon: _searchQuery.isNotEmpty
@@ -186,14 +186,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                      ),
-                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
                   ),
                 ),
               
@@ -246,7 +246,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               ),
             ],
           ),
-        ),
+          ),
           floatingActionButton: _selectedTools != null 
               ? FloatingActionButton.extended(
                   onPressed: _selectedTechnicians.isNotEmpty ? () {
@@ -282,26 +282,26 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         .length;
     
     return InkWell(
-      onTap: () {
-        if (_selectedTools != null) {
-          setState(() {
-            if (technician.id != null) {
-              if (isSelected) {
-                _selectedTechnicians.remove(technician.id!);
-              } else {
-                _selectedTechnicians.add(technician.id!);
+        onTap: () {
+          if (_selectedTools != null) {
+            setState(() {
+              if (technician.id != null) {
+                if (isSelected) {
+                  _selectedTechnicians.remove(technician.id!);
+                } else {
+                  _selectedTechnicians.add(technician.id!);
+                }
               }
-            }
-          });
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TechnicianDetailScreen(technician: technician),
-            ),
-          );
-        }
-      },
+            });
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TechnicianDetailScreen(technician: technician),
+              ),
+            );
+          }
+        },
       onLongPress: () {
         if (_selectedTools == null) {
           _showEditTechnicianDialog(technician);
@@ -311,7 +311,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -349,18 +349,18 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+              Text(
                               technician.name,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 18,
                                 color: Theme.of(context).colorScheme.onSurface,
-                              ),
+              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
-                            Text(
+              Text(
                               technician.department?.isNotEmpty == true
                                   ? technician.department!
                                   : 'No department',
@@ -368,7 +368,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: Theme.of(context).colorScheme.primary,
-                              ),
+              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -386,9 +386,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             size: 20,
                           ),
                         ),
-                      _buildStatusChip(technician.status),
-                    ],
-                  ),
+                _buildStatusChip(technician.status),
+              ],
+            ),
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -400,9 +400,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             Colors.black.withValues(alpha: 0.05),
                       ),
                     ),
-                    child: Row(
+              child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
+                children: [
                         Icon(
                           Icons.build,
                           size: 16,
@@ -419,9 +419,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                ],
+              ),
+            ),
                 ],
               ),
             ),
@@ -434,7 +434,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   Widget _buildPlaceholderAvatar(Technician technician) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(

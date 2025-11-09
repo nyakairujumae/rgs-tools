@@ -30,80 +30,72 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: const [
-              Color(0xFF00D4C3), // Subtle green at top
-              Color(0xFFE0F7F4), // Light green-tinted
-              Color(0xFFF5FCFB), // Very light green-tinted
-              Colors.white, // Pure white at bottom
-            ],
-          ),
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            child: Padding(
+        child: Padding(
               padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 80.0, bottom: 16.0),
-              child: Column(
-                children: [
+          child: Column(
+            children: [
                   // Branding Section
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.20,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // RGS Branding - Larger and more prominent
+                    Column(
                       children: [
-                        // RGS Branding - Larger and more prominent
-                        Column(
-                          children: [
-                            Text(
-                              'RGS',
-                              style: TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w900,
+                        Text(
+                          'RGS',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
                                 color: Colors.grey[800],
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'HVAC SERVICES',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'HVAC SERVICES',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                                 color: Colors.grey[700],
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                             const SizedBox(height: 16),
-                            Text(
-                              'Not your ordinary HVAC company.',
-                              style: TextStyle(
+                        Text(
+                          'Not your ordinary HVAC company.',
+                          style: TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                                 color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                  ),
+                  ],
+                ),
+              ),
                   
                   const SizedBox(height: 32),
-                  
-                  // Login Form Section
+              
+              // Login Form Section
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                     // Login Form
                     Form(
                       key: _formKey,
@@ -114,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Email Field
                           Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -125,39 +117,39 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             child: TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
                               style: TextStyle(color: Colors.grey[800]),
-                              decoration: InputDecoration(
-                                labelText: 'Email',
+                            decoration: InputDecoration(
+                              labelText: 'Email',
                                 labelStyle: TextStyle(color: Colors.grey[600]),
                                 prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[600]),
-                                border: OutlineInputBorder(
+                              border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
-                                ),
-                                enabledBorder: OutlineInputBorder(
+                              ),
+                              enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
+                              ),
+                              focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide(color: Colors.blue, width: 2),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                if (!AppConfig.isEmailDomainAllowed(value)) {
-                                  return 'Email domain not allowed. Use @mekar.ae or other approved domains';
-                                }
-                                return null;
-                              },
+                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Please enter a valid email';
+                              }
+                              if (!AppConfig.isEmailDomainAllowed(value)) {
+                                return 'Email domain not allowed. Use @mekar.ae or other approved domains';
+                              }
+                              return null;
+                            },
                             ),
                           ),
                           
@@ -166,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Password Field
                           Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -177,47 +169,47 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             child: TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
                               style: TextStyle(color: Colors.grey[800]),
-                              decoration: InputDecoration(
-                                labelText: 'Password',
+                            decoration: InputDecoration(
+                              labelText: 'Password',
                                 labelStyle: TextStyle(color: Colors.grey[600]),
                                 prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600]),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                     color: Colors.grey[600],
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
                                 ),
-                                border: OutlineInputBorder(
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
-                                ),
-                                enabledBorder: OutlineInputBorder(
+                              ),
+                              enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
+                              ),
+                              focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide(color: Colors.blue, width: 2),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
+                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
                             ),
                           ),
                           
@@ -248,26 +240,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                     onTap: authProvider.isLoading ? null : _handleLogin,
                                     borderRadius: BorderRadius.circular(28),
                                     child: Center(
-                                      child: authProvider.isLoading
-                                          ? SizedBox(
-                                              height: 20,
-                                              width: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                              ),
-                                            )
-                                          : const Text(
-                                              'Sign In',
-                                              style: TextStyle(
+                                  child: authProvider.isLoading
+                                      ? SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Sign In',
+                                          style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.white,
                                                 letterSpacing: 0.5,
                                               ),
                                             ),
-                                    ),
-                                  ),
+                                          ),
+                                        ),
                                 ),
                               );
                             },
@@ -296,8 +288,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Back to Role Selection
                           InkWell(
                             onTap: () {
-                              Navigator.pop(context);
-                            },
+                                Navigator.pop(context);
+                              },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Text(
@@ -318,9 +310,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ],
-            ),
+              ),
           ),
-        ),
+          ),
         ),
       ),
     );

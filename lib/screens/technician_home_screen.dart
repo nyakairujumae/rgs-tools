@@ -12,6 +12,7 @@ import 'web/checkin_screen_web.dart';
 import 'shared_tools_screen.dart';
 import 'add_tool_issue_screen.dart';
 import 'request_new_tool_screen.dart';
+import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
 import '../widgets/common/rgs_logo.dart';
 import 'package:provider/provider.dart';
@@ -186,9 +187,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
           currentIndex: _selectedIndex,
           onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 2)),
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          selectedItemColor: Colors.green,
-          unselectedItemColor: Colors.grey,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard),
@@ -391,7 +392,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -619,10 +620,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         // Latest tools (my tools or all tools if none assigned)
         final myTools = currentUserId == null
             ? <Tool>[]
-            : toolProvider.tools.where((tool) => 
+            : toolProvider.tools.where((tool) =>
                 tool.assignedTo == currentUserId && (tool.status == 'Assigned' || tool.status == 'In Use')
               ).toList();
-        final latestTools = myTools.isNotEmpty ? myTools : toolProvider.tools.take(10).toList();
+        final latestTools = myTools;
 
         if (toolProvider.isLoading) {
           return Center(child: CircularProgressIndicator());
@@ -650,7 +651,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
         return Container(
           decoration: BoxDecoration(
-            gradient: AppTheme.backgroundGradient,
+            gradient: AppTheme.backgroundGradientFor(context),
           ),
           child: SingleChildScrollView(
                   child: Column(
@@ -662,7 +663,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         child: Container(
                     padding: EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradient,
+                      gradient: AppTheme.cardGradientFor(context),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
@@ -770,7 +771,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 children: [
                     Text('My Tools', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     TextButton(
-                      onPressed: () => setState(() { _selectedCategoryIndex = 2; }),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const TechnicianMyToolsScreen()),
+                        );
+                      },
                       child: Text('See All >', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
                     ),
                   ],
@@ -788,9 +794,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.build, size: 48, color: Colors.grey),
-                              SizedBox(height: 8),
-                              Text('No tools assigned', style: TextStyle(color: Colors.grey)),
+                              Icon(Icons.badge_outlined, size: 48, color: Colors.grey[500]),
+                              const SizedBox(height: 8),
+                              Text('No tools assigned yet', style: TextStyle(color: Colors.grey[700])),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Add or badge tools you currently have to see them here.',
+                                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                              ),
                             ],
                           ),
                         ),
@@ -821,7 +832,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         height: 148,
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -1166,7 +1177,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         height: 148,
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -1252,7 +1263,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _buildPlaceholderImage(bool isFeatured) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.horizontal(left: Radius.circular(12), right: isFeatured ? Radius.zero : Radius.circular(12)),
       ),
       child: Icon(Icons.build, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6), size: 32),

@@ -12,23 +12,15 @@ class RoleSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: const [
-              Color(0xFF00D4C3), // Subtle green at top
-              Color(0xFFE0F7F4), // Light green-tinted
-              Color(0xFFF5FCFB), // Very light green-tinted
-              Colors.white, // Pure white at bottom
-            ],
-          ),
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(

@@ -40,7 +40,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
           child: Column(
@@ -49,7 +49,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradient,
+                  gradient: AppTheme.cardGradientFor(context),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(28),
                     bottomRight: Radius.circular(28),
@@ -218,7 +218,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       width: double.infinity,
       height: 250,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -246,7 +246,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         return Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradient,
+                            gradient: AppTheme.cardGradientFor(context),
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
@@ -266,7 +266,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         return Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradient,
+                            gradient: AppTheme.cardGradientFor(context),
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
@@ -290,7 +290,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       : Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradient,
+                            gradient: AppTheme.cardGradientFor(context),
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
@@ -308,7 +308,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           : Container(
               height: 250,
               decoration: BoxDecoration(
-                gradient: AppTheme.cardGradient,
+                gradient: AppTheme.cardGradientFor(context),
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Column(
@@ -374,7 +374,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
+              gradient: AppTheme.cardGradientFor(context),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -419,7 +419,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
+              gradient: AppTheme.cardGradientFor(context),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -464,7 +464,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
+              gradient: AppTheme.cardGradientFor(context),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -539,7 +539,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradient,
+              gradient: AppTheme.cardGradientFor(context),
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
@@ -787,7 +787,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color.withOpacity(0.3), width: 1.5),
         boxShadow: [

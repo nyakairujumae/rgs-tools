@@ -417,6 +417,11 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
         profilePictureUrl = await _uploadProfileImage();
       }
 
+      // Preserve existing profile picture when editing and no new picture selected
+      if (profilePictureUrl == null && widget.technician?.profilePictureUrl != null) {
+        profilePictureUrl = widget.technician!.profilePictureUrl;
+      }
+
       final technician = Technician(
         id: widget.technician?.id,
         name: _nameController.text.trim(),
@@ -429,11 +434,16 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
         profilePictureUrl: profilePictureUrl,
       );
 
+      final technicianProvider = context.read<SupabaseTechnicianProvider>();
+
       if (widget.technician == null) {
-        await context.read<SupabaseTechnicianProvider>().addTechnician(technician);
+        await technicianProvider.addTechnician(technician);
       } else {
-        await context.read<SupabaseTechnicianProvider>().updateTechnician(technician);
+        await technicianProvider.updateTechnician(technician);
       }
+
+      // Refresh list to ensure latest data (including profile urls)
+      await technicianProvider.loadTechnicians();
 
       if (mounted) {
         Navigator.pop(context);

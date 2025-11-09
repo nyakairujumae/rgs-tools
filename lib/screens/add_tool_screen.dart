@@ -141,7 +141,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -153,8 +153,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
             elevation: 0,
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
@@ -190,7 +190,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
             data: Theme.of(context).copyWith(
               inputDecorationTheme: InputDecorationTheme(
                 filled: true,
-                fillColor: AppTheme.cardGradientStart,
+                fillColor: AppTheme.cardSurfaceColor(context),
                 labelStyle: TextStyle(color: Colors.grey[700]),
                 hintStyle: TextStyle(color: Colors.grey[500]),
                 border: OutlineInputBorder(
@@ -240,7 +240,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -268,7 +268,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -315,7 +315,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             }
                             return null;
                           },
-                          dropdownColor: AppTheme.cardGradientStart,
+                          dropdownColor: AppTheme.cardSurfaceColor(context),
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
@@ -327,7 +327,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -350,7 +350,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -435,7 +435,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -502,7 +502,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -527,7 +527,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -554,7 +554,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -605,7 +605,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -641,7 +641,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                     _condition = value!;
                                   });
                                 },
-                                dropdownColor: AppTheme.cardGradientStart,
+                                dropdownColor: AppTheme.cardSurfaceColor(context),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
@@ -651,7 +651,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradient,
+                              gradient: AppTheme.cardGradientFor(context),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -686,7 +686,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                     _status = value!;
                                   });
                                 },
-                                dropdownColor: AppTheme.cardGradientStart,
+                                dropdownColor: AppTheme.cardSurfaceColor(context),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
@@ -698,7 +698,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -720,7 +720,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -939,7 +939,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppTheme.cardGradient,
+            gradient: AppTheme.cardGradientFor(context),
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(

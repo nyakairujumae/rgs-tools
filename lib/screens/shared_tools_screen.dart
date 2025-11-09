@@ -4,6 +4,7 @@ import 'dart:io';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/request_thread_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -53,7 +54,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: SafeArea(
         child: Column(
@@ -61,16 +62,39 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               // Section Heading
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Shared Tools',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Shared Tools',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             // Search Section
@@ -134,7 +158,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 10.0,
                         mainAxisSpacing: 12.0,
-                        childAspectRatio: 0.75, // Square image + compact details below
+                        childAspectRatio: 0.62, // Extra height for owner labels & buttons
                       ),
                     itemCount: tools.length,
                     itemBuilder: (context, index) {
@@ -159,7 +183,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
           boxShadow: [
             BoxShadow(
@@ -249,6 +273,13 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   Widget _buildToolCard(Tool tool, SupabaseTechnicianProvider technicianProvider) {
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final assignedToId = tool.assignedTo;
+    final assignedTechnicianName = assignedToId != null && assignedToId.isNotEmpty
+        ? technicianProvider.getTechnicianNameById(assignedToId)
+        : null;
+    final isOwnedByCurrentUser = assignedToId != null && assignedToId == currentUserId;
     return InkWell(
         onTap: () {
         Navigator.push(
@@ -268,7 +299,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             aspectRatio: 1.0, // Perfect square
             child: Container(
                 decoration: BoxDecoration(
-                gradient: AppTheme.cardGradient,
+                gradient: AppTheme.cardGradientFor(context),
                 borderRadius: BorderRadius.circular(28), // More rounded
                 boxShadow: [
                   BoxShadow(
@@ -299,7 +330,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   if (loadingProgress == null) return child;
                                   return Container(
                                 decoration: BoxDecoration(
-                                  gradient: AppTheme.cardGradient,
+                                  gradient: AppTheme.cardGradientFor(context),
                                 ),
                                     child: Center(
                                       child: CircularProgressIndicator(
@@ -349,35 +380,58 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   overflow: TextOverflow.ellipsis,
                     ),
                 SizedBox(height: 6),
-                // Status and Value Pills
-                    Row(
-                      children: [
-                        StatusChip(
-                          status: tool.status,
-                      showIcon: false,
+                // Status, value, and actions
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  StatusChip(
+                    status: tool.status,
+                    showIcon: false,
+                  ),
+                  if (!isOwnedByCurrentUser && assignedToId != null && assignedToId.isNotEmpty)
+                    OutlinedButton(
+                      onPressed: () => _openRequestChat(tool, assignedToId),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.4)),
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Request', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (assignedToId != null && assignedToId.isNotEmpty) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      isOwnedByCurrentUser ? Icons.verified_user : Icons.person_pin_circle,
+                      size: 16,
+                      color: isOwnedByCurrentUser ? Colors.green : Colors.orangeAccent,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        isOwnedByCurrentUser
+                            ? 'You have this tool.'
+                            : '${assignedTechnicianName ?? 'Another technician'} has this tool.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isOwnedByCurrentUser ? Colors.green.shade700 : Colors.orange.shade700,
                         ),
-                    if (tool.currentValue != null) ...[
-                      SizedBox(width: 6),
-                          Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              'AED ${tool.currentValue!.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                color: Colors.green,
-                            fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
+                    ),
                   ],
                 ),
+                const SizedBox(height: 4),
               ],
+            ],
                       ),
                     ),
                 ],
@@ -390,7 +444,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -583,6 +637,270 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _openRequestChat(Tool tool, String ownerId) async {
+    final auth = context.read<AuthProvider>();
+    final requesterId = auth.user?.id;
+    if (requesterId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You need to be signed in to request a tool.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (tool.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This tool is missing an identifier.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final threadProvider = context.read<RequestThreadProvider>();
+    try {
+      final chatCtrl = TextEditingController();
+      final FocusNode inputFocus = FocusNode();
+      bool hasText = false;
+      bool requestedFocus = false;
+
+      final thread = await threadProvider.openOrCreateThread(
+        toolId: tool.id!,
+        ownerId: ownerId,
+        requesterId: requesterId,
+      );
+
+      if (!mounted) return;
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.75,
+            minChildSize: 0.3,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return StatefulBuilder(
+                builder: (context, setSheetState) {
+                  if (!requestedFocus) {
+                    requestedFocus = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (inputFocus.canRequestFocus) {
+                        inputFocus.requestFocus();
+                      }
+                    });
+                  }
+                  void handleChanged(String value) {
+                    final trimmed = value.trim().isNotEmpty;
+                    if (trimmed != hasText) {
+                      hasText = trimmed;
+                      setSheetState(() {});
+                    }
+                  }
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, -6)),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 8),
+                        Container(width: 40, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(4))),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                child: Text(
+                                  tool.name.isNotEmpty ? tool.name[0].toUpperCase() : 'T',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(tool.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 6,
+                                      children: [
+                                        _sharedChip(context, 'Request chat', Theme.of(context).colorScheme.onSurface),
+                                        _sharedChip(context, tool.status, Theme.of(context).colorScheme.primary),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Expanded(
+                          child: Consumer<RequestThreadProvider>(
+                            builder: (context, provider, child) {
+                              final messages = provider.messages(thread.id);
+                              return ListView.builder(
+                                controller: scrollController,
+                                padding: const EdgeInsets.all(16),
+                                itemCount: messages.length,
+                                itemBuilder: (context, index) {
+                                  final msg = messages[index];
+                                  final isMe = msg.senderId == requesterId;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: isMe
+                                        ? _sharedMeBubble(context, msg.text)
+                                        : _sharedOtherBubble(context, msg.text),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        SafeArea(
+                          top: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceVariant,
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    child: TextField(
+                                      focusNode: inputFocus,
+                                      controller: chatCtrl,
+                                      onChanged: handleChanged,
+                                      textInputAction: hasText ? TextInputAction.send : TextInputAction.newline,
+                                      minLines: 1,
+                                      maxLines: 3,
+                                      decoration: InputDecoration(
+                                        hintText: 'Message',
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                        prefixIcon: IconButton(
+                                          icon: Icon(Icons.attach_file, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                                          onPressed: () {},
+                                        ),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            hasText ? Icons.send : Icons.photo_camera,
+                                            color: hasText ? Colors.green : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                          ),
+                                          onPressed: () async {
+                                            if (!hasText) return;
+                                            await threadProvider.sendMessage(threadId: thread.id, senderId: requesterId, text: chatCtrl.text);
+                                            chatCtrl.clear();
+                                            handleChanged('');
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Consumer<RequestThreadProvider>(
+                                  builder: (context, provider, child) {
+                                    return provider.isSending
+                                        ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
+                                        : const SizedBox.shrink();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+      chatCtrl.dispose();
+      inputFocus.dispose();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open request chat: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Widget _sharedChip(BuildContext context, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _sharedMeBubble(BuildContext context, String text) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          color: Colors.green,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16),
+          ),
+        ),
+        child: Text(text, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _sharedOtherBubble(BuildContext context, String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+        ),
+        child: Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       ),
     );
   }

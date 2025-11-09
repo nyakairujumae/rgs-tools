@@ -39,21 +39,13 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: const [
-              Color(0xFF00D4C3), // Subtle green at top
-              Color(0xFFE0F7F4), // Light green-tinted
-              Color(0xFFF5FCFB), // Very light green-tinted
-              Colors.white, // Pure white at bottom
-            ],
-          ),
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
@@ -61,12 +53,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             title: const Text(
               'Admin Registration',
               style: TextStyle(
-                color: Colors.black87,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
+            backgroundColor: colorScheme.surface,
+            foregroundColor: colorScheme.onSurface,
             elevation: 0,
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(
@@ -76,7 +67,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -118,7 +109,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Name Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -161,7 +152,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Email Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -208,7 +199,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Position Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -252,7 +243,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Password Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -311,7 +302,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Confirm Password Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradient,
+                        gradient: AppTheme.cardGradientFor(context),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(

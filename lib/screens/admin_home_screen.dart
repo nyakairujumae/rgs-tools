@@ -144,7 +144,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
     // Refresh pending approvals every 30 seconds to catch new registrations
     Future.delayed(Duration(seconds: 30), () {
       if (!_isDisposed && mounted) {
-        context.read<PendingApprovalsProvider>().loadPendingApprovals();
+      context.read<PendingApprovalsProvider>().loadPendingApprovals();
         _startPeriodicRefresh(); // Schedule next refresh
       }
     });
@@ -184,33 +184,24 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
     // Note: Pending approvals are loaded in initState and refreshed periodically
     // No need to reload on every build to prevent constant refreshing
     
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF00D4C3), // Subtle green at top
-              Color(0xFFE0F7F4), // Light green-tinted
-              Color(0xFFF5FCFB), // Very light green-tinted
-              Colors.white, // Pure white at bottom
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.backgroundGradientFor(context)),
         child: Scaffold(
           backgroundColor: Colors.transparent,
       appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3)
           ? null
           : AppBar(
         backgroundColor: _selectedIndex == 0 
-            ? const Color(0xFF00D4C3) // New gradient green at top
-            : Colors.white, // White for Tools, Shared, and Technicians screens
+            ? (isDarkMode ? Colors.black : AppTheme.primaryColor)
+            : colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0, // Prevent elevation on scroll
-        foregroundColor: _selectedIndex == 0 
-            ? Theme.of(context).textTheme.bodyLarge?.color
-            : Colors.black87, // Dark text for white AppBar
+        foregroundColor: colorScheme.onSurface,
         toolbarHeight: 80,
         automaticallyImplyLeading: false, // No drawer menu
         surfaceTintColor: Colors.transparent, // Remove any tint overlay
@@ -218,11 +209,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
         flexibleSpace: _selectedIndex != 0 
             ? Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // Fully opaque white
+                  color: colorScheme.surface,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(24),
                     bottomRight: Radius.circular(24),
-                  ),
+        ),
                 ),
               )
             : null, // Use default for dashboard
@@ -237,51 +228,51 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
           child: Align(
             alignment: Alignment.centerLeft,
             child: Consumer<AdminNotificationProvider>(
-              builder: (context, notificationProvider, child) {
-                return Stack(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.notifications),
+            builder: (context, notificationProvider, child) {
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.notifications),
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AdminNotificationScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    if (notificationProvider.unreadCount > 0)
-                      Positioned(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminNotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (notificationProvider.unreadCount > 0)
+                    Positioned(
                         left: 8,
-                        top: 8,
-                        child: Container(
-                          padding: EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
+                      top: 8,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '${notificationProvider.unreadCount}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
-                          constraints: BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            '${notificationProvider.unreadCount}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
+          ),
           ),
         ),
         title: _selectedIndex == 0
@@ -421,9 +412,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
           currentIndex: _selectedIndex,
           onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 3)),
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard),
@@ -527,7 +518,7 @@ class DashboardScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradient,
+                  gradient: AppTheme.cardGradientFor(context),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
@@ -647,7 +638,7 @@ class DashboardScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradient,
+                  gradient: AppTheme.cardGradientFor(context),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
@@ -865,7 +856,7 @@ class DashboardScreen extends StatelessWidget {
       child: Container(
         padding: ResponsiveHelper.getCardPadding(context),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -878,7 +869,7 @@ class DashboardScreen extends StatelessWidget {
               color: color.withValues(alpha: 0.08),
               blurRadius: 12,
               offset: const Offset(0, 2),
-            ),
+          ),
           ],
         ),
         child: Column(
@@ -942,8 +933,8 @@ class DashboardScreen extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            gradient: AppTheme.cardGradient,
+        decoration: BoxDecoration(
+            gradient: AppTheme.cardGradientFor(context),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
             BoxShadow(
@@ -955,7 +946,7 @@ class DashboardScreen extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
-            ),
+          ),
           ],
         ),
         child: Column(
@@ -1005,7 +996,7 @@ class DashboardScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -1053,7 +1044,7 @@ class DashboardScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
+          gradient: AppTheme.cardGradientFor(context),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(

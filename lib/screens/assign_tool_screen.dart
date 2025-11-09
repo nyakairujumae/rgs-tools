@@ -30,8 +30,8 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
@@ -43,7 +43,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: AppTheme.backgroundGradientFor(context),
         ),
         child: Consumer<SupabaseToolProvider>(
           builder: (context, toolProvider, child) {
@@ -96,7 +96,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                   margin: ResponsiveHelper.getResponsivePadding(context, all: 16),
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+                    gradient: AppTheme.cardGradientFor(context),
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
                     boxShadow: [
                       BoxShadow(
@@ -183,7 +183,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                 Container(
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+                    gradient: AppTheme.cardGradientFor(context),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -299,7 +299,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradient,
+                    gradient: AppTheme.cardGradientFor(context),
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
                     boxShadow: [
                       BoxShadow(
@@ -427,7 +427,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradient,
+        gradient: AppTheme.cardGradientFor(context),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

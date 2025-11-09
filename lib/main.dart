@@ -18,7 +18,6 @@ import 'screens/role_selection_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/pending_approval_screen.dart';
-import 'screens/initial_tool_setup_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
 import 'models/user_role.dart';
@@ -379,8 +378,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                     if (kIsWeb) {
                       return const WebTechnicianDashboard();
                     } else {
-                      // Check if initial setup is needed
-                      return const InitialToolSetupScreen();
+                      return const TechnicianHomeScreen();
                     }
                   },
               '/tool-detail': (context) {
@@ -448,8 +446,8 @@ class HvacToolsManagerApp extends StatelessWidget {
           print('🔍 Technician user detected, checking approval status...');
           return const PendingApprovalScreen();
         } else {
-          // Technician is approved - check if they need to complete initial tool setup
-          return InitialToolSetupScreen();
+          // Technician is approved - send to home screen
+          return const TechnicianHomeScreen();
         }
       } else {
         print('🔍 User not authenticated, showing role selection screen');
