@@ -258,7 +258,7 @@ class _WebReportsScreenState extends State<WebReportsScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFFF3F4F6),
+                    color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFFF9FAFB),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFFD1D5DB),
@@ -477,7 +477,7 @@ class _WebReportsScreenState extends State<WebReportsScreen> {
                       Expanded(
                         child: LinearProgressIndicator(
                           value: entry.value / tools.length,
-                          backgroundColor: const Color(0xFFF3F4F6),
+                          backgroundColor: const Color(0xFFF9FAFB),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _getStatusColor(entry.key),
                           ),
@@ -551,7 +551,7 @@ class _WebReportsScreenState extends State<WebReportsScreen> {
                       Expanded(
                         child: LinearProgressIndicator(
                           value: entry.value / tools.length,
-                          backgroundColor: const Color(0xFFF3F4F6),
+                          backgroundColor: const Color(0xFFF9FAFB),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _getConditionColor(entry.key),
                           ),

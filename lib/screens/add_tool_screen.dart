@@ -24,7 +24,6 @@ class _AddToolScreenState extends State<AddToolScreen> {
   final _modelController = TextEditingController();
   final _serialNumberController = TextEditingController();
   final _purchasePriceController = TextEditingController();
-  final _currentValueController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -52,6 +51,26 @@ class _AddToolScreenState extends State<AddToolScreen> {
     'Other',
   ];
 
+  BoxDecoration _outlineDecoration(
+    BuildContext context, {
+    double radius = 24,
+    bool showBorder = false,
+    bool subtleFill = false,
+  }) {
+    final theme = Theme.of(context);
+    final borderColor = theme.brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.24)
+        : AppTheme.subtleBorder;
+    final backgroundColor =
+        subtleFill ? AppTheme.subtleSurface : theme.scaffoldBackgroundColor;
+
+    return BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(radius),
+      border: showBorder ? Border.all(color: borderColor, width: 1.1) : null,
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -60,13 +79,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
     _modelController.dispose();
     _serialNumberController.dispose();
     _purchasePriceController.dispose();
-    _currentValueController.dispose();
     _locationController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  Future<void> _scanBarcode(TextEditingController controller, String fieldName) async {
+  Future<void> _scanBarcode(
+      TextEditingController controller, String fieldName) async {
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(
@@ -78,7 +97,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       setState(() {
         controller.text = result;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -95,7 +114,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     setState(() {
       _serialNumberController.text = ToolIdGenerator.generateToolId();
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Generated unique serial number'),
@@ -109,7 +128,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     setState(() {
       _modelController.text = ToolIdGenerator.generateModelNumber();
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Generated unique model number'),
@@ -125,7 +144,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       _modelController.text = ids['model']!;
       _serialNumberController.text = ids['serial']!;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Generated model and serial numbers'),
@@ -137,79 +156,95 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: Text(
-              'Add New Tool',
-              style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: TextButton(
-                  onPressed: _isLoading ? null : _saveTool,
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          'Save',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Add New Tool',
+          style: TextStyle(
+            color: theme.textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.w600,
           ),
-          body: Theme(
-            data: Theme.of(context).copyWith(
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppTheme.cardSurfaceColor(context),
-                labelStyle: TextStyle(color: Colors.grey[700]),
+        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.08),
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton(
+              onPressed: _isLoading ? null : _saveTool,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      'Save',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: Theme(
+            data: theme.copyWith(
+              inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+                filled: false,
+                labelStyle: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w400,
+                ),
+                floatingLabelStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 hintStyle: TextStyle(color: Colors.grey[500]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(
+                    color: AppTheme.subtleBorder,
+                    width: 1.1,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(
+                    color: AppTheme.subtleBorder,
+                    width: 1.1,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary.withOpacity(0.7),
+                    width: 2,
+                  ),
                 ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
               ),
-              textTheme: TextTheme(
-                bodyLarge: TextStyle(color: Colors.black87),
-                bodyMedium: TextStyle(color: Colors.black87),
+              textTheme: theme.textTheme.apply(
+                bodyColor: theme.textTheme.bodyLarge?.color,
+                displayColor: theme.textTheme.bodyLarge?.color,
               ),
             ),
             child: Form(
@@ -233,23 +268,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       ),
                     ),
                     SizedBox(height: 20),
-              
-              // Image Selection Section
-              _buildImageSelectionSection(),
-              SizedBox(height: 24),
-              
+
+                    // Image Selection Section
+                    _buildImageSelectionSection(),
+                    SizedBox(height: 24),
+
                     Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
+                      decoration: _outlineDecoration(context, radius: 24),
                       child: TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
@@ -267,57 +292,47 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     SizedBox(height: 16),
 
                     Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategory.isEmpty
+                            ? null
+                            : _selectedCategory,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Category *',
+                          hintText: 'Select a category',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 16,
                           ),
-                        ],
-                      ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedCategory.isEmpty ? null : _selectedCategory,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  labelText: 'Category *',
-                                  hintText: 'Select a category',
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 16,
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                ),
-                          items: _categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category,
-                              child: Text(
-                                category,
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value ?? '';
-                              _categoryController.text = value ?? '';
-                            });
-                          },
-                          validator: (value) {
-                            if (_selectedCategory.isEmpty) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
-                          dropdownColor: AppTheme.cardSurfaceColor(context),
-                          borderRadius: BorderRadius.circular(20),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
                         ),
+                        items: _categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(
+                              category,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value ?? '';
+                            _categoryController.text = value ?? '';
+                          });
+                        },
+                        validator: (value) {
+                          if (_selectedCategory.isEmpty) {
+                            return 'Please select a category';
+                          }
+                          return null;
+                        },
+                        dropdownColor: AppTheme.cardSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -326,17 +341,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       children: [
                         Expanded(
                           child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
+                            decoration: _outlineDecoration(context, radius: 24),
                             child: TextFormField(
                               controller: _brandController,
                               decoration: const InputDecoration(
@@ -349,17 +354,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         SizedBox(width: 16),
                         Expanded(
                           child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
+                            decoration: _outlineDecoration(context, radius: 24),
                             child: TextFormField(
                               controller: _modelController,
                               decoration: InputDecoration(
@@ -369,14 +364,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.auto_awesome, color: Colors.blue),
+                                      icon: const Icon(Icons.auto_awesome,
+                                          color: Colors.blue),
                                       tooltip: 'Generate Model Number',
                                       onPressed: _generateModelNumber,
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
+                                      icon: const Icon(Icons.qr_code_scanner,
+                                          color: Colors.green),
                                       tooltip: 'Scan Model Number',
-                                      onPressed: () => _scanBarcode(_modelController, 'Model number'),
+                                      onPressed: () => _scanBarcode(
+                                          _modelController, 'Model number'),
                                     ),
                                   ],
                                 ),
@@ -387,13 +385,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       ],
                     ),
                     SizedBox(height: 16),
-                    
+
                     // Generate Both Button
                     Center(
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.orange.shade400, Colors.orange.shade600],
+                            colors: [
+                              Colors.orange.shade400,
+                              Colors.orange.shade600
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
@@ -410,11 +411,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             onTap: _generateBothIds,
                             borderRadius: BorderRadius.circular(24),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 14),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                                  Icon(Icons.auto_awesome,
+                                      color: Colors.white, size: 20),
                                   SizedBox(width: 8),
                                   Text(
                                     'Generate Both Model & Serial Numbers',
@@ -434,17 +437,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     SizedBox(height: 16),
 
                     Container(
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
+                      decoration: _outlineDecoration(context, radius: 24),
                       child: TextFormField(
                         controller: _serialNumberController,
                         decoration: InputDecoration(
@@ -454,14 +447,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.auto_awesome, color: Colors.blue),
+                                icon: const Icon(Icons.auto_awesome,
+                                    color: Colors.blue),
                                 tooltip: 'Generate Unique ID',
                                 onPressed: _generateToolId,
                               ),
                               IconButton(
-                                icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
+                                icon: const Icon(Icons.qr_code_scanner,
+                                    color: Colors.green),
                                 tooltip: 'Scan Serial Number',
-                                onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
+                                onPressed: () => _scanBarcode(
+                                    _serialNumberController, 'Serial number'),
                               ),
                             ],
                           ),
@@ -480,11 +476,19 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 24),
+                    Divider(
+                      height: 32,
+                      thickness: 0.8,
+                      color: AppTheme.subtleBorder.withOpacity(0.7),
+                      indent: 4,
+                      endIndent: 4,
+                    ),
+                    SizedBox(height: 20),
 
                     // Purchase Information
                     Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
+                      padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
                         'Purchase Information',
                         style: TextStyle(
@@ -497,58 +501,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     ),
                     SizedBox(height: 20),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextFormField(
-                              controller: _purchasePriceController,
-                              decoration: const InputDecoration(
-                                labelText: 'Purchase Price',
-                                hintText: '0.00',
-                                prefixText: '\$ ',
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
+                        controller: _purchasePriceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Purchase Price',
+                          hintText: '0.00',
+                          prefixText: '\$ ',
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextFormField(
-                              controller: _currentValueController,
-                              decoration: const InputDecoration(
-                                labelText: 'Current Value',
-                                hintText: '0.00',
-                                prefixText: '\$ ',
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ),
-                      ],
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
                     SizedBox(height: 16),
 
@@ -570,14 +533,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         child: InputDecorator(
                           decoration: const InputDecoration(
                             labelText: 'Purchase Date',
-                            contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
                           ),
                           child: Text(
                             _purchaseDate != null
                                 ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
                                 : 'Select date',
                             style: TextStyle(
-                              color: _purchaseDate != null ? Colors.black87 : Colors.grey[500],
+                              color: _purchaseDate != null
+                                  ? Colors.black87
+                                  : Colors.grey[500],
                             ),
                           ),
                         ),
@@ -604,91 +570,103 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       children: [
                         Expanded(
                           child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_condition),
+                              value: _condition,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Condition',
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 16),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'Excellent',
+                                  child: Text('Excellent',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Good',
+                                  child: Text('Good',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Fair',
+                                  child: Text('Fair',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Poor',
+                                  child: Text('Poor',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Needs Repair',
+                                  child: Text('Needs Repair',
+                                      style: TextStyle(color: Colors.black87)),
                                 ),
                               ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: DropdownButtonFormField<String>(
-                                key: ValueKey(_condition),
-                                initialValue: _condition,
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                decoration: const InputDecoration(
-                                  labelText: 'Condition',
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                ),
-                                items: [
-                                  DropdownMenuItem(value: 'Excellent', child: Text('Excellent', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Good', child: Text('Good', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Fair', child: Text('Fair', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Poor', child: Text('Poor', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Needs Repair', child: Text('Needs Repair', style: TextStyle(color: Colors.black87))),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _condition = value!;
-                                  });
-                                },
-                                dropdownColor: AppTheme.cardSurfaceColor(context),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _condition = value ?? _condition;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              dropdownColor: AppTheme.cardSurfaceColor(context),
                             ),
                           ),
                         ),
                         SizedBox(width: 16),
                         Expanded(
                           child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_status),
+                              value: _status,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 16),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'Available',
+                                  child: Text('Available',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'In Use',
+                                  child: Text('In Use',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Maintenance',
+                                  child: Text('Maintenance',
+                                      style: TextStyle(color: Colors.black87)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Retired',
+                                  child: Text('Retired',
+                                      style: TextStyle(color: Colors.black87)),
                                 ),
                               ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: DropdownButtonFormField<String>(
-                                key: ValueKey(_status),
-                                initialValue: _status,
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                decoration: const InputDecoration(
-                                  labelText: 'Status',
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                ),
-                                items: [
-                                  DropdownMenuItem(value: 'Available', child: Text('Available', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'In Use', child: Text('In Use', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance', style: TextStyle(color: Colors.black87))),
-                                  DropdownMenuItem(value: 'Retired', child: Text('Retired', style: TextStyle(color: Colors.black87))),
-                                ],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _status = value!;
-                                  });
-                                },
-                                dropdownColor: AppTheme.cardSurfaceColor(context),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _status = value ?? _status;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              dropdownColor: AppTheme.cardSurfaceColor(context),
                             ),
                           ),
                         ),
@@ -815,29 +793,42 @@ class _AddToolScreenState extends State<AddToolScreen> {
     try {
       // First, create the tool without image
       final tool = Tool(
-        name: _nameController.text.trim(),
+        name: _nameController.text.trim().toUpperCase(),
         category: _categoryController.text.trim(),
-        brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-        model: _modelController.text.trim().isEmpty ? null : _modelController.text.trim(),
-        serialNumber: _serialNumberController.text.trim().isEmpty ? null : _serialNumberController.text.trim(),
+        brand: _brandController.text.trim().isEmpty
+            ? null
+            : _brandController.text.trim(),
+        model: _modelController.text.trim().isEmpty
+            ? null
+            : _modelController.text.trim(),
+        serialNumber: _serialNumberController.text.trim().isEmpty
+            ? null
+            : _serialNumberController.text.trim(),
         purchaseDate: _purchaseDate?.toIso8601String().split('T')[0],
-        purchasePrice: _purchasePriceController.text.isEmpty ? null : double.tryParse(_purchasePriceController.text),
-        currentValue: _currentValueController.text.isEmpty ? null : double.tryParse(_currentValueController.text),
+        purchasePrice: _purchasePriceController.text.isEmpty
+            ? null
+            : double.tryParse(_purchasePriceController.text),
         condition: _condition,
-        location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
+        location: _locationController.text.trim().isEmpty
+            ? null
+            : _locationController.text.trim(),
         status: _status,
         toolType: 'inventory', // Explicitly set to inventory for admin tools
         imagePath: null, // Will be set after upload
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
 
       // Add the tool first to get the ID
-      final addedTool = await context.read<SupabaseToolProvider>().addTool(tool);
+      final addedTool =
+          await context.read<SupabaseToolProvider>().addTool(tool);
 
       // Now upload image if selected and update the tool with image URL
       if (_selectedImage != null && addedTool.id != null) {
         try {
-          final imageUrl = await ImageUploadService.uploadImage(_selectedImage!, addedTool.id!);
+          final imageUrl = await ImageUploadService.uploadImage(
+              _selectedImage!, addedTool.id!);
           if (imageUrl != null) {
             // Update the tool with the image URL
             final updatedTool = addedTool.copyWith(imagePath: imageUrl);
@@ -846,14 +837,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
         } catch (e) {
           // If Supabase upload fails, fall back to local storage
           try {
-            final localImagePath = await _saveImageLocally(_selectedImage!, addedTool.id!);
+            final localImagePath =
+                await _saveImageLocally(_selectedImage!, addedTool.id!);
             final updatedTool = addedTool.copyWith(imagePath: localImagePath);
             await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-            
+
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Tool saved with local image (cloud upload failed: ${e.toString().split(':').last})'),
+                  content: Text(
+                      'Tool saved with local image (cloud upload failed: ${e.toString().split(':').last})'),
                   backgroundColor: Colors.orange,
                   duration: const Duration(seconds: 4),
                 ),
@@ -864,7 +857,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Tool saved but image upload failed: ${e.toString().split(':').last}'),
+                  content: Text(
+                      'Tool saved but image upload failed: ${e.toString().split(':').last}'),
                   backgroundColor: Colors.orange,
                   duration: const Duration(seconds: 4),
                 ),
@@ -873,12 +867,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
           }
         }
       }
-      
+
       // Reload tools to refresh all screens
       await context.read<SupabaseToolProvider>().loadTools();
-      
+
       debugPrint('✅ Admin tool added - ID: ${addedTool.id}');
-      debugPrint('✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
+      debugPrint(
+          '✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
       debugPrint('✅ AssignedTo: ${addedTool.assignedTo}');
 
       if (mounted) {
@@ -939,18 +934,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppTheme.cardGradientFor(context),
+            color: AppTheme.cardSurfaceColor(context),
             borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: AppTheme.subtleBorder,
+              width: 1.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -971,18 +965,22 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       right: 12,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withOpacity(0.92),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
                         child: IconButton(
-                          icon: Icon(Icons.close, color: Colors.black87),
+                          icon: Icon(Icons.close,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.75)),
                           onPressed: () {
                             setState(() {
                               _selectedImage = null;
@@ -998,37 +996,49 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   child: InkWell(
                     onTap: _showImagePickerOptions,
                     borderRadius: BorderRadius.circular(28),
+                    splashColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.06),
+                    highlightColor: Colors.transparent,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.add_a_photo,
-                            size: 40,
-                            color: Colors.blue.shade600,
+                            size: 36,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Text(
                           'Add Tool Image',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color,
+                                  ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           'Tap to select from gallery or camera',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -1137,7 +1147,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -1169,7 +1179,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'tool_${toolId}_$timestamp.$extension';
-      
+
       // For now, just return the original path
       // In a real app, you'd copy to a persistent directory
       return imageFile.path;
@@ -1181,13 +1191,12 @@ class _AddToolScreenState extends State<AddToolScreen> {
   void _navigateToAllTools(BuildContext context) {
     // Navigate back to the admin home screen and set the selected index to 1 (All Tools)
     Navigator.popUntil(context, (route) => route.isFirst);
-    
+
     // Navigate to admin home screen with All Tools tab (index 1) selected
     Navigator.pushNamed(
-      context, 
+      context,
       '/admin',
       arguments: {'initialTab': 1}, // 1 = All Tools tab
     );
   }
 }
-

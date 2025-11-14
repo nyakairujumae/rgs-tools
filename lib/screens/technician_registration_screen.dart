@@ -17,10 +17,13 @@ class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
 
   @override
-  State<TechnicianRegistrationScreen> createState() => _TechnicianRegistrationScreenState();
+  State<TechnicianRegistrationScreen> createState() =>
+      _TechnicianRegistrationScreenState();
 }
 
-class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScreen> {
+class _TechnicianRegistrationScreenState
+    extends State<TechnicianRegistrationScreen> {
+  static const Color _cardColor = Color(0xFFF9FAFB);
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -29,7 +32,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
   final _employeeIdController = TextEditingController();
   final _phoneController = TextEditingController();
   final _departmentController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -51,13 +54,12 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scaffoldColor = theme.scaffoldBackgroundColor;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: scaffoldColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
+        color: scaffoldColor,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -133,12 +135,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.orange.shade100,
-            Colors.orange.shade50,
-          ],
-        ),
+        color: _cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.orange.shade200),
         boxShadow: [
@@ -158,7 +155,8 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.security_rounded, color: Colors.orange.shade600, size: 20),
+            child: Icon(Icons.security_rounded,
+                color: Colors.orange.shade600, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -168,17 +166,17 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
                 Text(
                   'Pending Admin Approval',
                   style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.orange.shade800,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: Colors.orange.shade800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'After submitting the form our admin team reviews your details. We’ll notify you once your account has been approved.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade700,
-                        height: 1.4,
-                      ),
+                    color: Colors.orange.shade700,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -191,7 +189,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
   Widget _buildRegistrationCard(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
+        color: _cardColor,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -271,7 +269,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
               controller: _passwordController,
               icon: Icons.lock_outline,
               obscureText: _obscurePassword,
-              helperText: 'Minimum 6 characters',
+              hintText: 'Enter Password (minimum 6 characters)',
               onToggleVisibility: () {
                 setState(() {
                   _obscurePassword = !_obscurePassword;
@@ -361,7 +359,8 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
             color: AppTheme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.check_circle_outline, color: AppTheme.primaryColor, size: 18),
+          child: const Icon(Icons.check_circle_outline,
+              color: AppTheme.primaryColor, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -385,7 +384,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     VoidCallback? onToggleVisibility,
-    String? helperText,
+    String? hintText,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -405,15 +404,37 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
           keyboardType: keyboardType,
           obscureText: obscureText,
           decoration: InputDecoration(
-            hintText: 'Enter $label',
+            hintText: hintText ?? 'Enter $label',
+            hintStyle: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+            filled: true,
+            fillColor: _cardColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide:
+                  const BorderSide(color: AppTheme.primaryColor, width: 2),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             prefixIcon: icon != null ? Icon(icon) : null,
             suffixIcon: onToggleVisibility != null
                 ? IconButton(
-                    icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility),
                     onPressed: onToggleVisibility,
                   )
                 : null,
-            helperText: helperText,
           ),
           validator: validator,
         ),
@@ -466,7 +487,8 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
               ? const SizedBox(
                   height: 24,
                   width: 24,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2.5),
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -498,7 +520,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: AppTheme.cardGradientFor(context),
+                color: _cardColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.12),
@@ -510,7 +532,8 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
               child: CircleAvatar(
                 radius: 58,
                 backgroundColor: Colors.grey[200],
-                backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                backgroundImage:
+                    _profileImage != null ? FileImage(_profileImage!) : null,
                 child: _profileImage == null
                     ? Icon(
                         Icons.account_circle_rounded,
@@ -543,7 +566,8 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 18),
+                  child: const Icon(Icons.camera_alt_outlined,
+                      color: Colors.white, size: 18),
                 ),
               ),
             ),
@@ -584,8 +608,10 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final Color bgColor = isDestructive ? Colors.red.shade50 : Colors.blue.shade50;
-    final Color fgColor = isDestructive ? Colors.red.shade700 : Colors.blue.shade700;
+    final Color bgColor =
+        isDestructive ? Colors.red.shade50 : Colors.blue.shade50;
+    final Color fgColor =
+        isDestructive ? Colors.red.shade700 : Colors.blue.shade700;
 
     return Material(
       color: Colors.transparent,
@@ -671,7 +697,7 @@ class _TechnicianRegistrationScreenState extends State<TechnicianRegistrationScr
 
     try {
       final authProvider = context.read<AuthProvider>();
-      
+
       await authProvider.registerTechnician(
         _nameController.text.trim(),
         _emailController.text.trim(),

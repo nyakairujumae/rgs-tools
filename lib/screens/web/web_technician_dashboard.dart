@@ -396,6 +396,13 @@ class TechnicianDashboardPage extends StatelessWidget {
     return 'Good Evening';
   }
 
+  String _getFirstName(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) {
+      return 'Technician';
+    }
+    return fullName.split(RegExp(r"\s+")).first;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<SupabaseToolProvider, AuthProvider>(
@@ -421,7 +428,7 @@ class TechnicianDashboardPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_getGreeting()}, ${authProvider.userFullName ?? 'Technician'}!',
+                          '${_getGreeting()}, ${_getFirstName(authProvider.userFullName ?? 'Technician')}!',
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -821,7 +828,7 @@ class TechnicianDashboardPage extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(0xFFF3F4F6),
+      color: const Color(0xFFF9FAFB),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

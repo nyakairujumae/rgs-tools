@@ -9,6 +9,8 @@ import '../services/report_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
+import '../utils/responsive_helper.dart';
+import '../utils/currency_formatter.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final ReportType reportType;
@@ -188,53 +190,104 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          _getReportTitle(),
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: Column(
+            children: [
+              // Header with back button and title
+              Padding(
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    Expanded(
+                      child: Text(
+                        _getReportTitle(),
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                    if (_isExporting)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.download_rounded),
+                        onPressed: _exportReport,
+                        tooltip: 'Export Report',
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
+                  builder: (context, toolProvider, technicianProvider, child) {
+                    if (toolProvider.isLoading || technicianProvider.isLoading) {
+                      return const Center(
+                        child: LoadingWidget(message: 'Loading data...'),
+                      );
+                    }
+
+                    final tools = toolProvider.tools;
+                    final technicians = technicianProvider.technicians;
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: _buildReportContent(tools, technicians, technicianProvider),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        actions: [
-          if (_isExporting)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.download_rounded),
-              onPressed: _exportReport,
-              tooltip: 'Export Report',
-            ),
-        ],
-      ),
-      body: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
-        builder: (context, toolProvider, technicianProvider, child) {
-          if (toolProvider.isLoading || technicianProvider.isLoading) {
-            return const Center(
-              child: LoadingWidget(message: 'Loading data...'),
-            );
-          }
-
-          final tools = toolProvider.tools;
-          final technicians = technicianProvider.technicians;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: _buildReportContent(tools, technicians, technicianProvider),
-          );
-        },
       ),
     );
   }
@@ -339,31 +392,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Widget _buildFinancialReport(List tools) {
     final totalPurchasePrice = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
-    final totalCurrentValue = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0));
-    final depreciation = totalPurchasePrice - totalCurrentValue;
-    final depreciationPercentage = totalPurchasePrice > 0
-        ? (depreciation / totalPurchasePrice * 100)
-        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildStatsGrid([
-          _buildStatCard('Total Purchase Value', '\$${totalPurchasePrice.toStringAsFixed(0)}', Icons.shopping_cart, Colors.blue),
-          _buildStatCard('Current Value', '\$${totalCurrentValue.toStringAsFixed(0)}', Icons.account_balance_wallet, Colors.green),
-          _buildStatCard('Depreciation', '\$${depreciation.toStringAsFixed(0)}', Icons.trending_down, Colors.red),
-          _buildStatCard('Depreciation %', '${depreciationPercentage.toStringAsFixed(1)}%', Icons.percent, Colors.orange),
+          _buildStatCard('Total Purchase Value', CurrencyFormatter.formatCurrencyWhole(totalPurchasePrice), Icons.shopping_cart, Colors.blue),
         ]),
         
         const SizedBox(height: 32),
-        _buildSectionTitle('Top Value Tools', 'Tools with highest current value'),
+        _buildSectionTitle('Top Value Tools', 'Tools with highest purchase price'),
         const SizedBox(height: 16),
         
         ...() {
           final sortedTools = tools
-            .where((t) => (t.currentValue ?? 0) > 0)
+            .where((t) => (t.purchasePrice ?? 0) > 0)
             .toList()
-            ..sort((a, b) => (b.currentValue ?? 0).compareTo(a.currentValue ?? 0));
+            ..sort((a, b) => (b.purchasePrice ?? 0).compareTo(a.purchasePrice ?? 0));
           return sortedTools
             .take(10)
             .map((tool) => _buildFinancialToolCard(tool))
@@ -450,7 +495,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Widget _buildComprehensiveReport(List tools, List technicians, SupabaseTechnicianProvider technicianProvider) {
     final assignedTools = tools.where((t) => t.assignedTo != null && t.assignedTo!.isNotEmpty).length;
-    final totalValue = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0));
+    final totalValue = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,7 +504,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           _buildStatCard('Total Tools', tools.length.toString(), Icons.build_circle, Colors.blue),
           _buildStatCard('Assigned Tools', assignedTools.toString(), Icons.assignment_ind, Colors.green),
           _buildStatCard('Technicians', technicians.length.toString(), Icons.people, Colors.orange),
-          _buildStatCard('Total Value', '\$${totalValue.toStringAsFixed(0)}', Icons.account_balance, Colors.purple),
+          _buildStatCard('Total Value', CurrencyFormatter.formatCurrencyWhole(totalValue), Icons.account_balance, Colors.purple),
         ]),
         
         const SizedBox(height: 32),
@@ -610,16 +655,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             color: Colors.grey[600],
           ),
         ),
@@ -641,53 +687,80 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+          // Large value centered, taking up center space
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
-            child: Icon(icon, color: color, size: 20),
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+          // Icon and name together at the bottom
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 8)),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                ),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -699,14 +772,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -751,8 +827,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ),
               Expanded(
                 child: _buildInfoRow(
-                  'Current Value',
-                  '\$${(tool.currentValue ?? 0).toStringAsFixed(0)}',
+                  'Purchase Price',
+                  CurrencyFormatter.formatCurrencyWhole(tool.purchasePrice ?? 0),
                 ),
               ),
             ],
@@ -767,14 +843,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -783,10 +862,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.assignment, color: Colors.green, size: 24),
+            child: Icon(Icons.assignment, color: AppTheme.secondaryColor, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -795,24 +874,26 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               children: [
                 Text(
                   tool.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   'Assigned to: $technicianName',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                    fontSize: 13,
+                    color: Colors.grey[600],
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   '${tool.category} • ${tool.status}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey[500],
+                    color: Colors.grey[500],
                   ),
                 ),
               ],
@@ -828,14 +909,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -844,12 +928,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.person,
-              color: Theme.of(context).primaryColor,
+              color: AppTheme.primaryColor,
               size: 24,
             ),
           ),
@@ -887,8 +971,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
@@ -897,14 +981,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
                 Text(
                   'tools',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -920,14 +1004,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -936,8 +1023,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.purple.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.account_balance_wallet, color: Colors.purple, size: 24),
           ),
@@ -968,21 +1055,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${(tool.currentValue ?? 0).toStringAsFixed(0)}',
+                CurrencyFormatter.formatCurrencyWhole(tool.purchasePrice ?? 0),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.purple,
                 ),
               ),
-              if (tool.purchasePrice != null && tool.purchasePrice! > 0)
-                Text(
-                  'Purchased: \$${tool.purchasePrice!.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey[500],
-                  ),
-                ),
             ],
           ),
         ],
@@ -1000,14 +1079,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1016,8 +1098,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.history,
@@ -1079,18 +1161,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.subtleBorder,
+            width: 1.1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1099,8 +1184,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
             ),

@@ -188,6 +188,99 @@ class ResponsiveHelper {
     
     return baseSpacing;
   }
+
+  // Responsive button padding
+  static EdgeInsets getResponsiveButtonPadding(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final textScaler = MediaQuery.of(context).textScaler;
+    final textScaleFactor = textScaler.scale(1.0).clamp(0.9, 1.2);
+    
+    double horizontal = 24;
+    double vertical = 12;
+    
+    if (screenWidth < 360) {
+      horizontal = 16;
+      vertical = 10;
+    } else if (screenWidth > 600) {
+      horizontal = 32;
+      vertical = 14;
+    }
+    
+    return EdgeInsets.symmetric(
+      horizontal: horizontal * textScaleFactor,
+      vertical: vertical * textScaleFactor,
+    );
+  }
+
+  // Responsive card height (for stat cards)
+  static double getResponsiveCardHeight(BuildContext context, double baseHeight) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final textScaler = MediaQuery.of(context).textScaler;
+    final textScaleFactor = textScaler.scale(1.0).clamp(0.9, 1.2);
+    
+    double scale = 1.0;
+    if (screenWidth < 360) {
+      scale = 0.9;
+    } else if (screenWidth > 600) {
+      scale = 1.1;
+    }
+    
+    return baseHeight * scale * textScaleFactor;
+  }
+
+  // Get responsive container constraints for dialogs
+  static BoxConstraints getResponsiveDialogConstraints(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    if (screenWidth < 600) {
+      return BoxConstraints(
+        maxWidth: screenWidth * 0.95,
+        maxHeight: screenHeight * 0.9,
+      );
+    } else {
+      return BoxConstraints(
+        maxWidth: 600,
+        maxHeight: screenHeight * 0.9,
+      );
+    }
+  }
+
+  // Responsive list item height
+  static double getResponsiveListItemHeight(BuildContext context, double baseHeight) {
+    final textScaler = MediaQuery.of(context).textScaler;
+    final textScaleFactor = textScaler.scale(1.0).clamp(0.9, 1.3);
+    return baseHeight * textScaleFactor;
+  }
+
+  // Get responsive column count for filter chips/tabs
+  static int getResponsiveColumnCount(BuildContext context, int baseCount) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    if (screenWidth < 360) {
+      return baseCount > 2 ? 2 : baseCount;
+    } else if (screenWidth < 600) {
+      return baseCount;
+    } else {
+      return baseCount + 1; // Allow more columns on larger screens
+    }
+  }
+
+  // Responsive header height
+  static double getResponsiveHeaderHeight(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final textScaler = MediaQuery.of(context).textScaler;
+    final textScaleFactor = textScaler.scale(1.0).clamp(0.9, 1.2);
+    
+    double baseHeight = 60;
+    if (screenWidth < 360) {
+      baseHeight = 56;
+    } else if (screenWidth > 600) {
+      baseHeight = 64;
+    }
+    
+    return baseHeight * textScaleFactor;
+  }
 }
 
 

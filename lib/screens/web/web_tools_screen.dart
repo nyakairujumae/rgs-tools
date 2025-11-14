@@ -653,7 +653,7 @@ class _WebToolsScreenState extends State<WebToolsScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(0xFFF3F4F6),
+      color: const Color(0xFFF9FAFB),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

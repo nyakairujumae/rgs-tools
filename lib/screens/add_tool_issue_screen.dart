@@ -6,9 +6,12 @@ import '../providers/auth_provider.dart';
 import '../models/tool_issue.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 
 class AddToolIssueScreen extends StatefulWidget {
-  const AddToolIssueScreen({super.key});
+  final Function()? onNavigateToDashboard;
+  
+  const AddToolIssueScreen({super.key, this.onNavigateToDashboard});
 
   @override
   State<AddToolIssueScreen> createState() => _AddToolIssueScreenState();
@@ -50,12 +53,69 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        scrolledUnderElevation: 6,
+        foregroundColor: colorScheme.onSurface,
+        toolbarHeight: 80,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
         ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              // If embedded as tab, navigate to dashboard instead of popping
+              if (widget.onNavigateToDashboard != null) {
+                widget.onNavigateToDashboard!();
+              } else {
+                // Fallback: try to pop if it's a pushed screen
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Report Tool Issue',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            Text(
+              'Help us track and resolve tool problems quickly',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                color: Colors.grey[600],
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
+      ),
+      body: Container(
+        color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           child: _isLoading
               ? Center(
@@ -64,56 +124,21 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                   ),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
+                  padding: ResponsiveHelper.getResponsivePadding(
+                    context,
+                    horizontal: 16,
+                    vertical: 24,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.getMaxWidth(context),
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              icon: Icon(Icons.arrow_back, color: Colors.black87),
-                              onPressed: () {
-                                // Since this screen is embedded as a tab, we can't pop
-                                // Instead, navigate to dashboard tab (index 0) if possible
-                                try {
-                                  // Try to find the parent TechnicianHomeScreen and switch to dashboard
-                                  final navigator = Navigator.of(context, rootNavigator: false);
-                                  if (navigator.canPop()) {
-                                    navigator.pop();
-                                  } else {
-                                    // If we can't pop, just do nothing (user can use bottom nav)
-                                    debugPrint('Cannot pop - screen is embedded as tab');
-                                  }
-                                } catch (e) {
-                                  debugPrint('Navigation error: $e');
-                                }
-                              },
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Report Tool Issue',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Help us track and resolve tool problems quickly',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
 
                         // Tool Information Section
                         _SectionCard(
@@ -151,9 +176,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
-                        // Issue Details Section
+                            // Issue Details Section
                         _SectionCard(
                           title: 'Issue Details',
                           child: Column(
@@ -174,7 +199,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 },
                                 icon: Icons.category,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                               _dropdown(
                                 label: 'Priority',
                                 value: _selectedPriority,
@@ -191,7 +216,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 },
                                 icon: Icons.priority_high,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                               _multiline(
                                 _descriptionController,
                                 label: 'Description *',
@@ -207,9 +232,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
-                        // Additional Information Section
+                            // Additional Information Section
                         _SectionCard(
                           title: 'Additional Information',
                           child: Column(
@@ -220,7 +245,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 hint: 'Where did this occur? (optional)',
                                 icon: Icons.location_on,
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                               _textField(
                                 _estimatedCostController,
                                 label: 'Estimated Cost',
@@ -232,101 +257,122 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
-                        // Priority Guidelines
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradientFor(context),
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                            // Priority Guidelines
+                            Container(
+                              width: double.infinity,
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                all: 20,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Priority Guidelines',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.blue[700],
-                                      ),
-                                    ),
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? colorScheme.surface : Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                border: Border.all(
+                                  color: isDarkMode 
+                                      ? Colors.white.withValues(alpha: 0.1)
+                                      : Colors.grey.withValues(alpha: 0.15),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              _buildPriorityGuideline('Critical', 'Safety hazard or complete tool failure'),
-                              _buildPriorityGuideline('High', 'Tool unusable but no safety risk'),
-                              _buildPriorityGuideline('Medium', 'Tool partially functional'),
-                              _buildPriorityGuideline('Low', 'Minor issue, tool still usable'),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // Submit Button
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.red.shade600, Colors.red.shade700],
-                            ),
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withOpacity(0.3),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _isLoading ? null : _submitReport,
-                              borderRadius: BorderRadius.circular(28),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 18),
-                                alignment: Alignment.center,
-                                child: _isLoading
-                                    ? SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : Text(
-                                        'Submit Report',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: AppTheme.primaryColor,
+                                        size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                      ),
+                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                                      Expanded(
+                                        child: Text(
+                                          'Priority Guidelines',
+                                          style: TextStyle(
+                                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                            fontWeight: FontWeight.w600,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                                  _buildPriorityGuideline(context, 'Critical', 'Safety hazard or complete tool failure'),
+                                  _buildPriorityGuideline(context, 'High', 'Tool unusable but no safety risk'),
+                                  _buildPriorityGuideline(context, 'Medium', 'Tool partially functional'),
+                                  _buildPriorityGuideline(context, 'Low', 'Minor issue, tool still usable'),
+                                ],
                               ),
                             ),
-                          ),
+
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+
+                            // Submit Button
+                            Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade600,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _isLoading ? null : _submitReport,
+                                  borderRadius: BorderRadius.circular(
+                                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                                  ),
+                                  child: Container(
+                                    padding: ResponsiveHelper.getResponsivePadding(
+                                      context,
+                                      vertical: 16,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: _isLoading
+                                        ? SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : Text(
+                                            'Submit Report',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -343,44 +389,92 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     TextInputType? keyboardType,
     IconData? icon,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: TextFormField(
         controller: ctrl,
-        style: TextStyle(color: Colors.black87, fontSize: 16),
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+        ),
         keyboardType: keyboardType,
         validator: validator,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
-          prefixIcon: icon != null ? Icon(icon, size: 20, color: Colors.grey[600]) : null,
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
+          prefixIcon: icon != null
+              ? Icon(
+                  icon,
+                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                  color: Colors.grey[600],
+                )
+              : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
       ),
     );
@@ -392,42 +486,88 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: TextFormField(
         controller: ctrl,
-        style: TextStyle(color: Colors.black87, fontSize: 16),
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+        ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
-          prefixIcon: Icon(Icons.description, size: 20, color: Colors.grey[600]),
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
+          prefixIcon: Icon(
+            Icons.description,
+            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+            color: Colors.grey[600],
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
         minLines: 3,
         maxLines: 6,
@@ -444,15 +584,26 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     String? Function(String?)? validator,
     IconData? icon,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -461,50 +612,71 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         isExpanded: true,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           hintText: value == null ? 'Select...' : null,
           hintStyle: TextStyle(
-            color: Colors.grey[500],
-            fontSize: 16,
+            color: Colors.grey[400],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
             overflow: TextOverflow.ellipsis,
           ),
-          prefixIcon: icon != null ? Icon(icon, size: 20, color: Colors.grey[600]) : null,
+          prefixIcon: icon != null
+              ? Icon(
+                  icon,
+                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                  color: Colors.grey[600],
+                )
+              : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
         style: TextStyle(
-          color: Colors.black87,
-          fontSize: 16,
+          color: theme.colorScheme.onSurface,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
           fontWeight: FontWeight.w500,
           overflow: TextOverflow.ellipsis,
         ),
-        selectedItemBuilder: (BuildContext context) {
-          return items.map<Widget>((DropdownMenuItem<String> item) {
-            if (item.value != value) {
-              return SizedBox.shrink();
-            }
-            // Return the child with proper overflow handling
-            return Container(
-              alignment: AlignmentDirectional.centerStart,
-              child: item.child,
-            );
-          }).toList();
-        },
-        dropdownColor: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(20),
+        dropdownColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
         menuMaxHeight: 300,
         items: items,
         onChanged: onChanged,
@@ -513,7 +685,8 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     );
   }
 
-  Widget _buildPriorityGuideline(String priority, String description) {
+  Widget _buildPriorityGuideline(BuildContext context, String priority, String description) {
+    final theme = Theme.of(context);
     Color color;
     switch (priority) {
       case 'Critical':
@@ -533,7 +706,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
+      ),
       child: Row(
         children: [
           Container(
@@ -544,13 +719,13 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
           Expanded(
             child: Text(
               '$priority: $description',
               style: TextStyle(
-                color: Colors.grey[700],
-                fontSize: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
               ),
             ),
           ),
@@ -734,22 +909,31 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        all: 20,
+      ),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(28),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -759,13 +943,13 @@ class _SectionCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+              color: theme.colorScheme.onSurface,
               letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
           child,
         ],
       ),

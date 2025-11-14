@@ -12,10 +12,10 @@ import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/currency_formatter.dart';
 import 'tools_screen.dart';
 import 'technicians_screen.dart';
 import 'add_tool_screen.dart';
-import 'assign_tool_screen.dart';
 import 'checkin_screen.dart';
 import 'web/checkin_screen_web.dart';
 import 'reports_screen.dart';
@@ -38,7 +38,7 @@ import '../widgets/common/rgs_logo.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final int initialTab;
-  
+
   const AdminHomeScreen({super.key, this.initialTab = 0});
 
   @override
@@ -47,7 +47,7 @@ class AdminHomeScreen extends StatefulWidget {
 
 class AdminHomeScreenErrorBoundary extends StatelessWidget {
   final Widget child;
-  
+
   const AdminHomeScreenErrorBoundary({super.key, required this.child});
 
   @override
@@ -58,7 +58,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
           return child;
         } catch (e, stackTrace) {
           // Handle error silently in production
-          
+
           return Scaffold(
             appBar: AppBar(
               title: Text('Admin Dashboard'),
@@ -84,7 +84,8 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         await authProvider.signOut();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
                         });
@@ -92,7 +93,8 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         // Silent error handling
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
                         });
@@ -110,7 +112,8 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
   }
 }
 
-class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingObserver {
+class _AdminHomeScreenState extends State<AdminHomeScreen>
+    with WidgetsBindingObserver {
   late int _selectedIndex;
   bool _isDisposed = false;
   late List<Widget> _screens;
@@ -119,7 +122,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _selectedIndex = widget.initialTab.clamp(0, 3); // Ensure index is within bounds
+    _selectedIndex =
+        widget.initialTab.clamp(0, 3); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
@@ -139,20 +143,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
       _startPeriodicRefresh();
     });
   }
-  
+
   void _startPeriodicRefresh() {
     // Refresh pending approvals every 30 seconds to catch new registrations
     Future.delayed(Duration(seconds: 30), () {
       if (!_isDisposed && mounted) {
-      context.read<PendingApprovalsProvider>().loadPendingApprovals();
+        context.read<PendingApprovalsProvider>().loadPendingApprovals();
         _startPeriodicRefresh(); // Schedule next refresh
       }
     });
   }
-  
+
   Future<void> _loadData() async {
     if (_isDisposed) return;
-    
+
     try {
       await Future.wait([
         context.read<SupabaseToolProvider>().loadTools(),
@@ -163,7 +167,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
       debugPrint('Error loading admin data: $e');
     }
   }
-  
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && !_isDisposed) {
@@ -183,277 +187,397 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
   Widget build(BuildContext context) {
     // Note: Pending approvals are loaded in initState and refreshed periodically
     // No need to reload on every build to prevent constant refreshing
-    
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final scaffoldColor = theme.scaffoldBackgroundColor;
 
     return Scaffold(
+      backgroundColor: scaffoldColor,
       body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.backgroundGradientFor(context)),
+        color: scaffoldColor,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-      appBar: (_selectedIndex == 1 || _selectedIndex == 2 || _selectedIndex == 3)
-          ? null
-          : AppBar(
-        backgroundColor: _selectedIndex == 0 
-            ? (isDarkMode ? Colors.black : AppTheme.primaryColor)
-            : colorScheme.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0, // Prevent elevation on scroll
-        foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
-        automaticallyImplyLeading: false, // No drawer menu
-        surfaceTintColor: Colors.transparent, // Remove any tint overlay
-        systemOverlayStyle: null, // Use default system overlay
-        flexibleSpace: _selectedIndex != 0 
-            ? Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-        ),
-                ),
-              )
-            : null, // Use default for dashboard
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Consumer<AdminNotificationProvider>(
-            builder: (context, notificationProvider, child) {
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.notifications),
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AdminNotificationScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  if (notificationProvider.unreadCount > 0)
-                    Positioned(
-                        left: 8,
-                      top: 8,
-                      child: Container(
-                        padding: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '${notificationProvider.unreadCount}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+          appBar: (_selectedIndex == 1 ||
+                  _selectedIndex == 2 ||
+                  _selectedIndex == 3)
+              ? null
+              : AppBar(
+                  backgroundColor:
+                      isDarkMode ? colorScheme.surface : Colors.white,
+                  elevation: 4,
+                  shadowColor: Colors.black.withValues(alpha: 0.08),
+                  scrolledUnderElevation: 6,
+                  foregroundColor: colorScheme.onSurface,
+                  toolbarHeight: 80,
+                  automaticallyImplyLeading: false, // No drawer menu
+                  surfaceTintColor:
+                      Colors.transparent, // Remove any tint overlay
+                  systemOverlayStyle: null, // Use default system overlay
+                  flexibleSpace: _selectedIndex != 0
+                      ? Container(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(24),
+                              bottomRight: Radius.circular(24),
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
+                        )
+                      : null, // Use default for dashboard
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                  ),
+                  leading: Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Consumer<AdminNotificationProvider>(
+                        builder: (context, notificationProvider, child) {
+                          return Stack(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.notifications),
+                                padding: EdgeInsets.zero,
+                                constraints: BoxConstraints(),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AdminNotificationScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (notificationProvider.unreadCount > 0)
+                                Positioned(
+                                  left: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    constraints: BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      '${notificationProvider.unreadCount}',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
-                ],
-              );
-            },
-          ),
-          ),
-        ),
-        title: _selectedIndex == 0
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: const RGSLogo(),
-              )
-            : Text(
-                _getTabTitle(_selectedIndex),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-        centerTitle: true,
-        actions: [
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              // Don't render PopupMenuButton during logout to prevent widget tree issues
-              if (authProvider.isLoading || authProvider.isLoggingOut) {
-                return IconButton(
-                  icon: Icon(Icons.account_circle),
-                  onPressed: null, // Disabled during logout
-                );
-              }
-              
-              return Builder(
-                builder: (context) {
-                  return PopupMenuButton<String>(
-                icon: Icon(Icons.account_circle),
-                onSelected: (value) async {
-                  if (value == 'logout' && !_isDisposed && mounted) {
-                    try {
-                      // Close any open popup menus first (safely)
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
-                      
-                      // Sign out and navigate to login
-                      await authProvider.signOut();
-                      
-                      // Navigate to login screen
-                      if (mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
-                          (route) => false,
+                  ),
+                  title: _selectedIndex == 0
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: const RGSLogo(),
+                        )
+                      : Text(
+                          _getTabTitle(_selectedIndex),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                  centerTitle: true,
+                  actions: [
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        // Don't render PopupMenuButton during logout to prevent widget tree issues
+                        if (authProvider.isLoading ||
+                            authProvider.isLoggingOut) {
+                          return IconButton(
+                            icon: Icon(Icons.account_circle),
+                            onPressed: null, // Disabled during logout
+                          );
+                        }
+
+                        return Builder(
+                          builder: (context) {
+                            return PopupMenuButton<String>(
+                              icon: Icon(Icons.account_circle),
+                              onSelected: (value) async {
+                                if (value == 'logout' &&
+                                    !_isDisposed &&
+                                    mounted) {
+                                  try {
+                                    // Close any open popup menus first (safely)
+                                    if (Navigator.of(context).canPop()) {
+                                      Navigator.of(context).pop();
+                                    }
+
+                                    // Sign out and navigate to login
+                                    await authProvider.signOut();
+
+                                    // Navigate to login screen
+                                    if (mounted) {
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const LoginScreen()),
+                                        (route) => false,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    // Silent error handling - the app will handle navigation
+                                    debugPrint('Logout error: $e');
+                                  }
+                                }
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                              ),
+                              elevation: 8,
+                              color: Colors.white,
+                              itemBuilder: (BuildContext context) => [
+                                PopupMenuItem<String>(
+                                  value: 'profile',
+                                  padding: ResponsiveHelper.getResponsivePadding(
+                                    context,
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  child: Container(
+                                    padding: ResponsiveHelper.getResponsivePadding(
+                                      context,
+                                      all: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        ResponsiveHelper.getResponsiveBorderRadius(context, 12),
+                                      ),
+                                      border: Border.all(
+                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(
+                                            ResponsiveHelper.getResponsiveSpacing(context, 8),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              ResponsiveHelper.getResponsiveBorderRadius(context, 12),
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.person,
+                                            color: AppTheme.primaryColor,
+                                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                          ),
+                                        ),
+                                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                authProvider.userFullName ??
+                                                    'Admin User',
+                                                style: TextStyle(
+                                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                                                  vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                                                  borderRadius: BorderRadius.circular(
+                                                    ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'Admin',
+                                                  style: TextStyle(
+                                                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
+                                                    color: AppTheme.secondaryColor,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const PopupMenuDivider(),
+                                PopupMenuItem<String>(
+                                  value: 'settings',
+                                  padding: ResponsiveHelper.getResponsivePadding(
+                                    context,
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(
+                                          ResponsiveHelper.getResponsiveSpacing(context, 6),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.settings,
+                                          color: Colors.grey[700],
+                                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                                        ),
+                                      ),
+                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                                      Text(
+                                        'Settings',
+                                        style: TextStyle(
+                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                          fontWeight: FontWeight.w500,
+                                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  value: 'logout',
+                                  padding: ResponsiveHelper.getResponsivePadding(
+                                    context,
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(
+                                          ResponsiveHelper.getResponsiveSpacing(context, 6),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.logout,
+                                          color: Colors.red,
+                                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                                        ),
+                                      ),
+                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                                      Text(
+                                        'Logout',
+                                        style: TextStyle(
+                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         );
-                      }
-                      
-                    } catch (e) {
-                      // Silent error handling - the app will handle navigation
-                      debugPrint('Logout error: $e');
-                    }
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  PopupMenuItem<String>(
-                    value: 'profile',
-                    child: Row(
-                      children: [
-                        Icon(Icons.person, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              authProvider.userFullName ?? 'Admin User',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              'Admin',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      },
                     ),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text(
-                          'Settings',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text(
-                          'Logout',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.red,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-                },
-              );
-            },
+                  ],
+                ),
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: _screens,
           ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 3)),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: 'Dashboard',
+          bottomNavigationBar: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.build),
-              label: 'Tools',
+            child: BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) =>
+                  setState(() => _selectedIndex = index.clamp(0, 3)),
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              selectedItemColor: Theme.of(context).colorScheme.secondary,
+              unselectedItemColor:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard),
+                  label: 'Dashboard',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.build),
+                  label: 'Tools',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.share),
+                  label: 'Shared',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people),
+                  label: 'Technicians',
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.share),
-              label: 'Shared',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people),
-              label: 'Technicians',
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: (_selectedIndex == 1)
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddToolScreen(),
-                  ),
-                );
-              },
-              backgroundColor: AppTheme.primaryColor,
-              child: Icon(Icons.add, color: Theme.of(context).textTheme.bodyLarge?.color),
-            )
-          : null,
+          ),
+          floatingActionButton: (_selectedIndex == 1)
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddToolScreen(),
+                      ),
+                    );
+                  },
+                  backgroundColor: AppTheme.primaryColor,
+                  child: Icon(Icons.add,
+                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                )
+              : null,
         ),
       ),
     );
   }
-
 
   void _navigateToToolsWithFilter(String statusFilter) {
     setState(() {
@@ -477,34 +601,43 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> with WidgetsBindingOb
         return '';
     }
   }
-
 }
 
 // Dashboard Screen for Admin
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateToTab;
   final Function(String) onNavigateToToolsWithFilter;
-  
+  static const double _cardRadiusValue = 20;
+
   const DashboardScreen({
-    super.key, 
+    super.key,
     required this.onNavigateToTab,
     required this.onNavigateToToolsWithFilter,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider, AuthProvider>(
-      builder: (context, toolProvider, technicianProvider, authProvider, child) {
+    return Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider,
+        AuthProvider>(
+      builder:
+          (context, toolProvider, technicianProvider, authProvider, child) {
         final tools = toolProvider.tools;
         final technicians = technicianProvider.technicians;
         final totalTools = tools.length;
         final totalValue = toolProvider.getTotalValue();
-        final toolsNeedingMaintenance = toolProvider.getToolsNeedingMaintenance();
+        final toolsNeedingMaintenance =
+            toolProvider.getToolsNeedingMaintenance();
         final availableTools = toolProvider.getAvailableTools();
         final assignedTools = toolProvider.getAssignedTools();
 
+        final cardRadius = BorderRadius.circular(_cardRadiusValue);
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 24,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -513,334 +646,351 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              // Welcome Section
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.admin_panel_settings,
-                            color: AppTheme.primaryColor,
-                            size: 24,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${_getGreeting()}, ${authProvider.userFullName ?? 'Admin'}!',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                                ),
-                              ),
-                              Text(
-                                'Manage your HVAC tools and technicians',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                            ],
-                          ),
+                  // Welcome Section
+                  Container(
+                    width: double.infinity,
+                    padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: cardRadius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 7),
+                          spreadRadius: 0,
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 24),
-
-              // Stats Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: ResponsiveHelper.isWeb ? 1.5 : 1.2,
-                children: [
-                  _buildStatCard(
-                    'Total Tools',
-                    totalTools.toString(),
-                    Icons.build,
-                    Colors.blue,
-                    context,
-                    () => onNavigateToTab(1), // Navigate to Tools tab
-                  ),
-                  _buildStatCard(
-                    'Technicians',
-                    technicians.length.toString(),
-                    Icons.people,
-                    Colors.green,
-                    context,
-                    () => onNavigateToTab(3), // Navigate to Technicians tab
-                  ),
-                  _buildStatCard(
-                    'Total Value',
-                    '\$${totalValue.toStringAsFixed(0)}',
-                    Icons.attach_money,
-                    Colors.orange,
-                    context,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReportDetailScreen(
-                          reportType: ReportType.financialSummary,
-                          timePeriod: 'Last 30 Days',
-                        ),
-                      ),
-                    ),
-                  ),
-                  _buildStatCard(
-                    'Need Maintenance',
-                    '${toolsNeedingMaintenance.length}',
-                    Icons.warning,
-                    Colors.red,
-                    context,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MaintenanceScreen(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 24),
-
-              // Status Overview
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tool Status Overview',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatusItem(
-                          'Available',
-                          availableTools.length.toString(),
-                          Colors.green,
-                          context,
-                        ),
-                        _buildStatusItem(
-                          'Assigned',
-                          assignedTools.length.toString(),
-                          Colors.blue,
-                          context,
-                        ),
-                        _buildStatusItem(
-                          'Maintenance',
-                          '${toolsNeedingMaintenance.length}',
-                          Colors.orange,
-                          context,
+                        Row(
+                          children: [
+                            Container(
+                              width: ResponsiveHelper.getResponsiveIconSize(context, 52),
+                              height: ResponsiveHelper.getResponsiveIconSize(context, 52),
+                              decoration: BoxDecoration(
+                                color: AppTheme.secondaryColor
+                                    .withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.secondaryColor
+                                        .withValues(alpha: 0.18),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.admin_panel_settings,
+                                  color: AppTheme.secondaryColor,
+                                  size: ResponsiveHelper.getResponsiveIconSize(context, 26),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${_getGreeting()}, ${_getFirstName(authProvider.userFullName ?? 'Admin')}!',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                                  ),
+                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                                  Text(
+                                    'Manage your HVAC tools and technicians',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              SizedBox(height: 24),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
-              // Quick Actions
-              Text(
-                'Quick Actions',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Add Tool',
-                      Icons.add,
-                      AppTheme.primaryColor,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AddToolScreen(),
-                        ),
-                      ),
-                      context,
+                  Text(
+                    'Key Metrics',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Assign Tool',
-                      Icons.person_add,
-                      Colors.green,
-                      () => Navigator.push(
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+
+                  // Stats Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount:
+                        ResponsiveHelper.getGridCrossAxisCount(context),
+                    crossAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
+                    mainAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
+                    childAspectRatio: ResponsiveHelper.isWeb ? 1.5 : 1.2,
+                    children: [
+                      _buildStatCard(
+                        'Total Tools',
+                        totalTools.toString(),
+                        Icons.build,
+                        Colors.blue,
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const AssignToolScreen(),
+                        () => onNavigateToTab(1), // Navigate to Tools tab
+                      ),
+                      _buildStatCard(
+                        'Technicians',
+                        technicians.length.toString(),
+                        Icons.people,
+                        Colors.green,
+                        context,
+                        () => onNavigateToTab(3), // Navigate to Technicians tab
+                      ),
+                      _buildStatCard(
+                        'Total Value',
+                        CurrencyFormatter.formatCurrencyWhole(totalValue),
+                        Icons.attach_money,
+                        Colors.orange,
+                        context,
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReportDetailScreen(
+                              reportType: ReportType.financialSummary,
+                              timePeriod: 'Last 30 Days',
+                            ),
+                          ),
                         ),
                       ),
-                      context,
+                      _buildStatCard(
+                        'Maintenance',
+                        '${toolsNeedingMaintenance.length}',
+                        Icons.warning,
+                        Colors.red,
+                        context,
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MaintenanceScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // Status Overview
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: cardRadius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 7),
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatusItem(
+                              'Available',
+                              availableTools.length.toString(),
+                              Colors.green,
+                              context,
+                            ),
+                            _buildStatusItem(
+                              'Assigned',
+                              assignedTools.length.toString(),
+                              Colors.blue,
+                              context,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Consumer<PendingApprovalsProvider>(
-                      builder: (context, provider, child) {
-                        final pendingCount = provider.pendingCount;
-                        return _buildQuickActionCardWithBadge(
-                          'Authorize Users',
-                          Icons.verified_user,
-                          Colors.blue,
+
+                  SizedBox(height: 24),
+
+                  // Quick Actions
+                  Text(
+                    'Quick Actions',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Add Tool',
+                          Icons.add,
+                          AppTheme.primaryColor,
                           () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AdminApprovalScreen(),
+                              builder: (context) => const AddToolScreen(),
                             ),
                           ),
                           context,
-                          badgeCount: pendingCount,
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Reports',
-                      Icons.analytics,
-                      Colors.purple,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ReportsScreen(),
                         ),
                       ),
-                      context,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Settings',
-                      Icons.settings,
-                      Colors.grey,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Assign Tool',
+                          Icons.person_add,
+                          Colors.green,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ToolsScreen(isSelectionMode: true),
+                            ),
+                          ),
+                          context,
                         ),
                       ),
-                      context,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Tool Issues',
-                      Icons.report_problem,
-                      Colors.red,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ToolIssuesScreen(),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Consumer<PendingApprovalsProvider>(
+                          builder: (context, provider, child) {
+                            final pendingCount = provider.pendingCount;
+                            return _buildQuickActionCardWithBadge(
+                              'Authorize Users',
+                              Icons.verified_user,
+                              Colors.blue,
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AdminApprovalScreen(),
+                                ),
+                              ),
+                              context,
+                              badgeCount: pendingCount,
+                            );
+                          },
                         ),
                       ),
-                      context,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Approvals',
-                      Icons.approval,
-                      Colors.amber,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ApprovalWorkflowsScreen(),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Reports',
+                          Icons.analytics,
+                          Colors.purple,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ReportsScreen(),
+                            ),
+                          ),
+                          context,
                         ),
                       ),
-                      context,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      'Maintenance Schedule',
-                      Icons.schedule,
-                      Colors.teal,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MaintenanceScreen(),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Settings',
+                          Icons.settings,
+                          Colors.grey,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          ),
+                          context,
                         ),
                       ),
-                      context,
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Tool Issues',
+                          Icons.report_problem,
+                          Colors.red,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ToolIssuesScreen(),
+                            ),
+                          ),
+                          context,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Approvals',
+                          Icons.approval,
+                          Colors.amber,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ApprovalWorkflowsScreen(),
+                            ),
+                          ),
+                          context,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildQuickActionCard(
+                          'Maintenance Schedule',
+                          Icons.schedule,
+                          Colors.teal,
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MaintenanceScreen(),
+                            ),
+                          ),
+                          context,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -850,17 +1000,18 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, BuildContext context, VoidCallback? onTap) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color,
+      BuildContext context, VoidCallback? onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: ResponsiveHelper.getCardPadding(context),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(28),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 16,
               offset: const Offset(0, 6),
               spreadRadius: 0,
@@ -869,7 +1020,7 @@ class DashboardScreen extends StatelessWidget {
               color: color.withValues(alpha: 0.08),
               blurRadius: 12,
               offset: const Offset(0, 2),
-          ),
+            ),
           ],
         ),
         child: Column(
@@ -877,50 +1028,64 @@ class DashboardScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Large value at the top
-            Flexible(
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28,
-                  letterSpacing: -0.5,
+            // Large value centered, taking up center space
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                      letterSpacing: -0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
-            // Icon in the middle
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon, 
-                color: color, 
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Title at the bottom
-            Flexible(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+            // Icon and name together at the bottom
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 8)),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.color
+                          ?.withValues(alpha: 0.8),
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -928,25 +1093,29 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusItem(String status, String count, Color color, BuildContext context) {
+  Widget _buildStatusItem(
+      String status, String count, Color color, BuildContext context) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: EdgeInsets.symmetric(horizontal: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+        padding: EdgeInsets.symmetric(
+          vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
+        ),
         decoration: BoxDecoration(
-            gradient: AppTheme.cardGradientFor(context),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
+          boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
-          ),
+            ),
           ],
         ),
         child: Column(
@@ -957,19 +1126,23 @@ class DashboardScreen extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 20, // Reduced from 28
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                 letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(height: 4), // Reduced spacing
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
             Flexible(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   status,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
-                    fontSize: 12, // Reduced from 14
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.color
+                        ?.withValues(alpha: 0.8),
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
@@ -992,12 +1165,12 @@ class DashboardScreen extends StatelessWidget {
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(_cardRadiusValue),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(28),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(_cardRadiusValue),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.12),
@@ -1005,7 +1178,7 @@ class DashboardScreen extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1040,12 +1213,12 @@ class DashboardScreen extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(_cardRadiusValue),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(28),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(_cardRadiusValue),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.12),
@@ -1053,7 +1226,7 @@ class DashboardScreen extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1061,20 +1234,23 @@ class DashboardScreen extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Column(
-              children: [
-                Icon(icon, color: color, size: 24),
-                SizedBox(height: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                ],
+              ),
             ),
             if (badgeCount > 0)
               Positioned(
@@ -1117,5 +1293,11 @@ class DashboardScreen extends StatelessWidget {
       return 'Good Evening';
     }
   }
-}
 
+  String _getFirstName(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) {
+      return 'Admin';
+    }
+    return fullName.split(RegExp(r"\s+")).first;
+  }
+}

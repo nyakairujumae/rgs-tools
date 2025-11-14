@@ -10,6 +10,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 import 'barcode_scanner_screen.dart';
 
 class TechnicianAddToolScreen extends StatefulWidget {
@@ -59,6 +60,26 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   final List<String> _conditions = const ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'];
   final List<String> _statuses = const ['Assigned', 'Available', 'In Use', 'Maintenance', 'Retired'];
 
+  BoxDecoration _outlineDecoration(
+    BuildContext context, {
+    double radius = 24,
+    bool showBorder = false,
+    bool subtleFill = false,
+  }) {
+    final theme = Theme.of(context);
+    final borderColor = theme.brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.24)
+        : AppTheme.subtleBorder;
+    final backgroundColor =
+        subtleFill ? AppTheme.subtleSurface : theme.scaffoldBackgroundColor;
+
+    return BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(radius),
+      border: showBorder ? Border.all(color: borderColor, width: 1.1) : null,
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -75,79 +96,223 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.backgroundGradientFor(context)),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: const Text('Add My Tool'),
-            centerTitle: true,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Add My Tool',
+          style: TextStyle(
+            color: theme.textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.w600,
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+          ),
+        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton(
+              onPressed: _isSaving ? null : _saveTool,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      'Save',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
+                    ),
             ),
           ),
-          body: Theme(
-            data: Theme.of(context).copyWith(
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: AppTheme.cardSurfaceColor(context),
-                labelStyle: TextStyle(color: Colors.grey[700]),
-                hintStyle: TextStyle(color: Colors.grey[500]),
+        ],
+      ),
+      body: SafeArea(
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: Theme(
+            data: theme.copyWith(
+              inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+                filled: false,
+                labelStyle: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w400,
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                ),
+                floatingLabelStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                hintStyle: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                  ),
+                  borderSide: const BorderSide(
+                    color: AppTheme.subtleBorder,
+                    width: 1.1,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                  ),
+                  borderSide: const BorderSide(
+                    color: AppTheme.subtleBorder,
+                    width: 1.1,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                  ),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary.withOpacity(0.7),
+                    width: 2,
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+              ),
+              textTheme: theme.textTheme.apply(
+                bodyColor: theme.textTheme.bodyLarge?.color,
+                displayColor: theme.textTheme.bodyLarge?.color,
               ),
             ),
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildImagePicker(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Tool Details'),
-                    const SizedBox(height: 16),
-                    _buildCardField(
-                      TextFormField(
+                    // Basic Information
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Text(
+                        'Basic Information',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+
+                    // Image Selection Section
+                    _buildImageSelectionSection(),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
                         controller: _nameController,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          color: theme.colorScheme.onSurface,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Tool Name *',
                           hintText: 'e.g., Digital Multimeter',
                         ),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'Please enter the tool name' : null,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter tool name';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildCategoryDropdown(),
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategory.isEmpty ? null : _selectedCategory,
+                        isExpanded: true,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Category *',
+                          hintText: 'Select a category',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          ),
+                          contentPadding: ResponsiveHelper.getResponsivePadding(
+                            context,
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: _categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value ?? '';
+                            _categoryController.text = value ?? '';
+                          });
+                        },
+                        validator: (value) {
+                          if (_selectedCategory.isEmpty) {
+                            return 'Please select a category';
+                          }
+                          return null;
+                        },
+                        dropdownColor: AppTheme.cardSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
                     Row(
                       children: [
                         Expanded(
-                          child: _buildCardField(
-                            TextFormField(
+                          child: Container(
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: TextFormField(
                               controller: _brandController,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                color: theme.colorScheme.onSurface,
+                              ),
                               decoration: const InputDecoration(
                                 labelText: 'Brand',
                                 hintText: 'e.g., Fluke',
@@ -155,11 +320,16 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                         Expanded(
-                          child: _buildCardField(
-                            TextFormField(
+                          child: Container(
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: TextFormField(
                               controller: _modelController,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                color: theme.colorScheme.onSurface,
+                              ),
                               decoration: InputDecoration(
                                 labelText: 'Model Number',
                                 hintText: 'e.g., 87V',
@@ -168,12 +338,12 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.auto_awesome, color: Colors.blue),
-                                      tooltip: 'Generate',
+                                      tooltip: 'Generate Model Number',
                                       onPressed: _generateModelNumber,
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                                      tooltip: 'Scan',
+                                      tooltip: 'Scan Model Number',
                                       onPressed: () => _scanBarcode(_modelController, 'Model number'),
                                     ),
                                   ],
@@ -184,19 +354,76 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    // Generate Both Button
                     Center(
-                      child: _buildGradientButton(
-                        icon: Icons.auto_awesome,
-                        label: 'Generate Model & Serial',
-                        colors: [Colors.orange.shade400, Colors.orange.shade600],
-                        onTap: _generateBothIds,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.shade400,
+                              Colors.orange.shade600
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _generateBothIds,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                            ),
+                            child: Padding(
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                horizontal: 24,
+                                vertical: 14,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome,
+                                    color: Colors.white,
+                                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                  ),
+                                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                                  Text(
+                                    'Generate Both Model & Serial Numbers',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildCardField(
-                      TextFormField(
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
                         controller: _serialNumberController,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          color: theme.colorScheme.onSurface,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Serial Number',
                           hintText: 'Scan or enter manually',
@@ -205,12 +432,12 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.auto_awesome, color: Colors.blue),
-                                tooltip: 'Generate',
+                                tooltip: 'Generate Unique ID',
                                 onPressed: _generateSerialNumber,
                               ),
                               IconButton(
                                 icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                                tooltip: 'Scan',
+                                tooltip: 'Scan Serial Number',
                                 onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
                               ),
                             ],
@@ -218,110 +445,237 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Purchase Information'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildCardField(
-                            TextFormField(
-                              controller: _purchasePriceController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Purchase Price',
-                                prefixText: 'AED ',
-                              ),
-                            ),
-                          ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        'Scan barcode/QR code or generate ID for tools without serial numbers',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildCardField(
-                            TextFormField(
-                              controller: _currentValueController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Current Value',
-                                prefixText: 'AED ',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildCardField(
-                      InkWell(
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    Divider(
+                      height: 32,
+                      thickness: 0.8,
+                      color: AppTheme.subtleBorder.withOpacity(0.7),
+                      indent: 4,
+                      endIndent: 4,
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+
+                    // Purchase Information
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        'Purchase Information',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
+                        controller: _purchasePriceController,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Purchase Price',
+                          hintText: '0.00',
+                          prefixText: 'AED ',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                        ),
+                        border: Border.all(
+                          color: AppTheme.subtleBorder,
+                          width: 1.1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
                         onTap: _selectPurchaseDate,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                        ),
                         child: InputDecorator(
-                          decoration: const InputDecoration(labelText: 'Purchase Date'),
+                          decoration: InputDecoration(
+                            labelText: 'Purchase Date',
+                            contentPadding: ResponsiveHelper.getResponsivePadding(
+                              context,
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                          ),
                           child: Text(
                             _purchaseDate != null
                                 ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
                                 : 'Select date',
                             style: TextStyle(
-                              color: _purchaseDate != null ? Colors.black87 : Colors.grey[500],
+                              color: _purchaseDate != null
+                                  ? theme.colorScheme.onSurface
+                                  : Colors.grey[500],
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Condition & Status'),
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+
+                    // Status and Condition
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Status & Condition',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+
                     Row(
                       children: [
                         Expanded(
-                          child: _buildCardField(
-                            DropdownButtonFormField<String>(
+                          child: Container(
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_condition),
                               value: _condition,
-                              items: _conditions
-                                  .map((condition) => DropdownMenuItem(
-                                        value: condition,
-                                        child: Text(condition),
-                                      ))
-                                  .toList(),
-                              onChanged: (value) => setState(() => _condition = value ?? 'Good'),
-                              decoration: const InputDecoration(labelText: 'Condition'),
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Condition',
+                                contentPadding: ResponsiveHelper.getResponsivePadding(
+                                  context,
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                              ),
+                              items: _conditions.map((condition) {
+                                return DropdownMenuItem(
+                                  value: condition,
+                                  child: Text(
+                                    condition,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _condition = value ?? _condition;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(20),
                               dropdownColor: AppTheme.cardSurfaceColor(context),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                         Expanded(
-                          child: _buildCardField(
-                            DropdownButtonFormField<String>(
+                          child: Container(
+                            decoration: _outlineDecoration(context, radius: 24),
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_status),
                               value: _status,
-                              items: _statuses
-                                  .map((status) => DropdownMenuItem(
-                                        value: status,
-                                        child: Text(status),
-                                      ))
-                                  .toList(),
-                              onChanged: (value) => setState(() => _status = value ?? 'Assigned'),
-                              decoration: const InputDecoration(labelText: 'Status'),
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Status',
+                                contentPadding: ResponsiveHelper.getResponsivePadding(
+                                  context,
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                              ),
+                              items: _statuses.map((status) {
+                                return DropdownMenuItem(
+                                  value: status,
+                                  child: Text(
+                                    status,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _status = value ?? _status;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(20),
                               dropdownColor: AppTheme.cardSurfaceColor(context),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildCardField(
-                      TextFormField(
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
                         controller: _locationController,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          color: theme.colorScheme.onSurface,
+                        ),
                         decoration: const InputDecoration(
                           labelText: 'Location',
                           hintText: 'e.g., Van 2, Warehouse A',
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildCardField(
-                      TextFormField(
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: TextFormField(
                         controller: _notesController,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          color: theme.colorScheme.onSurface,
+                        ),
                         maxLines: 3,
                         decoration: const InputDecoration(
                           labelText: 'Notes',
@@ -329,20 +683,20 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    _buildGradientButton(
-                      icon: Icons.save,
-                      label: _isSaving ? 'Saving...' : 'Save Tool',
-                      colors: [Colors.blue.shade600, Colors.blue.shade700],
-                      onTap: _isSaving ? null : _saveTool,
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Text(
+                        'Tools you add here are also available to admins. Assign "Available" if the tool is ready for sharing, or keep "Assigned" if it is yours exclusively.',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          height: 1.4,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Tools you add here are also available to admins. Assign "Available" if the tool is ready for sharing, or keep "Assigned" if it is yours exclusively.',
-                      style: TextStyle(color: Colors.grey[600], height: 1.4),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                   ],
                 ),
               ),
@@ -353,157 +707,82 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-          letterSpacing: -0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardField(Widget child) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildGradientButton({
-    required IconData icon,
-    required String label,
-    required List<Color> colors,
-    required VoidCallback? onTap,
-  }) {
-    final bool isDisabled = onTap == null;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: isDisabled ? [Colors.grey, Colors.grey] : colors),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          if (!isDisabled)
-            BoxShadow(
-              color: colors.last.withOpacity(0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white),
-                const SizedBox(width: 10),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryDropdown() {
-    return _buildCardField(
-      DropdownButtonFormField<String>(
-        value: _selectedCategory.isEmpty ? null : _selectedCategory,
-        isExpanded: true,
-        decoration: const InputDecoration(labelText: 'Category *', hintText: 'Select a category'),
-        items: _categories
-            .map(
-              (category) => DropdownMenuItem(
-                value: category,
-                child: Text(category),
-              ),
-            )
-            .toList(),
-        onChanged: (value) {
-          setState(() {
-            _selectedCategory = value ?? '';
-            _categoryController.text = value ?? '';
-          });
-        },
-        validator: (value) =>
-            _selectedCategory.isEmpty ? 'Please select a category' : null,
-        dropdownColor: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    );
-  }
-
-  Widget _buildImagePicker() {
+  Widget _buildImageSelectionSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Tool Image'),
-        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0),
+          child: Text(
+            'Tool Image',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
         Container(
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppTheme.cardGradientFor(context),
-            borderRadius: BorderRadius.circular(28),
+            color: AppTheme.cardSurfaceColor(context),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 28),
+            ),
+            border: Border.all(
+              color: AppTheme.subtleBorder,
+              width: 1.2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
-                blurRadius: 18,
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
                 offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: _selectedImage != null
               ? Stack(
-                  fit: StackFit.expand,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.getResponsiveBorderRadius(context, 28),
+                      ),
+                      child: Image.file(
+                        _selectedImage!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     Positioned(
                       top: 12,
                       right: 12,
-                      child: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.surface,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
                         child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.black87),
-                          onPressed: () => setState(() => _selectedImage = null),
+                          icon: Icon(
+                            Icons.close,
+                            color: theme.colorScheme.onSurface.withOpacity(0.75),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _selectedImage = null;
+                            });
+                          },
                         ),
                       ),
                     ),
@@ -512,31 +791,43 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
               : Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(28),
                     onTap: _showImagePickerOptions,
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.getResponsiveBorderRadius(context, 28),
+                    ),
+                    splashColor: theme.colorScheme.primary.withValues(alpha: 0.06),
+                    highlightColor: Colors.transparent,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.add_a_photo, color: Colors.blue.shade600, size: 40),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Add Tool Image',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w600,
+                          child: Icon(
+                            Icons.add_a_photo,
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 36),
+                            color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         Text(
-                          'Tap to choose from gallery or camera',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                          'Add Tool Image',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
+                            fontWeight: FontWeight.w500,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                        Text(
+                          'Tap to select from gallery or camera',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                          ),
                         ),
                       ],
                     ),
@@ -546,6 +837,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
       ],
     );
   }
+
 
   void _showImagePickerOptions() {
     showModalBottomSheet(
@@ -673,11 +965,35 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   }
 
   void _generateModelNumber() {
-    setState(() => _modelController.text = ToolIdGenerator.generateModelNumber());
+    setState(() {
+      _modelController.text = ToolIdGenerator.generateModelNumber();
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generated unique model number'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _generateSerialNumber() {
-    setState(() => _serialNumberController.text = ToolIdGenerator.generateToolId());
+    setState(() {
+      _serialNumberController.text = ToolIdGenerator.generateToolId();
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generated unique serial number'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _generateBothIds() {
@@ -686,6 +1002,16 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
       _modelController.text = ids['model']!;
       _serialNumberController.text = ids['serial']!;
     });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generated model and serial numbers'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _saveTool() async {

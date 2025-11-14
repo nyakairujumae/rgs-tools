@@ -237,6 +237,8 @@ class AuthProvider with ChangeNotifier {
     String? hireDate,
     File? profileImage,
   ) async {
+    String? profilePictureUrl;
+
     // First, create the auth user with 'technician' role
     // Note: signUp will create a basic pending approval, but we need to update it with additional details
     await signUp(
@@ -245,6 +247,10 @@ class AuthProvider with ChangeNotifier {
       fullName: name,
       role: UserRole.technician, // Explicitly set as technician
     );
+
+    if (profileImage != null) {
+      profilePictureUrl = await _uploadTechnicianProfileImage(profileImage);
+    }
     
     // Then update the pending approval with additional details if it exists
     // OR create it if signUp didn't create one (shouldn't happen, but just in case)
@@ -260,31 +266,43 @@ class AuthProvider with ChangeNotifier {
         
         if (existingApproval != null) {
           // Update existing approval with additional details
+          final updateData = <String, dynamic>{
+            'employee_id': employeeId,
+            'phone': phone,
+            'department': department,
+            'hire_date': hireDate,
+          };
+
+          if (profilePictureUrl != null) {
+            updateData['profile_picture_url'] = profilePictureUrl;
+          }
+
           await SupabaseService.client
               .from('pending_user_approvals')
-              .update({
-                'employee_id': employeeId,
-                'phone': phone,
-                'department': department,
-                'hire_date': hireDate,
-              })
+              .update(updateData)
               .eq('id', existingApproval['id']);
           
           debugPrint('✅ Updated existing pending approval with additional details: $email');
         } else {
           // Create new pending approval if it doesn't exist (shouldn't happen normally)
-        await SupabaseService.client
-            .from('pending_user_approvals')
-            .insert({
-              'user_id': _user!.id,
-              'email': email,
-              'full_name': name,
-              'employee_id': employeeId,
-              'phone': phone,
-              'department': department,
-              'hire_date': hireDate,
-              'status': 'pending',
-            });
+          final insertData = {
+            'user_id': _user!.id,
+            'email': email,
+            'full_name': name,
+            'employee_id': employeeId,
+            'phone': phone,
+            'department': department,
+            'hire_date': hireDate,
+            'status': 'pending',
+          };
+
+          if (profilePictureUrl != null) {
+            insertData['profile_picture_url'] = profilePictureUrl;
+          }
+
+          await SupabaseService.client
+              .from('pending_user_approvals')
+              .insert(insertData);
         
           debugPrint('✅ Created pending approval for technician: $email');
         }
@@ -309,6 +327,28 @@ class AuthProvider with ChangeNotifier {
         debugPrint('❌ Error updating pending approval: $e');
         // Don't throw error here, user is already created
       }
+    }
+  }
+
+  Future<String?> _uploadTechnicianProfileImage(File image) async {
+    try {
+      final technicianId = _user?.id ?? SupabaseService.client.auth.currentUser?.id;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = image.path.split('.').last;
+      final fileName = technicianId != null
+          ? 'technician_${technicianId}_$timestamp.$extension'
+          : 'technician_$timestamp.$extension';
+      final filePath = 'profile-pictures/$fileName';
+
+      await SupabaseService.client.storage.from('technician-images').upload(filePath, image);
+
+      final publicUrl = SupabaseService.client.storage
+          .from('technician-images')
+          .getPublicUrl(filePath);
+      return publicUrl;
+    } catch (e) {
+      debugPrint('❌ Error uploading technician profile image: $e');
+      return null;
     }
   }
 

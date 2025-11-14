@@ -17,6 +17,7 @@ class PendingApproval {
   final DateTime submittedAt;
   final DateTime? reviewedAt;
   final String? reviewedBy;
+  final String? profilePictureUrl;
 
   PendingApproval({
     required this.id,
@@ -33,6 +34,7 @@ class PendingApproval {
     required this.submittedAt,
     this.reviewedAt,
     this.reviewedBy,
+    this.profilePictureUrl,
   });
 
   factory PendingApproval.fromMap(Map<String, dynamic> map) {
@@ -51,6 +53,7 @@ class PendingApproval {
       submittedAt: DateTime.parse(map['submitted_at']),
       reviewedAt: map['reviewed_at'] != null ? DateTime.parse(map['reviewed_at']) : null,
       reviewedBy: map['reviewed_by'],
+      profilePictureUrl: map['profile_picture_url'],
     );
   }
 
@@ -70,6 +73,7 @@ class PendingApproval {
       'submitted_at': submittedAt.toIso8601String(),
       'reviewed_at': reviewedAt?.toIso8601String(),
       'reviewed_by': reviewedBy,
+      'profile_picture_url': profilePictureUrl,
     };
   }
 }
@@ -154,7 +158,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
     throw Exception('Failed after $maxRetries attempts');
   }
 
-  Future<bool> approveUser(String approvalId) async {
+  Future<bool> approveUser(PendingApproval approval) async {
     try {
       final currentUser = SupabaseService.client.auth.currentUser;
       if (currentUser == null) {
@@ -163,12 +167,23 @@ class PendingApprovalsProvider extends ChangeNotifier {
 
       await _retryOperation(
         () => SupabaseService.client.rpc('approve_pending_user', params: {
-          'approval_id': approvalId,
+          'approval_id': approval.id,
           'reviewer_id': currentUser.id,
         }),
         maxRetries: 3,
         operationName: 'approveUser',
       );
+
+      if (approval.profilePictureUrl != null && approval.profilePictureUrl!.isNotEmpty) {
+        try {
+          await SupabaseService.client
+              .from('technicians')
+              .update({'profile_picture_url': approval.profilePictureUrl})
+              .eq('id', approval.userId);
+        } catch (e) {
+          debugPrint('⚠️ Failed to sync technician profile picture after approval: $e');
+        }
+      }
 
       // Reload the approvals
       await loadPendingApprovals();

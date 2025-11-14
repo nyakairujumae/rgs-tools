@@ -5,6 +5,7 @@ import '../services/supabase_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
+import '../utils/responsive_helper.dart';
 
 class RequestNewToolScreen extends StatefulWidget {
   const RequestNewToolScreen({super.key});
@@ -42,67 +43,97 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        scrolledUnderElevation: 6,
+        foregroundColor: colorScheme.onSurface,
+        toolbarHeight: 80,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
         ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/technician',
+                (route) => false,
+              );
+            },
+          ),
+        ),
+        title: Text(
+          'Request New Tool',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Container(
+        color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
+            padding: ResponsiveHelper.getResponsivePadding(
+              context,
+              horizontal: 16,
+              vertical: 24,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveHelper.getMaxWidth(context),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back, color: Colors.black87),
-                        onPressed: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/technician',
-                            (route) => false,
-                          );
-                        },
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Request New Tool',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                            letterSpacing: -0.5,
-                          ),
+                      Text(
+                        'Fill in the details below to request a new tool',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                          color: Colors.grey[600],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Fill in the details below to request a new tool',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                   _SectionCard(
                     title: 'Tool Details',
                     child: Column(
                       children: [
-                        _textField(_nameCtrl, label: 'Tool name', hint: 'e.g., Cordless Drill', validator: _req),
+                        _textField(_nameCtrl,
+                            label: 'Tool name',
+                            hint: 'e.g., Cordless Drill',
+                            validator: _req),
                         const SizedBox(height: 16),
-                        _textField(_categoryCtrl, label: 'Category', hint: 'e.g., Electrical Tools', validator: _req),
+                        _textField(_categoryCtrl,
+                            label: 'Category',
+                            hint: 'e.g., Electrical Tools',
+                            validator: _req),
                         const SizedBox(height: 16),
                         Row(children: [
-                          Expanded(child: _textField(_brandCtrl, label: 'Brand', hint: 'e.g., Makita')),
+                          Expanded(
+                              child: _textField(_brandCtrl,
+                                  label: 'Brand', hint: 'e.g., Makita')),
                           const SizedBox(width: 12),
-                          Expanded(child: _textField(_modelCtrl, label: 'Model', hint: 'e.g., XFD131')),
+                          Expanded(
+                              child: _textField(_modelCtrl,
+                                  label: 'Model', hint: 'e.g., XFD131')),
                         ]),
                         const SizedBox(height: 16),
                         Row(children: [
@@ -113,9 +144,11 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                               hint: '1',
                               keyboardType: TextInputType.number,
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty) return 'Required';
+                                if (v == null || v.trim().isEmpty)
+                                  return 'Required';
                                 final n = int.tryParse(v);
-                                if (n == null || n <= 0) return 'Enter a valid number';
+                                if (n == null || n <= 0)
+                                  return 'Enter a valid number';
                                 return null;
                               },
                             ),
@@ -134,122 +167,159 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
-                  _SectionCard(
-                    title: 'Timing & Location',
-                    child: Column(
-                      children: [
-                        _dateField(
-                          label: 'Needed by',
-                          value: _neededBy,
-                          onPick: () async {
-                            final now = DateTime.now();
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: now.add(const Duration(days: 1)),
-                              firstDate: now,
-                              lastDate: now.add(const Duration(days: 365)),
-                            );
-                            if (picked != null) setState(() => _neededBy = picked);
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _textField(_siteCtrl, label: 'Site / Location', hint: 'Job site or office pickup'),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _SectionCard(
-                    title: 'Justification',
-                    child: Column(
-                      children: [
-                        _multiline(_reasonCtrl, label: 'Why is this needed?', hint: 'Describe reason, job, safety/efficiency impact', validator: _req),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.attachment, color: Colors.blue.shade600, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Attach photo or spec (optional)',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.blue.shade600,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                ),
-                                child: const Text('Attach'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Submit Button
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade600, Colors.green.shade700],
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _isSubmitting ? null : _submit,
-                        borderRadius: BorderRadius.circular(28),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          alignment: Alignment.center,
-                          child: _isSubmitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                                )
-                              : const Text(
-                                  'Submit Request',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                      _SectionCard(
+                        title: 'Timing & Location',
+                        child: Column(
+                          children: [
+                            _dateField(
+                              label: 'Needed by',
+                              value: _neededBy,
+                              onPick: () async {
+                                final now = DateTime.now();
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: now.add(const Duration(days: 1)),
+                                  firstDate: now,
+                                  lastDate: now.add(const Duration(days: 365)),
+                                );
+                                if (picked != null)
+                                  setState(() => _neededBy = picked);
+                              },
+                            ),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            _textField(_siteCtrl,
+                                label: 'Site / Location',
+                                hint: 'Job site or office pickup'),
+                          ],
                         ),
                       ),
-                    ),
+
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+                      _SectionCard(
+                        title: 'Justification',
+                        child: Column(
+                          children: [
+                            _multiline(_reasonCtrl,
+                                label: 'Why is this needed?',
+                                hint:
+                                    'Describe reason, job, safety/efficiency impact',
+                                validator: _req),
+                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            Container(
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                all: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                                ),
+                                border: Border.all(
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.attachment,
+                                    color: AppTheme.primaryColor,
+                                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                  ),
+                                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                                  Expanded(
+                                    child: Text(
+                                      'Attach photo or spec (optional)',
+                                      style: TextStyle(
+                                        color: Colors.grey[700],
+                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {},
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppTheme.primaryColor,
+                                      padding: ResponsiveHelper.getResponsivePadding(
+                                        context,
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Attach',
+                                      style: TextStyle(
+                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+
+                      // Submit Button
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isSubmitting ? null : _submit,
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                            ),
+                            child: Container(
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                vertical: 16,
+                              ),
+                              alignment: Alignment.center,
+                              child: _isSubmitting
+                                  ? SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Submit Request',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           ),
@@ -258,7 +328,8 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     );
   }
 
-  String? _req(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;
+  String? _req(String? v) =>
+      (v == null || v.trim().isEmpty) ? 'Required' : null;
 
   Widget _textField(
     TextEditingController ctrl, {
@@ -267,41 +338,83 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     String? Function(String?)? validator,
     TextInputType? keyboardType,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: TextFormField(
         controller: ctrl,
-        style: TextStyle(color: Colors.black87, fontSize: 16),
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+        ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
         keyboardType: keyboardType,
         validator: validator,
@@ -315,41 +428,83 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     String? hint,
     String? Function(String?)? validator,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: TextFormField(
         controller: ctrl,
-        style: TextStyle(color: Colors.black87, fontSize: 16),
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+        ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
+          hintStyle: TextStyle(
+            color: Colors.grey[400],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
         minLines: 3,
         maxLines: 6,
@@ -364,100 +519,171 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 16,
+            vertical: 16,
+          ),
           filled: true,
-          fillColor: Colors.transparent,
+          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: value,
             isExpanded: true,
-            style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
-            dropdownColor: AppTheme.cardSurfaceColor(context),
-            borderRadius: BorderRadius.circular(20),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+              fontWeight: FontWeight.w500,
+            ),
+            dropdownColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+            ),
             menuMaxHeight: 300,
             onChanged: onChanged,
-            items: [for (final i in items) DropdownMenuItem(value: i, child: Text(i))],
+            items: [
+              for (final i in items) DropdownMenuItem(value: i, child: Text(i))
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _dateField({required String label, required DateTime? value, required VoidCallback onPick}) {
-    final text = value == null ? 'Select date' : '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+  Widget _dateField(
+      {required String label,
+      required DateTime? value,
+      required VoidCallback onPick}) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final text = value == null
+        ? 'Select date'
+        : '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: InkWell(
         onTap: onPick,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: TextStyle(color: Colors.grey[700], fontSize: 15),
+            labelStyle: TextStyle(
+              color: Colors.grey[600],
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+              ),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+              ),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide(color: Colors.blue, width: 2),
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+              ),
+              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            contentPadding: ResponsiveHelper.getResponsivePadding(
+              context,
+              horizontal: 16,
+              vertical: 16,
+            ),
             filled: true,
-            fillColor: Colors.transparent,
+            fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
           ),
           child: Row(
             children: [
-              Icon(Icons.event, color: Colors.grey[600], size: 20),
-              const SizedBox(width: 12),
+              Icon(
+                Icons.calendar_today,
+                color: value == null
+                    ? Colors.grey[400]
+                    : AppTheme.primaryColor,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               Text(
                 text,
                 style: TextStyle(
-                  color: value == null ? Colors.grey[500] : Colors.black87,
-                  fontSize: 16,
+                  color: value == null
+                      ? Colors.grey[400]
+                      : theme.colorScheme.onSurface,
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -499,11 +725,13 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
       try {
         await adminNotificationProvider.createNotification(
-          technicianName: authProvider.userFullName ?? (user?.email ?? 'Technician'),
+          technicianName:
+              authProvider.userFullName ?? (user?.email ?? 'Technician'),
           technicianEmail: user?.email ?? 'unknown@technician',
           type: NotificationType.toolRequest,
           title: 'Tool Request: ${_nameCtrl.text.trim()}',
-          message: '${authProvider.userFullName ?? 'A technician'} requested ${_quantityCtrl.text.trim()} x ${_nameCtrl.text.trim()}',
+          message:
+              '${authProvider.userFullName ?? 'A technician'} requested ${_quantityCtrl.text.trim()} x ${_nameCtrl.text.trim()}',
           data: {
             'tool_name': _nameCtrl.text.trim(),
             'quantity': _quantityCtrl.text.trim(),
@@ -565,22 +793,31 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        all: 20,
+      ),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(28),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -590,18 +827,16 @@ class _SectionCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: Colors.black87,
-              letterSpacing: -0.5,
+              fontWeight: FontWeight.w600,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+              color: theme.colorScheme.onSurface,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
           child,
         ],
       ),
     );
   }
 }
-
-

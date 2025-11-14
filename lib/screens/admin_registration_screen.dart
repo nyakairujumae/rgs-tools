@@ -11,7 +11,8 @@ class AdminRegistrationScreen extends StatefulWidget {
   const AdminRegistrationScreen({super.key});
 
   @override
-  State<AdminRegistrationScreen> createState() => _AdminRegistrationScreenState();
+  State<AdminRegistrationScreen> createState() =>
+      _AdminRegistrationScreenState();
 }
 
 class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
@@ -21,7 +22,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _positionController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -40,15 +41,24 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+    const cardColor = Color(0xFFF9FAFB);
+    final cardShadow = BoxShadow(
+      color: Colors.black.withOpacity(0.1),
+      blurRadius: 22,
+      offset: const Offset(0, 10),
+    );
+    final hintStyle = TextStyle(
+      color: Colors.grey.shade500,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+    );
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
+        color: theme.scaffoldBackgroundColor,
         child: Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Text(
               'Admin Registration',
@@ -103,27 +113,27 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 32),
-                
+
                     // Name Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [cardShadow],
                       ),
                       child: TextFormField(
                         controller: _nameController,
                         decoration: InputDecoration(
                           labelText: 'Full Name',
-                          prefixIcon: Icon(Icons.person, color: Colors.grey[600]),
+                          filled: true,
+                          fillColor: cardColor,
+                          prefixIcon:
+                              Icon(Icons.person, color: Colors.grey[600]),
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'Enter full name',
+                          hintStyle: hintStyle,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -134,9 +144,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue, width: 2),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -146,28 +158,28 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Email Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [cardShadow],
                       ),
                       child: TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: 'Email Address',
-                          prefixIcon: Icon(Icons.email, color: Colors.grey[600]),
+                          filled: true,
+                          fillColor: cardColor,
+                          prefixIcon:
+                              Icon(Icons.email, color: Colors.grey[600]),
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'Enter company email',
+                          hintStyle: hintStyle,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -178,43 +190,44 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue, width: 2),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email address';
                           }
-                          if (!value.contains('@royalgulf.ae') && !value.contains('@mekar.ae')) {
+                          if (!value.contains('@royalgulf.ae') &&
+                              !value.contains('@mekar.ae')) {
                             return 'Invalid email domain for admin registration';
                           }
                           return null;
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Position Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [cardShadow],
                       ),
                       child: TextFormField(
                         controller: _positionController,
                         decoration: InputDecoration(
                           labelText: 'Position/Title',
+                          filled: true,
+                          fillColor: cardColor,
                           prefixIcon: Icon(Icons.work, color: Colors.grey[600]),
-                          helperText: 'e.g., Operations Manager, Director',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'e.g., Operations Manager, Director',
+                          hintStyle: hintStyle,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -225,9 +238,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue, width: 2),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -237,31 +252,29 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                
+
                     // Password Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [cardShadow],
                       ),
                       child: TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
+                          filled: true,
+                          fillColor: cardColor,
                           prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              _obscurePassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                               color: Colors.grey[600],
                             ),
                             onPressed: () {
@@ -270,7 +283,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                               });
                             },
                           ),
-                          helperText: 'Minimum 6 characters',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'Minimum 6 characters',
+                          hintStyle: hintStyle,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -281,9 +296,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue, width: 2),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -296,39 +313,42 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Confirm Password Field
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [cardShadow],
                       ),
                       child: TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         decoration: InputDecoration(
                           labelText: 'Confirm Password',
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600]),
+                          filled: true,
+                          fillColor: cardColor,
+                          prefixIcon:
+                              Icon(Icons.lock_outline, color: Colors.grey[600]),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                              _obscureConfirmPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                               color: Colors.grey[600],
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          hintText: 'Re-enter password',
+                          hintStyle: hintStyle,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -339,9 +359,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue, width: 2),
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding:
+                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -354,9 +376,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         },
                       ),
                     ),
-                
+
                     const SizedBox(height: 32),
-                    
+
                     // Register Button
                     Container(
                       height: 56,
@@ -380,7 +402,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           borderRadius: BorderRadius.circular(28),
                           child: Center(
                             child: _isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white)
                                 : const Text(
                                     'Register as Admin',
                                     style: TextStyle(
@@ -394,9 +417,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Login Link
                     InkWell(
                       onTap: () {
@@ -449,7 +472,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
     try {
       final authProvider = context.read<AuthProvider>();
-      
+
       await authProvider.registerAdmin(
         _nameController.text.trim(),
         _emailController.text.trim(),
@@ -462,7 +485,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           context,
           '🎉 Admin account created successfully! Welcome to RGS HVAC Services.',
         );
-        
+
         // Navigate to admin home screen
         Navigator.pushAndRemoveUntil(
           context,

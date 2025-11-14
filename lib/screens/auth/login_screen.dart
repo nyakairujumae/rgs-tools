@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/common/rgs_logo.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
+import '../../utils/responsive_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,114 +29,115 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-        child: Padding(
-              padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 80.0, bottom: 16.0),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 24,
+            vertical: 40,
+          ),
           child: Column(
             children: [
-                  // Branding Section
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.20,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // RGS Branding - Larger and more prominent
-                    Column(
-                      children: [
-                        Text(
-                          'RGS',
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                                color: Colors.grey[800],
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'HVAC SERVICES',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                            const SizedBox(height: 16),
-                        Text(
-                          'Not your ordinary HVAC company.',
-                          style: TextStyle(
-                                fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+              // Branding Section
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'RGS',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 48),
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey[900],
+                      letterSpacing: 1.0,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                  Text(
+                    'HVAC SERVICES',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                  Text(
+                    'Not your ordinary HVAC company.',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[600],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-                  
-                  const SizedBox(height: 32),
+              
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
               
               // Login Form Section
-                  Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Login Form
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
                           
                           // Email Field
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextFormField(
+                          TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(color: Colors.grey[800]),
+                            style: TextStyle(
+                              color: Colors.grey[900],
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Email',
-                                labelStyle: TextStyle(color: Colors.grey[600]),
-                                prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[600]),
+                              labelStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: Colors.grey[600],
+                                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
                               border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: AppTheme.secondaryColor,
+                                  width: 2,
+                                ),
                               ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              contentPadding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -150,36 +151,34 @@ class _LoginScreenState extends State<LoginScreen> {
                               }
                               return null;
                             },
-                            ),
                           ),
                           
-                          SizedBox(height: 16),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                           
                           // Password Field
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.cardGradientFor(context),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: TextFormField(
+                          TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                              style: TextStyle(color: Colors.grey[800]),
+                            style: TextStyle(
+                              color: Colors.grey[900],
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Password',
-                                labelStyle: TextStyle(color: Colors.grey[600]),
-                                prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600]),
+                              labelStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Colors.grey[600],
+                                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                    color: Colors.grey[600],
+                                  color: Colors.grey[600],
+                                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -187,19 +186,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                   });
                                 },
                               ),
+                              filled: true,
+                              fillColor: Colors.white,
                               border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                ),
+                                borderSide: BorderSide(
+                                  color: AppTheme.secondaryColor,
+                                  width: 2,
+                                ),
                               ),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              contentPadding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -210,54 +230,45 @@ class _LoginScreenState extends State<LoginScreen> {
                               }
                               return null;
                             },
-                            ),
                           ),
                           
-                          SizedBox(height: 24),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                           
                           // Login Button
                           Consumer<AuthProvider>(
                             builder: (context, authProvider, child) {
-                              return Container(
+                              return SizedBox(
                                 width: double.infinity,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Colors.green.shade600, Colors.green.shade700],
-                                  ),
-                                  borderRadius: BorderRadius.circular(28),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.green.withOpacity(0.3),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
+                                height: ResponsiveHelper.getResponsiveListItemHeight(context, 56),
+                                child: ElevatedButton(
+                                  onPressed: authProvider.isLoading ? null : _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.secondaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: authProvider.isLoading ? null : _handleLogin,
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: Center(
+                                    elevation: 0,
+                                    padding: ResponsiveHelper.getResponsiveButtonPadding(context),
+                                  ),
                                   child: authProvider.isLoading
                                       ? SizedBox(
-                                          height: 20,
-                                          width: 20,
+                                          height: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                          width: ResponsiveHelper.getResponsiveIconSize(context, 20),
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
                                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                           ),
                                         )
-                                      : const Text(
+                                      : Text(
                                           'Sign In',
                                           style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
+                                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
                                           ),
                                         ),
                                 ),
@@ -265,53 +276,53 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           
-                          SizedBox(height: 16),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                           
                           // Forgot Password
-                          InkWell(
-                            onTap: _handleForgotPassword,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: Colors.green[600],
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                          TextButton(
+                            onPressed: _handleForgotPassword,
+                            style: TextButton.styleFrom(
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: AppTheme.secondaryColor,
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
                           
-                          SizedBox(height: 24),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                           
                           // Back to Role Selection
-                          InkWell(
-                            onTap: () {
-                                Navigator.pop(context);
-                              },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Text(
-                                '← Back to Role Selection',
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            style: TextButton.styleFrom(
+                              padding: ResponsiveHelper.getResponsivePadding(
+                                context,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: Text(
+                              '← Back to Role Selection',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                          
-                          SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
-              ],
               ),
-          ),
+            ],
           ),
         ),
       ),

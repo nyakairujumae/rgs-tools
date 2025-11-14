@@ -9,6 +9,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
+import '../utils/responsive_helper.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
@@ -47,10 +48,59 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        scrolledUnderElevation: 6,
+        foregroundColor: colorScheme.onSurface,
+        toolbarHeight: 80,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Check In Tool',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            Text(
+              'Scan or search for tools you currently hold, review their condition, and return them to the inventory.',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                color: Colors.grey[600],
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
+      ),
       body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.backgroundGradientFor(context)),
+        color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           child: Consumer3<SupabaseToolProvider, AuthProvider, SupabaseTechnicianProvider>(
             builder: (context, toolProvider, authProvider, technicianProvider, child) {
@@ -67,26 +117,38 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
               return Column(
                 children: [
-                  _buildHeader(context),
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: () async {
                         await toolProvider.loadTools();
                       },
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        children: [
-                          _buildSearchCard(context),
-                          const SizedBox(height: 24),
-                          _buildToolList(context, filteredTools, technicianProvider),
-                          if (_selectedTool != null) ...[
-                            const SizedBox(height: 24),
-                            _buildSelectedToolCard(context, technicianProvider),
-                            const SizedBox(height: 16),
-                            _buildCheckinForm(context),
-                          ],
-                          const SizedBox(height: 120),
-                        ],
+                      child: SingleChildScrollView(
+                        padding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 16,
+                          vertical: 24,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: ResponsiveHelper.getMaxWidth(context),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildSearchCard(context),
+                                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                                _buildToolList(context, filteredTools, technicianProvider),
+                                if (_selectedTool != null) ...[
+                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                                  _buildSelectedToolCard(context, technicianProvider),
+                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                                  _buildCheckinForm(context),
+                                ],
+                                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 100)),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -100,109 +162,131 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Check In Tool',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 26,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Scan or search for tools you currently hold, review their condition, and return them to the inventory.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[700],
-                        height: 1.4,
-                      ),
-                ),
-            ],
-          ),
-        ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSearchCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        all: 16,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search by tool name, brand, or serial number',
-                    prefixIcon: Icon(Icons.search),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                    ),
+                    border: Border.all(
+                      color: isDarkMode 
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.trim();
-                    });
-                  },
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search by tool name, brand, or...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[600],
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                        ),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                        ),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                        ),
+                        borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                      ),
+                      contentPadding: ResponsiveHelper.getResponsivePadding(
+                        context,
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      filled: true,
+                      fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.trim();
+                      });
+                    },
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: _openScanner,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade50,
-                  foregroundColor: Colors.blue.shade600,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                  ),
                 ),
-                child: const Icon(Icons.qr_code_scanner, size: 20),
+                child: IconButton(
+                  onPressed: _openScanner,
+                  icon: Icon(
+                    Icons.qr_code_scanner,
+                    color: AppTheme.primaryColor,
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
           Text(
             'Only tools currently assigned to you are listed below. Use the scanner to speed up the search.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+            ),
           ),
         ],
       ),
@@ -210,32 +294,58 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   }
 
   Widget _buildToolList(BuildContext context, List<Tool> tools, SupabaseTechnicianProvider technicianProvider) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     if (tools.isEmpty) {
-    return Container(
-        padding: const EdgeInsets.all(24),
+      return Container(
+        padding: ResponsiveHelper.getResponsivePadding(
+          context,
+          all: 24,
+        ),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(24),
+          color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+          ),
+          border: Border.all(
+            color: isDarkMode 
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.grey.withValues(alpha: 0.15),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 16,
-              offset: const Offset(0, 6),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-      child: Column(
-        children: [
-            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey[500]),
-            const SizedBox(height: 12),
+        child: Column(
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: ResponsiveHelper.getResponsiveIconSize(context, 48),
+              color: Colors.grey[500],
+            ),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
             Text(
               'No tools to check in',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
             Text(
               'You currently do not have any tools assigned to you. Badge a shared tool or request one from the admin team.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700], height: 1.4),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                height: 1.4,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -248,12 +358,13 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
       children: [
         Text(
           'Tools Assigned to You',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: Colors.grey[900],
-              ),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            color: theme.colorScheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
         ...tools.map((tool) {
           final bool isSelected = _selectedTool?.id == tool.id;
           final technicianName = technicianProvider.getTechnicianNameById(tool.assignedTo) ?? 'You';
@@ -268,35 +379,51 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               });
             },
             child: Container(
-              margin: const EdgeInsets.only(bottom: 14),
+              margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               decoration: BoxDecoration(
-                gradient: AppTheme.cardGradientFor(context),
-                borderRadius: BorderRadius.circular(24),
-                border: isSelected ? Border.all(color: AppTheme.primaryColor, width: 1.8) : null,
+                color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                borderRadius: BorderRadius.circular(
+                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                ),
+                border: isSelected
+                    ? Border.all(color: AppTheme.primaryColor, width: 2)
+                    : Border.all(
+                        color: isDarkMode 
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.grey.withValues(alpha: 0.15),
+                        width: 1,
+                      ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(18),
+              padding: ResponsiveHelper.getResponsivePadding(
+                context,
+                all: 16,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 54,
-                    height: 54,
+                    width: ResponsiveHelper.getResponsiveIconSize(context, 54),
+                    height: ResponsiveHelper.getResponsiveIconSize(context, 54),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade100, Colors.blue.shade50],
+                      color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.getResponsiveBorderRadius(context, 16),
                       ),
-                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.build, color: Colors.blue),
+                    child: Icon(
+                      Icons.build,
+                      color: AppTheme.primaryColor,
+                      size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                    ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,46 +433,65 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                             Expanded(
                               child: Text(
                                 tool.name,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                             ),
                             StatusChip(status: tool.status),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                         Text(
                           '${tool.category}${tool.brand != null && tool.brand!.isNotEmpty ? ' • ${tool.brand}' : ''}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                          ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                         Row(
                           children: [
-                            Icon(Icons.badge_outlined, size: 14, color: Colors.grey[600]),
-                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.badge_outlined,
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 14),
+                              color: Colors.grey[600],
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                             Text(
                               tool.serialNumber ?? 'No serial number',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                         Row(
                           children: [
-                            Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
-                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.person_outline,
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 14),
+                              color: Colors.grey[600],
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                             Text(
                               'Assigned to: $technicianName',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
-          ),
-        ],
-      ),
+                  ),
+                ],
+              ),
             ),
           );
         }),
@@ -354,48 +500,77 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   }
 
   Widget _buildSelectedToolCard(BuildContext context, SupabaseTechnicianProvider technicianProvider) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final tool = _selectedTool!;
     final technicianName = technicianProvider.getTechnicianNameById(tool.assignedTo) ?? 'You';
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-              Icon(Icons.assignment_turned_in_outlined, color: Colors.green.shade600),
-              const SizedBox(width: 8),
-                  Text(
-                'Selected Tool',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-          const SizedBox(height: 16),
-          _buildDetailRow('Name', tool.name),
-          _buildDetailRow('Category', tool.category),
-          if (tool.brand != null && tool.brand!.isNotEmpty)
-            _buildDetailRow('Brand', tool.brand!),
-          if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
-            _buildDetailRow('Serial Number', tool.serialNumber!),
-          _buildDetailRow('Currently Assigned', technicianName),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        all: 20,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             children: [
-              const SizedBox(width: 110, child: Text('Status', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))),
+              Icon(
+                Icons.assignment_turned_in_outlined,
+                color: Colors.green.shade600,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+              Text(
+                'Selected Tool',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+          _buildDetailRow(context, 'Name', tool.name),
+          _buildDetailRow(context, 'Category', tool.category),
+          if (tool.brand != null && tool.brand!.isNotEmpty)
+            _buildDetailRow(context, 'Brand', tool.brand!),
+          if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
+            _buildDetailRow(context, 'Serial Number', tool.serialNumber!),
+          _buildDetailRow(context, 'Currently Assigned', technicianName),
+          Row(
+            children: [
+              SizedBox(
+                width: 110,
+                child: Text(
+                  'Status',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
+              ),
               StatusChip(status: tool.status),
             ],
           ),
@@ -404,9 +579,10 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 10)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -414,16 +590,21 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.grey,
+              style: TextStyle(
+                color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -432,97 +613,208 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   }
 
   Widget _buildCheckinForm(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(24),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: isDarkMode 
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.15),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        all: 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.assignment, color: Colors.blue.shade600),
-              const SizedBox(width: 8),
-          Text(
+              Icon(
+                Icons.assignment,
+                color: AppTheme.primaryColor,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+              Text(
                 'Check-In Details',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
           GestureDetector(
             onTap: _selectCheckinDate,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.blue.shade100),
+                color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                borderRadius: BorderRadius.circular(
+                  ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                ),
+                border: Border.all(
+                  color: isDarkMode 
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.grey.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: ResponsiveHelper.getResponsivePadding(
+                context,
+                horizontal: 16,
+                vertical: 14,
+              ),
               child: Row(
                 children: [
-                  Icon(Icons.event_available, color: Colors.blue.shade600),
-                  const SizedBox(width: 12),
-                  Text(
-                _checkinDate != null
-                    ? '${_checkinDate!.day}/${_checkinDate!.month}/${_checkinDate!.year}'
-                        : 'Select check-in date',
-                style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: _checkinDate != null ? Colors.black : Colors.grey[500],
+                  Icon(
+                    Icons.calendar_today,
+                    color: _checkinDate != null
+                        ? AppTheme.primaryColor
+                        : Colors.grey[400],
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                  ),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                  Expanded(
+                    child: Text(
+                      _checkinDate != null
+                          ? '${_checkinDate!.day}/${_checkinDate!.month}/${_checkinDate!.year}'
+                          : 'Select check-in date',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: _checkinDate != null
+                            ? theme.colorScheme.onSurface
+                            : Colors.grey[400],
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
                     ),
-                ),
-                  const Spacer(),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.grey[500]),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.grey[500],
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                  ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
           Text(
             'Returned Condition',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+              color: theme.colorScheme.onSurface,
+            ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
+            runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
             children: _conditions.map((condition) {
               final bool isSelected = _returnCondition == condition;
-              final colors = isSelected
-                  ? [Colors.green.shade400, Colors.green.shade600]
-                  : [Colors.grey.shade200, Colors.grey.shade200];
               return ChoiceChip(
-                label: Text(condition),
+                label: Text(
+                  condition,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
                 selected: isSelected,
                 onSelected: (_) => setState(() => _returnCondition = condition),
-                backgroundColor: colors.first,
-                selectedColor: colors.last,
+                backgroundColor: isSelected
+                    ? Colors.green.shade600
+                    : (isDarkMode ? theme.colorScheme.surface : Colors.grey.shade200),
+                selectedColor: Colors.green.shade600,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[800],
+                  color: isSelected ? Colors.white : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? Colors.green.shade600
+                      : (isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey.shade300),
                 ),
               );
             }).toList(),
           ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Notes (optional)',
-              hintText: 'Add any issues, damage, or additional information...',
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
+          Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+              ),
+              border: Border.all(
+                color: isDarkMode 
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: TextField(
+              controller: _notesController,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+              ),
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Notes (optional)',
+                labelStyle: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                ),
+                hintText: 'Add any issues, damage, or additional information...',
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                  ),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                  ),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                  ),
+                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                ),
+                contentPadding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                filled: true,
+                fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+              ),
             ),
           ),
         ],
@@ -531,15 +823,21 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
   }
 
   Widget _buildBottomActions(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final canSubmit = _selectedTool != null && _checkinDate != null && !_isSaving;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: ResponsiveHelper.getResponsivePadding(
+        context,
+        horizontal: 16,
+        vertical: 20,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -6),
           ),
@@ -549,18 +847,18 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DecoratedBox(
+          Container(
             decoration: BoxDecoration(
-              gradient: canSubmit
-                  ? const LinearGradient(colors: [Color(0xFF22C55E), Color(0xFF16A34A)])
-                  : const LinearGradient(colors: [Colors.grey, Colors.grey]),
-              borderRadius: BorderRadius.circular(20),
+              color: canSubmit ? Colors.green.shade600 : Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+              ),
               boxShadow: [
                 if (canSubmit)
                   BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
+                    color: Colors.green.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
               ],
             ),
@@ -569,36 +867,55 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                  ),
+                ),
               ),
               child: _isSaving
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.assignment_turned_in, color: Colors.white),
-                        SizedBox(width: 10),
+                      children: [
+                        Icon(
+                          Icons.assignment_turned_in,
+                          color: Colors.white,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                        ),
+                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 10)),
                         Text(
                           'Check In Tool',
-                      style: TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                           ),
-                      ),
+                        ),
                       ],
                     ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
           TextButton(
-              onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+              ),
+            ),
           ),
         ],
       ),
@@ -685,13 +1002,13 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
       await context.read<SupabaseToolProvider>().loadTools();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_selectedTool!.name} checked in successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_selectedTool!.name} checked in successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
     } catch (e) {
       handleError(e);
     } finally {

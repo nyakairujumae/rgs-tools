@@ -10,6 +10,8 @@ import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../services/report_service.dart';
 import 'report_detail_screen.dart';
+import '../utils/responsive_helper.dart';
+import '../utils/currency_formatter.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -60,7 +62,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     },
     ReportType.financialSummary: {
       'name': 'Financial Summary',
-      'description': 'Financial overview: purchase costs, current values, depreciation',
+      'description': 'Financial overview: purchase costs and total investment',
       'icon': Icons.account_balance,
     },
     ReportType.toolHistory: {
@@ -72,74 +74,122 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Reports & Analytics',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: Column(
+            children: [
+              // Header with back button and title
+              Padding(
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    Expanded(
+                      child: Text(
+                        'Reports & Analytics',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                    if (_isExporting)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.download_rounded),
+                        onPressed: _exportReport,
+                        tooltip: 'Export Report',
+                      ),
+                  ],
+                ),
+              ),
+              Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
+                builder: (context, toolProvider, technicianProvider, child) {
+                  if (toolProvider.isLoading || technicianProvider.isLoading) {
+                    return const Expanded(
+                      child: Center(
+                        child: LoadingWidget(message: 'Loading data...'),
+                      ),
+                    );
+                  }
+
+                  final tools = toolProvider.tools;
+                  final technicians = technicianProvider.technicians;
+                  
+                  return Expanded(
+                    child: Column(
+                      children: [
+                        // Report Configuration Section
+                        _buildConfigurationSection(context),
+                        
+                        // Data Preview Section
+                        Expanded(
+                          child: _buildDataPreviewSection(
+                            context,
+                            tools,
+                            technicians,
+                            toolProvider,
+                            technicianProvider,
+                          ),
+                        ),
+
+                        // Export Button Bar
+                        _buildExportButton(context),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-        elevation: 0,
-        actions: [
-          if (_isExporting)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
-            )
-          else
-          IconButton(
-              icon: const Icon(Icons.download_rounded),
-            onPressed: _exportReport,
-              tooltip: 'Export Report',
-          ),
-        ],
-      ),
-      body: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
-        builder: (context, toolProvider, technicianProvider, child) {
-          if (toolProvider.isLoading || technicianProvider.isLoading) {
-            return const Center(
-              child: LoadingWidget(message: 'Loading data...'),
-            );
-          }
-
-          final tools = toolProvider.tools;
-          final technicians = technicianProvider.technicians;
-          
-          return Column(
-              children: [
-              // Report Configuration Section
-              _buildConfigurationSection(context),
-              
-              // Data Preview Section
-              Expanded(
-                child: _buildDataPreviewSection(
-                  context,
-                  tools,
-                  technicians,
-                  toolProvider,
-                  technicianProvider,
-                ),
-              ),
-
-              // Export Button Bar
-              _buildExportButton(context),
-            ],
-          );
-        },
       ),
     );
   }
@@ -151,38 +201,54 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildConfigurationSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           // Search Bar
           Container(
+            height: 52,
             decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              color: AppTheme.cardSurfaceColor(context),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppTheme.subtleBorder,
+                width: 1.1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search reports...',
-                hintStyle: TextStyle(color: Colors.grey[500]),
-                prefixIcon: Icon(Icons.search, color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400]),
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withOpacity(0.45),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: theme.colorScheme.onSurface.withOpacity(0.45),
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear, color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400], size: 20),
+                        icon: Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: theme.colorScheme.onSurface.withOpacity(0.45),
+                        ),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
@@ -191,6 +257,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       )
                     : null,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                    width: 2,
+                  ),
+                ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               onChanged: (value) {
@@ -201,7 +275,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Filter Pills Row
           Row(
@@ -235,18 +309,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
   
   Widget _buildFilterPill(BuildContext context, {required String label, required String value, required VoidCallback onTap}) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
+        ),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(20),
+          color: AppTheme.cardSurfaceColor(context),
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
           border: Border.all(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            width: 1.5,
+            color: AppTheme.subtleBorder,
+            width: 1.1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -254,23 +339,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                   Text(
                     value,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
+                      color: theme.colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -279,9 +365,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
             Icon(
-              Icons.arrow_drop_down,
-              color: Theme.of(context).primaryColor,
-              size: 20,
+              Icons.keyboard_arrow_down,
+              color: theme.colorScheme.onSurface,
+              size: ResponsiveHelper.getResponsiveIconSize(context, 20),
             ),
           ],
         ),
@@ -688,43 +774,62 @@ class _ReportsScreenState extends State<ReportsScreen> {
     SupabaseToolProvider toolProvider,
     SupabaseTechnicianProvider technicianProvider,
   ) {
+    final theme = Theme.of(context);
+    final reportData = _reportTypes[_selectedReportType] as Map<String, dynamic>?;
     return Column(
-          children: [
-        // Header with toggle
+      children: [
+        // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
+            color: Colors.white,
             border: Border(
-              bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              bottom: BorderSide(color: AppTheme.subtleBorder.withValues(alpha: 0.5)),
             ),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  Icons.table_chart,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.table_chart,
+                      color: AppTheme.secondaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Report Data Preview',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Report Data Preview',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.3,
-              ),
-            ),
-          ],
+              if (reportData != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${reportData['name']} - ${reportData['description']}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
         
         // Preview Content
         Expanded(
@@ -921,8 +1026,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Expanded(
                     flex: 2,
                     child: Text(
-                      tool.currentValue != null
-                          ? '\$${tool.currentValue!.toStringAsFixed(0)}'
+                      tool.purchasePrice != null
+                          ? CurrencyFormatter.formatCurrencyWhole(tool.purchasePrice!)
                           : 'N/A',
                       style: TextStyle(
                         fontSize: 13,
@@ -1253,11 +1358,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildFinancialDetailed(List tools) {
     final totalPurchasePrice = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
-    final totalCurrentValue = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0));
-    final depreciation = totalPurchasePrice - totalCurrentValue;
-    final depreciationPercentage = totalPurchasePrice > 0
-        ? (depreciation / totalPurchasePrice * 100)
-        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1300,27 +1400,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             _buildFinancialCard(
               'Total Purchase Value',
-              '\$${totalPurchasePrice.toStringAsFixed(2)}',
+              CurrencyFormatter.formatCurrency(totalPurchasePrice),
               Icons.shopping_cart,
               Colors.blue,
-            ),
-            _buildFinancialCard(
-              'Current Total Value',
-              '\$${totalCurrentValue.toStringAsFixed(2)}',
-              Icons.attach_money,
-              Colors.green,
-            ),
-            _buildFinancialCard(
-              'Total Depreciation',
-              '\$${depreciation.toStringAsFixed(2)}',
-              Icons.trending_down,
-              Colors.red,
-            ),
-            _buildFinancialCard(
-              'Depreciation %',
-              '${depreciationPercentage.toStringAsFixed(2)}%',
-              Icons.percent,
-              Colors.orange,
             ),
           ],
         ),
@@ -1347,16 +1429,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
               const SizedBox(height: 16),
               _buildFinancialRow('Total Purchase Value', totalPurchasePrice),
-              const Divider(),
-              _buildFinancialRow('Total Current Value', totalCurrentValue),
-              const Divider(),
-              _buildFinancialRow('Total Depreciation', depreciation),
-              const Divider(height: 24),
-              _buildFinancialRow(
-                'Depreciation Percentage',
-                depreciationPercentage,
-                isPercentage: true,
-              ),
             ],
           ),
         ),
@@ -1436,7 +1508,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Text(
             isPercentage
                 ? '${value.toStringAsFixed(2)}%'
-                : '\$${value.toStringAsFixed(2)}',
+                : CurrencyFormatter.formatCurrency(value),
                           style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -1667,7 +1739,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     SupabaseTechnicianProvider technicianProvider,
   ) {
     final assignedTools = tools.where((t) => t.assignedTo != null && t.assignedTo!.isNotEmpty).length;
-    final totalValue = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0));
+    final totalValue = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1724,7 +1796,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 12),
         _buildComprehensiveSection(
           'Financial Summary',
-          'Financial analysis including total value of \$${totalValue.toStringAsFixed(0)}',
+          'Financial analysis including total value of ${CurrencyFormatter.formatCurrencyWhole(totalValue)}',
           Icons.account_balance,
           Colors.purple,
           ReportType.financialSummary,
@@ -1868,17 +1940,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 20,
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
             fontWeight: FontWeight.bold,
             letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
             color: Colors.grey[600],
           ),
         ),
@@ -1898,27 +1970,37 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildMiniStat(String label, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: ResponsiveHelper.getResponsivePadding(context, all: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-        child: Column(
-          children: [
-            Text(
+      child: Column(
+        children: [
+          Text(
             value,
-              style: TextStyle(
-              fontSize: 20,
-                fontWeight: FontWeight.bold,
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+              fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
@@ -1930,12 +2012,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildExportButton(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -1944,34 +2026,52 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _isExporting ? null : _exportReport,
-            icon: _isExporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.file_download_rounded),
-            label: Text(
-              _isExporting ? 'Exporting...' : 'Export to Excel',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _isExporting ? null : _exportReport,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isExporting)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else
+                        const Icon(Icons.file_download_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isExporting ? 'Exporting...' : 'Export to Excel',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              elevation: 2,
             ),
           ),
         ),

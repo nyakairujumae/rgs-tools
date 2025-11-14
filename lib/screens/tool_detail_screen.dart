@@ -10,10 +10,11 @@ import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../utils/error_handler.dart';
-import 'assign_tool_screen.dart';
+import '../utils/currency_formatter.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
+import 'tools_screen.dart';
 
 class ToolDetailScreen extends StatefulWidget {
   final Tool tool;
@@ -184,8 +185,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             // Financial Information
               if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
               _buildInfoSection('Financial Information', [
-                  if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', 'AED ${_currentTool.purchasePrice!.toStringAsFixed(2)}'),
-                  if (_currentTool.currentValue != null) _buildInfoRow('Current Value', 'AED ${_currentTool.currentValue!.toStringAsFixed(2)}'),
+                  if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
+                  if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
                   if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
                   if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
                     _buildInfoRow('Depreciation', _calculateDepreciation()),
@@ -501,7 +502,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 SizedBox(height: 6),
                 Text(
                   _currentTool.currentValue != null 
-                      ? 'AED ${_currentTool.currentValue!.toStringAsFixed(0)}'
+                      ? CurrencyFormatter.formatCurrencyWhole(_currentTool.currentValue!)
                       : 'N/A',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -628,7 +629,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AssignToolScreen(),
+                      builder: (context) => const ToolsScreen(isSelectionMode: true),
                     ),
                   );
                 },
@@ -844,7 +845,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     final depreciation = _currentTool.purchasePrice! - _currentTool.currentValue!;
     final percentage = (depreciation / _currentTool.purchasePrice!) * 100;
     
-    return 'AED ${depreciation.toStringAsFixed(2)} (${percentage.toStringAsFixed(1)}%)';
+    return '${CurrencyFormatter.formatCurrency(depreciation)} (${percentage.toStringAsFixed(1)}%)';
   }
 
   void _handleMenuAction(String action) async {

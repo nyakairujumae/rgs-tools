@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/supabase_technician_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
   const AdminApprovalScreen({super.key});
@@ -14,7 +16,8 @@ class AdminApprovalScreen extends StatefulWidget {
 class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final TextEditingController _rejectionReasonController = TextEditingController();
+  final TextEditingController _rejectionReasonController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -34,130 +37,207 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: SafeArea(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with back button and title
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Technician Approvals',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Review and manage technician access requests',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.65),
-                            fontWeight: FontWeight.w500,
-                          ),
+                    Container(
+                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                         ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    Expanded(
+                      child: Text(
+                        'Technician Approvals',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.refresh, color: Theme.of(context).textTheme.bodyLarge?.color),
+                      icon: Icon(
+                        Icons.refresh,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
                       onPressed: () {
-                        context.read<PendingApprovalsProvider>().loadPendingApprovals();
+                        context
+                            .read<PendingApprovalsProvider>()
+                            .loadPendingApprovals();
                       },
                     ),
                   ],
                 ),
               ),
+              // Tabs
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                ),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: AppTheme.cardGradientFor(context),
-                    borderRadius: BorderRadius.circular(24),
+                    color: AppTheme.cardSurfaceColor(context),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                    ),
+                    border: Border.all(
+                      color: AppTheme.subtleBorder,
+                      width: 1.1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: TabBar(
-          controller: _tabController,
-                    indicatorColor: AppTheme.primaryColor,
-                    labelColor: AppTheme.primaryColor,
+                    controller: _tabController,
+                    indicatorColor: AppTheme.secondaryColor,
+                    labelColor: AppTheme.secondaryColor,
                     unselectedLabelColor: Colors.grey[600],
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                            const Icon(Icons.pending, size: 18),
-                            const SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.pendingCount;
-                      return Text('Pending${count > 0 ? ' ($count)' : ''}');
-                    },
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.pending,
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                            Flexible(
+                              child: Consumer<PendingApprovalsProvider>(
+                                builder: (context, provider, child) {
+                                  final count = provider.pendingCount;
+                                  return Text(
+                                    'Pending${count > 0 ? ' ($count)' : ''}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                            Flexible(
+                              child: Consumer<PendingApprovalsProvider>(
+                                builder: (context, provider, child) {
+                                  final count = provider.approvedCount;
+                                  return Text(
+                                    'Authorized${count > 0 ? ' ($count)' : ''}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.cancel,
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                            Flexible(
+                              child: Consumer<PendingApprovalsProvider>(
+                                builder: (context, provider, child) {
+                                  final count = provider.rejectedCount;
+                                  return Text(
+                                    'Rejected${count > 0 ? ' ($count)' : ''}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                            const Icon(Icons.check_circle, size: 18),
-                            const SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.approvedCount;
-                      return Text('Authorized${count > 0 ? ' ($count)' : ''}');
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                            const Icon(Icons.cancel, size: 18),
-                            const SizedBox(width: 8),
-                  Consumer<PendingApprovalsProvider>(
-                    builder: (context, provider, child) {
-                      final count = provider.rejectedCount;
-                      return Text('Rejected${count > 0 ? ' ($count)' : ''}');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               Expanded(
                 child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildPendingTab(),
-          _buildApprovedTab(),
-          _buildRejectedTab(),
-        ],
+                  controller: _tabController,
+                  children: [
+                    _buildPendingTab(),
+                    _buildApprovedTab(),
+                    _buildRejectedTab(),
+                  ],
                 ),
               ),
             ],
@@ -173,7 +253,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         if (provider.isLoading) {
           return Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.secondary,
+              ),
             ),
           );
         }
@@ -194,15 +276,15 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Text(
                   'No Users Awaiting Authorization',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.grey[400],
-                  ),
+                        color: Colors.grey[400],
+                      ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'New technician registrations will appear here for authorization',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                  ),
+                        color: Colors.grey[500],
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -241,15 +323,15 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Text(
                   'No Authorized Users',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.grey[400],
-                  ),
+                        color: Colors.grey[400],
+                      ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Authorized technician registrations will appear here',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                  ),
+                        color: Colors.grey[500],
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -258,7 +340,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
           itemCount: approvedApprovals.length,
           itemBuilder: (context, index) {
             final approval = approvedApprovals[index];
@@ -288,15 +370,15 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Text(
                   'No Rejected Users',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.grey[400],
-                  ),
+                        color: Colors.grey[400],
+                      ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Rejected technician registrations will appear here',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                  ),
+                        color: Colors.grey[500],
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -318,33 +400,24 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   Widget _buildApprovalCard(dynamic approval, bool showActions) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
-        border: approval.status == 'pending'
-            ? Border.all(
-          color: _getStatusColor(approval.status).withValues(alpha: 0.3),
-                width: 1.5,
-              )
-            : null,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,20 +428,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _getStatusColor(approval.status).withValues(alpha: 0.2),
-                        _getStatusColor(approval.status).withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                    color: _getStatusColor(approval.status).withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: _getStatusColor(approval.status).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     _getStatusIcon(approval.status),
@@ -376,7 +437,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     size: 28,
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,32 +446,35 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                         approval.fullName ?? 'Unknown User',
                         style: TextStyle(
                           color: Colors.black87,
-                          fontSize: 20,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: 6),
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                       Text(
                         approval.email,
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: 14,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(approval.status).withValues(alpha: 0.15),
+                              color: _getStatusColor(approval.status)
+                                  .withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: _getStatusColor(approval.status).withValues(alpha: 0.3),
+                                color: _getStatusColor(approval.status)
+                                    .withValues(alpha: 0.3),
                                 width: 1,
                               ),
                             ),
@@ -426,7 +490,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                           ),
                           if (approval.rejectionCount > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.red.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
@@ -451,17 +516,20 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ),
               ],
             ),
-            
-            if (approval.employeeId != null || approval.phone != null || approval.department != null) ...[
+            if (approval.employeeId != null ||
+                approval.phone != null ||
+                approval.department != null) ...[
               SizedBox(height: 12),
               Divider(color: Colors.grey.withValues(alpha: 0.3), height: 1),
               SizedBox(height: 8),
               _buildInfoRow('Employee ID', approval.employeeId),
-              if (approval.phone != null) _buildInfoRow('Phone', approval.phone),
-              if (approval.department != null) _buildInfoRow('Department', approval.department),
-              if (approval.hireDate != null) _buildInfoRow('Hire Date', _formatDate(approval.hireDate)),
+              if (approval.phone != null)
+                _buildInfoRow('Phone', approval.phone),
+              if (approval.department != null)
+                _buildInfoRow('Department', approval.department),
+              if (approval.hireDate != null)
+                _buildInfoRow('Hire Date', _formatDate(approval.hireDate)),
             ],
-            
             SizedBox(height: 12),
             Row(
               children: [
@@ -476,12 +544,12 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ),
               ],
             ),
-            
             if (approval.reviewedAt != null) ...[
               SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.check_circle_outline, size: 16, color: Colors.grey[400]),
+                  Icon(Icons.check_circle_outline,
+                      size: 16, color: Colors.grey[400]),
                   SizedBox(width: 8),
                   Text(
                     'Reviewed: ${_formatDateTime(approval.reviewedAt!)}',
@@ -493,7 +561,6 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ],
               ),
             ],
-            
             if (approval.rejectionReason != null) ...[
               SizedBox(height: 8),
               Container(
@@ -527,7 +594,6 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 ),
               ),
             ],
-            
             if (showActions) ...[
               SizedBox(height: 16),
               Row(
@@ -535,13 +601,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.green.shade600, Colors.green.shade700],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
+                        color: AppTheme.secondaryColor,
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withValues(alpha: 0.3),
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -551,13 +615,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () => _approveUser(approval),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(20),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.check, size: 20, color: Colors.white),
+                                Icon(Icons.check,
+                                    size: 20, color: Colors.white),
                                 SizedBox(width: 8),
                                 Text(
                                   'Authorize',
@@ -579,8 +644,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.red, width: 1.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.red.withValues(alpha: 0.1),
@@ -593,7 +658,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () => _showRejectDialog(approval),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(20),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Row(
@@ -627,7 +692,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   Widget _buildInfoRow(String label, String? value) {
     if (value == null) return SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -694,18 +759,24 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _approveUser(dynamic approval) async {
+  Future<void> _approveUser(PendingApproval approval) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Authorize User',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
           'Are you sure you want to authorize ${approval.fullName ?? approval.email} as a technician?',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[300]),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Colors.grey[300]),
         ),
         actions: [
           TextButton(
@@ -723,9 +794,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
     if (confirmed == true) {
       final provider = context.read<PendingApprovalsProvider>();
-      final success = await provider.approveUser(approval.id);
-      
+      final success = await provider.approveUser(approval);
+
       if (success && mounted) {
+        await context.read<SupabaseTechnicianProvider>().loadTechnicians();
+        await context.read<AuthProvider>().initialize();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('User authorized successfully'),
@@ -745,14 +818,17 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   void _showRejectDialog(dynamic approval) {
     _rejectionReasonController.clear();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Reject User',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -760,7 +836,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           children: [
             Text(
               'Reject ${approval.fullName ?? approval.email}?',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[300]),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey[300]),
             ),
             SizedBox(height: 16),
             Text(
@@ -774,7 +853,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             TextField(
               controller: _rejectionReasonController,
               maxLines: 3,
-              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color),
               decoration: InputDecoration(
                 hintText: 'Enter reason for rejection...',
                 hintStyle: TextStyle(color: Colors.grey[400]),
@@ -832,9 +912,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 );
                 return;
               }
-              
+
               Navigator.pop(context);
-              await _rejectUser(approval, _rejectionReasonController.text.trim());
+              await _rejectUser(
+                  approval, _rejectionReasonController.text.trim());
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text('Reject'),
@@ -847,7 +928,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   Future<void> _rejectUser(dynamic approval, String reason) async {
     final provider = context.read<PendingApprovalsProvider>();
     final success = await provider.rejectUser(approval.id, reason);
-    
+
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

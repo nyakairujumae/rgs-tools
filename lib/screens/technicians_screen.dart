@@ -27,7 +27,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     super.initState();
     // Check if we're coming from assign tool screen with selected tools
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['selectedTools'] != null) {
         setState(() {
           _selectedTools = List<String>.from(args['selectedTools']);
@@ -41,15 +42,16 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     return Consumer2<SupabaseTechnicianProvider, SupabaseToolProvider>(
       builder: (context, technicianProvider, toolProvider, child) {
         final technicians = technicianProvider.technicians;
-        
+
         // Get unique departments for filter
         final departments = technicians
-            .where((tech) => tech.department != null && tech.department!.isNotEmpty)
+            .where((tech) =>
+                tech.department != null && tech.department!.isNotEmpty)
             .map((tech) => tech.department!)
             .toSet()
             .toList()
           ..sort();
-        
+
         // Filter technicians based on search, filter, and assignment mode
         // When assigning tools, only show Active technicians
         final filteredTechnicians = technicians.where((tech) {
@@ -57,11 +59,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           if (_selectedTools != null && tech.status != 'Active') {
             return false;
           }
-          
+
           // Apply selected filter
           if (_selectedFilter != 'All') {
-            if (_selectedFilter == 'Active' && tech.status != 'Active') return false;
-            if (_selectedFilter == 'Inactive' && tech.status != 'Inactive') return false;
+            if (_selectedFilter == 'Active' && tech.status != 'Active')
+              return false;
+            if (_selectedFilter == 'Inactive' && tech.status != 'Inactive')
+              return false;
             if (_selectedFilter == 'With Tools') {
               final toolCount = toolProvider.tools
                   .where((tool) => tool.assignedTo == tech.id)
@@ -75,106 +79,167 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               if (toolCount > 0) return false;
             }
             // Department filter
-            if (departments.contains(_selectedFilter) && tech.department != _selectedFilter) {
+            if (departments.contains(_selectedFilter) &&
+                tech.department != _selectedFilter) {
               return false;
             }
           }
-          
+
           // Filter by search query
           return _searchQuery.isEmpty ||
               tech.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              (tech.employeeId?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-              (tech.department?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+              (tech.employeeId
+                      ?.toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ??
+                  false) ||
+              (tech.department
+                      ?.toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ??
+                  false);
         }).toList();
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: AppTheme.backgroundGradientFor(context),
-          ),
-            child: Column(
-            children: [
-            SizedBox(height: MediaQuery.of(context).padding.top + 12),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Technicians',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+          body: SafeArea(
+            bottom: false,
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Technicians',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              // Assignment Instructions (only show when assigning tools)
-              if (_selectedTools != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16.0),
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).primaryColor,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to Technicians',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).primaryColor,
+                  // Assignment Instructions (only show when assigning tools)
+                  if (_selectedTools != null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                          width: 1.1,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Select one or more technicians to assign the tools to',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: AppTheme.primaryColor,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Select technicians to assign',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color
+                                        ?.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              
-                // Compact Search Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradientFor(context),
-                      borderRadius: BorderRadius.circular(24), // Fully rounded pill shape
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                child: TextField(
+
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppTheme.subtleBorder,
+                          width: 1.1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
                         decoration: InputDecoration(
-                    hintText: 'Search technicians...',
-                          hintStyle: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                          prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[500]),
+                          hintText: 'Search technicians...',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.45),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.45),
+                          ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: Icon(Icons.clear, size: 18, color: Colors.grey[500]),
+                                  icon: Icon(
+                                    Icons.clear,
+                                    size: 18,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.45),
+                                  ),
                                   onPressed: () {
                                     setState(() {
                                       _searchQuery = '';
@@ -185,79 +250,91 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                ),
-              ),
-                  ),
-                ),
-              
-              // Filter Chips
-              _buildFilterChips(departments),
-              
-              // Technicians List
-              Expanded(
-                child: technicianProvider.isLoading
-                    ? Center(child: CircularProgressIndicator())
+
+                  // Filter Chips
+                  _buildFilterChips(departments),
+
+                  // Technicians List
+                  Expanded(
+                    child: technicianProvider.isLoading
+                        ? Center(child: CircularProgressIndicator())
                     : filteredTechnicians.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.people,
+                                  Icons.people_outline,
                                   size: 64,
-                                  color: Colors.grey,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.3),
                                 ),
-                                SizedBox(height: 16),
+                                const SizedBox(height: 16),
                                 Text(
                                   'No technicians found',
                                   style: TextStyle(
                                     fontSize: 18,
-                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color,
                                   ),
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(
                                   'Add your first technician to get started',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color
+                                        ?.withOpacity(0.6),
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                            itemCount: filteredTechnicians.length,
-                            itemBuilder: (context, index) {
-                              final technician = filteredTechnicians[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: _buildTechnicianCard(technician),
-                              );
-                            },
-                          ),
+                            : ListView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                                itemCount: filteredTechnicians.length,
+                                itemBuilder: (context, index) {
+                                  final technician = filteredTechnicians[index];
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 12.0),
+                                    child: _buildTechnicianCard(technician),
+                                  );
+                                },
+                              ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          ),
-          floatingActionButton: _selectedTools != null 
+          floatingActionButton: _selectedTools != null
               ? FloatingActionButton.extended(
-                  onPressed: _selectedTechnicians.isNotEmpty ? () {
-                    _assignToolsToTechnicians();
-                  } : null,
+                  onPressed: _selectedTechnicians.isNotEmpty
+                      ? () {
+                          _assignToolsToTechnicians();
+                        }
+                      : null,
                   icon: Icon(Icons.assignment_turned_in),
-                  label: Text(_selectedTechnicians.isNotEmpty 
+                  label: Text(_selectedTechnicians.isNotEmpty
                       ? 'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} Technician${_selectedTechnicians.length > 1 ? 's' : ''}'
                       : 'Select Technicians First'),
-                  backgroundColor: _selectedTechnicians.isNotEmpty 
-                      ? Colors.green 
+                  backgroundColor: _selectedTechnicians.isNotEmpty
+                      ? Colors.green
                       : Colors.grey,
                 )
               : FloatingActionButton.extended(
@@ -274,63 +351,60 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 
   Widget _buildTechnicianCard(Technician technician) {
-    final isSelected = technician.id != null && _selectedTechnicians.contains(technician.id!);
-    
+    final isSelected =
+        technician.id != null && _selectedTechnicians.contains(technician.id!);
+
     // Get assigned tools count
-    final assignedToolsCount = context.read<SupabaseToolProvider>().tools
+    final assignedToolsCount = context
+        .read<SupabaseToolProvider>()
+        .tools
         .where((tool) => tool.assignedTo == technician.id)
         .length;
-    
+
     return InkWell(
-        onTap: () {
-          if (_selectedTools != null) {
-            setState(() {
-              if (technician.id != null) {
-                if (isSelected) {
-                  _selectedTechnicians.remove(technician.id!);
-                } else {
-                  _selectedTechnicians.add(technician.id!);
-                }
+      onTap: () {
+        if (_selectedTools != null) {
+          setState(() {
+            if (technician.id != null) {
+              if (isSelected) {
+                _selectedTechnicians.remove(technician.id!);
+              } else {
+                _selectedTechnicians.add(technician.id!);
               }
-            });
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TechnicianDetailScreen(technician: technician),
-              ),
-            );
-          }
-        },
+            }
+          });
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  TechnicianDetailScreen(technician: technician),
+            ),
+          );
+        }
+      },
       onLongPress: () {
         if (_selectedTools == null) {
           _showEditTechnicianDialog(technician);
         }
       },
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradientFor(context),
-          borderRadius: BorderRadius.circular(28),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryColor : AppTheme.subtleBorder,
+            width: isSelected ? 2 : 1.1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 18,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
           ],
-          border: isSelected
-              ? Border.all(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
-                )
-              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,26 +423,32 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-              Text(
+                            Text(
                               technician.name,
                               style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 18,
-                                color: Theme.of(context).colorScheme.onSurface,
-              ),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.color,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 4),
-              Text(
+                            const SizedBox(height: 3),
+                            Text(
                               technician.department?.isNotEmpty == true
                                   ? technician.department!
                                   : 'No department',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.primary,
-              ),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -377,51 +457,61 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       ),
                       if (_selectedTools != null)
                         Padding(
-                          padding: const EdgeInsets.only(right: 8.0, top: 4),
+                          padding: const EdgeInsets.only(left: 8.0),
                           child: Icon(
-                            isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
                             color: isSelected
-                                ? Theme.of(context).primaryColor
+                                ? AppTheme.primaryColor
                                 : Colors.grey[400],
-                            size: 20,
+                            size: 24,
                           ),
                         ),
-                _buildStatusChip(technician.status),
-              ],
-            ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant ??
-                            Colors.black.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildStatusChip(technician.status),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.build,
+                              size: 14,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                assignedToolsCount == 0
+                                    ? 'No tools'
+                                    : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color
+                                      ?.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-              child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                children: [
-                        Icon(
-                          Icons.build,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          assignedToolsCount == 0
-                              ? 'No tools assigned'
-                              : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''} assigned',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
-                          ),
-                        ),
-                ],
-              ),
-            ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -434,18 +524,17 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   Widget _buildPlaceholderAvatar(Technician technician) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
         child: Text(
-          technician.name.isNotEmpty 
-              ? technician.name[0].toUpperCase() 
-              : '?',
+          technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
             fontWeight: FontWeight.bold,
-            fontSize: 32,
+            fontSize: 24,
           ),
         ),
       ),
@@ -453,32 +542,52 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 
   Widget _buildTechnicianAvatar(Technician technician) {
-    final statusColor = technician.status == 'Active' ? Colors.green : Colors.grey;
+    final statusColor =
+        technician.status == 'Active' ? Colors.green : Colors.grey;
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-            width: 108,
-            height: 108,
-            color: statusColor.withValues(alpha: 0.15),
-            child: (technician.profilePictureUrl != null && technician.profilePictureUrl!.isNotEmpty)
+            width: 64,
+            height: 64,
+            color: statusColor.withValues(alpha: 0.12),
+            child: (technician.profilePictureUrl != null &&
+                    technician.profilePictureUrl!.isNotEmpty)
                 ? Image.network(
                     technician.profilePictureUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderAvatar(technician),
+                    width: 64,
+                    height: 64,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Error loading profile image: $error');
+                      debugPrint('URL: ${technician.profilePictureUrl}');
+                      return _buildPlaceholderAvatar(technician);
+                    },
                   )
                 : _buildPlaceholderAvatar(technician),
           ),
         ),
         Positioned(
-          bottom: 6,
-          right: 6,
+          bottom: 0,
+          right: 0,
           child: Container(
-            width: 18,
-            height: 18,
+            width: 16,
+            height: 16,
             decoration: BoxDecoration(
               color: statusColor,
               shape: BoxShape.circle,
@@ -494,8 +603,15 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   }
 
   Widget _buildFilterChips(List<String> departments) {
-    final filterOptions = ['All', 'Active', 'Inactive', 'With Tools', 'Without Tools', ...departments];
-    
+    final filterOptions = [
+      'All',
+      'Active',
+      'Inactive',
+      'With Tools',
+      'Without Tools',
+      ...departments
+    ];
+
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -505,14 +621,16 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         itemBuilder: (context, index) {
           final filter = filterOptions[index];
           final isSelected = _selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 6),
             child: FilterChip(
               label: Text(
                 filter,
                 style: TextStyle(
-                  color: isSelected ? Theme.of(context).textTheme.bodyLarge?.color : Colors.grey[400],
+                  color: isSelected
+                      ? Theme.of(context).textTheme.bodyLarge?.color
+                      : Colors.grey[400],
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 11,
                 ),
@@ -526,11 +644,12 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 });
               },
               backgroundColor: Theme.of(context).cardTheme.color,
-              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+              selectedColor:
+                  Theme.of(context).primaryColor.withValues(alpha: 0.2),
               checkmarkColor: Theme.of(context).primaryColor,
               side: BorderSide(
-                color: isSelected 
-                    ? Theme.of(context).primaryColor 
+                color: isSelected
+                    ? Theme.of(context).primaryColor
                     : Colors.grey.withValues(alpha: 0.3),
                 width: isSelected ? 1.5 : 1,
               ),
@@ -544,13 +663,16 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   Widget _buildProfilePicture(Technician technician) {
     return CircleAvatar(
       radius: 25,
-      backgroundColor: technician.status == 'Active' ? Colors.green : Colors.grey,
+      backgroundColor:
+          technician.status == 'Active' ? Colors.green : Colors.grey,
       backgroundImage: technician.profilePictureUrl != null
           ? NetworkImage(technician.profilePictureUrl!)
           : null,
       child: technician.profilePictureUrl == null
           ? Text(
-              technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
+              technician.name.isNotEmpty
+                  ? technician.name[0].toUpperCase()
+                  : '?',
               style: TextStyle(
                 color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontWeight: FontWeight.bold,
@@ -563,14 +685,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
   Widget _buildStatusChip(String status) {
     Color color = status == 'Active' ? Colors.green : Colors.grey;
-    
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withValues(alpha: 0.5),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -578,7 +700,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         status,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -626,7 +748,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           ),
           TextButton(
             onPressed: () {
-              context.read<SupabaseTechnicianProvider>().deleteTechnician(technician.id!);
+              context
+                  .read<SupabaseTechnicianProvider>()
+                  .deleteTechnician(technician.id!);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -664,26 +788,28 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       // Get technician provider and tool provider
       final technicianProvider = context.read<SupabaseTechnicianProvider>();
       final toolProvider = context.read<SupabaseToolProvider>();
-      
+
       // Get technician details for each selected technician
-      final technicians = technicianProvider.technicians.where((tech) => 
-        tech.id != null && _selectedTechnicians.contains(tech.id!)
-      ).toList();
+      final technicians = technicianProvider.technicians
+          .where((tech) =>
+              tech.id != null && _selectedTechnicians.contains(tech.id!))
+          .toList();
 
       // Assign each tool to each selected technician
       List<String> failedAssignments = [];
-      
+
       for (final toolId in _selectedTools!) {
         for (final technician in technicians) {
           if (technician.email != null && technician.email!.isNotEmpty) {
             // Look up the user ID - check approval status first, then users table
             try {
               final technicianEmail = technician.email!.trim();
-              debugPrint('🔍 Looking up user for technician: ${technician.name}');
+              debugPrint(
+                  '🔍 Looking up user for technician: ${technician.name}');
               debugPrint('   Technician email: "$technicianEmail"');
-              
+
               String? userId;
-              
+
               // First, check if there's an approved pending approval record (this has the user_id)
               final approvalRecord = await SupabaseService.client
                   .from('pending_user_approvals')
@@ -693,29 +819,33 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   .order('created_at', ascending: false)
                   .limit(1)
                   .maybeSingle();
-              
+
               if (approvalRecord != null && approvalRecord['user_id'] != null) {
                 userId = approvalRecord['user_id'] as String;
                 debugPrint('   ✅ Found user ID from approval record: $userId');
               } else {
                 // If no approval record, try to find user in users table
-                debugPrint('   No approval record found, checking users table...');
+                debugPrint(
+                    '   No approval record found, checking users table...');
                 var userResponse = await SupabaseService.client
                     .from('users')
                     .select('id, email')
                     .ilike('email', technicianEmail)
                     .maybeSingle();
-                
+
                 // If not found with ilike, try fetching all and matching
                 if (userResponse == null) {
-                  debugPrint('   No direct match found, searching all users...');
+                  debugPrint(
+                      '   No direct match found, searching all users...');
                   final allUsers = await SupabaseService.client
                       .from('users')
                       .select('id, email');
-                  
-                  debugPrint('   Found ${(allUsers as List).length} total users');
+
+                  debugPrint(
+                      '   Found ${(allUsers as List).length} total users');
                   for (var user in allUsers as List) {
-                    final userEmail = (user['email'] as String?)?.toLowerCase() ?? '';
+                    final userEmail =
+                        (user['email'] as String?)?.toLowerCase() ?? '';
                     if (userEmail == technicianEmail.toLowerCase()) {
                       userResponse = user;
                       debugPrint('   ✅ Found matching user: ${user['id']}');
@@ -725,12 +855,12 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 } else {
                   debugPrint('   ✅ Found user: ${userResponse['id']}');
                 }
-                
+
                 if (userResponse != null && userResponse['id'] != null) {
                   userId = userResponse['id'] as String;
                 }
               }
-              
+
               if (userId != null) {
                 // Use the user ID (from auth.users/users table) as the assigned_to value
                 await toolProvider.assignTool(
@@ -741,11 +871,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               } else {
                 // No user account found - technician needs to register and be approved first
                 failedAssignments.add(technician.name);
-                debugPrint('⚠️ No user account found for technician: ${technician.name} (${technician.email})');
-                debugPrint('   Technician must register in the app and be approved by admin first.');
+                debugPrint(
+                    '⚠️ No user account found for technician: ${technician.name} (${technician.email})');
+                debugPrint(
+                    '   Technician must register in the app and be approved by admin first.');
               }
             } catch (e) {
-              debugPrint('Error looking up user for technician ${technician.name}: $e');
+              debugPrint(
+                  'Error looking up user for technician ${technician.name}: $e');
               failedAssignments.add(technician.name);
             }
           } else {
@@ -754,7 +887,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           }
         }
       }
-      
+
       // Show consolidated error message if any assignments failed
       if (failedAssignments.isNotEmpty) {
         final failedCount = failedAssignments.length;
@@ -766,7 +899,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   ? 'Could not assign tools. ${failedCount} technician${failedCount > 1 ? 's' : ''} (${failedAssignments.take(3).join(', ')}${failedCount > 3 ? '...' : ''}) need to register in the app first.'
                   : 'Assigned tools to ${totalCount - failedCount} technician(s), but ${failedCount} technician${failedCount > 1 ? 's' : ''} need to register first.',
             ),
-            backgroundColor: failedCount == totalCount ? Colors.red : Colors.orange,
+            backgroundColor:
+                failedCount == totalCount ? Colors.red : Colors.orange,
             duration: Duration(seconds: 5),
           ),
         );
@@ -794,7 +928,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     } catch (e) {
       // Close loading dialog
       Navigator.pop(context);
-      
+
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -806,5 +940,3 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     }
   }
 }
-
-

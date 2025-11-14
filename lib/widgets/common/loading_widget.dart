@@ -80,17 +80,21 @@ class LoadingOverlay extends StatelessWidget {
   }
 }
 
-/// Skeleton loading widget for list items
+/// Skeleton loading widget with shimmer effect
 class SkeletonLoader extends StatefulWidget {
   final double? width;
   final double? height;
   final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
 
   const SkeletonLoader({
     super.key,
     this.width,
     this.height,
     this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
   });
 
   @override
@@ -106,13 +110,13 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
-    _controller.repeat(reverse: true);
+    _controller.repeat();
   }
 
   @override
@@ -123,6 +127,9 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = widget.baseColor ?? Colors.grey[200]!;
+    final highlightColor = widget.highlightColor ?? Colors.grey[100]!;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -130,26 +137,32 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            color: baseColor,
             borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.grey[300]!,
-                  Colors.grey[100]!,
-                  Colors.grey[300]!,
-                ],
-                stops: [
-                  0.0,
-                  _animation.value,
-                  1.0,
-                ],
-              ),
+          child: ClipRRect(
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        baseColor,
+                        highlightColor,
+                        baseColor,
+                      ],
+                      stops: [
+                        0.0,
+                        _animation.value.clamp(0.0, 1.0),
+                        1.0,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -212,6 +225,154 @@ class ListSkeletonLoader extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Tool card skeleton loader - matches the tool card design
+class ToolCardSkeleton extends StatelessWidget {
+  const ToolCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Image skeleton - square
+        Expanded(
+          flex: 1,
+          child: AspectRatio(
+            aspectRatio: 1.0,
+            child: SkeletonLoader(
+              width: double.infinity,
+              height: double.infinity,
+              borderRadius: BorderRadius.circular(28),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Tool name skeleton
+        SkeletonLoader(
+          width: double.infinity,
+          height: 16,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        const SizedBox(height: 8),
+        // Category and status skeleton
+        Row(
+          children: [
+            Expanded(
+              child: SkeletonLoader(
+                width: double.infinity,
+                height: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SkeletonLoader(
+              width: 60,
+              height: 12,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Grid skeleton loader for tool cards
+class ToolCardGridSkeleton extends StatelessWidget {
+  final int itemCount;
+  final int crossAxisCount;
+  final double crossAxisSpacing;
+  final double mainAxisSpacing;
+  final double childAspectRatio;
+
+  const ToolCardGridSkeleton({
+    super.key,
+    this.itemCount = 6,
+    this.crossAxisCount = 2,
+    this.crossAxisSpacing = 10.0,
+    this.mainAxisSpacing = 12.0,
+    this.childAspectRatio = 0.75,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: crossAxisSpacing,
+        mainAxisSpacing: mainAxisSpacing,
+        childAspectRatio: childAspectRatio,
+      ),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        return const ToolCardSkeleton();
+      },
+    );
+  }
+}
+
+/// Stat card skeleton loader
+class StatCardSkeleton extends StatelessWidget {
+  const StatCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Value skeleton
+          Expanded(
+            child: Center(
+              child: SkeletonLoader(
+                width: 80,
+                height: 32,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Icon and title skeleton
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SkeletonLoader(
+                width: 24,
+                height: 24,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(width: 6),
+              SkeletonLoader(
+                width: 60,
+                height: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

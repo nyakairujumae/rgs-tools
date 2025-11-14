@@ -389,7 +389,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
 
     try {
       final updatedTool = widget.tool.copyWith(
-        name: _nameController.text.trim(),
+        name: _nameController.text.trim().toUpperCase(),
         category: _categoryController.text.trim(),
         brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
         model: _modelController.text.trim().isEmpty ? null : _modelController.text.trim(),

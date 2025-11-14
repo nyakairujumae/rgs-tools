@@ -15,14 +15,10 @@ class SupabaseToolProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await SupabaseService.client
-          .from('tools')
-          .select()
-          .order('name');
+      final response =
+          await SupabaseService.client.from('tools').select().order('name');
 
-      _tools = (response as List)
-          .map((data) => Tool.fromMap(data))
-          .toList();
+      _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
     } catch (e) {
       debugPrint('Error loading tools: $e');
     } finally {
@@ -70,54 +66,45 @@ class SupabaseToolProvider with ChangeNotifier {
   Future<void> deleteTool(String toolId) async {
     try {
       debugPrint('🗑️ Provider: Deleting tool from database: $toolId');
-      
+
       // Delete from database
-      await SupabaseService.client
-          .from('tools')
-          .delete()
-          .eq('id', toolId);
+      await SupabaseService.client.from('tools').delete().eq('id', toolId);
 
       debugPrint('✅ Provider: Tool deleted from database');
-      
+
       // Update local state
       _tools.removeWhere((tool) => tool.id == toolId);
-      debugPrint('✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
-      
+      debugPrint(
+          '✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
+
       notifyListeners();
       debugPrint('✅ Provider: Notified listeners');
-      
     } catch (e) {
       debugPrint('❌ Provider: Error deleting tool: $e');
       rethrow;
     }
   }
 
-
-  Future<void> assignTool(String toolId, String technicianId, String assignmentType) async {
+  Future<void> assignTool(
+      String toolId, String technicianId, String assignmentType) async {
     try {
       // Update tool status and assigned_to field
-      await SupabaseService.client
-          .from('tools')
-          .update({
-            'status': 'Assigned',
-            'assigned_to': technicianId
-          })
-          .eq('id', toolId);
+      await SupabaseService.client.from('tools').update(
+          {'status': 'Assigned', 'assigned_to': technicianId}).eq('id', toolId);
 
       // Try to create assignment record (optional - table may not exist)
       try {
-        await SupabaseService.client
-            .from('assignments')
-            .insert({
-              'tool_id': toolId,
-              'technician_id': technicianId,
-              'assignment_type': assignmentType,
-              'status': 'Active'
-            });
+        await SupabaseService.client.from('assignments').insert({
+          'tool_id': toolId,
+          'technician_id': technicianId,
+          'assignment_type': assignmentType,
+          'status': 'Active'
+        });
       } catch (assignmentsError) {
         // Assignments table doesn't exist, but that's okay
         // The tool assignment is already done via the tools table
-        debugPrint('Assignments table not found, skipping assignment record: $assignmentsError');
+        debugPrint(
+            'Assignments table not found, skipping assignment record: $assignmentsError');
       }
 
       // Update local tools list
@@ -139,13 +126,8 @@ class SupabaseToolProvider with ChangeNotifier {
   Future<void> returnTool(String toolId) async {
     try {
       // Update tool status and clear assigned_to field
-      await SupabaseService.client
-          .from('tools')
-          .update({
-            'status': 'Available',
-            'assigned_to': null
-          })
-          .eq('id', toolId);
+      await SupabaseService.client.from('tools').update(
+          {'status': 'Available', 'assigned_to': null}).eq('id', toolId);
 
       // Try to update assignment status (optional - table may not exist)
       try {
@@ -160,7 +142,8 @@ class SupabaseToolProvider with ChangeNotifier {
       } catch (assignmentsError) {
         // Assignments table doesn't exist, but that's okay
         // The tool return is already done via the tools table
-        debugPrint('Assignments table not found, skipping assignment update: $assignmentsError');
+        debugPrint(
+            'Assignments table not found, skipping assignment update: $assignmentsError');
       }
 
       // Update local tools list
@@ -187,11 +170,16 @@ class SupabaseToolProvider with ChangeNotifier {
   }
 
   double getTotalValue() {
-    return _tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0.0));
+    return _tools.fold(0.0, (sum, tool) {
+      final monetaryValue = tool.purchasePrice ?? tool.currentValue ?? 0.0;
+      return sum + monetaryValue;
+    });
   }
 
   List<Tool> getToolsNeedingMaintenance() {
-    return _tools.where((tool) => tool.condition == 'Maintenance Required').toList();
+    return _tools
+        .where((tool) => tool.condition == 'Maintenance Required')
+        .toList();
   }
 
   List<Tool> getAvailableTools() {

@@ -670,7 +670,6 @@ class ReportService {
       'Location',
       'Purchase Date',
       'Purchase Price',
-      'Current Value',
       'Tool Type',
     ];
 
@@ -728,7 +727,6 @@ class ReportService {
 
     final returnedStatusIndex = headers.indexOf('Returned Status');
     final purchasePriceIndex = headers.indexOf('Purchase Price');
-    final currentValueIndex = headers.indexOf('Current Value');
 
     for (var index = 0; index < tools.length; index++) {
       final tool = tools[index];
@@ -766,7 +764,6 @@ class ReportService {
         tool.location ?? '',
         _formatDate(tool.purchaseDate),
         tool.purchasePrice != null ? _currencyFormat.format(tool.purchasePrice) : '',
-        tool.currentValue != null ? _currencyFormat.format(tool.currentValue) : '',
         tool.toolType,
       ]);
 
@@ -774,7 +771,7 @@ class ReportService {
 
       final rowIndex = sheet.maxRows - 1;
       final numericColumns = <int>{}
-        ..addAll([purchasePriceIndex, currentValueIndex].where((index) => index >= 0));
+        ..addAll([purchasePriceIndex].where((index) => index >= 0));
       final wrapColumns = <int>{
         headers.indexOf('Location'),
         headers.indexOf('Brand'),
@@ -938,15 +935,9 @@ class ReportService {
 
   static void _addFinancialData(Sheet sheet, List<Tool> tools) {
     final totalPurchasePrice = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
-    final totalCurrentValue = tools.fold(0.0, (sum, tool) => sum + (tool.currentValue ?? 0));
-    final depreciation = totalPurchasePrice - totalCurrentValue;
-    final depreciationPercentage = totalPurchasePrice > 0 ? (depreciation / totalPurchasePrice * 100) : 0;
 
     sheet.appendRow(['Metric', 'Value']);
     sheet.appendRow(['Total Purchase Value', 'AED ${totalPurchasePrice.toStringAsFixed(2)}']);
-    sheet.appendRow(['Total Current Value', 'AED ${totalCurrentValue.toStringAsFixed(2)}']);
-    sheet.appendRow(['Total Depreciation', 'AED ${depreciation.toStringAsFixed(2)}']);
-    sheet.appendRow(['Depreciation Percentage', '${depreciationPercentage.toStringAsFixed(2)}%']);
 
     // Set column widths for financial summary to ensure text fits
     sheet.setColumnWidth(0, 50.0); // Metric column - needs extra space for long labels

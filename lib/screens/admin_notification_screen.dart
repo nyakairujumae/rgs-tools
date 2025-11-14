@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
   const AdminNotificationScreen({super.key});
@@ -25,202 +26,226 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: const Text(
-              'Notifications',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Header with back button
+            Padding(
+              padding: ResponsiveHelper.getResponsivePadding(
+                context,
+                horizontal: 16,
+                vertical: 20,
               ),
-            ),
-            backgroundColor: colorScheme.surface,
-            foregroundColor: colorScheme.onSurface,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            actions: [
-              Consumer<AdminNotificationProvider>(
-                builder: (context, provider, child) {
-                  if (provider.unreadCount > 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: TextButton(
-                        onPressed: () {
-                          provider.markAllAsRead();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('All notifications marked as read'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Mark All Read',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
+              child: Row(
+                children: [
+                  Container(
+                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                  Expanded(
+                    child: Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  Consumer<AdminNotificationProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.unreadCount > 0) {
+                        return TextButton(
+                          onPressed: () {
+                            provider.markAllAsRead();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('All notifications marked as read'),
+                                backgroundColor: AppTheme.secondaryColor,
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Mark All Read',
+                            style: TextStyle(
+                              color: AppTheme.secondaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                            ),
+                          ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            // Filter chips
+            Container(
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.getResponsiveSpacing(context, 16),
+                0,
+                ResponsiveHelper.getResponsiveSpacing(context, 16),
+                ResponsiveHelper.getResponsiveSpacing(context, 12),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', null),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                    ...NotificationType.values.map((type) => 
+                      Padding(
+                        padding: EdgeInsets.only(right: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                        child: _buildFilterChip(type.displayName, type),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        
+            // Notifications list
+            Expanded(
+              child: Consumer<AdminNotificationProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
                       ),
                     );
                   }
-                  return SizedBox.shrink();
-                },
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Filter chips
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip('All', null),
-                      const SizedBox(width: 8),
-                      ...NotificationType.values.map((type) => 
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: _buildFilterChip(type.displayName, type),
-                        ),
+
+                  if (provider.error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading notifications',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              provider.error!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: () => provider.loadNotifications(),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: AppTheme.secondaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: Text('Retry'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-          
-          // Notifications list
-          Expanded(
-            child: Consumer<AdminNotificationProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return Center(child: CircularProgressIndicator());
-                }
+                    );
+                  }
 
-                if (provider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error, size: 64, color: Colors.red),
-                        SizedBox(height: 16),
-                        Text(
-                          'Error loading notifications',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          provider.error!,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => provider.loadNotifications(),
-                          child: Text('Retry'),
-                        ),
-                      ],
+                  final filteredNotifications = _selectedFilter == null
+                      ? provider.notifications
+                      : provider.getNotificationsByType(_selectedFilter!);
+
+                  if (filteredNotifications.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_none_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No notifications',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'You\'ll see technician requests here',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: () => provider.loadNotifications(),
+                    color: AppTheme.secondaryColor,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: filteredNotifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = filteredNotifications[index];
+                        return _buildNotificationCard(notification, provider);
+                      },
                     ),
                   );
-                }
-
-                final filteredNotifications = _selectedFilter == null
-                    ? provider.notifications
-                    : provider.getNotificationsByType(_selectedFilter!);
-
-                if (filteredNotifications.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No notifications',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'You\'ll see technician requests here',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () => provider.loadNotifications(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    itemCount: filteredNotifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = filteredNotifications[index];
-                      return _buildNotificationCard(notification, provider);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-          floatingActionButton: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade600, Colors.blue.shade700],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  _showCreateNotificationDialog();
                 },
-                borderRadius: BorderRadius.circular(28),
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  alignment: Alignment.center,
-                  child: Icon(Icons.add, color: Colors.white),
-                ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showCreateNotificationDialog();
+        },
+        backgroundColor: AppTheme.secondaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -229,13 +254,14 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     final isSelected = _selectedFilter == type;
     
     return Container(
-      height: 40,
+      height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
       child: FilterChip(
         label: Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? AppTheme.secondaryColor : Colors.grey[700],
           ),
         ),
         selected: isSelected,
@@ -244,42 +270,45 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             _selectedFilter = selected ? type : null;
           });
         },
-        selectedColor: Colors.blue.withOpacity(0.15),
+        selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
         backgroundColor: AppTheme.cardSurfaceColor(context),
-        checkmarkColor: Colors.blue,
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-        labelPadding: EdgeInsets.symmetric(horizontal: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+        checkmarkColor: AppTheme.secondaryColor,
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
+          vertical: 0,
         ),
+        labelPadding: EdgeInsets.symmetric(
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 4),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
+          side: BorderSide(
+            color: isSelected ? AppTheme.secondaryColor : AppTheme.subtleBorder,
+            width: 1.1,
+          ),
+        ),
+        elevation: 0,
       ),
     );
   }
 
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
+        border: Border.all(
+          color: notification.isRead ? AppTheme.subtleBorder : AppTheme.secondaryColor.withValues(alpha: 0.3),
+          width: notification.isRead ? 1.1 : 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
-        border: notification.isRead 
-            ? null 
-            : Border.all(
-                color: Colors.blue.withOpacity(0.3),
-                width: 1.5,
-              ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -290,31 +319,26 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             }
             _showNotificationDetails(notification);
           },
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon Container
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _getNotificationColor(notification.type).withOpacity(0.2),
-                        _getNotificationColor(notification.type).withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
+                    color: _getNotificationColor(notification.type).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
                   ),
                   child: Icon(
                     _getNotificationIcon(notification.type),
                     color: _getNotificationColor(notification.type),
-                    size: 24,
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                 // Content
                 Expanded(
                   child: Column(
@@ -326,9 +350,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                             child: Text(
                               notification.title,
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
-                                color: Colors.grey[800],
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
+                                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w600,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                               ),
                             ),
                           ),
@@ -337,25 +361,25 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: Colors.blue,
+                                color: AppTheme.secondaryColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         notification.message,
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
+                          fontSize: 13,
+                          color: Colors.grey[600],
                           height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
+                          Icon(Icons.person_outline, size: 12, color: Colors.grey[500]),
                           const SizedBox(width: 4),
                           Text(
                             notification.technicianName,
@@ -365,8 +389,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 12),
+                          Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
                           const SizedBox(width: 4),
                           Text(
                             _formatTimestamp(notification.timestamp),
@@ -382,7 +406,10 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                 ),
                 // Menu Button
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+                  icon: Icon(Icons.more_vert, color: Colors.grey[400], size: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   onSelected: (value) {
                     switch (value) {
                       case 'mark_read':
@@ -398,7 +425,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                       value: 'mark_read',
                       child: Row(
                         children: [
-                          Icon(Icons.mark_email_read, size: 18),
+                          Icon(Icons.mark_email_read, size: 18, color: Colors.grey[700]),
                           const SizedBox(width: 8),
                           Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
                         ],
@@ -473,32 +500,70 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(notification.title),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          notification.title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(notification.message),
-            SizedBox(height: 16),
+            Text(
+              notification.message,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 16),
             Divider(),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Technician Details:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
-            SizedBox(height: 4),
-            Text('Name: ${notification.technicianName}'),
-            Text('Email: ${notification.technicianEmail}'),
-            SizedBox(height: 8),
+            const SizedBox(height: 4),
+            Text(
+              'Name: ${notification.technicianName}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              'Email: ${notification.technicianEmail}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               'Time: ${_formatTimestamp(notification.timestamp)}',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+            ),
             child: Text('Close'),
           ),
         ],

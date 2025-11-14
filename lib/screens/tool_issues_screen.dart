@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../models/tool_issue.dart';
+import '../theme/app_theme.dart';
 import 'add_tool_issue_screen.dart';
+import '../utils/responsive_helper.dart';
+import '../utils/currency_formatter.dart';
+import '../widgets/common/loading_widget.dart';
 
 class ToolIssuesScreen extends StatefulWidget {
   const ToolIssuesScreen({super.key});
@@ -38,112 +42,224 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
-        elevation: 0,
-        title: Text(
-          'Tool Issues Management',
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () => context.read<ToolIssueProvider>().loadIssues(),
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'All (${context.watch<ToolIssueProvider>().totalIssues})'),
-            Tab(text: 'Open (${context.watch<ToolIssueProvider>().openIssuesCount})'),
-            Tab(text: 'Critical (${context.watch<ToolIssueProvider>().criticalIssuesCount})'),
-            Tab(text: 'Resolved'),
-          ],
-        ),
-      ),
-      body: Consumer<ToolIssueProvider>(
-        builder: (context, issueProvider, child) {
-          if (issueProvider.isLoading) {
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Header with back button
+            Padding(
+              padding: ResponsiveHelper.getResponsivePadding(
+                context,
+                horizontal: 16,
+                vertical: 20,
               ),
-            );
-          }
-
-          if (issueProvider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Error loading issues',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    issueProvider.error!,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => issueProvider.loadIssues(),
-                        child: Text('Retry'),
+                  Container(
+                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
-                      if (issueProvider.error!.contains('Session expired') || 
-                          issueProvider.error!.contains('Please log in'))
-                        SizedBox(width: 16),
-                      if (issueProvider.error!.contains('Session expired') || 
-                          issueProvider.error!.contains('Please log in'))
-                        ElevatedButton(
-                          onPressed: () {
-                            // Navigate to role selection screen
-                            Navigator.pushNamedAndRemoveUntil(
-                              context, 
-                              '/role-selection', 
-                              (route) => false
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: Text('Sign In'),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                    ],
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                  Expanded(
+                    child: Text(
+                      'Tool Issues',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.refresh,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                      onPressed: () => context.read<ToolIssueProvider>().loadIssues(),
+                    ),
                   ),
                 ],
               ),
-            );
-          }
+            ),
+            // Tab Bar
+            Container(
+              margin: EdgeInsets.symmetric(
+                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.cardSurfaceColor(context),
+                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
+                border: Border.all(
+                  color: AppTheme.subtleBorder,
+                  width: 1.1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: AppTheme.secondaryColor,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey[600],
+                labelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                dividerColor: Colors.transparent,
+                tabs: [
+                  Tab(text: 'All (${context.watch<ToolIssueProvider>().totalIssues})'),
+                  Tab(text: 'Open (${context.watch<ToolIssueProvider>().openIssuesCount})'),
+                  Tab(text: 'Critical (${context.watch<ToolIssueProvider>().criticalIssuesCount})'),
+                  const Tab(text: 'Resolved'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Consumer<ToolIssueProvider>(
+                builder: (context, issueProvider, child) {
+                  if (issueProvider.isLoading) {
+                    return ListSkeletonLoader(
+                      itemCount: 5,
+                      itemHeight: 120,
+                    );
+                  }
+                  if (issueProvider.error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red[300],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading issues',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              issueProvider.error!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              OutlinedButton(
+                                onPressed: () => issueProvider.loadIssues(),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: AppTheme.secondaryColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: Text('Retry'),
+                              ),
+                              if (issueProvider.error!.contains('Session expired') || 
+                                  issueProvider.error!.contains('Please log in'))
+                                const SizedBox(width: 16),
+                              if (issueProvider.error!.contains('Session expired') || 
+                                  issueProvider.error!.contains('Please log in'))
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context, 
+                                      '/role-selection', 
+                                      (route) => false
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.secondaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  child: Text('Sign In'),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildIssuesList(issueProvider.issues),
-              _buildIssuesList(issueProvider.openIssues),
-              _buildIssuesList(issueProvider.criticalIssues),
-              _buildIssuesList(issueProvider.resolvedIssues),
-            ],
-          );
-        },
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildIssuesList(issueProvider.issues),
+                      _buildIssuesList(issueProvider.openIssues),
+                      _buildIssuesList(issueProvider.criticalIssues),
+                      _buildIssuesList(issueProvider.resolvedIssues),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -154,10 +270,13 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
             ),
           );
         },
-        icon: Icon(Icons.add),
-        label: Text('Report New Issue'),
+        icon: const Icon(Icons.add),
+        label: const Text('Report New Issue'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
       ),
     );
   }
@@ -171,17 +290,22 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
             Icon(
               Icons.check_circle_outline,
               size: 64,
-              color: Colors.green,
+              color: AppTheme.secondaryColor,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'No issues found',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'All tools are working properly!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontSize: 14,
                 color: Colors.grey[600],
               ),
             ),
@@ -195,8 +319,9 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
 
     return RefreshIndicator(
       onRefresh: () => context.read<ToolIssueProvider>().loadIssues(),
+      color: AppTheme.secondaryColor,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
         itemCount: sortedIssues.length,
         itemBuilder: (context, index) {
           final issue = sortedIssues[index];
@@ -207,14 +332,28 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
   }
 
   Widget _buildIssueCard(ToolIssue issue) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Theme.of(context).cardTheme.color,
+    return Container(
+      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
+        border: Border.all(
+          color: AppTheme.subtleBorder,
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: InkWell(
         onTap: () => _showIssueDetails(issue),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -223,18 +362,18 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 children: [
                   // Issue type icon
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
                     decoration: BoxDecoration(
-                      color: _getIssueTypeColor(issue.issueType).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      color: _getIssueTypeColor(issue.issueType).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
                     ),
                     child: Icon(
                       _getIssueTypeIcon(issue.issueType),
                       color: _getIssueTypeColor(issue.issueType),
-                      size: 20,
+                      size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                   
                   // Tool name and issue type
                   Expanded(
@@ -243,13 +382,17 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                       children: [
                         Text(
                           issue.toolName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                             fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                         Text(
                           issue.issueType,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                             color: _getIssueTypeColor(issue.issueType),
                             fontWeight: FontWeight.w500,
                           ),
@@ -263,45 +406,52 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 ],
               ),
               
-              SizedBox(height: 12),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               
               // Description
               Text(
                 issue.description,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                  color: Colors.grey[700],
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               
-              SizedBox(height: 12),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               
               // Footer row
               Row(
                 children: [
                   // Priority
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveHelper.getResponsiveSpacing(context, 10),
+                      vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                    ),
                     decoration: BoxDecoration(
-                      color: _getPriorityColor(issue.priority).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: _getPriorityColor(issue.priority).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
                     ),
                     child: Text(
                       issue.priority,
                       style: TextStyle(
                         color: _getPriorityColor(issue.priority),
-                        fontSize: 12,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   
-                  SizedBox(width: 8),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                   
                   // Reported by
                   Expanded(
                     child: Text(
                       'Reported by ${issue.reportedBy}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: TextStyle(
+                        fontSize: 12,
                         color: Colors.grey[600],
                       ),
                     ),
@@ -310,7 +460,8 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                   // Age
                   Text(
                     issue.ageText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: TextStyle(
+                      fontSize: 12,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -363,7 +514,17 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Issue Details'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Issue Details',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,18 +545,23 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
               if (issue.location != null)
                 _buildDetailRow('Location', issue.location!),
               if (issue.estimatedCost != null)
-                _buildDetailRow('Estimated Cost', '\$${issue.estimatedCost!.toStringAsFixed(2)}'),
-              SizedBox(height: 16),
+                _buildDetailRow('Estimated Cost', CurrencyFormatter.formatCurrency(issue.estimatedCost!)),
+              const SizedBox(height: 16),
               Text(
                 'Description',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 issue.description,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                ),
               ),
             ],
           ),
@@ -403,6 +569,9 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+            ),
             child: Text('Close'),
           ),
           if (issue.status == 'Open')
@@ -411,6 +580,13 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 Navigator.pop(context);
                 _showAssignDialog(issue);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
               child: Text('Assign'),
             ),
           if (issue.status == 'In Progress')
@@ -419,6 +595,13 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 Navigator.pop(context);
                 _showResolveDialog(issue);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
               child: Text('Resolve'),
             ),
         ],
