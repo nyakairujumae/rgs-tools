@@ -37,16 +37,16 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Run tests
-        run: flutter test --no-sound-null-safety || true
+        run: flutter test || true
 
       - name: Build APK (Debug)
-        run: flutter build apk --debug --no-sound-null-safety
+        run: flutter build apk --debug
 
       - name: Build APK (Release)
-        run: flutter build apk --release --no-sound-null-safety
+        run: flutter build apk --release
 
       - name: Build App Bundle (Release)
-        run: flutter build appbundle --release --no-sound-null-safety
+        run: flutter build appbundle --release
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
