@@ -68,3 +68,8 @@ android/.gradle/
 # SQL files (keep only the essential ones)
 SUPABASE_*.sql
 !SUPABASE_RECREATE_ALL_TABLES.sql
+
+# Android keystore files (sensitive signing information)
+android/keystore.properties
+android/keystore/*.jks
+android/keystore/*.keystore
