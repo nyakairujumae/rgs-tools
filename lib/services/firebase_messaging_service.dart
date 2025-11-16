@@ -4,12 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../config/firebase_config.dart';
 import 'supabase_service.dart';
 
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
+  static final FlutterLocalNotificationsPlugin _local =
+      FlutterLocalNotificationsPlugin();
+  static const String _androidChannelId = 'default_channel';
+  static const String _androidChannelName = 'General';
+  static const String _androidChannelDesc = 'General notifications';
 
   static String? get fcmToken {
     try {
@@ -44,6 +50,26 @@ class FirebaseMessagingService {
       }
       
       debugPrint('✅ Firebase is initialized. Proceeding with FCM setup...');
+      
+      // Initialize local notifications (for foreground + badge number)
+      const initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+      );
+      await _local.initialize(initializationSettings);
+      // Ensure channel exists with showBadge
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        _androidChannelId,
+        _androidChannelName,
+        description: _androidChannelDesc,
+        importance: Importance.defaultImportance,
+        showBadge: true,
+      );
+      final androidPlugin = _local
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(channel);
       
       // Request permission for notifications
       final settings = await _messaging.requestPermission(
@@ -138,7 +164,8 @@ class FirebaseMessagingService {
       
       // Show local notification or handle in-app
       _handleForegroundMessage(message);
-      await _incrementBadgeCount();
+      final newCount = await _incrementBadgeCount();
+      await _showLocalFromMessage(message, badgeCount: newCount);
     });
 
     // Handle messages when app is opened from background
@@ -205,7 +232,7 @@ class FirebaseMessagingService {
   /// Badge helpers
   static const String _badgeKey = 'app_badge_count';
 
-  static Future<void> _incrementBadgeCount() async {
+  static Future<int> _incrementBadgeCount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final current = prefs.getInt(_badgeKey) ?? 0;
@@ -214,8 +241,10 @@ class FirebaseMessagingService {
       if (await FlutterAppBadger.isAppBadgeSupported()) {
         FlutterAppBadger.updateBadgeCount(updated);
       }
+      return updated;
     } catch (e) {
       debugPrint('⚠️ Failed to increment badge: $e');
+      return 0;
     }
   }
 
@@ -229,6 +258,29 @@ class FirebaseMessagingService {
     } catch (e) {
       debugPrint('⚠️ Failed to clear badge: $e');
     }
+  }
+
+  static Future<void> _showLocalFromMessage(RemoteMessage msg,
+      {required int badgeCount}) async {
+    final title = msg.notification?.title ?? 'RGS';
+    final body = msg.notification?.body ?? 'You have a new notification';
+    final androidDetails = AndroidNotificationDetails(
+      _androidChannelId,
+      _androidChannelName,
+      channelDescription: _androidChannelDesc,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      showWhen: true,
+      number: badgeCount,
+    );
+    final details = NotificationDetails(android: androidDetails);
+    await _local.show(
+      (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
+      title,
+      body,
+      details,
+      payload: msg.data.isNotEmpty ? msg.data.toString() : null,
+    );
   }
 
   /// Send token to server (Supabase)
@@ -282,4 +334,11 @@ class FirebaseMessagingService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('🔥 Background message handler: ${message.messageId}');
   debugPrint('🔥 Message data: ${message.data}');
+  // Increment stored count; numeric badge on Android may require app in foreground,
+  // but we still persist count so it syncs next time app opens.
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getInt(FirebaseMessagingService._badgeKey) ?? 0;
+    await prefs.setInt(FirebaseMessagingService._badgeKey, current + 1);
+  } catch (_) {}
 }
