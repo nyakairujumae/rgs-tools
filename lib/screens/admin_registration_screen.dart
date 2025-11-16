@@ -41,14 +41,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    const cardColor = Color(0xFFF9FAFB);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
     final cardShadow = BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: Colors.black.withValues(alpha: isDarkMode ? 0.18 : 0.1),
       blurRadius: 22,
       offset: const Offset(0, 10),
     );
     final hintStyle = TextStyle(
-      color: Colors.grey.shade500,
+      color: colorScheme.onSurface.withValues(alpha: 0.5),
       fontSize: 12,
       fontWeight: FontWeight.w400,
     );
@@ -98,7 +99,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: colorScheme.onSurface,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -107,7 +108,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           'Register as an administrator for RGS HVAC Services',
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.grey[700],
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -122,6 +123,12 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [cardShadow],
+                        border: isDarkMode
+                            ? Border.all(
+                                color:
+                                    colorScheme.onSurface.withValues(alpha: 0.12),
+                              )
+                            : null,
                       ),
                       child: TextFormField(
                         controller: _nameController,
@@ -129,8 +136,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           labelText: 'Full Name',
                           filled: true,
                           fillColor: cardColor,
-                          prefixIcon:
-                              Icon(Icons.person, color: Colors.grey[600]),
+                          prefixIcon: Icon(Icons.person,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6)),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           hintText: 'Enter full name',
                           hintStyle: hintStyle,
@@ -144,8 +152,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                BorderSide(color: Colors.blue, width: 2),
+                            borderSide: BorderSide(
+                                color: AppTheme.primaryColor, width: 2),
                           ),
                           contentPadding:
                               const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -167,6 +175,12 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [cardShadow],
+                        border: isDarkMode
+                            ? Border.all(
+                                color:
+                                    colorScheme.onSurface.withValues(alpha: 0.12),
+                              )
+                            : null,
                       ),
                       child: TextFormField(
                         controller: _emailController,
@@ -175,8 +189,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           labelText: 'Email Address',
                           filled: true,
                           fillColor: cardColor,
-                          prefixIcon:
-                              Icon(Icons.email, color: Colors.grey[600]),
+                          prefixIcon: Icon(Icons.email,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6)),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           hintText: 'Enter company email',
                           hintStyle: hintStyle,
@@ -190,8 +205,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                BorderSide(color: Colors.blue, width: 2),
+                            borderSide: BorderSide(
+                                color: AppTheme.primaryColor, width: 2),
                           ),
                           contentPadding:
                               const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -217,6 +232,12 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [cardShadow],
+                        border: isDarkMode
+                            ? Border.all(
+                                color:
+                                    colorScheme.onSurface.withValues(alpha: 0.12),
+                              )
+                            : null,
                       ),
                       child: TextFormField(
                         controller: _positionController,
@@ -224,7 +245,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           labelText: 'Position/Title',
                           filled: true,
                           fillColor: cardColor,
-                          prefixIcon: Icon(Icons.work, color: Colors.grey[600]),
+                          prefixIcon: Icon(Icons.work,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6)),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           hintText: 'e.g., Operations Manager, Director',
                           hintStyle: hintStyle,
@@ -238,8 +261,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                BorderSide(color: Colors.blue, width: 2),
+                            borderSide: BorderSide(
+                                color: AppTheme.primaryColor, width: 2),
                           ),
                           contentPadding:
                               const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -261,6 +284,12 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [cardShadow],
+                        border: isDarkMode
+                            ? Border.all(
+                                color:
+                                    colorScheme.onSurface.withValues(alpha: 0.12),
+                              )
+                            : null,
                       ),
                       child: TextFormField(
                         controller: _passwordController,
@@ -269,13 +298,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           labelText: 'Password',
                           filled: true,
                           fillColor: cardColor,
-                          prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
+                          prefixIcon: Icon(Icons.lock,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6)),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                             onPressed: () {
                               setState(() {
@@ -296,8 +327,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                BorderSide(color: Colors.blue, width: 2),
+                            borderSide: BorderSide(
+                                color: AppTheme.primaryColor, width: 2),
                           ),
                           contentPadding:
                               const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -322,6 +353,12 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [cardShadow],
+                        border: isDarkMode
+                            ? Border.all(
+                                color:
+                                    colorScheme.onSurface.withValues(alpha: 0.12),
+                              )
+                            : null,
                       ),
                       child: TextFormField(
                         controller: _confirmPasswordController,
@@ -330,14 +367,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           labelText: 'Confirm Password',
                           filled: true,
                           fillColor: cardColor,
-                          prefixIcon:
-                              Icon(Icons.lock_outline, color: Colors.grey[600]),
+                          prefixIcon: Icon(Icons.lock_outline,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6)),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                             onPressed: () {
                               setState(() {
@@ -359,8 +397,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                BorderSide(color: Colors.blue, width: 2),
+                            borderSide: BorderSide(
+                                color: AppTheme.primaryColor, width: 2),
                           ),
                           contentPadding:
                               const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -384,12 +422,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                       height: 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.blue.shade600, Colors.blue.shade700],
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.9)
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -437,14 +478,14 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey[700],
+                              color: colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             children: [
                               const TextSpan(text: 'Already have an account? '),
                               TextSpan(
                                 text: 'Sign in',
                                 style: TextStyle(
-                                  color: Colors.blue,
+                                  color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
