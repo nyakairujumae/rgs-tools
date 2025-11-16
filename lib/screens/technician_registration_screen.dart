@@ -23,7 +23,6 @@ class TechnicianRegistrationScreen extends StatefulWidget {
 
 class _TechnicianRegistrationScreenState
     extends State<TechnicianRegistrationScreen> {
-  static const Color _cardColor = Color(0xFFF9FAFB);
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -54,7 +53,10 @@ class _TechnicianRegistrationScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     final scaffoldColor = theme.scaffoldBackgroundColor;
+    final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
 
     return Scaffold(
       backgroundColor: scaffoldColor,
@@ -82,6 +84,9 @@ class _TechnicianRegistrationScreenState
   }
 
   Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -89,18 +94,18 @@ class _TechnicianRegistrationScreenState
           height: 44,
           width: 44,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? colorScheme.surface : Colors.white,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, size: 22),
+            icon: Icon(Icons.arrow_back, size: 22, color: colorScheme.onSurface),
             onPressed: () => Navigator.pop(context),
             tooltip: 'Back',
           ),
@@ -115,13 +120,14 @@ class _TechnicianRegistrationScreenState
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 26,
+                      color: colorScheme.onSurface,
                     ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Create your technician account to access tool tracking, assignments, and maintenance workflows.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
               ),
             ],
@@ -132,15 +138,19 @@ class _TechnicianRegistrationScreenState
   }
 
   Widget _buildInfoBanner(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: isDarkMode ? colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(
+          color: Colors.orange.withValues(alpha: 0.4),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -152,7 +162,7 @@ class _TechnicianRegistrationScreenState
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDarkMode ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(Icons.security_rounded,
@@ -167,14 +177,14 @@ class _TechnicianRegistrationScreenState
                   'Pending Admin Approval',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.orange.shade800,
+                    color: Colors.orange.shade700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'After submitting the form our admin team reviews your details. We’ll notify you once your account has been approved.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.orange.shade700,
+                    color: Colors.orange.shade600,
                     height: 1.4,
                   ),
                 ),
@@ -187,13 +197,19 @@ class _TechnicianRegistrationScreenState
   }
 
   Widget _buildRegistrationCard(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
     return Container(
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: cardColor,
         borderRadius: BorderRadius.circular(28),
+        border: isDarkMode
+            ? Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12))
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 25,
             offset: const Offset(0, 12),
           ),
@@ -325,7 +341,7 @@ class _TechnicianRegistrationScreenState
         Text(
           'Already registered?',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
         ),
         const SizedBox(height: 8),
@@ -350,13 +366,15 @@ class _TechnicianRegistrationScreenState
   }
 
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Row(
       children: [
         Container(
           height: 36,
           width: 36,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(Icons.check_circle_outline,
@@ -366,10 +384,10 @@ class _TechnicianRegistrationScreenState
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -387,15 +405,19 @@ class _TechnicianRegistrationScreenState
     String? hintText,
     String? Function(String?)? validator,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -406,12 +428,12 @@ class _TechnicianRegistrationScreenState
           decoration: InputDecoration(
             hintText: hintText ?? 'Enter $label',
             hintStyle: TextStyle(
-              color: Colors.grey.shade500,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
               fontSize: 12,
               fontWeight: FontWeight.w400,
             ),
             filled: true,
-            fillColor: _cardColor,
+            fillColor: cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide.none,
@@ -427,11 +449,15 @@ class _TechnicianRegistrationScreenState
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            prefixIcon: icon != null ? Icon(icon) : null,
+            prefixIcon: icon != null
+                ? Icon(icon,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6))
+                : null,
             suffixIcon: onToggleVisibility != null
                 ? IconButton(
-                    icon: Icon(
-                        obscureText ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(obscureText
+                        ? Icons.visibility_off
+                        : Icons.visibility, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                     onPressed: onToggleVisibility,
                   )
                 : null,
@@ -455,18 +481,19 @@ class _TechnicianRegistrationScreenState
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: isDisabled
-              ? const LinearGradient(colors: [Colors.grey, Colors.grey])
-              : const LinearGradient(
-                  colors: [
-                    Color(0xFF2563EB),
-                    Color(0xFF1D4ED8),
-                  ],
-                ),
+              ? LinearGradient(colors: [
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)
+                ])
+              : LinearGradient(colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withValues(alpha: 0.9),
+                ]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             if (!isDisabled)
               BoxShadow(
-                color: Colors.blueAccent.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -511,6 +538,9 @@ class _TechnicianRegistrationScreenState
   }
 
   Widget _buildProfilePictureSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Column(
       children: [
         Stack(
@@ -520,10 +550,10 @@ class _TechnicianRegistrationScreenState
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _cardColor,
+                color: isDarkMode ? colorScheme.surface : Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
@@ -531,14 +561,14 @@ class _TechnicianRegistrationScreenState
               ),
               child: CircleAvatar(
                 radius: 58,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
                 backgroundImage:
                     _profileImage != null ? FileImage(_profileImage!) : null,
                 child: _profileImage == null
                     ? Icon(
                         Icons.account_circle_rounded,
                         size: 72,
-                        color: Colors.grey[500],
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
                       )
                     : null,
               ),
@@ -608,10 +638,14 @@ class _TechnicianRegistrationScreenState
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final Color bgColor =
-        isDestructive ? Colors.red.shade50 : Colors.blue.shade50;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final Color bgColor = isDestructive
+        ? Colors.red.withValues(alpha: 0.12)
+        : AppTheme.primaryColor.withValues(alpha: 0.12);
     final Color fgColor =
-        isDestructive ? Colors.red.shade700 : Colors.blue.shade700;
+        isDestructive ? Colors.red : AppTheme.primaryColor;
 
     return Material(
       color: Colors.transparent,
@@ -623,7 +657,7 @@ class _TechnicianRegistrationScreenState
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(40),
-            border: Border.all(color: fgColor.withOpacity(0.2)),
+            border: Border.all(color: fgColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
