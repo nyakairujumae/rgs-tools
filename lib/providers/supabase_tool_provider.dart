@@ -19,8 +19,11 @@ class SupabaseToolProvider with ChangeNotifier {
           await SupabaseService.client.from('tools').select().order('name');
 
       _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
+      debugPrint('✅ Loaded ${_tools.length} tools from database');
     } catch (e) {
-      debugPrint('Error loading tools: $e');
+      debugPrint('❌ Error loading tools: $e');
+      // Don't clear tools on error - keep existing data
+      // This prevents showing empty state if there's a temporary network issue
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -77,11 +80,28 @@ class SupabaseToolProvider with ChangeNotifier {
       debugPrint(
           '✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
 
+      // Reload tools to ensure sync with database and clear any stale references
+      await loadTools();
+      
       notifyListeners();
-      debugPrint('✅ Provider: Notified listeners');
+      debugPrint('✅ Provider: Notified listeners after reload');
     } catch (e) {
       debugPrint('❌ Provider: Error deleting tool: $e');
       rethrow;
+    }
+  }
+
+  /// Check if a tool exists in the current tools list
+  bool toolExists(String toolId) {
+    return _tools.any((tool) => tool.id == toolId);
+  }
+
+  /// Get a tool by ID, returns null if not found
+  Tool? getToolById(String toolId) {
+    try {
+      return _tools.firstWhere((tool) => tool.id == toolId);
+    } catch (e) {
+      return null;
     }
   }
 

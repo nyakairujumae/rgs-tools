@@ -29,11 +29,61 @@ class ToolDetailScreen extends StatefulWidget {
 class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingMixin {
   late Tool _currentTool;
   bool _isLoading = false;
+  bool _toolNotFound = false;
 
   @override
   void initState() {
     super.initState();
     _currentTool = widget.tool;
+    _verifyToolExists();
+  }
+
+  /// Verify that the tool still exists in the provider
+  Future<void> _verifyToolExists() async {
+    // Wait a frame to ensure provider is available
+    await Future.delayed(Duration(milliseconds: 100));
+    
+    if (!mounted) return;
+    
+    final toolProvider = context.read<SupabaseToolProvider>();
+    
+    // Check if tool exists in provider
+    if (!toolProvider.toolExists(_currentTool.id!)) {
+      // Tool might have been deleted, try to reload tools first
+      await toolProvider.loadTools();
+      
+      if (mounted) {
+        // Check again after reload
+        if (!toolProvider.toolExists(_currentTool.id!)) {
+          setState(() {
+            _toolNotFound = true;
+          });
+          
+          // Show error and navigate back
+          Future.delayed(Duration(milliseconds: 500), () {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('This tool no longer exists. It may have been deleted.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              Navigator.of(context).pop();
+            }
+          });
+          return;
+        } else {
+          // Tool found after reload, update current tool
+          final updatedTool = toolProvider.getToolById(_currentTool.id!);
+          if (updatedTool != null && mounted) {
+            setState(() {
+              _currentTool = updatedTool;
+            });
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -157,10 +207,40 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
         ],
       ),
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        loadingMessage: 'Loading tool details...',
-        child: SingleChildScrollView(
+      body: _toolNotFound
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.orange),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tool Not Found',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'This tool may have been deleted.',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Go Back'),
+                  ),
+                ],
+              ),
+            )
+          : LoadingOverlay(
+              isLoading: _isLoading,
+              loadingMessage: 'Loading tool details...',
+              child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1282,23 +1362,35 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               
               try {
                 final toolName = _currentTool.name;
-                await context.read<SupabaseToolProvider>().deleteTool(_currentTool.id!);
+                final toolId = _currentTool.id!;
+                
+                // Delete the tool
+                await context.read<SupabaseToolProvider>().deleteTool(toolId);
+                
+                // Ensure loading state is cleared before navigation
+                if (mounted) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                }
                 
                 // Force navigation back immediately
-                Navigator.of(context).pop();
-                
-                // Show success message
-                Future.delayed(Duration(milliseconds: 100), () {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Tool "$toolName" deleted successfully'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                });
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  
+                  // Show success message after navigation
+                  Future.delayed(Duration(milliseconds: 300), () {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Tool "$toolName" deleted successfully'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  });
+                }
               } catch (e) {
                 debugPrint('❌ Error deleting tool: $e');
                 
