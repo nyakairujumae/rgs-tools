@@ -452,6 +452,12 @@ class HvacToolsManagerApp extends StatelessWidget {
     print('🔍 isAuthenticated: ${authProvider.isAuthenticated}');
     
     try {
+      // If we're in the middle of logging out, immediately show role selection.
+      // This prevents a temporary blank screen caused by returning an empty widget while isLoading is true.
+      if (authProvider.isLoggingOut) {
+        print('🔍 isLoggingOut=true → Showing RoleSelectionScreen immediately');
+        return const RoleSelectionScreen();
+      }
       // For web, show role selection screen initially (no backend for now)
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
