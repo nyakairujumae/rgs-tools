@@ -102,7 +102,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                  ? Theme.of(context).colorScheme.surface 
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
@@ -178,7 +180,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             color: AppTheme.cardSurfaceColor(context),
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: AppTheme.subtleBorder,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                               width: 1.1,
                             ),
                             boxShadow: [
@@ -764,7 +766,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             ? AppTheme.primaryColor
                             : widget.isSelectionMode
                                 ? AppTheme.primaryColor.withValues(alpha: 0.3)
-                                : AppTheme.subtleBorder,
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                         width: widget.isSelectionMode && isSelected ? 3 : 1.5,
                       ),
                       boxShadow: [
@@ -881,7 +883,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),

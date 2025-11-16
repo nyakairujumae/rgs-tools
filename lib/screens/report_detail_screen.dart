@@ -212,13 +212,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -689,10 +691,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -752,7 +756,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   title,
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
@@ -772,10 +776,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -843,10 +849,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -885,7 +893,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   'Assigned to: $technicianName',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -893,7 +901,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   '${tool.category} • ${tool.status}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -909,10 +917,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -954,7 +964,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   '${tech.department ?? "No Department"} • ${tech.status}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (tech.email != null && tech.email!.isNotEmpty)
@@ -962,7 +972,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     tech.email!,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey[500],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
               ],
@@ -1004,10 +1014,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -1045,7 +1057,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   '${tool.category} • ${tool.brand ?? "No Brand"}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -1079,10 +1091,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -1098,12 +1112,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.12),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.history,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               size: 20,
             ),
           ),
@@ -1124,7 +1138,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   '${tool.category} • ${tool.status}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (tool.assignedTo != null)
@@ -1132,7 +1146,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     'Assigned to: ${technicianProvider.getTechnicianNameById(tool.assignedTo!) ?? "Unknown"}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey[500],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
               ],
@@ -1143,7 +1157,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               dateFormat.format(updatedAt),
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1165,10 +1179,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surface
+              : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.subtleBorder,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             width: 1.1,
           ),
           boxShadow: [
@@ -1206,7 +1222,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       height: 1.4,
                     ),
                   ),
@@ -1216,7 +1232,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -1232,7 +1248,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey[500],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1241,7 +1257,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           value,
           style: TextStyle(
             fontSize: 13,
-            color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),

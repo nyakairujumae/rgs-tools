@@ -96,13 +96,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -214,7 +216,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               color: AppTheme.cardSurfaceColor(context),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppTheme.subtleBorder,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 width: 1.1,
               ),
               boxShadow: [
@@ -235,19 +237,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 hintText: 'Search reports...',
                 hintStyle: TextStyle(
                   fontSize: 14,
-                  color: theme.colorScheme.onSurface.withOpacity(0.45),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                 ),
                 prefixIcon: Icon(
                   Icons.search,
                   size: 18,
-                  color: theme.colorScheme.onSurface.withOpacity(0.45),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: Icon(
                           Icons.clear,
                           size: 18,
-                          color: theme.colorScheme.onSurface.withOpacity(0.45),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                         ),
                         onPressed: () {
                           setState(() {
@@ -322,7 +324,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           color: AppTheme.cardSurfaceColor(context),
           borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
           border: Border.all(
-            color: AppTheme.subtleBorder,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             width: 1.1,
           ),
           boxShadow: [
@@ -346,7 +348,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     label,
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -397,17 +399,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: const Text(
+              child: Text(
                 'Select Report Type',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -442,13 +445,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Theme.of(context).primaryColor.withOpacity(0.1)
+                          ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                             : Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).primaryColor
-                              : Colors.grey.withOpacity(0.2),
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -458,7 +461,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             icon,
                             color: isSelected
                                 ? Theme.of(context).primaryColor
-                                : Colors.grey[600],
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -548,13 +551,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Theme.of(context).primaryColor.withOpacity(0.1)
+                            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                             : Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).primaryColor
-                              : Colors.grey.withOpacity(0.2),
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -564,7 +567,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             Icons.access_time,
                             color: isSelected
                                 ? Theme.of(context).primaryColor
-                                : Colors.grey[600],
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -575,7 +578,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                 color: isSelected
                                     ? Theme.of(context).primaryColor
-                                    : Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
+                                    : Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -782,9 +785,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.surface
+                : Colors.white,
             border: Border(
-              bottom: BorderSide(color: AppTheme.subtleBorder.withValues(alpha: 0.5)),
+              bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)),
             ),
           ),
           child: Column(
@@ -933,10 +938,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -948,7 +953,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -971,7 +976,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                  bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                 ),
               ),
               child: Row(
@@ -993,7 +998,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             '${tool.brand} ${tool.model ?? ''}'.trim(),
               style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                       ],
@@ -1018,7 +1023,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           : 'Unassigned',
                       style: TextStyle(
                         fontSize: 12,
-                        color: tool.assignedTo != null ? Colors.grey[800] : Colors.grey[500],
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withValues(alpha: tool.assignedTo != null ? 0.8 : 0.5),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1032,7 +1038,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey[800],
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       ),
                     ),
@@ -1123,10 +1129,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
                 ),
@@ -1163,7 +1169,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   '${tool.category} • ${tool.brand ?? "No Brand"}',
               style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -1413,9 +1419,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surface
+              : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1442,10 +1450,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1461,7 +1469,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -1482,7 +1490,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1553,9 +1561,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       Container(
           padding: const EdgeInsets.all(40),
                         decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.surface
+                : Colors.white,
                           borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           ),
           child: Center(
             child: Column(
@@ -1563,7 +1573,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Icon(
                   Icons.warning_amber_rounded,
                   size: 64,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -1571,7 +1581,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1580,7 +1590,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
           ],
@@ -1660,10 +1670,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
                 ),
@@ -1674,12 +1684,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.history,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               size: 20,
             ),
           ),
@@ -1700,7 +1710,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   '${tool.category} • ${tool.status}',
               style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (tool.assignedTo != null)
@@ -1708,7 +1718,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     'Assigned to: ${technicianProvider.getTechnicianNameById(tool.assignedTo!) ?? "Unknown"}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
               ],
@@ -1722,7 +1732,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   dateFormat.format(updatedAt),
                     style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1826,10 +1836,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
                 ),
@@ -1862,7 +1872,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     description,
                   style: TextStyle(
                       fontSize: 13,
-                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       height: 1.4,
                     ),
                   ),
@@ -1886,10 +1896,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
                 ),
@@ -1925,7 +1935,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             title,
                       style: TextStyle(
               fontSize: 13,
-              color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontWeight: FontWeight.w500,
             ),
           ),
@@ -1972,10 +1982,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       padding: ResponsiveHelper.getResponsivePadding(context, all: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -2001,7 +2013,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             label,
             style: TextStyle(
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -2014,10 +2026,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

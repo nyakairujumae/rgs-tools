@@ -8,6 +8,7 @@ import '../providers/pending_approvals_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import 'auth/login_screen.dart';
+import 'role_selection_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
@@ -68,7 +69,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 64, color: Colors.red),
+                  Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
                   SizedBox(height: 16),
                   Text(
                     'Something went wrong',
@@ -324,23 +325,46 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                     if (Navigator.of(context).canPop()) {
                                       Navigator.of(context).pop();
                                     }
+                                    
+                                    // Wait a frame to ensure UI is stable
+                                    await Future.delayed(const Duration(milliseconds: 100));
 
                                     // Sign out and navigate to login
                                     await authProvider.signOut();
+                                    
+                                    // Wait another frame before navigation
+                                    await Future.delayed(const Duration(milliseconds: 100));
 
                                     // Navigate to login screen
                                     if (mounted) {
                                       Navigator.pushAndRemoveUntil(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LoginScreen()),
+                                          builder: (context) => const RoleSelectionScreen(),
+                                          settings: const RouteSettings(name: '/role-selection'),
+                                        ),
                                         (route) => false,
                                       );
                                     }
-                                  } catch (e) {
+                                  } catch (e, stackTrace) {
                                     // Silent error handling - the app will handle navigation
                                     debugPrint('Logout error: $e');
+                                    debugPrint('Stack trace: $stackTrace');
+                                    // Even if there's an error, try to navigate to login
+                                    if (mounted) {
+                                      try {
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const RoleSelectionScreen(),
+                                            settings: const RouteSettings(name: '/role-selection'),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      } catch (navError) {
+                                        debugPrint('Navigation error during logout: $navError');
+                                      }
+                                    }
                                   }
                                 }
                               },
@@ -350,7 +374,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 ),
                               ),
                               elevation: 8,
-                              color: Colors.white,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.white,
                               itemBuilder: (BuildContext context) => [
                                 PopupMenuItem<String>(
                                   value: 'profile',
@@ -365,12 +391,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                       all: 12,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Theme.of(context).colorScheme.surface
+                                          : Colors.white,
                                       borderRadius: BorderRadius.circular(
                                         ResponsiveHelper.getResponsiveBorderRadius(context, 12),
                                       ),
                                       border: Border.all(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
                                         width: 1,
                                       ),
                                     ),
@@ -453,14 +481,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                           ResponsiveHelper.getResponsiveSpacing(context, 6),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.grey.withValues(alpha: 0.12),
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
                                           borderRadius: BorderRadius.circular(
                                             ResponsiveHelper.getResponsiveBorderRadius(context, 8),
                                           ),
                                         ),
                                         child: Icon(
                                           Icons.settings,
-                                          color: Colors.grey[700],
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.7),
                                           size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                                         ),
                                       ),
@@ -538,7 +566,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               backgroundColor: Theme.of(context).colorScheme.surface,
               selectedItemColor: Theme.of(context).colorScheme.secondary,
               unselectedItemColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha:0.5),
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard),
@@ -651,7 +679,9 @@ class DashboardScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: cardRadius,
                       boxShadow: [
                         BoxShadow(
@@ -710,7 +740,7 @@ class DashboardScreen extends StatelessWidget {
                                     'Manage your HVAC tools and technicians',
                                     style: TextStyle(
                                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                      color: Colors.grey[400],
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.6),
                                     ),
                                   ),
                                 ],
@@ -746,7 +776,18 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       _buildStatCard(
                         'Total Tools',
-                        totalTools.toString(),
+                        Text(
+                          totalTools.toString(),
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         Icons.build,
                         Colors.blue,
                         context,
@@ -754,7 +795,18 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       _buildStatCard(
                         'Technicians',
-                        technicians.length.toString(),
+                        Text(
+                          technicians.length.toString(),
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         Icons.people,
                         Colors.green,
                         context,
@@ -762,7 +814,21 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       _buildStatCard(
                         'Total Value',
-                        CurrencyFormatter.formatCurrencyWhole(totalValue),
+                        CurrencyFormatter.aedAmount(
+                          totalValue,
+                          decimalDigits: 0,
+                          amountStyle: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                            letterSpacing: -0.5,
+                          ),
+                          aedStyle: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w700,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32) * 0.6,
+                          ),
+                        ),
                         Icons.attach_money,
                         Colors.orange,
                         context,
@@ -778,7 +844,18 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       _buildStatCard(
                         'Maintenance',
-                        '${toolsNeedingMaintenance.length}',
+                        Text(
+                          '${toolsNeedingMaintenance.length}',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         Icons.warning,
                         Colors.red,
                         context,
@@ -799,7 +876,9 @@ class DashboardScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: cardRadius,
                       boxShadow: [
                         BoxShadow(
@@ -1000,14 +1079,16 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color,
+  Widget _buildStatCard(String title, Widget valueWidget, IconData icon, Color color,
       BuildContext context, VoidCallback? onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: ResponsiveHelper.getCardPadding(context),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Theme.of(context).colorScheme.surface 
+              : Colors.white,
           borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
           boxShadow: [
             BoxShadow(
@@ -1031,21 +1112,7 @@ class DashboardScreen extends StatelessWidget {
             // Large value centered, taking up center space
             Expanded(
               child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                child: FittedBox(fit: BoxFit.scaleDown, child: valueWidget),
               ),
             ),
             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
@@ -1103,7 +1170,9 @@ class DashboardScreen extends StatelessWidget {
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Theme.of(context).colorScheme.surface 
+              : Colors.white,
           borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
           boxShadow: [
             BoxShadow(
@@ -1163,14 +1232,24 @@ class DashboardScreen extends StatelessWidget {
     VoidCallback onTap,
     BuildContext context,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(_cardRadiusValue),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkMode ? colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(_cardRadiusValue),
+          border: isDarkMode
+              ? Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.12),
@@ -1211,14 +1290,24 @@ class DashboardScreen extends StatelessWidget {
     BuildContext context, {
     int badgeCount = 0,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(_cardRadiusValue),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkMode ? colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(_cardRadiusValue),
+          border: isDarkMode
+              ? Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.12),

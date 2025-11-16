@@ -108,7 +108,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                         'Fill in the details below to request a new tool',
                         style: TextStyle(
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          color: Colors.grey[600],
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                       SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
@@ -214,12 +214,14 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                 all: 16,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                color: isDarkMode
+                                    ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                                    : AppTheme.primaryColor.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 16),
                                 ),
                                 border: Border.all(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                  color: AppTheme.primaryColor.withValues(alpha: isDarkMode ? 0.3 : 0.2),
                                   width: 1,
                                 ),
                               ),
@@ -235,7 +237,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                     child: Text(
                                       'Attach photo or spec (optional)',
                                       style: TextStyle(
-                                        color: Colors.grey[700],
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                                       ),
                                     ),
@@ -370,12 +372,12 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           border: OutlineInputBorder(
@@ -460,12 +462,12 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           border: OutlineInputBorder(
@@ -591,7 +593,16 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
             menuMaxHeight: 300,
             onChanged: onChanged,
             items: [
-              for (final i in items) DropdownMenuItem(value: i, child: Text(i))
+              for (final i in items)
+                DropdownMenuItem(
+                  value: i,
+                  child: Text(
+                    i,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                )
             ],
           ),
         ),
@@ -638,7 +649,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           decoration: InputDecoration(
             labelText: label,
             labelStyle: TextStyle(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
             ),
             border: OutlineInputBorder(
@@ -672,7 +683,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
               Icon(
                 Icons.calendar_today,
                 color: value == null
-                    ? Colors.grey[400]
+                    ? theme.colorScheme.onSurface.withOpacity(0.4)
                     : AppTheme.primaryColor,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
               ),
@@ -681,7 +692,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                 text,
                 style: TextStyle(
                   color: value == null
-                      ? Colors.grey[400]
+                      ? theme.colorScheme.onSurface.withOpacity(0.4)
                       : theme.colorScheme.onSurface,
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                   fontWeight: FontWeight.w500,

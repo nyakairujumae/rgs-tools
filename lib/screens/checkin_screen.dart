@@ -91,7 +91,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               'Scan or search for tools you currently hold, review their condition, and return them to the inventory.',
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -219,12 +219,12 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     decoration: InputDecoration(
                       hintText: 'Search by tool name, brand, or...',
                       hintStyle: TextStyle(
-                        color: Colors.grey[400],
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        color: Colors.grey[600],
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                         size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                       ),
                       border: OutlineInputBorder(
@@ -284,7 +284,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           Text(
             'Only tools currently assigned to you are listed below. Use the scanner to speed up the search.',
             style: TextStyle(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             ),
           ),
@@ -327,7 +327,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             Icon(
               Icons.inventory_2_outlined,
               size: ResponsiveHelper.getResponsiveIconSize(context, 48),
-              color: Colors.grey[500],
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
             Text(
@@ -342,7 +342,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             Text(
               'You currently do not have any tools assigned to you. Badge a shared tool or request one from the admin team.',
               style: TextStyle(
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                 height: 1.4,
               ),
@@ -447,7 +447,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                         Text(
                           '${tool.category}${tool.brand != null && tool.brand!.isNotEmpty ? ' • ${tool.brand}' : ''}',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                           ),
                         ),
@@ -457,13 +457,13 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                             Icon(
                               Icons.badge_outlined,
                               size: ResponsiveHelper.getResponsiveIconSize(context, 14),
-                              color: Colors.grey[600],
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                             SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                             Text(
                               tool.serialNumber ?? 'No serial number',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: theme.colorScheme.onSurface.withOpacity(0.7),
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                               ),
                             ),
@@ -475,13 +475,13 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                             Icon(
                               Icons.person_outline,
                               size: ResponsiveHelper.getResponsiveIconSize(context, 14),
-                              color: Colors.grey[600],
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                             SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                             Text(
                               'Assigned to: $technicianName',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: theme.colorScheme.onSurface.withOpacity(0.7),
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                               ),
                             ),

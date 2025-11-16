@@ -11,6 +11,7 @@ import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../utils/error_handler.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/responsive_helper.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
@@ -37,53 +38,62 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        scrolledUnderElevation: 6,
+        foregroundColor: colorScheme.onSurface,
+        toolbarHeight: 80,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom AppBar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(28),
-                    bottomRight: Radius.circular(28),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _currentTool.name,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+                letterSpacing: -0.3,
+              ),
+            ),
+            if (_currentTool.category.isNotEmpty)
+              Text(
+                _currentTool.category,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w500,
                 ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.black87),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: Text(
-                        _currentTool.name,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: _handleMenuAction,
-                      icon: Icon(Icons.more_vert, color: Colors.black87),
-                      itemBuilder: (context) => [
+              ),
+          ],
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: _handleMenuAction,
+            icon: Icon(Icons.more_vert),
+            itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit',
                 child: Row(
@@ -104,13 +114,22 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'maintenance',
                 child: Row(
                   children: [
-                    Icon(Icons.build, size: 20),
+                    Icon(
+                      _currentTool.status == 'Maintenance' 
+                          ? Icons.check_circle 
+                          : Icons.build, 
+                      size: 20,
+                    ),
                     SizedBox(width: 8),
-                    Text('Schedule Maintenance'),
+                    Text(
+                      _currentTool.status == 'Maintenance' 
+                          ? 'Complete Maintenance' 
+                          : 'Mark for Maintenance',
+                    ),
                   ],
                 ),
               ),
@@ -134,18 +153,15 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   ],
                 ),
               ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Body Content
-              Expanded(
-                child: LoadingOverlay(
-                  isLoading: _isLoading,
-                  loadingMessage: 'Loading tool details...',
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            ],
+          ),
+        ],
+      ),
+      body: LoadingOverlay(
+        isLoading: _isLoading,
+        loadingMessage: 'Loading tool details...',
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -204,31 +220,36 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildActionButtons(),
             ],
           ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );
   }
 
   Widget _buildImageSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       width: double.infinity,
       height: 250,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
+        color: isDarkMode ? colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(28),
+        border: isDarkMode
+            ? Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1,
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -244,19 +265,22 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       width: double.infinity,
                       height: 250,
                       errorBuilder: (context, error, stackTrace) {
+                        final theme = Theme.of(context);
+                        final colorScheme = theme.colorScheme;
+                        final isDarkMode = theme.brightness == Brightness.dark;
                         return Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradientFor(context),
+                            color: isDarkMode ? colorScheme.surface : Colors.white,
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.error, size: 48, color: Colors.grey[600]),
+                                Icon(Icons.error, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                                 SizedBox(height: 8),
-                                Text('Failed to load image', style: TextStyle(color: Colors.grey[600])),
+                                Text('Failed to load image', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
                               ],
                             ),
                           ),
@@ -264,10 +288,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       },
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
+                        final theme = Theme.of(context);
+                        final colorScheme = theme.colorScheme;
+                        final isDarkMode = theme.brightness == Brightness.dark;
                         return Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradientFor(context),
+                            color: isDarkMode ? colorScheme.surface : Colors.white,
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
@@ -291,16 +318,16 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       : Container(
                           height: 250,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.cardGradientFor(context),
+                            color: isDarkMode ? colorScheme.surface : Colors.white,
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.image_not_supported, size: 48, color: Colors.grey[600]),
+                                Icon(Icons.image_not_supported, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                                 SizedBox(height: 8),
-                                Text('Image not found', style: TextStyle(color: Colors.grey[600])),
+                                Text('Image not found', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
                               ],
                             ),
                           ),
@@ -309,7 +336,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           : Container(
               height: 250,
               decoration: BoxDecoration(
-                gradient: AppTheme.cardGradientFor(context),
+                color: isDarkMode ? colorScheme.surface : Colors.white,
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Column(
@@ -318,13 +345,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   Icon(
                     Icons.build,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'No image available',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 16,
                     ),
                   ),
@@ -332,12 +359,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
+                        colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.8)],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),
@@ -369,17 +396,27 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildQuickStatusCards() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
+              color: isDarkMode ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(20),
+              border: isDarkMode
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -391,7 +428,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.getStatusColor(_currentTool.status).withOpacity(0.15),
+                    color: AppTheme.getStatusColor(_currentTool.status).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -404,13 +441,16 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Text(
                   'Status',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 6),
-                StatusChip(status: _currentTool.status),
+                StatusChip(
+                  status: _currentTool.status,
+                  label: _currentTool.status == 'Maintenance' ? 'Maint.' : null,
+                ),
               ],
             ),
           ),
@@ -420,11 +460,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
+              color: isDarkMode ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(20),
+              border: isDarkMode
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -436,7 +482,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.getConditionColor(_currentTool.condition).withOpacity(0.15),
+                    color: AppTheme.getConditionColor(_currentTool.condition).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -449,7 +495,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Text(
                   'Condition',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -465,11 +511,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
+              color: isDarkMode ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(20),
+              border: isDarkMode
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -481,33 +533,33 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (_currentTool.currentValue != null ? Colors.green : Colors.grey).withOpacity(0.15),
+                    color: (_currentTool.purchasePrice != null ? Colors.green : Colors.grey).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.attach_money,
-                    color: _currentTool.currentValue != null ? Colors.green : Colors.grey,
+                    color: _currentTool.purchasePrice != null ? Colors.green : Colors.grey,
                     size: 24,
                   ),
                 ),
                 SizedBox(height: 10),
                 Text(
-                  'Value',
+                  'Purchase Price',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 6),
                 Text(
-                  _currentTool.currentValue != null 
-                      ? CurrencyFormatter.formatCurrencyWhole(_currentTool.currentValue!)
+                  _currentTool.purchasePrice != null 
+                      ? CurrencyFormatter.formatCurrencyWhole(_currentTool.purchasePrice!)
                       : 'N/A',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -520,6 +572,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
 
   Widget _buildInfoSection(String title, List<Widget> children) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -532,7 +588,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
                 letterSpacing: -0.3,
               ),
             ),
@@ -540,16 +596,22 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
+              color: isDarkMode ? colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(28),
+              border: isDarkMode
+                  ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 2),
                 ),
@@ -565,6 +627,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildInfoRow(String label, String value, {Widget? statusWidget}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     if (label.isEmpty) {
       // For notes or long text without label
       return Padding(
@@ -573,7 +638,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           value,
           style: TextStyle(
             fontSize: 15,
-            color: Colors.black87,
+            color: colorScheme.onSurface,
             height: 1.5,
           ),
         ),
@@ -591,7 +656,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 15,
               ),
             ),
@@ -600,7 +665,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             child: statusWidget ?? Text(
               value,
               style: TextStyle(
-                color: Colors.black87,
+                color: colorScheme.onSurface,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -624,7 +689,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildFilledActionButton(
                 label: 'Assign to Technician',
                 icon: Icons.person_add,
-                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.85)],
+                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
                 onTap: () {
                   Navigator.push(
                     context,
@@ -638,7 +703,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildFilledActionButton(
                 label: 'Reassign Tool',
                 icon: Icons.swap_horiz,
-                colors: [AppTheme.accentColor, AppTheme.accentColor.withOpacity(0.85)],
+                colors: [AppTheme.accentColor, AppTheme.accentColor.withValues(alpha: 0.85)],
                 onTap: () {
                   Navigator.push(
                     context,
@@ -689,9 +754,15 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               children: [
                 Expanded(
                   child: _buildOutlinedActionButton(
-                    label: 'Maintenance',
-                    icon: Icons.build,
-                    color: AppTheme.primaryColor,
+                    label: _currentTool.status == 'Maintenance' 
+                        ? 'Complete Maint.' 
+                        : 'Mark for Maint.',
+                    icon: _currentTool.status == 'Maintenance' 
+                        ? Icons.check_circle 
+                        : Icons.build,
+                    color: _currentTool.status == 'Maintenance' 
+                        ? Colors.green 
+                        : AppTheme.primaryColor,
                     onTap: _scheduleMaintenance,
                   ),
                 ),
@@ -745,7 +816,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: colors.first.withOpacity(0.3),
+            color: colors.first.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -786,14 +857,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     required Color color,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
+        color: isDarkMode ? colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -805,19 +880,25 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
             alignment: Alignment.center,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, color: color, size: 18),
                 const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -927,14 +1008,72 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     }
   }
 
-  void _scheduleMaintenance() {
-    // TODO: Implement maintenance scheduling
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Maintenance scheduling coming soon!'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+  void _scheduleMaintenance() async {
+    final toolProvider = context.read<SupabaseToolProvider>();
+    final isInMaintenance = _currentTool.status == 'Maintenance';
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Create updated tool with new status
+      final updatedTool = Tool(
+        id: _currentTool.id,
+        name: _currentTool.name,
+        category: _currentTool.category,
+        brand: _currentTool.brand,
+        model: _currentTool.model,
+        serialNumber: _currentTool.serialNumber,
+        purchaseDate: _currentTool.purchaseDate,
+        purchasePrice: _currentTool.purchasePrice,
+        currentValue: _currentTool.currentValue,
+        condition: _currentTool.condition,
+        location: _currentTool.location,
+        assignedTo: _currentTool.assignedTo,
+        status: isInMaintenance ? 'Available' : 'Maintenance',
+        toolType: _currentTool.toolType,
+        imagePath: _currentTool.imagePath,
+        notes: _currentTool.notes,
+        createdAt: _currentTool.createdAt,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await toolProvider.updateTool(updatedTool);
+
+      setState(() {
+        _currentTool = updatedTool;
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isInMaintenance 
+                  ? 'Maintenance completed! Tool is now available.' 
+                  : 'Tool marked for maintenance.',
+            ),
+            backgroundColor: isInMaintenance ? Colors.green : Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating maintenance status: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _badgeTool() {

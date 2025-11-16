@@ -69,13 +69,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.surface
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -158,17 +160,19 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 20),
         ),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -216,9 +220,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                         Text(
                           [tool.brand, tool.model].where((e) => e != null && e.isNotEmpty).join(' '),
-                          style: TextStyle(
+                        style: TextStyle(
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                            color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -299,7 +303,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 tool.notes!,
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   height: 1.5,
                 ),
                 maxLines: 2,
@@ -428,7 +432,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 'This will mark ${tool.name} as available and remove it from maintenance.',
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -439,9 +443,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context, false),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[700],
+                        foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         padding: ResponsiveHelper.getResponsiveButtonPadding(context),
-                        side: BorderSide(color: AppTheme.subtleBorder),
+                        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),

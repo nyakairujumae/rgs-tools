@@ -358,8 +358,8 @@ class AppTheme {
       splashColor: secondaryColor.withValues(alpha: 0.2),
       highlightColor: secondaryColor.withValues(alpha: 0.18),
 
-      // Scaffold background - Will use gradient via Container decoration
-      scaffoldBackgroundColor: gradientStart, // Base color for gradient
+      // Scaffold background - Dark background for dark theme
+      scaffoldBackgroundColor: backgroundColor, // Pure black for dark theme
 
       // AppBar theme
       appBarTheme: const AppBarTheme(

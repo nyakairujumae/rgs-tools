@@ -104,7 +104,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.3),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -144,7 +144,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                                           ? 'Enter technician details below'
                                           : 'Update technician information',
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey[600],
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                       ),
                                     ),
                                   ],
@@ -312,7 +312,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                                 style: TextStyle(
                                   color: _hireDate != null 
                                       ? Theme.of(context).textTheme.bodyLarge?.color 
-                                      : Colors.grey[600],
+                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                             ),
@@ -331,7 +331,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                             onPressed: _isLoading ? null : () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: BorderSide(color: Colors.grey),
+                              side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -339,7 +339,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                             child: Text(
                               'Cancel',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -518,10 +518,10 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(40),
                     border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                       width: 2,
                     ),
                   ),

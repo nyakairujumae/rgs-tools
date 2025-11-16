@@ -60,13 +60,15 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Theme.of(context).colorScheme.surface 
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -118,7 +120,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       ResponsiveHelper.getResponsiveBorderRadius(context, 24),
                     ),
                     border: Border.all(
-                      color: AppTheme.subtleBorder,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                       width: 1.1,
                     ),
                     boxShadow: [
@@ -133,7 +135,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     controller: _tabController,
                     indicatorColor: AppTheme.secondaryColor,
                     labelColor: AppTheme.secondaryColor,
-                    unselectedLabelColor: Colors.grey[600],
+                    unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelStyle: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
@@ -270,20 +272,20 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Icon(
                   Icons.pending_actions,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 SizedBox(height: 16),
                 Text(
                   'No Users Awaiting Authorization',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'New technician registrations will appear here for authorization',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -317,20 +319,20 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Icon(
                   Icons.check_circle_outline,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 SizedBox(height: 16),
                 Text(
                   'No Authorized Users',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Authorized technician registrations will appear here',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -364,20 +366,20 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Icon(
                   Icons.cancel_outlined,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 SizedBox(height: 16),
                 Text(
                   'No Rejected Users',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Rejected technician registrations will appear here',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -402,10 +404,12 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -445,7 +449,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       Text(
                         approval.fullName ?? 'Unknown User',
                         style: TextStyle(
-                          color: Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.5,
@@ -455,7 +459,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       Text(
                         approval.email,
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                           fontWeight: FontWeight.w500,
                         ),
@@ -520,7 +524,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 approval.phone != null ||
                 approval.department != null) ...[
               SizedBox(height: 12),
-              Divider(color: Colors.grey.withValues(alpha: 0.3), height: 1),
+              Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), height: 1),
               SizedBox(height: 8),
               _buildInfoRow('Employee ID', approval.employeeId),
               if (approval.phone != null)
@@ -533,12 +537,12 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.access_time, size: 16, color: Colors.grey[400]),
+                Icon(Icons.access_time, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                 SizedBox(width: 8),
                 Text(
                   'Submitted: ${_formatDateTime(approval.submittedAt)}',
                   style: TextStyle(
-                    color: Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                     fontSize: 12,
                   ),
                 ),
@@ -554,7 +558,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   Text(
                     'Reviewed: ${_formatDateTime(approval.reviewedAt!)}',
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       fontSize: 12,
                     ),
                   ),
@@ -703,7 +707,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             child: Text(
               '$label:',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -839,7 +843,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: Colors.grey[300]),
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             ),
             SizedBox(height: 16),
             Text(
@@ -857,7 +861,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   color: Theme.of(context).textTheme.bodyLarge?.color),
               decoration: InputDecoration(
                 hintText: 'Enter reason for rejection...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

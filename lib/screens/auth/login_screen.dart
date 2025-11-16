@@ -29,8 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: ResponsiveHelper.getResponsivePadding(
@@ -49,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 48),
                       fontWeight: FontWeight.w900,
-                      color: Colors.grey[900],
+                      color: colorScheme.onSurface,
                       letterSpacing: 1.0,
                     ),
                   ),
@@ -59,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -69,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -90,28 +94,28 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             style: TextStyle(
-                              color: Colors.grey[900],
+                              color: colorScheme.onSurface,
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                             ),
                             decoration: InputDecoration(
                               labelText: 'Email',
                               labelStyle: TextStyle(
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                               ),
                               prefixIcon: Icon(
                                 Icons.email_outlined,
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: isDarkMode ? colorScheme.surface : Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                                 ),
                                 borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -120,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                                 ),
                                 borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -160,24 +164,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             style: TextStyle(
-                              color: Colors.grey[900],
+                              color: colorScheme.onSurface,
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                             ),
                             decoration: InputDecoration(
                               labelText: 'Password',
                               labelStyle: TextStyle(
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                               ),
                               prefixIcon: Icon(
                                 Icons.lock_outline,
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                  color: Colors.grey[600],
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                                 ),
                                 onPressed: () {
@@ -187,13 +191,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: isDarkMode ? colorScheme.surface : Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                                 ),
                                 borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -202,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                                 ),
                                 borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -313,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text(
                               '← Back to Role Selection',
                               style: TextStyle(
-                                color: Colors.grey[700],
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                                 fontWeight: FontWeight.w500,
                               ),

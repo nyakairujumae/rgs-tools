@@ -170,7 +170,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.08),
+        shadowColor: Colors.black.withValues(alpha:0.08),
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -209,33 +209,33 @@ class _AddToolScreenState extends State<AddToolScreen> {
               inputDecorationTheme: theme.inputDecorationTheme.copyWith(
                 filled: false,
                 labelStyle: TextStyle(
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurface.withValues(alpha:0.6),
                   fontWeight: FontWeight.w400,
                 ),
                 floatingLabelStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha:0.7),
                   fontWeight: FontWeight.w500,
                 ),
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                hintStyle: TextStyle(color: Colors.grey[500]),
+                hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha:0.5)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                    color: AppTheme.subtleBorder,
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                     width: 1.1,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                    color: AppTheme.subtleBorder,
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                     width: 1.1,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(
-                    color: theme.colorScheme.primary.withOpacity(0.7),
+                    color: theme.colorScheme.primary.withValues(alpha:0.7),
                     width: 2,
                   ),
                 ),
@@ -262,7 +262,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: theme.colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -302,7 +302,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                           labelText: 'Category *',
                           hintText: 'Select a category',
                           hintStyle: TextStyle(
-                            color: Colors.grey[700],
+                            color: theme.colorScheme.onSurface.withValues(alpha:0.5),
                             fontSize: 16,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
@@ -313,8 +313,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             value: category,
                             child: Text(
                               category,
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                           );
@@ -399,7 +399,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withOpacity(0.3),
+                              color: Colors.orange.withValues(alpha:0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -471,7 +471,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         'Scan barcode/QR code or generate ID for tools without serial numbers',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: theme.colorScheme.onSurface.withValues(alpha:0.7),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -480,7 +480,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     Divider(
                       height: 32,
                       thickness: 0.8,
-                      color: AppTheme.subtleBorder.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                       indent: 4,
                       endIndent: 4,
                     ),
@@ -494,7 +494,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: theme.colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -521,7 +521,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha:0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -542,8 +542,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                 : 'Select date',
                             style: TextStyle(
                               color: _purchaseDate != null
-                                  ? Colors.black87
-                                  : Colors.grey[500],
+                                  ? theme.colorScheme.onSurface
+                                  : theme.colorScheme.onSurface.withValues(alpha:0.5),
                             ),
                           ),
                         ),
@@ -559,7 +559,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: theme.colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -574,8 +574,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             child: DropdownButtonFormField<String>(
                               key: ValueKey(_condition),
                               value: _condition,
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -584,31 +584,31 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                 contentPadding: EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 16),
                               ),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: 'Excellent',
                                   child: Text('Excellent',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Good',
                                   child: Text('Good',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Fair',
                                   child: Text('Fair',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Poor',
                                   child: Text('Poor',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Needs Repair',
                                   child: Text('Needs Repair',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                               ],
                               onChanged: (value) {
@@ -628,8 +628,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             child: DropdownButtonFormField<String>(
                               key: ValueKey(_status),
                               value: _status,
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -638,26 +638,26 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                 contentPadding: EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 16),
                               ),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: 'Available',
                                   child: Text('Available',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'In Use',
                                   child: Text('In Use',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Maintenance',
                                   child: Text('Maintenance',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 DropdownMenuItem(
                                   value: 'Retired',
                                   child: Text('Retired',
-                                      style: TextStyle(color: Colors.black87)),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                               ],
                               onChanged: (value) {
@@ -680,7 +680,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha:0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -702,7 +702,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha:0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -730,7 +730,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
+                            color: Colors.blue.withValues(alpha:0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -925,7 +925,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -937,7 +937,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
             color: AppTheme.cardSurfaceColor(context),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: AppTheme.subtleBorder,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               width: 1.2,
             ),
             boxShadow: [
@@ -965,7 +965,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       right: 12,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.92),
+                          color: Colors.white.withValues(alpha:0.92),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -980,7 +980,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(0.75)),
+                                  .withValues(alpha:0.75)),
                           onPressed: () {
                             setState(() {
                               _selectedImage = null;
@@ -1037,7 +1037,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                           'Tap to select from gallery or camera',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                   ),
                         ),
                       ],
@@ -1065,7 +1065,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1118,9 +1118,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: Colors.blue.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
         ),
         child: Column(
           children: [

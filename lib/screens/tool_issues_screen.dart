@@ -59,13 +59,15 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -94,13 +96,15 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -126,7 +130,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 color: AppTheme.cardSurfaceColor(context),
                 borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
                 border: Border.all(
-                  color: AppTheme.subtleBorder,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   width: 1.1,
                 ),
                 boxShadow: [
@@ -145,7 +149,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                   borderRadius: BorderRadius.circular(24),
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey[600],
+                unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 labelStyle: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -198,7 +202,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                               issueProvider.error!,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -306,7 +310,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
               'All tools are working properly!',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -335,10 +339,12 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -413,7 +419,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 issue.description,
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -452,7 +458,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                       'Reported by ${issue.reportedBy}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -462,7 +468,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                     issue.ageText,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -560,7 +566,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                 issue.description,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],

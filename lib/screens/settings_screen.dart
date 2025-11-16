@@ -36,13 +36,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -128,10 +130,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildLanguageCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -171,13 +175,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _selectedLanguage,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-          color: Colors.grey[400],
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
         onTap: _showLanguageDialog,
       ),
@@ -187,10 +191,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildCurrencyCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -233,13 +239,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _selectedCurrency,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-          color: Colors.grey[400],
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
         onTap: _showCurrencyDialog,
       ),
@@ -249,10 +255,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNotificationCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -292,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Receive maintenance reminders and updates',
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         value: _notificationsEnabled,
@@ -308,10 +316,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBackupCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -353,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Automatically backup data to cloud',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             value: _autoBackup,
@@ -363,7 +373,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
             },
           ),
-          Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(
+            height: 1, 
+            indent: 16, 
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          ),
           ListTile(
             contentPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
@@ -393,17 +408,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Download your data as CSV',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _exportData,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(
+            height: 1, 
+            indent: 16, 
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          ),
           ListTile(
             contentPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
@@ -433,13 +453,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Restore from backup file',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _importData,
           ),
@@ -451,10 +471,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -496,17 +518,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               '1.0.0',
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _showVersionInfo,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(
+            height: 1, 
+            indent: 16, 
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          ),
           ListTile(
             contentPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
@@ -532,17 +559,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Get help and contact support',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _showHelp,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(
+            height: 1, 
+            indent: 16, 
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          ),
           ListTile(
             contentPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
@@ -568,17 +600,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Read our privacy policy',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _showPrivacyPolicy,
           ),
-          Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(
+            height: 1, 
+            indent: 16, 
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          ),
           ListTile(
             contentPadding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
@@ -604,13 +641,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Read our terms of service',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onTap: _showTermsOfService,
           ),
@@ -745,7 +782,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     name,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -786,11 +823,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('RGS Tools Manager'),
-            Text('Version: 1.0.0'),
-            Text('Build: 2024.01.15'),
+            Text(
+              'RGS Tools Manager',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              'Version: 1.0.0',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            Text(
+              'Build: 2024.01.15',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
             SizedBox(height: 16),
-            Text('© 2024 RGS Tools. All rights reserved.'),
+            Text(
+              '© 2024 RGS Tools. All rights reserved.',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
           ],
         ),
         actions: [

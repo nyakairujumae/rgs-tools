@@ -298,11 +298,16 @@ class ErrorBoundary extends StatelessWidget {
                     SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
-                        // Try to navigate to login screen
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
-                          (route) => false,
-                        );
+                        // Try to navigate to login screen using root navigator after frame
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => const RoleSelectionScreen(),
+                              settings: const RouteSettings(name: '/role-selection'),
+                            ),
+                            (route) => false,
+                          );
+                        });
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -339,6 +344,53 @@ class HvacToolsManagerApp extends StatelessWidget {
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, child) {
+          // Set custom error widget builder to prevent red screen during logout
+          ErrorWidget.builder = (FlutterErrorDetails details) {
+            // During logout, silently handle errors
+            if (authProvider.isLoggingOut) {
+              return const SizedBox.shrink();
+            }
+            // For other errors, show a custom error widget
+            return Material(
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Something went wrong',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          // Use root navigator and schedule after frame to avoid missing Navigator context
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => const RoleSelectionScreen(),
+                                settings: const RouteSettings(name: '/role-selection'),
+                              ),
+                              (route) => false,
+                            );
+                          });
+                        },
+                        child: const Text('Go to Login'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          };
+          
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
@@ -409,27 +461,8 @@ class HvacToolsManagerApp extends StatelessWidget {
       // Show loading screen during initialization or any loading state
       if (!authProvider.isInitialized || authProvider.isLoading) {
         print('🔍 Showing loading screen');
-        return const Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Loading RGS Tools...',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        // Return an invisible widget so only the native splash is visible
+        return const SizedBox.shrink();
       }
 
       if (authProvider.isAuthenticated) {

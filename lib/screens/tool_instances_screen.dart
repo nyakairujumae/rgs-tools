@@ -108,10 +108,12 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surface
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.subtleBorder,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   width: 1.1,
                 ),
                 boxShadow: [
@@ -135,7 +137,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 1,
                     height: 40,
-                    color: AppTheme.subtleBorder,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -148,7 +150,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 1,
                     height: 40,
-                    color: AppTheme.subtleBorder,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -234,10 +236,14 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.subtleBorder,
+          color: isSelected
+              ? AppTheme.primaryColor
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: isSelected ? 2 : 1.1,
         ),
         boxShadow: [
@@ -272,7 +278,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   color: AppTheme.cardSurfaceColor(context),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppTheme.subtleBorder,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -344,7 +350,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       _buildInfoRow(
                         Icons.qr_code,
                         'Serial: ${tool.serialNumber}',
-                        theme.colorScheme.onSurface.withOpacity(0.7),
+                        theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     const SizedBox(height: 4),
                     _buildInfoRow(

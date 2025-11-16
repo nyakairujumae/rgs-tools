@@ -90,7 +90,39 @@ class CurrencyFormatter {
       ),
     );
   }
+
+  /// Widget that displays a small "AED" label before the amount.
+  /// Example visual: [AED] 1,234 where "AED" is smaller than the amount.
+  static Widget aedAmount(
+    double? value, {
+    int decimalDigits = 0,
+    TextStyle? amountStyle,
+    TextStyle? aedStyle,
+    BuildContext? context,
+    double aedScale = 0.6,
+  }) {
+    final baseStyle = amountStyle ?? (context != null ? Theme.of(context).textTheme.bodyLarge : const TextStyle());
+    final smallStyle = aedStyle ??
+        baseStyle?.copyWith(
+          fontSize: (baseStyle?.fontSize ?? 16) * aedScale,
+          fontWeight: FontWeight.w700,
+        );
+
+    final formatted = (value ?? 0).toStringAsFixed(decimalDigits);
+
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(text: 'AED ', style: smallStyle),
+          TextSpan(text: formatted, style: baseStyle),
+        ],
+      ),
+    );
+  }
 }
+
+
+
 
 
 

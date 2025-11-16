@@ -106,7 +106,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               'Help us track and resolve tool problems quickly',
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -120,7 +120,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
           child: _isLoading
               ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                   ),
                 )
               : SingleChildScrollView(
@@ -156,6 +156,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                       '${tool.name} (${tool.category})',
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
                                     ),
                                   );
                                 }).toList(),
@@ -189,7 +192,12 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 items: _issueTypes.map((type) {
                                   return DropdownMenuItem(
                                     value: type,
-                                    child: Text(type),
+                                    child: Text(
+                                      type,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -206,7 +214,12 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 items: _priorities.map((priority) {
                                   return DropdownMenuItem(
                                     value: priority,
-                                    child: Text(priority),
+                                    child: Text(
+                                      priority,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -423,19 +436,19 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           prefixIcon: icon != null
               ? Icon(
                   icon,
                   size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                 )
               : null,
           border: OutlineInputBorder(
@@ -518,18 +531,18 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           prefixIcon: Icon(
             Icons.description,
             size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(
@@ -613,12 +626,12 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: Colors.grey[600],
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
           ),
           hintText: value == null ? 'Select...' : null,
           hintStyle: TextStyle(
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
             overflow: TextOverflow.ellipsis,
           ),
@@ -626,7 +639,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               ? Icon(
                   icon,
                   size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                 )
               : null,
           border: OutlineInputBorder(

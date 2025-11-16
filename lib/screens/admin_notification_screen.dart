@@ -148,7 +148,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                          Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
                           const SizedBox(height: 16),
                           Text(
                             'Error loading notifications',
@@ -165,7 +165,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                               provider.error!,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -198,7 +198,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                           Icon(
                             Icons.notifications_none_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -206,7 +206,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -214,7 +214,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                             'You\'ll see technician requests here',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                         ],
@@ -261,7 +261,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? AppTheme.secondaryColor : Colors.grey[700],
+            color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
         selected: isSelected,
@@ -296,7 +296,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
           color: notification.isRead ? AppTheme.subtleBorder : AppTheme.secondaryColor.withValues(alpha: 0.3),
@@ -372,31 +374,31 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                         notification.message,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.person_outline, size: 12, color: Colors.grey[500]),
+                          Icon(Icons.person_outline, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                           const SizedBox(width: 4),
                           Text(
                             notification.technicianName,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
+                          Icon(Icons.access_time, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                           const SizedBox(width: 4),
                           Text(
                             _formatTimestamp(notification.timestamp),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -406,7 +408,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                 ),
                 // Menu Button
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: Colors.grey[400], size: 20),
+                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -425,7 +427,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                       value: 'mark_read',
                       child: Row(
                         children: [
-                          Icon(Icons.mark_email_read, size: 18, color: Colors.grey[700]),
+                          Icon(Icons.mark_email_read, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                           const SizedBox(width: 8),
                           Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
                         ],
@@ -519,7 +521,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               notification.message,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 16),

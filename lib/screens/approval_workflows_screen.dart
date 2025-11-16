@@ -39,13 +39,15 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -74,13 +76,15 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                     width: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 44),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Theme.of(context).colorScheme.surface 
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -150,7 +154,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppTheme.secondaryColor : Colors.grey[700],
+                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               selected: isSelected,
@@ -172,7 +176,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
                 side: BorderSide(
-                  color: isSelected ? AppTheme.secondaryColor : AppTheme.subtleBorder,
+                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   width: 1.1,
                 ),
               ),
@@ -210,7 +214,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppTheme.secondaryColor : Colors.grey[700],
+                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               selected: isSelected,
@@ -232,7 +236,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
                 side: BorderSide(
-                  color: isSelected ? AppTheme.secondaryColor : AppTheme.subtleBorder,
+                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   width: 1.1,
                 ),
               ),
@@ -306,10 +310,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? Theme.of(context).colorScheme.surface 
+            : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
         border: Border.all(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
         boxShadow: [
@@ -360,7 +366,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                         workflow.requestType,
                         style: TextStyle(
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -403,7 +409,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               workflow.description,
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,
@@ -491,7 +497,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                         'Reason: ${workflow.rejectionReason}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -622,7 +628,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -756,14 +762,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
           'Are you sure you want to approve "${workflow.title}"?',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[700],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[600],
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             child: Text('Cancel'),
           ),
@@ -813,7 +819,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               'Are you sure you want to reject this request?',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 16),
@@ -834,7 +840,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[600],
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             child: Text('Cancel'),
           ),
@@ -913,7 +919,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 workflow.description,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -1094,7 +1100,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey[600],
+                    foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   child: const Text('Cancel'),
                 ),
@@ -1127,14 +1133,14 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: AppTheme.subtleBorder,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
       ),
@@ -1192,7 +1198,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           RequestTypes.typeDescriptions[_selectedRequestType] ?? '',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             fontStyle: FontStyle.italic,
           ),
         ),

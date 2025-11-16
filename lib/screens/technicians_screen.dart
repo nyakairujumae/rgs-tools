@@ -168,11 +168,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   'Select technicians to assign',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.color
-                                        ?.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -192,7 +192,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         color: AppTheme.cardSurfaceColor(context),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: AppTheme.subtleBorder,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                           width: 1.1,
                         ),
                         boxShadow: [
@@ -217,28 +217,28 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           hintText: 'Search technicians...',
                           hintStyle: TextStyle(
                             fontSize: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.45),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.45),
                           ),
                           prefixIcon: Icon(
                             Icons.search,
                             size: 18,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.45),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.45),
                           ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
                                   icon: Icon(
                                     Icons.clear,
                                     size: 18,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.45),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.45),
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -275,7 +275,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withOpacity(0.3),
+                                      .withValues(alpha: 0.3),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -298,7 +298,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                         .textTheme
                                         .bodySmall
                                         ?.color
-                                        ?.withOpacity(0.6),
+                                        ?.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -335,7 +335,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       : 'Select Technicians First'),
                   backgroundColor: _selectedTechnicians.isNotEmpty
                       ? Colors.green
-                      : Colors.grey,
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 )
               : FloatingActionButton.extended(
                   onPressed: () {
@@ -343,7 +343,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   },
                   icon: Icon(Icons.add),
                   label: Text('Add'),
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppTheme.primaryColor,
                 ),
         );
       },
@@ -392,10 +392,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Theme.of(context).colorScheme.surface 
+              : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.subtleBorder,
+            color: isSelected 
+                ? AppTheme.primaryColor 
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1.1,
           ),
           boxShadow: [
@@ -464,7 +468,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 : Icons.radio_button_unchecked,
                             color: isSelected
                                 ? AppTheme.primaryColor
-                                : Colors.grey[400],
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                             size: 24,
                           ),
                         ),
@@ -482,11 +486,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             Icon(
                               Icons.build,
                               size: 14,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.color
-                                  ?.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 4),
                             Flexible(
@@ -497,11 +501,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.color
-                                      ?.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -532,7 +536,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
           style: TextStyle(
             color:
-                Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
+                Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
@@ -592,7 +596,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               color: statusColor,
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surface
+                    : Colors.white,
                 width: 2,
               ),
             ),
@@ -630,7 +636,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 style: TextStyle(
                   color: isSelected
                       ? Theme.of(context).textTheme.bodyLarge?.color
-                      : Colors.grey[400],
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 11,
                 ),
@@ -650,7 +656,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               side: BorderSide(
                 color: isSelected
                     ? Theme.of(context).primaryColor
-                    : Colors.grey.withValues(alpha: 0.3),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
@@ -736,14 +742,14 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         ),
         content: Text(
           'Are you sure you want to delete ${technician.name}?',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
             ),
           ),
           TextButton(

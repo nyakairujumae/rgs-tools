@@ -286,6 +286,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                       ),
                       items: const [
                         DropdownMenuItem(value: 'Available', child: Text('Available')),
+                        DropdownMenuItem(value: 'Assigned', child: Text('Assigned')),
                         DropdownMenuItem(value: 'In Use', child: Text('In Use')),
                         DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
                         DropdownMenuItem(value: 'Retired', child: Text('Retired')),

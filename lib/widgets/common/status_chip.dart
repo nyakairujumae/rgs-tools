@@ -42,12 +42,16 @@ class StatusChip extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            Text(
-              displayText,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 10,
+            Flexible(
+              child: Text(
+                displayText,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

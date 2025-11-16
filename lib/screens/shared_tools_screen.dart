@@ -186,7 +186,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           color: AppTheme.cardSurfaceColor(context),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppTheme.subtleBorder,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             width: 1.1,
           ),
           boxShadow: [
@@ -215,7 +215,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               color: Theme.of(context)
                   .colorScheme
                   .onSurface
-                  .withOpacity(0.45),
+                  .withValues(alpha: 0.45),
             ),
             prefixIcon: Icon(
               Icons.search,
@@ -223,7 +223,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               color: Theme.of(context)
                   .colorScheme
                   .onSurface
-                  .withOpacity(0.45),
+                  .withValues(alpha: 0.45),
             ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
@@ -233,7 +233,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(0.45),
+                          .withValues(alpha: 0.45),
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -272,7 +272,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 style: TextStyle(
                   color: isSelected
                       ? Theme.of(context).textTheme.bodyLarge?.color
-                      : Colors.grey[400],
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 11,
                 ),
@@ -291,7 +291,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.primaryColor
-                    : Colors.grey.withValues(alpha: 0.3),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             ),
           );
@@ -335,7 +335,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   color: AppTheme.cardSurfaceColor(context),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: AppTheme.subtleBorder,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                     width: 1.2,
                   ),
                   boxShadow: [
@@ -563,14 +563,14 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           Icon(
             Icons.build,
             size: 40,
-            color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -682,7 +682,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
