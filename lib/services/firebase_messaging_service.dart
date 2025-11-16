@@ -54,8 +54,14 @@ class FirebaseMessagingService {
       // Initialize local notifications (for foreground + badge number)
       const initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initializationSettingsDarwin = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
       const initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
+        iOS: initializationSettingsDarwin,
       );
       await _local.initialize(initializationSettings);
       // Ensure channel exists with showBadge
@@ -273,7 +279,10 @@ class FirebaseMessagingService {
       showWhen: true,
       number: badgeCount,
     );
-    final details = NotificationDetails(android: androidDetails);
+    final darwinDetails = DarwinNotificationDetails(
+      badgeNumber: badgeCount,
+    );
+    final details = NotificationDetails(android: androidDetails, iOS: darwinDetails);
     await _local.show(
       (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
       title,
@@ -346,8 +355,10 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     // Show local notification from background isolate
     const initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsDarwin = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
     );
     final plugin = FlutterLocalNotificationsPlugin();
     await plugin.initialize(initializationSettings);
@@ -370,7 +381,11 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       showWhen: true,
       number: updated,
     );
-    final details = NotificationDetails(android: androidDetails);
+    final darwinDetails = DarwinNotificationDetails(
+      badgeNumber: updated,
+    );
+    final details =
+        NotificationDetails(android: androidDetails, iOS: darwinDetails);
     await plugin.show(
       (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
       message.notification?.title ?? 'RGS',
