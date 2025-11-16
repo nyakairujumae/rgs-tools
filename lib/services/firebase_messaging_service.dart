@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 import '../config/firebase_config.dart';
 import 'supabase_service.dart';
 
@@ -130,13 +131,14 @@ class FirebaseMessagingService {
   /// Set up message handlers
   static void _setupMessageHandlers() {
     // Handle messages when app is in foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       debugPrint('🔥 Received foreground message: ${message.messageId}');
       debugPrint('🔥 Message data: ${message.data}');
       debugPrint('🔥 Message notification: ${message.notification?.title}');
       
       // Show local notification or handle in-app
       _handleForegroundMessage(message);
+      await _incrementBadgeCount();
     });
 
     // Handle messages when app is opened from background
@@ -197,6 +199,35 @@ class FirebaseMessagingService {
         default:
           debugPrint('🔥 Unknown message type: ${data['type']}');
       }
+    }
+  }
+
+  /// Badge helpers
+  static const String _badgeKey = 'app_badge_count';
+
+  static Future<void> _incrementBadgeCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final current = prefs.getInt(_badgeKey) ?? 0;
+      final updated = current + 1;
+      await prefs.setInt(_badgeKey, updated);
+      if (await FlutterAppBadger.isAppBadgeSupported()) {
+        FlutterAppBadger.updateBadgeCount(updated);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to increment badge: $e');
+    }
+  }
+
+  static Future<void> clearBadge() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_badgeKey, 0);
+      if (await FlutterAppBadger.isAppBadgeSupported()) {
+        FlutterAppBadger.removeBadge();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to clear badge: $e');
     }
   }
 

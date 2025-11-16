@@ -511,6 +511,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   }
 
   void _showNotifications(BuildContext context) {
+    // Clear badge when opening notifications sheet
+    FirebaseMessagingService.clearBadge();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
