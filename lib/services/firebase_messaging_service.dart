@@ -334,11 +334,51 @@ class FirebaseMessagingService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('🔥 Background message handler: ${message.messageId}');
   debugPrint('🔥 Message data: ${message.data}');
-  // Increment stored count; numeric badge on Android may require app in foreground,
-  // but we still persist count so it syncs next time app opens.
+  // Increment stored count and update badge immediately; also show a local notif
   try {
     final prefs = await SharedPreferences.getInstance();
     final current = prefs.getInt(FirebaseMessagingService._badgeKey) ?? 0;
-    await prefs.setInt(FirebaseMessagingService._badgeKey, current + 1);
-  } catch (_) {}
+    final updated = current + 1;
+    await prefs.setInt(FirebaseMessagingService._badgeKey, updated);
+    if (await FlutterAppBadger.isAppBadgeSupported()) {
+      FlutterAppBadger.updateBadgeCount(updated);
+    }
+    // Show local notification from background isolate
+    const initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+    );
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.initialize(initializationSettings);
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      FirebaseMessagingService._androidChannelId,
+      FirebaseMessagingService._androidChannelName,
+      description: FirebaseMessagingService._androidChannelDesc,
+      importance: Importance.defaultImportance,
+      showBadge: true,
+    );
+    final androidPlugin = plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.createNotificationChannel(channel);
+    final androidDetails = AndroidNotificationDetails(
+      FirebaseMessagingService._androidChannelId,
+      FirebaseMessagingService._androidChannelName,
+      channelDescription: FirebaseMessagingService._androidChannelDesc,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      showWhen: true,
+      number: updated,
+    );
+    final details = NotificationDetails(android: androidDetails);
+    await plugin.show(
+      (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
+      message.notification?.title ?? 'RGS',
+      message.notification?.body ?? 'You have a new notification',
+      details,
+      payload: message.data.isNotEmpty ? message.data.toString() : null,
+    );
+  } catch (e) {
+    debugPrint('⚠️ Background badge/local notification failed: $e');
+  }
 }
