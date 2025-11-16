@@ -204,14 +204,15 @@ class _TechnicianRegistrationScreenState
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(28),
-        border: isDarkMode
-            ? Border.all(color: colorScheme.onSurface.withValues(alpha: 0.12))
-            : null,
+        border: Border.all(
+          color: colorScheme.onSurface.withValues(alpha: 0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.06 : 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -409,6 +410,11 @@ class _TechnicianRegistrationScreenState
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
     final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
+    final cardShadow = BoxShadow(
+      color: Colors.black.withValues(alpha: isDarkMode ? 0.18 : 0.1),
+      blurRadius: 22,
+      offset: const Offset(0, 10),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -421,48 +427,62 @@ class _TechnicianRegistrationScreenState
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          decoration: InputDecoration(
-            hintText: hintText ?? 'Enter $label',
-            hintStyle: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-            filled: true,
-            fillColor: cardColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide:
-                  const BorderSide(color: AppTheme.primaryColor, width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            prefixIcon: icon != null
-                ? Icon(icon,
-                    color: colorScheme.onSurface.withValues(alpha: 0.6))
-                : null,
-            suffixIcon: onToggleVisibility != null
-                ? IconButton(
-                    icon: Icon(obscureText
-                        ? Icons.visibility_off
-                        : Icons.visibility, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                    onPressed: onToggleVisibility,
+        Container(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [cardShadow],
+            border: isDarkMode
+                ? Border.all(
+                    color: colorScheme.onSurface.withValues(alpha: 0.12),
                   )
                 : null,
           ),
-          validator: validator,
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            decoration: InputDecoration(
+              labelText: label,
+              filled: true,
+              fillColor: cardColor,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              hintText: hintText ?? 'Enter $label',
+              hintStyle: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryColor, width: 2),
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              prefixIcon: icon != null
+                  ? Icon(icon,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6))
+                  : null,
+              suffixIcon: onToggleVisibility != null
+                  ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      onPressed: onToggleVisibility,
+                    )
+                  : null,
+            ),
+            validator: validator,
+          ),
         ),
       ],
     );
