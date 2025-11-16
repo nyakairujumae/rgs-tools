@@ -7,6 +7,7 @@ import '../models/user_role.dart';
 import '../services/supabase_service.dart';
 import 'auth/login_screen.dart';
 import 'technician_home_screen.dart';
+import '../theme/app_theme.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
   const PendingApprovalScreen({super.key});
