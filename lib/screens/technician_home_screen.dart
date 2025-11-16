@@ -1118,9 +1118,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
-                // Shared Tools Carousel (auto sliding)
+              // Shared Tools Carousel (auto sliding)
               SizedBox(
-                height: ResponsiveHelper.getResponsiveListItemHeight(context, 160),
+                height: ResponsiveHelper.getResponsiveListItemHeight(context, 176),
                 child: featuredTools.isEmpty
                     ? Center(
                         child: Padding(
@@ -1276,7 +1276,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         ResponsiveHelper.getResponsiveBorderRadius(context, 12),
       ),
       child: Container(
-        height: ResponsiveHelper.getResponsiveListItemHeight(context, 148),
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 164),
         padding: ResponsiveHelper.getResponsivePadding(
           context,
           horizontal: 12,
