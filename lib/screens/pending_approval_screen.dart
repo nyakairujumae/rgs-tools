@@ -123,6 +123,8 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
     final status = _approvalStatus?['status'] as String?;
     final isRejected = status == 'rejected';
     final isPending = status == 'pending' || status == null;
@@ -151,7 +153,8 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: (isRejected ? Colors.red : Colors.orange).withOpacity(0.1),
+                  color: (isRejected ? Colors.red : Colors.orange)
+                      .withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -168,7 +171,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 isRejected ? 'Account Approval Rejected' : 'Account Pending Approval',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -181,7 +184,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   ? 'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.'
                   : 'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.textTheme.bodyMedium?.color,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -192,12 +195,21 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: theme.cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDarkMode ? colorScheme.surface : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: (isRejected ? Colors.red : Colors.orange).withOpacity(0.3),
+                    color: (isRejected ? Colors.red : Colors.orange)
+                        .withValues(alpha: 0.3),
                     width: 1,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          Colors.black.withValues(alpha: isDarkMode ? 0.08 : 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -213,7 +225,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                           'Current Status',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: theme.textTheme.bodyLarge?.color,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -225,7 +237,8 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: (isRejected ? Colors.red : Colors.orange).withOpacity(0.1),
+                        color: (isRejected ? Colors.red : Colors.orange)
+                            .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -238,7 +251,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                     ),
                     if (isRejected && rejectionReason != null) ...[
                       SizedBox(height: 16),
-                      Divider(),
+                      Divider(
+                        color: colorScheme.onSurface.withValues(alpha: 0.2),
+                      ),
                       SizedBox(height: 12),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +272,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                                   'Rejection Reason:',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: theme.textTheme.bodyLarge?.color,
+                                    color: colorScheme.onSurface,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -280,9 +295,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                          border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -318,11 +335,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       await _loadApprovalStatus();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                     icon: _isLoading 
@@ -348,7 +365,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 Text(
                   'Status is checked automatically every 5 seconds',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic,
                   ),
                   textAlign: TextAlign.center,
@@ -362,11 +379,12 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 child: ElevatedButton(
                   onPressed: () => _signOut(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
+                    backgroundColor:
+                        colorScheme.onSurface.withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: Text(
@@ -385,7 +403,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
               Text(
                 'Questions? Contact your administrator',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodyMedium?.color,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
