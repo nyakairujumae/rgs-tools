@@ -1355,7 +1355,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // Close confirmation dialog
+              // Close confirmation dialog first
+              Navigator.pop(context);
+              
+              // Capture the navigator context before async operations
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               
               setState(() {
                 _isLoading = true;
@@ -1372,21 +1377,24 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 // Update local state immediately for instant UI feedback
                 toolProvider.removeToolFromList(toolId);
                 
-                // Navigate back immediately - don't wait for reload
+                // Clear loading state and navigate immediately
                 if (mounted) {
-                  Navigator.pop(context);
+                  setState(() {
+                    _isLoading = false;
+                  });
                   
-                  // Show success message after navigation
-                  Future.delayed(Duration(milliseconds: 200), () {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Tool "$toolName" deleted successfully'),
-                          backgroundColor: Colors.green,
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
+                  // Navigate back immediately
+                  navigator.pop();
+                  
+                  // Show success message after a short delay
+                  Future.delayed(Duration(milliseconds: 100), () {
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Tool "$toolName" deleted successfully'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
                   });
                 }
                 
