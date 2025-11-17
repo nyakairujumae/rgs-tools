@@ -1165,7 +1165,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         content: Text('Are you sure you want to badge yourself as having this tool? This will notify other technicians that you have it temporarily.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel'),
           ),
           ElevatedButton(
@@ -1354,7 +1354,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel'),
           ),
           TextButton(
