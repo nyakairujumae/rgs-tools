@@ -1311,56 +1311,57 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Delete Tool'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Are you sure you want to delete "${_currentTool.name}"?'),
-            SizedBox(height: 12),
-            Text(
-              'This will permanently delete:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('• The tool and all its data'),
-            Text('• All maintenance records'),
-            Text('• All usage history'),
-            Text('• All reported issues'),
-            SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.red.shade200),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Delete Tool'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to delete "${_currentTool.name}"?'),
+              SizedBox(height: 12),
+              Text(
+                'This will permanently delete:',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              child: Text(
-                'This action cannot be undone!',
-                style: TextStyle(
-                  color: Colors.red.shade700,
-                  fontWeight: FontWeight.bold,
+              SizedBox(height: 8),
+              Text('• The tool and all its data'),
+              Text('• All maintenance records'),
+              Text('• All usage history'),
+              Text('• All reported issues'),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Text(
+                  'This action cannot be undone!',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel'),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              // Close confirmation dialog first
-              Navigator.pop(dialogContext);
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Close confirmation dialog first
+                Navigator.pop(dialogContext);
               
               setState(() {
                 _isLoading = true;
@@ -1436,11 +1437,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 }
                 debugPrint('🔧 Finally block - cleaning up');
               }
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+              },
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
