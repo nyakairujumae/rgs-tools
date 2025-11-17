@@ -1160,7 +1160,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   void _badgeTool() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Badge Tool'),
         content: Text('Are you sure you want to badge yourself as having this tool? This will notify other technicians that you have it temporarily.'),
         actions: [
@@ -1170,7 +1170,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await _performBadgeTool();
             },
             style: ElevatedButton.styleFrom(
