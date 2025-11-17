@@ -1305,9 +1305,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       return;
     }
 
+    // Capture the screen's navigator and scaffold messenger before showing dialog
+    final screenNavigator = Navigator.of(context);
+    final screenScaffoldMessenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Row(
           children: [
             Icon(Icons.warning, color: Colors.red),
@@ -1356,11 +1360,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           TextButton(
             onPressed: () async {
               // Close confirmation dialog first
-              Navigator.pop(context);
-              
-              // Capture the navigator context before async operations
-              final navigator = Navigator.of(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              Navigator.pop(dialogContext);
               
               setState(() {
                 _isLoading = true;
@@ -1383,12 +1383,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     _isLoading = false;
                   });
                   
-                  // Navigate back immediately
-                  navigator.pop();
+                  // Navigate back using the screen's navigator
+                  screenNavigator.pop();
                   
                   // Show success message after a short delay
                   Future.delayed(Duration(milliseconds: 100), () {
-                    scaffoldMessenger.showSnackBar(
+                    screenScaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text('Tool "$toolName" deleted successfully'),
                         backgroundColor: Colors.green,
