@@ -6,6 +6,7 @@ import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
 import "../providers/supabase_technician_provider.dart";
 import "../providers/auth_provider.dart";
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
@@ -1363,23 +1364,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               try {
                 final toolName = _currentTool.name;
                 final toolId = _currentTool.id!;
+                final toolProvider = context.read<SupabaseToolProvider>();
                 
-                // Delete the tool
-                await context.read<SupabaseToolProvider>().deleteTool(toolId);
+                // Delete from database first
+                await SupabaseService.client.from('tools').delete().eq('id', toolId);
                 
-                // Ensure loading state is cleared before navigation
+                // Update local state immediately for instant UI feedback
+                toolProvider.removeToolFromList(toolId);
+                
+                // Navigate back immediately - don't wait for reload
                 if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                  });
-                }
-                
-                // Force navigation back immediately
-                if (mounted) {
-                  Navigator.of(context).pop();
+                  Navigator.pop(context);
                   
                   // Show success message after navigation
-                  Future.delayed(Duration(milliseconds: 300), () {
+                  Future.delayed(Duration(milliseconds: 200), () {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -1391,6 +1389,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     }
                   });
                 }
+                
+                // Reload tools in background to ensure full sync
+                toolProvider.loadTools().catchError((e) {
+                  debugPrint('Error reloading tools after deletion: $e');
+                });
               } catch (e) {
                 debugPrint('❌ Error deleting tool: $e');
                 
@@ -1417,8 +1420,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   );
                 }
               } finally {
-                // Don't reset loading state if we successfully deleted and navigated away
-                // The setState would cause an error since we've popped the screen
+                // Clear loading state if still mounted (in case of error)
+                if (mounted) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                }
                 debugPrint('🔧 Finally block - cleaning up');
               }
             },

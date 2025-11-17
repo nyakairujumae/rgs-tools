@@ -105,6 +105,12 @@ class SupabaseToolProvider with ChangeNotifier {
     }
   }
 
+  /// Remove a tool from local list (used for immediate UI update before reload)
+  void removeToolFromList(String toolId) {
+    _tools.removeWhere((tool) => tool.id == toolId);
+    notifyListeners();
+  }
+
   Future<void> assignTool(
       String toolId, String technicianId, String assignmentType) async {
     try {
