@@ -38,11 +38,23 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Back',
+          ),
+        ),
         title: Text('Temporary Return: ${widget.tool.name}'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Colors.black,
+        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
       ),
       body: SingleChildScrollView(
