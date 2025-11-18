@@ -49,9 +49,40 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final instances = widget.toolGroup.instances;
+    
+    return Consumer<SupabaseToolProvider>(
+      builder: (context, toolProvider, child) {
+        // Rebuild tool group from current tools to reflect deletions
+        final currentTools = toolProvider.tools.where((tool) =>
+          tool.name == widget.toolGroup.name &&
+          tool.category == widget.toolGroup.category &&
+          (widget.toolGroup.brand == null || tool.brand == widget.toolGroup.brand)
+        ).toList();
+        
+        // If no tools match, navigate back (tool group was deleted)
+        if (currentTools.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          });
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // Create updated tool group from current tools
+        final updatedToolGroup = ToolGroup(
+          name: widget.toolGroup.name,
+          category: widget.toolGroup.category,
+          brand: widget.toolGroup.brand,
+          instances: currentTools,
+        );
+        
+        final instances = updatedToolGroup.instances;
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -64,7 +95,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.toolGroup.name,
+              updatedToolGroup.name,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -129,7 +160,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Expanded(
                     child: _buildStatItem(
                       'Total',
-                      '${widget.toolGroup.totalCount}',
+                      '${updatedToolGroup.totalCount}',
                       Icons.inventory_2,
                       AppTheme.primaryColor,
                     ),
@@ -142,7 +173,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Expanded(
                     child: _buildStatItem(
                       'Available',
-                      '${widget.toolGroup.availableCount}',
+                      '${updatedToolGroup.availableCount}',
                       Icons.check_circle,
                       Colors.green,
                     ),
@@ -155,7 +186,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Expanded(
                     child: _buildStatItem(
                       'In Use',
-                      '${widget.toolGroup.inUseCount}',
+                      '${updatedToolGroup.inUseCount}',
                       Icons.build,
                       Colors.blue,
                     ),
@@ -202,6 +233,8 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 
