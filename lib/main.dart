@@ -178,8 +178,6 @@ void main() async {
       } catch (e) {
         print('Session management initialization failed (non-critical): $e');
       }
-    } else {
-      print('🌐 Web platform detected - skipping Supabase initialization');
     }
 
     print('Starting app...');

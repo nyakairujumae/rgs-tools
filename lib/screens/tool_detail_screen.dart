@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'dart:html' as io;
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
 import "../providers/supabase_technician_provider.dart";
@@ -389,14 +390,34 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         );
                       },
                     )
-                  : File(_currentTool.imagePath!).existsSync()
-                      ? Image.file(
-                          File(_currentTool.imagePath!),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 250,
-                        )
-                      : Container(
+                  : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
+                      ? (io.File(_currentTool.imagePath!).existsSync()
+                          ? Image.file(
+                              io.File(_currentTool.imagePath!),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 250,
+                            )
+                          : Container(
+                              width: double.infinity,
+                              height: 250,
+                              color: Colors.grey[200],
+                              child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+                            ))
+                      : (_currentTool.imagePath != null && _currentTool.imagePath!.isNotEmpty)
+                          ? Image.network(
+                              _currentTool.imagePath!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 250,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: double.infinity,
+                                height: 250,
+                                color: Colors.grey[200],
+                                child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+                              ),
+                            )
+                          : Container(
                           height: 250,
                           decoration: BoxDecoration(
                             color: isDarkMode ? colorScheme.surface : Colors.white,

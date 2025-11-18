@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'dart:html' as io;
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../models/tool_group.dart';
@@ -789,8 +790,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: Stack(
                       children: [
                         // Image content
-                        if (representativeTool.imagePath != null)
-                          (representativeTool.imagePath!.startsWith('http')
+                        if (representativeTool.imagePath != null &&
+                            representativeTool.imagePath!.isNotEmpty)
+                          (representativeTool.imagePath!.startsWith('http') || kIsWeb
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(28),
                                   child: Image.network(
@@ -805,15 +807,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 )
                               : ClipRRect(
                                   borderRadius: BorderRadius.circular(28),
-                                  child: Image.file(
-                                    File(representativeTool.imagePath!),
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            _buildPlaceholderImage(),
-                                  ),
+                                  child: io.File(representativeTool.imagePath!).existsSync()
+                                      ? Image.file(
+                                          io.File(representativeTool.imagePath!),
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              _buildPlaceholderImage(),
+                                        )
+                                      : _buildPlaceholderImage(),
                                 ))
                         else
                           ClipRRect(
