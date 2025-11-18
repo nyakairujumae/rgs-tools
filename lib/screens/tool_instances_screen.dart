@@ -61,14 +61,50 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
         
         // If no tools match, navigate back (tool group was deleted)
         if (currentTools.isEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
+          // Use a delayed navigation to avoid build errors
+          Future.microtask(() {
+            if (mounted && Navigator.canPop(context)) {
               Navigator.pop(context);
             }
           });
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
-            body: Center(child: CircularProgressIndicator()),
+            appBar: AppBar(
+              backgroundColor: theme.scaffoldBackgroundColor,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                widget.toolGroup.name,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 64,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No instances found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         }
         
