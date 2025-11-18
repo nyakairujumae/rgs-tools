@@ -4,6 +4,7 @@ import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../services/firebase_messaging_service.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
   const AdminNotificationScreen({super.key});
@@ -20,6 +21,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminNotificationProvider>().loadNotifications();
+      // Clear badge when opening notifications
+      FirebaseMessagingService.clearBadge();
     });
   }
 
