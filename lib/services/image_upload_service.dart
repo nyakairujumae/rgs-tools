@@ -1,12 +1,19 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+
+// Conditional imports for File support on mobile
+import 'image_upload_service_stub.dart'
+    if (dart.library.io) 'image_upload_service_mobile.dart'
+    if (dart.library.html) 'image_upload_service_web.dart';
 
 class ImageUploadService {
   static const String _bucketName = 'tool-images';
 
   /// Upload an image file to Supabase Storage
-  static Future<String?> uploadImage(File imageFile, String toolId) async {
+  /// Works on both web (Uint8List) and mobile (File)
+  static Future<String?> uploadImage(dynamic imageFile, String toolId) async {
     try {
       // Check if user is authenticated
       final user = SupabaseService.client.auth.currentUser;
@@ -16,16 +23,38 @@ class ImageUploadService {
 
       // Create a unique filename
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = imageFile.path.split('.').last;
-      final fileName = 'tool_${toolId}_$timestamp.$extension';
+      String extension = 'jpg';
+      String fileName;
+
+      if (kIsWeb) {
+        // On web, imageFile should be Uint8List or have a name property
+        if (imageFile is Uint8List) {
+          // Try to determine extension from content or default to jpg
+          extension = 'jpg';
+          fileName = 'tool_${toolId}_$timestamp.$extension';
+        } else {
+          // If it's a web file picker result, try to get name
+          final name = _getFileNameFromWebFile(imageFile);
+          extension = name.split('.').last;
+          fileName = 'tool_${toolId}_$timestamp.$extension';
+        }
+      } else {
+        // On mobile, imageFile should be File
+        final path = _getFilePath(imageFile);
+        extension = path.split('.').last;
+        fileName = 'tool_${toolId}_$timestamp.$extension';
+      }
 
       print('Attempting to upload image: $fileName to bucket: $_bucketName');
       print('User ID: ${user.id}');
 
+      // Convert to appropriate format for upload
+      final uploadData = await _prepareUploadData(imageFile);
+
       // Upload the file to Supabase Storage
       final response = await SupabaseService.client.storage
           .from(_bucketName)
-          .upload(fileName, imageFile);
+          .upload(fileName, uploadData);
 
       if (response.isNotEmpty) {
         // Get the public URL for the uploaded image
@@ -51,6 +80,62 @@ class ImageUploadService {
       } else {
         throw Exception('Failed to upload image: $e');
       }
+    }
+  }
+
+  /// Prepare upload data for the platform
+  static Future<dynamic> _prepareUploadData(dynamic imageFile) async {
+    if (kIsWeb) {
+      if (imageFile is Uint8List) {
+        return imageFile;
+      }
+      // For web file picker results, read as bytes
+      return await _readWebFileAsBytes(imageFile);
+    } else {
+      // On mobile, return File as-is
+      return imageFile;
+    }
+  }
+
+  /// Get file path from mobile File or web file
+  static String _getFilePath(dynamic file) {
+    if (kIsWeb) {
+      return _getFileNameFromWebFile(file);
+    } else {
+      // Use dynamic to access .path property
+      try {
+        return file.path as String;
+      } catch (e) {
+        return 'image.jpg';
+      }
+    }
+  }
+
+  /// Get file name from web file picker result
+  static String _getFileNameFromWebFile(dynamic file) {
+    try {
+      // Try common web file picker result properties
+      if (file.name != null) return file.name as String;
+      if (file.fileName != null) return file.fileName as String;
+      return 'image.jpg';
+    } catch (e) {
+      return 'image.jpg';
+    }
+  }
+
+  /// Read web file as bytes
+  static Future<Uint8List> _readWebFileAsBytes(dynamic file) async {
+    try {
+      // For web, use FileReader or similar
+      // This is a placeholder - actual implementation depends on file picker used
+      if (file is Uint8List) {
+        return file;
+      }
+      // If it's a web file, we need to read it
+      // This will be handled by the actual file picker implementation
+      throw Exception('Unable to read web file');
+    } catch (e) {
+      throw Exception('Failed to read file: $e');
     }
   }
 

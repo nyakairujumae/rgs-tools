@@ -136,20 +136,19 @@ void main() async {
       print('🌐 Web platform detected - skipping Firebase initialization');
     }
 
-    // Initialize Supabase (skip on web for now to avoid issues)
-    if (!kIsWeb) {
-      print('Initializing Supabase...');
-      try {
-        await Supabase.initialize(
-          url: SupabaseConfig.url,
-          anonKey: SupabaseConfig.anonKey,
-        );
-        print('Supabase initialized successfully');
-      } catch (supabaseError) {
-        print('Supabase initialization failed: $supabaseError');
-        // Continue without Supabase - this is not critical for basic app functionality
-        print('Continuing without Supabase...');
-      }
+    // Initialize Supabase (works on web too)
+    print('Initializing Supabase...');
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      );
+      print('Supabase initialized successfully');
+    } catch (supabaseError) {
+      print('Supabase initialization failed: $supabaseError');
+      // Continue without Supabase - this is not critical for basic app functionality
+      print('Continuing without Supabase...');
+    }
 
       // Initialize local database (for offline support) - skip on web
       try {
