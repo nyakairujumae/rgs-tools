@@ -662,15 +662,73 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     if (technicianEmail == null) return [];
 
     try {
-      // Load notifications for this technician
-      final response = await SupabaseService.client
-          .from('admin_notifications')
-          .select()
-          .eq('technician_email', technicianEmail)
-          .order('timestamp', ascending: false)
-          .limit(20);
+      final List<Map<String, dynamic>> allNotifications = [];
+      
+      // Load notifications from admin_notifications (where technician_email matches)
+      try {
+        final adminNotifications = await SupabaseService.client
+            .from('admin_notifications')
+            .select()
+            .eq('technician_email', technicianEmail)
+            .order('timestamp', ascending: false)
+            .limit(20);
+        
+        allNotifications.addAll((adminNotifications as List).cast<Map<String, dynamic>>());
+      } catch (e) {
+        debugPrint('⚠️ Error loading admin notifications: $e');
+      }
 
-      return (response as List).cast<Map<String, dynamic>>();
+      // Load notifications from technician_notifications (where user_id matches)
+      try {
+        final authProvider = context.read<AuthProvider>();
+        if (authProvider.user != null) {
+          final technicianNotifications = await SupabaseService.client
+              .from('technician_notifications')
+              .select()
+              .eq('user_id', authProvider.user!.id)
+              .order('timestamp', ascending: false)
+              .limit(20);
+          
+          // Convert technician_notifications format to match admin_notifications format
+          final converted = (technicianNotifications as List).map((n) {
+            return {
+              'id': n['id'],
+              'title': n['title'],
+              'message': n['message'],
+              'technician_name': authProvider.userFullName ?? 'You',
+              'technician_email': technicianEmail,
+              'type': n['type'] ?? 'general',
+              'timestamp': n['timestamp'],
+              'is_read': n['is_read'] ?? false,
+              'data': n['data'],
+            };
+          }).toList();
+          
+          allNotifications.addAll(converted);
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error loading technician notifications (table might not exist): $e');
+      }
+
+      // Sort by timestamp (newest first) and remove duplicates
+      allNotifications.sort((a, b) {
+        final aTime = DateTime.parse(a['timestamp']?.toString() ?? DateTime.now().toIso8601String());
+        final bTime = DateTime.parse(b['timestamp']?.toString() ?? DateTime.now().toIso8601String());
+        return bTime.compareTo(aTime);
+      });
+
+      // Remove duplicates based on ID
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (var notification in allNotifications) {
+        final id = notification['id']?.toString();
+        if (id != null && !seen.contains(id)) {
+          seen.add(id);
+          unique.add(notification);
+        }
+      }
+
+      return unique.take(20).toList();
     } catch (e) {
       debugPrint('Error loading technician notifications: $e');
       return [];
@@ -803,6 +861,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         return Icons.build_circle;
       case 'issue_report':
         return Icons.report_problem;
+      case 'user_approved':
+      case 'account_approved':
+        return Icons.check_circle;
       default:
         return Icons.notifications;
     }
