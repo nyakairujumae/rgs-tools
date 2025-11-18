@@ -79,17 +79,16 @@ post_install do |installer|
   end
   
   # Patch Firebase Messaging plugin header to fix import issue
-  # Try multiple possible paths
-  possible_paths = [
-    File.join(installer.sandbox.root, 'firebase_messaging', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
-    File.join(installer.sandbox.root, 'Headers', 'Public', 'firebase_messaging', 'FLTFirebaseMessagingPlugin.h'),
-    File.join(Dir.pwd, 'Pods', 'Headers', 'Public', 'firebase_messaging', 'FLTFirebaseMessagingPlugin.h'),
+  # The file is in pub cache, so we'll use a build script instead
+  # Try to find and patch in pub cache
+  pub_cache_paths = [
+    File.join(Dir.home, '.pub-cache', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
+    File.join(ENV['PUB_CACHE'] || '', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
   ]
   
-  possible_paths.each do |plugin_path|
+  pub_cache_paths.each do |plugin_path|
     if File.exist?(plugin_path)
       file_content = File.read(plugin_path)
-      # Replace the problematic import with a module import
       if file_content.include?('#import <Firebase/Firebase.h>')
         file_content.gsub!('#import <Firebase/Firebase.h>', '#import <FirebaseCore/FirebaseCore.h>')
         File.write(plugin_path, file_content)
