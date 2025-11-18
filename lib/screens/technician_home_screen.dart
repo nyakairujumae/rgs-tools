@@ -568,7 +568,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                       builder: (context, authProvider, child) {
                         return FutureBuilder<List<Map<String, dynamic>>>(
                           future: _loadTechnicianNotifications(
-                              authProvider.user?.email),
+                              authProvider.user?.email, authProvider),
                           builder: (context, snapshot) {
                             final notifications = snapshot.data ?? [];
 
@@ -658,7 +658,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadTechnicianNotifications(
-      String? technicianEmail) async {
+      String? technicianEmail, AuthProvider authProvider) async {
     if (technicianEmail == null) return [];
 
     try {
@@ -680,7 +680,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
 
       // Load notifications from technician_notifications (where user_id matches)
       try {
-        final authProvider = context.read<AuthProvider>();
         if (authProvider.user != null) {
           final technicianNotifications = await SupabaseService.client
               .from('technician_notifications')
