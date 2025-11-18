@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/web/web_login_screen.dart';
 import 'screens/web/web_admin_dashboard.dart';
 import 'screens/web/web_technician_dashboard.dart';
@@ -31,8 +30,10 @@ import 'providers/admin_notification_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
-import 'services/firebase_messaging_service.dart';
+import 'services/firebase_messaging_service.dart' if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
 import 'firebase_options.dart';
+
+// Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,8 +119,9 @@ void main() async {
         } else {
           print('✅ Firebase verified. Setting up messaging...');
           
-          // Set up Firebase Messaging background handler
-          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+          // Set up Firebase Messaging background handler (only on non-web)
+          // This is handled inside FirebaseMessagingService.initialize() on mobile
+          // On web, FirebaseMessagingService is stubbed and does nothing
           
           // Initialize Firebase Messaging
           await FirebaseMessagingService.initialize();
@@ -500,8 +502,4 @@ class HvacToolsManagerApp extends StatelessWidget {
 }
 
 /// Background message handler (must be top-level function)
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('🔥 Background message handler: ${message.messageId}');
-  print('🔥 Message data: ${message.data}');
-}
+/// Only used on non-web platforms - defined in firebase_messaging_service.dart

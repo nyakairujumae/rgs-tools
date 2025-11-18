@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io' if (dart.library.html) 'dart:html' as io;
+import '../utils/file_helper.dart' if (dart.library.html) '../utils/file_helper_stub.dart';
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
 import "../providers/supabase_technician_provider.dart";
@@ -392,18 +392,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     )
                   : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
                       ? (() {
-                          try {
-                            final file = io.File(_currentTool.imagePath!);
-                            if (file.existsSync()) {
-                              return Image.file(
-                                file,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: 250,
-                              );
-                            }
-                          } catch (e) {
-                            // File doesn't exist or can't be accessed
+                          final localImage = buildLocalFileImage(
+                            _currentTool.imagePath!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 250,
+                          );
+                          if (localImage != null) {
+                            return localImage;
                           }
                           return Container(
                             width: double.infinity,

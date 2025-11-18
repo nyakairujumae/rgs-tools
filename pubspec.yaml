@@ -56,13 +56,16 @@ dependencies:
   supabase_flutter: ^2.3.4
   
   # Firebase
-  firebase_core: ^2.24.2
+  firebase_core: ^2.32.0
   firebase_messaging: ^14.7.10
   flutter_app_badger: ^1.4.0
   flutter_local_notifications: ^17.2.1
   
   # Preferences
   shared_preferences: ^2.2.2
+  
+  # Environment variables
+  flutter_dotenv: ^5.1.0
   
   # Barcode scanning (for future use)
   mobile_scanner: ^3.5.6
@@ -88,6 +91,11 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   sqflite_common_ffi: ^2.3.0
   flutter_native_splash: ^2.4.1
+
+# Dependency overrides to fix web compatibility issues
+dependency_overrides:
+  # Use a compatible version of js package that firebase_messaging_web needs
+  js: ^0.7.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

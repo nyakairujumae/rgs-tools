@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
-import 'dart:io' if (dart.library.html) 'dart:html' as io;
+import '../utils/file_helper.dart' if (dart.library.html) '../utils/file_helper_stub.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../models/tool_group.dart';
@@ -808,20 +808,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               : ClipRRect(
                                   borderRadius: BorderRadius.circular(28),
                                   child: (() {
-                                    try {
-                                      final file = io.File(representativeTool.imagePath!);
-                                      if (file.existsSync()) {
-                                        return Image.file(
-                                          file,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              _buildPlaceholderImage(),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      // File doesn't exist or can't be accessed
+                                    final localImage = buildLocalFileImage(
+                                      representativeTool.imagePath!,
+                                      fit: BoxFit.cover,
+                                    );
+                                    if (localImage != null) {
+                                      return localImage;
                                     }
                                     return _buildPlaceholderImage();
                                   })(),
