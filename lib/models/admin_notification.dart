@@ -81,6 +81,7 @@ enum NotificationType {
   toolRequest('tool_request', 'Tool Request'),
   maintenanceRequest('maintenance_request', 'Maintenance Request'),
   issueReport('issue_report', 'Issue Report'),
+  userApproved('user_approved', 'User Approved'),
   general('general', 'General');
 
   const NotificationType(this.value, this.displayName);
@@ -98,6 +99,8 @@ enum NotificationType {
         return NotificationType.maintenanceRequest;
       case 'issue_report':
         return NotificationType.issueReport;
+      case 'user_approved':
+        return NotificationType.userApproved;
       case 'general':
         return NotificationType.general;
       default:

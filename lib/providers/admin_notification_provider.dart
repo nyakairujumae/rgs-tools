@@ -197,6 +197,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Maintenance Request';
       case NotificationType.issueReport:
         return 'Issue Report';
+      case NotificationType.userApproved:
+        return 'User Approved';
       case NotificationType.general:
         return 'General Notification';
     }
@@ -212,6 +214,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Technician $technicianName requested maintenance for a tool';
       case NotificationType.issueReport:
         return 'Technician $technicianName reported an issue';
+      case NotificationType.userApproved:
+        return 'User $technicianName has been approved and can now access the app';
       case NotificationType.general:
         return 'New notification from $technicianName';
     }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/supabase_technician_provider.dart';
+import '../providers/admin_notification_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 
@@ -803,6 +804,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
       if (success && mounted) {
         await context.read<SupabaseTechnicianProvider>().loadTechnicians();
         await context.read<AuthProvider>().initialize();
+        // Reload notifications to show the new approval notification
+        await context.read<AdminNotificationProvider>().loadNotifications();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('User authorized successfully'),

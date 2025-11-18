@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../services/supabase_service.dart';
+import '../models/admin_notification.dart';
 
 class PendingApproval {
   final String id;
@@ -183,6 +184,54 @@ class PendingApprovalsProvider extends ChangeNotifier {
         } catch (e) {
           debugPrint('⚠️ Failed to sync technician profile picture after approval: $e');
         }
+      }
+
+      // Create notification for admin (confirmation) - save directly to Supabase
+      try {
+        await SupabaseService.client
+            .from('admin_notifications')
+            .insert({
+              'title': 'User Approved',
+              'message': '${approval.fullName ?? approval.email} has been approved and can now access the app',
+              'technician_name': approval.fullName ?? approval.email,
+              'technician_email': approval.email,
+              'type': NotificationType.userApproved.value,
+              'is_read': false,
+              'timestamp': DateTime.now().toIso8601String(),
+              'data': {
+                'approval_id': approval.id,
+                'user_id': approval.userId,
+                'approved_at': DateTime.now().toIso8601String(),
+              },
+            });
+        debugPrint('✅ Created admin notification for user approval');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create admin notification: $e');
+        // Don't fail the approval if notification creation fails
+      }
+
+      // Create notification for the approved technician
+      try {
+        // Insert notification for the technician in a technician_notifications table
+        // or use a general notifications table that both admin and technicians can access
+        await SupabaseService.client
+            .from('technician_notifications')
+            .insert({
+              'user_id': approval.userId,
+              'title': 'Account Approved',
+              'message': 'Your account has been approved! You can now access all features of the RGS app.',
+              'type': 'account_approved',
+              'is_read': false,
+              'timestamp': DateTime.now().toIso8601String(),
+              'data': {
+                'approval_id': approval.id,
+                'approved_at': DateTime.now().toIso8601String(),
+              },
+            });
+        debugPrint('✅ Created technician notification for approval');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create technician notification (table might not exist): $e');
+        // Don't fail the approval if notification creation fails
       }
 
       // Reload the approvals
