@@ -466,6 +466,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Icons.build_circle;
       case NotificationType.issueReport:
         return Icons.report_problem;
+      case NotificationType.userApproved:
+        return Icons.check_circle;
       case NotificationType.general:
         return Icons.notifications;
     }
@@ -481,6 +483,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Colors.orange;
       case NotificationType.issueReport:
         return Colors.red;
+      case NotificationType.userApproved:
+        return Colors.green;
       case NotificationType.general:
         return Colors.grey;
     }

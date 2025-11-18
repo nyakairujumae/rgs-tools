@@ -150,7 +150,8 @@ void main() async {
       print('Continuing without Supabase...');
     }
 
-      // Initialize local database (for offline support) - skip on web
+    // Initialize local database (for offline support) - skip on web
+    if (!kIsWeb) {
       try {
         print('Initializing local database...');
         await DatabaseHelper.instance.database;

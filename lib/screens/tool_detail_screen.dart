@@ -391,19 +391,27 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                       },
                     )
                   : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
-                      ? (io.File(_currentTool.imagePath!).existsSync()
-                          ? Image.file(
-                              io.File(_currentTool.imagePath!),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: 250,
-                            )
-                          : Container(
-                              width: double.infinity,
-                              height: 250,
-                              color: Colors.grey[200],
-                              child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
-                            ))
+                      ? (() {
+                          try {
+                            final file = io.File(_currentTool.imagePath!);
+                            if (file.existsSync()) {
+                              return Image.file(
+                                file,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 250,
+                              );
+                            }
+                          } catch (e) {
+                            // File doesn't exist or can't be accessed
+                          }
+                          return Container(
+                            width: double.infinity,
+                            height: 250,
+                            color: Colors.grey[200],
+                            child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+                          );
+                        })()
                       : (_currentTool.imagePath != null && _currentTool.imagePath!.isNotEmpty)
                           ? Image.network(
                               _currentTool.imagePath!,

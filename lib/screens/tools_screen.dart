@@ -807,16 +807,24 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 )
                               : ClipRRect(
                                   borderRadius: BorderRadius.circular(28),
-                                  child: io.File(representativeTool.imagePath!).existsSync()
-                                      ? Image.file(
-                                          io.File(representativeTool.imagePath!),
+                                  child: (() {
+                                    try {
+                                      final file = io.File(representativeTool.imagePath!);
+                                      if (file.existsSync()) {
+                                        return Image.file(
+                                          file,
                                           width: double.infinity,
                                           height: double.infinity,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) =>
                                               _buildPlaceholderImage(),
-                                        )
-                                      : _buildPlaceholderImage(),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // File doesn't exist or can't be accessed
+                                    }
+                                    return _buildPlaceholderImage();
+                                  })(),
                                 ))
                         else
                           ClipRRect(
