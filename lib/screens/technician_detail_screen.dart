@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/technician.dart';
 import '../providers/supabase_tool_provider.dart';
+import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../theme/app_theme.dart';
 import 'add_technician_screen.dart';
+import 'technicians_screen.dart';
 
 class TechnicianDetailScreen extends StatefulWidget {
   final Technician technician;
@@ -60,6 +62,25 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 ),
               );
             },
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') {
+                _deleteTechnician();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete Technician', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(
@@ -549,6 +570,135 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  void _deleteTechnician() {
+    // Check if technician has assigned tools
+    final toolProvider = context.read<SupabaseToolProvider>();
+    final assignedTools = toolProvider.tools.where((tool) => 
+      tool.assignedTo == widget.technician.id ||
+      tool.assignedTo == widget.technician.name ||
+      tool.assignedTo == widget.technician.employeeId
+    ).toList();
+
+    if (assignedTools.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot delete technician with assigned tools. Please reassign or return ${assignedTools.length} tool(s) first.'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
+    // Capture the screen's navigator before showing dialog
+    final screenNavigator = Navigator.of(context);
+    final screenScaffoldMessenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Delete Technician'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to delete "${widget.technician.name}"?'),
+              SizedBox(height: 12),
+              Text(
+                'This will permanently delete:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('• The technician record'),
+              Text('• All associated data'),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Text(
+                  'This action cannot be undone!',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Close confirmation dialog first
+                Navigator.pop(dialogContext);
+                
+                try {
+                  final technicianProvider = context.read<SupabaseTechnicianProvider>();
+                  final technicianName = widget.technician.name;
+                  
+                  // Delete from database
+                  await technicianProvider.deleteTechnician(widget.technician.id!);
+                  
+                  // Navigate back to technicians screen
+                  screenNavigator.pop();
+                  
+                  // Show success message
+                  Future.delayed(Duration(milliseconds: 100), () {
+                    screenScaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Technician "$technicianName" deleted successfully'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  });
+                } catch (e) {
+                  debugPrint('❌ Error deleting technician: $e');
+                  
+                  if (mounted) {
+                    String errorMessage = 'Failed to delete technician. ';
+                    if (e.toString().contains('permission')) {
+                      errorMessage += 'You do not have permission to delete this technician.';
+                    } else if (e.toString().contains('network')) {
+                      errorMessage += 'Network error. Please check your connection.';
+                    } else if (e.toString().contains('foreign key') || e.toString().contains('constraint')) {
+                      errorMessage += 'Cannot delete technician with associated records.';
+                    } else {
+                      errorMessage += 'Please try again. Error: ${e.toString()}';
+                    }
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(errorMessage),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
