@@ -79,14 +79,23 @@ post_install do |installer|
   end
   
   # Patch Firebase Messaging plugin header to fix import issue
-  firebase_messaging_plugin_path = File.join(installer.sandbox.root, 'firebase_messaging', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h')
-  if File.exist?(firebase_messaging_plugin_path)
-    file_content = File.read(firebase_messaging_plugin_path)
-    # Replace the problematic import with a module import
-    if file_content.include?('#import <Firebase/Firebase.h>')
-      file_content.gsub!('#import <Firebase/Firebase.h>', '#import <FirebaseCore/FirebaseCore.h>')
-      File.write(firebase_messaging_plugin_path, file_content)
-      puts "✅ Patched FLTFirebaseMessagingPlugin.h"
+  # Try multiple possible paths
+  possible_paths = [
+    File.join(installer.sandbox.root, 'firebase_messaging', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
+    File.join(installer.sandbox.root, 'Headers', 'Public', 'firebase_messaging', 'FLTFirebaseMessagingPlugin.h'),
+    File.join(Dir.pwd, 'Pods', 'Headers', 'Public', 'firebase_messaging', 'FLTFirebaseMessagingPlugin.h'),
+  ]
+  
+  possible_paths.each do |plugin_path|
+    if File.exist?(plugin_path)
+      file_content = File.read(plugin_path)
+      # Replace the problematic import with a module import
+      if file_content.include?('#import <Firebase/Firebase.h>')
+        file_content.gsub!('#import <Firebase/Firebase.h>', '#import <FirebaseCore/FirebaseCore.h>')
+        File.write(plugin_path, file_content)
+        puts "✅ Patched FLTFirebaseMessagingPlugin.h at #{plugin_path}"
+        break
+      end
     end
   end
 end
