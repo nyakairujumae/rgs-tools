@@ -49,6 +49,21 @@ post_install do |installer|
       if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
+      
+      # Additional fix for Firebase Messaging
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'POD_CONFIGURATION_DEBUG=1' if config.name == 'Debug'
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'POD_CONFIGURATION_RELEASE=1' if config.name == 'Release'
+    end
+  end
+  
+  # Fix for Firebase Messaging plugin specifically
+  installer.pods_project.targets.each do |target|
+    if target.name == 'FLTFirebaseMessagingPlugin'
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+      end
     end
   end
 end
