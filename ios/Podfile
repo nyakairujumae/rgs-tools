@@ -93,23 +93,47 @@ post_install do |installer|
     config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
   end
   
-  # Patch Firebase Messaging plugin header to fix import issue
-  # The file is in pub cache, so we'll use a build script instead
-  # Try to find and patch in pub cache
-  pub_cache_paths = [
-    File.join(Dir.home, '.pub-cache', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
-    File.join(ENV['PUB_CACHE'] || '', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes', 'FLTFirebaseMessagingPlugin.h'),
+  # Patch Firebase Messaging plugin files to fix import issue
+  # The files are in pub cache, so we'll patch them there
+  base_paths = [
+    File.join(Dir.home, '.pub-cache', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes'),
+    File.join(ENV['PUB_CACHE'] || '', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes'),
   ]
   
-  pub_cache_paths.each do |plugin_path|
-    if File.exist?(plugin_path)
-      file_content = File.read(plugin_path)
-      if file_content.include?('#import <Firebase/Firebase.h>')
-        file_content.gsub!('#import <Firebase/Firebase.h>', '#import <FirebaseCore/FirebaseCore.h>')
-        File.write(plugin_path, file_content)
-        puts "✅ Patched FLTFirebaseMessagingPlugin.h at #{plugin_path}"
-        break
+  base_paths.each do |base_path|
+    if File.directory?(base_path)
+      # Patch header file
+      header_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.h')
+      if File.exist?(header_path)
+        file_content = File.read(header_path)
+        if file_content.include?('#import <Firebase/Firebase.h>')
+          # Replace with proper imports
+          file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+          File.write(header_path, file_content)
+          puts "✅ Patched FLTFirebaseMessagingPlugin.h at #{header_path}"
+        end
       end
+      
+      # Patch implementation file if needed
+      impl_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.m')
+      if File.exist?(impl_path)
+        file_content = File.read(impl_path)
+        if file_content.include?('#import <Firebase/Firebase.h>')
+          file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+          File.write(impl_path, file_content)
+          puts "✅ Patched FLTFirebaseMessagingPlugin.m at #{impl_path}"
+        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && file_content.include?('FIRMessaging')
+          # Add FirebaseMessaging import if FIRMessaging is used but import is missing
+          lines = file_content.lines
+          import_line_index = lines.index { |line| line.include?('#import') && !line.include?('FLTFirebaseMessagingPlugin.h') }
+          if import_line_index
+            lines.insert(import_line_index + 1, "#import <FirebaseMessaging/FirebaseMessaging.h>\n")
+            File.write(impl_path, lines.join)
+            puts "✅ Added FirebaseMessaging import to FLTFirebaseMessagingPlugin.m at #{impl_path}"
+          end
+        end
+      end
+      break
     end
   end
 end
