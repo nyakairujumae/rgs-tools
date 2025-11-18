@@ -21,20 +21,17 @@ class SupabaseTechnicianProvider with ChangeNotifier {
           .order('name');
 
       final techniciansList = (response as List)
-          .map((data) {
-            final tech = Technician.fromMap(data);
-            // Debug: Log profile picture status
-            if (tech.profilePictureUrl != null && tech.profilePictureUrl!.isNotEmpty) {
-              debugPrint('✅ ${tech.name}: profile_picture_url = ${tech.profilePictureUrl}');
-            } else {
-              debugPrint('⚠️ ${tech.name}: No profile_picture_url in database');
-            }
-            return tech;
-          })
+          .map((data) => Technician.fromMap(data))
           .toList();
 
+      // Count technicians with and without profile pictures
+      final withPictures = techniciansList.where((t) => 
+        t.profilePictureUrl != null && t.profilePictureUrl!.isNotEmpty
+      ).length;
+      final withoutPictures = techniciansList.length - withPictures;
+      
       _technicians = techniciansList;
-      debugPrint('✅ Loaded ${_technicians.length} technicians');
+      debugPrint('✅ Loaded ${_technicians.length} technicians (${withPictures} with profile pictures, ${withoutPictures} without)');
     } catch (e) {
       debugPrint('❌ Error loading technicians: $e');
     } finally {
