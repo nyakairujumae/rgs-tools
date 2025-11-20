@@ -143,6 +143,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 signUp called for: $email, role: ${role?.value ?? "null"}');
       final response = await SupabaseService.client.auth.signUp(
         email: email,
         password: password,
@@ -153,12 +154,15 @@ class AuthProvider with ChangeNotifier {
         emailRedirectTo: 'com.rgs.app://email-confirmation',
       );
 
+      debugPrint('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
+
       if (response.user != null) {
         _user = response.user;
         
         // For technicians, create pending approval instead of user record
         if (role == UserRole.technician || role == null) {
           try {
+            debugPrint('🔍 Creating pending approval for technician...');
             // Create pending approval record
             await SupabaseService.client
                 .from('pending_user_approvals')
@@ -187,19 +191,26 @@ class AuthProvider with ChangeNotifier {
             await _saveUserRole(_userRole);
             debugPrint('✅ User role set to pending: ${_userRole.value}');
             notifyListeners(); // Notify immediately so UI can check isPendingApproval
-          } catch (e) {
+          } catch (e, stackTrace) {
             debugPrint('❌ Error creating pending approval: $e');
+            debugPrint('❌ Stack trace: $stackTrace');
             // Continue anyway - user is created
           }
         } else {
           // For admins, load role normally
-        await _loadUserRole();
+          debugPrint('🔍 Loading role for admin...');
+          await _loadUserRole();
         }
+      } else {
+        debugPrint('⚠️ signUp returned null user');
       }
 
       return response;
-    } catch (e) {
-      debugPrint('Error signing up: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error signing up: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Error string: ${e.toString()}');
+      debugPrint('❌ Stack trace: $stackTrace');
       rethrow;
     } finally {
       _isLoading = false;
@@ -238,96 +249,116 @@ class AuthProvider with ChangeNotifier {
     String? hireDate,
     File? profileImage,
   ) async {
-    String? profilePictureUrl;
+    try {
+      String? profilePictureUrl;
 
-    // First, create the auth user with 'technician' role
-    // Note: signUp will create a basic pending approval, but we need to update it with additional details
-    await signUp(
-      email: email,
-      password: password,
-      fullName: name,
-      role: UserRole.technician, // Explicitly set as technician
-    );
+      // First, create the auth user with 'technician' role
+      // Note: signUp will create a basic pending approval, but we need to update it with additional details
+      debugPrint('🔍 Starting technician registration for: $email');
+      await signUp(
+        email: email,
+        password: password,
+        fullName: name,
+        role: UserRole.technician, // Explicitly set as technician
+      );
+      debugPrint('✅ signUp completed for: $email');
 
-    if (profileImage != null) {
-      profilePictureUrl = await _uploadTechnicianProfileImage(profileImage);
-    }
-    
-    // Then update the pending approval with additional details if it exists
-    // OR create it if signUp didn't create one (shouldn't happen, but just in case)
-    if (_user != null) {
-      try {
-        // Check if a pending approval already exists (created by signUp)
-        final existingApproval = await SupabaseService.client
-            .from('pending_user_approvals')
-            .select('id')
-            .eq('user_id', _user!.id)
-            .eq('status', 'pending')
-            .maybeSingle();
-        
-        if (existingApproval != null) {
-          // Update existing approval with additional details
-          final updateData = <String, dynamic>{
-            'employee_id': employeeId,
-            'phone': phone,
-            'department': department,
-            'hire_date': hireDate,
-          };
-
-          if (profilePictureUrl != null) {
-            updateData['profile_picture_url'] = profilePictureUrl;
-          }
-
-          await SupabaseService.client
-              .from('pending_user_approvals')
-              .update(updateData)
-              .eq('id', existingApproval['id']);
-          
-          debugPrint('✅ Updated existing pending approval with additional details: $email');
-        } else {
-          // Create new pending approval if it doesn't exist (shouldn't happen normally)
-          final insertData = {
-            'user_id': _user!.id,
-            'email': email,
-            'full_name': name,
-            'employee_id': employeeId,
-            'phone': phone,
-            'department': department,
-            'hire_date': hireDate,
-            'status': 'pending',
-          };
-
-          if (profilePictureUrl != null) {
-            insertData['profile_picture_url'] = profilePictureUrl;
-          }
-
-          await SupabaseService.client
-              .from('pending_user_approvals')
-              .insert(insertData);
-        
-          debugPrint('✅ Created pending approval for technician: $email');
-        }
-        
-        // IMPORTANT: Delete any user record that might have been created by the trigger
-        // Technicians should NOT have a user record until approved
-        try {
-          await SupabaseService.client
-              .from('users')
-              .delete()
-              .eq('id', _user!.id);
-          debugPrint('✅ Removed user record for pending technician (will be created on approval)');
-        } catch (deleteError) {
-          debugPrint('⚠️ Could not delete user record (might not exist): $deleteError');
-        }
-        
-        // Set role to pending
-        _userRole = UserRole.pending;
-        await _saveUserRole(_userRole);
-        notifyListeners();
-      } catch (e) {
-        debugPrint('❌ Error updating pending approval: $e');
-        // Don't throw error here, user is already created
+      if (profileImage != null) {
+        debugPrint('🔍 Uploading profile image...');
+        profilePictureUrl = await _uploadTechnicianProfileImage(profileImage);
+        debugPrint('✅ Profile image uploaded: $profilePictureUrl');
       }
+      
+      // Then update the pending approval with additional details if it exists
+      // OR create it if signUp didn't create one (shouldn't happen, but just in case)
+      if (_user != null) {
+        try {
+          debugPrint('🔍 Checking for existing pending approval...');
+          // Check if a pending approval already exists (created by signUp)
+          final existingApproval = await SupabaseService.client
+              .from('pending_user_approvals')
+              .select('id')
+              .eq('user_id', _user!.id)
+              .eq('status', 'pending')
+              .maybeSingle();
+          
+          if (existingApproval != null) {
+            debugPrint('✅ Found existing pending approval, updating...');
+            // Update existing approval with additional details
+            final updateData = <String, dynamic>{
+              'employee_id': employeeId,
+              'phone': phone,
+              'department': department,
+              'hire_date': hireDate,
+            };
+
+            if (profilePictureUrl != null) {
+              updateData['profile_picture_url'] = profilePictureUrl;
+            }
+
+            await SupabaseService.client
+                .from('pending_user_approvals')
+                .update(updateData)
+                .eq('id', existingApproval['id']);
+            
+            debugPrint('✅ Updated existing pending approval with additional details: $email');
+          } else {
+            debugPrint('⚠️ No existing approval found, creating new one...');
+            // Create new pending approval if it doesn't exist (shouldn't happen normally)
+            final insertData = {
+              'user_id': _user!.id,
+              'email': email,
+              'full_name': name,
+              'employee_id': employeeId,
+              'phone': phone,
+              'department': department,
+              'hire_date': hireDate,
+              'status': 'pending',
+            };
+
+            if (profilePictureUrl != null) {
+              insertData['profile_picture_url'] = profilePictureUrl;
+            }
+
+            await SupabaseService.client
+                .from('pending_user_approvals')
+                .insert(insertData);
+          
+            debugPrint('✅ Created pending approval for technician: $email');
+          }
+          
+          // IMPORTANT: Delete any user record that might have been created by the trigger
+          // Technicians should NOT have a user record until approved
+          try {
+            await SupabaseService.client
+                .from('users')
+                .delete()
+                .eq('id', _user!.id);
+            debugPrint('✅ Removed user record for pending technician (will be created on approval)');
+          } catch (deleteError) {
+            debugPrint('⚠️ Could not delete user record (might not exist): $deleteError');
+          }
+          
+          // Set role to pending
+          _userRole = UserRole.pending;
+          await _saveUserRole(_userRole);
+          notifyListeners();
+          debugPrint('✅ Technician registration completed successfully');
+        } catch (e, stackTrace) {
+          debugPrint('❌ Error updating pending approval: $e');
+          debugPrint('❌ Stack trace: $stackTrace');
+          // Don't throw error here, user is already created
+        }
+      } else {
+        debugPrint('❌ User is null after signUp');
+        throw Exception('User creation failed - no user returned from signUp');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error in registerTechnician: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Error string: ${e.toString()}');
+      debugPrint('❌ Stack trace: $stackTrace');
+      rethrow;
     }
   }
 

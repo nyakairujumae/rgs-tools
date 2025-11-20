@@ -108,7 +108,27 @@ class AuthErrorHandler {
       return '🔑 Your session has expired. Please sign in again.';
     }
     
-    // Generic fallback
+    // Supabase-specific errors
+    if (errorString.contains('duplicate key') ||
+        errorString.contains('unique constraint') ||
+        errorString.contains('already exists')) {
+      return '📧 This email is already registered. Please sign in or use a different email address.';
+    }
+    
+    if (errorString.contains('foreign key') ||
+        errorString.contains('constraint') ||
+        errorString.contains('violates')) {
+      return '❌ Registration failed due to a data constraint. Please check your information and try again.';
+    }
+    
+    if (errorString.contains('permission denied') ||
+        errorString.contains('row-level security') ||
+        errorString.contains('rls')) {
+      return '🔒 Permission denied. Please contact support if this issue persists.';
+    }
+    
+    // Generic fallback - but log the actual error for debugging
+    debugPrint('⚠️ Unhandled error in AuthErrorHandler: $error');
     return '❌ Something went wrong. Please try again.';
   }
   
