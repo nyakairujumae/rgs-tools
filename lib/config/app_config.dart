@@ -86,15 +86,34 @@ class AppConfig {
   static int get minPasswordLength => 8;
   static int get maxNameLength => 100;
   static int get maxDescriptionLength => 500;
-  static RegExp get emailRegex => RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  // More strict email validation regex
+  // Validates: local-part@domain.tld
+  // - Local part: alphanumeric, dots, hyphens, underscores, plus signs, percent
+  // - Domain: alphanumeric, hyphens, dots (valid domain format)
+  // - TLD: 2-6 letters (covers .com, .co.uk, .info, etc.)
+  static RegExp get emailRegex => RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$',
+    caseSensitive: false,
+  );
   static RegExp get phoneRegex => RegExp(r'^\+?[\d\s\-\(\)]+$');
   
   // Allow all email domains - no restrictions
   static List<String> get allowedEmailDomains => [];
   
+  // Validate email format - returns true if email format is valid
+  static bool isValidEmailFormat(String email) {
+    if (email.isEmpty) return false;
+    return emailRegex.hasMatch(email.trim());
+  }
+  
   // Check if email domain is allowed - always return true for any domain
+  // But first validates the email format
   static bool isEmailDomainAllowed(String email) {
-    // Allow any email domain - no restrictions
+    // First check if email format is valid
+    if (!isValidEmailFormat(email)) {
+      return false;
+    }
+    // Allow any email domain - no restrictions (as long as format is valid)
     return true;
   }
   

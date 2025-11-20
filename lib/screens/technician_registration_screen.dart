@@ -9,6 +9,7 @@ import '../services/supabase_service.dart';
 import '../models/user_role.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../config/app_config.dart';
 import 'technician_home_screen.dart';
 import 'role_selection_screen.dart';
 import 'auth/login_screen.dart';
@@ -266,9 +267,9 @@ class _TechnicianRegistrationScreenState
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email address';
                           }
-                          final emailRegex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
-                          if (!emailRegex.hasMatch(value)) {
-                            return 'Please enter a valid email address';
+                          // Use AppConfig for consistent email validation
+                          if (!AppConfig.isValidEmailFormat(value)) {
+                            return 'Please enter a valid email address (e.g., name@example.com)';
                           }
                           return null;
                         },

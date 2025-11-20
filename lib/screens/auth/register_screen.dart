@@ -222,8 +222,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                        // Use AppConfig for consistent email validation
+                        if (!AppConfig.isValidEmailFormat(value)) {
+                          return 'Please enter a valid email address (e.g., name@example.com)';
                         }
                         if (!AppConfig.isEmailDomainAllowed(value)) {
                           return 'Email domain not allowed. Use @mekar.ae or other approved domains';

@@ -76,6 +76,14 @@ class AuthErrorHandler {
       return '⏰ Too many attempts. Please wait a few minutes before trying again.';
     }
     
+    // Email sending errors (when email confirmation is enabled but email service fails)
+    if (errorString.contains('error sending confirmation email') ||
+        errorString.contains('error sending email') ||
+        errorString.contains('confirmation email') && errorString.contains('error') ||
+        errorString.contains('unexpected_failure') && errorString.contains('email')) {
+      return '📧 Email service error. Please disable email confirmation in Supabase settings or check your email configuration.';
+    }
+    
     // Server errors - be more specific to avoid false positives
     if (errorString.contains('server error') ||
         errorString.contains('internal server error') ||
