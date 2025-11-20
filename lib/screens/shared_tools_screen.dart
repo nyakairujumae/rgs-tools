@@ -822,24 +822,56 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         debugPrint('Could not fetch owner email: $e');
       }
       
-      // Create notification in admin_notifications table for the tool owner
-      await SupabaseService.client.from('admin_notifications').insert({
-        'title': 'Tool Request: ${tool.name}',
-        'message': '$requesterName requested the tool "${tool.name}"',
-        'technician_name': requesterName,
-        'technician_email': requesterEmail,
-        'type': 'tool_request',
-        'is_read': false,
-        'timestamp': DateTime.now().toIso8601String(),
-        'data': {
-          'tool_id': tool.id,
-          'tool_name': tool.name,
-          'requester_id': requesterId,
-          'requester_name': requesterName,
-          'requester_email': requesterEmail,
-          'owner_id': ownerId,
-        },
-      });
+      // Create notification in admin_notifications table (for admin visibility)
+      try {
+        await SupabaseService.client.from('admin_notifications').insert({
+          'title': 'Tool Request: ${tool.name}',
+          'message': '$requesterName requested the tool "${tool.name}"',
+          'technician_name': requesterName,
+          'technician_email': requesterEmail,
+          'type': 'tool_request',
+          'is_read': false,
+          'timestamp': DateTime.now().toIso8601String(),
+          'data': {
+            'tool_id': tool.id,
+            'tool_name': tool.name,
+            'requester_id': requesterId,
+            'requester_name': requesterName,
+            'requester_email': requesterEmail,
+            'owner_id': ownerId,
+          },
+        });
+        debugPrint('✅ Created admin notification for tool request');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create admin notification: $e');
+      }
+      
+      // Create notification in technician_notifications table for the tool owner
+      // This will appear in the technician's notification center
+      try {
+        await SupabaseService.client.from('technician_notifications').insert({
+          'user_id': ownerId, // The technician who has the tool
+          'title': 'Tool Request: ${tool.name}',
+          'message': '$requesterName needs the tool "${tool.name}" that you currently have',
+          'type': 'tool_request',
+          'is_read': false,
+          'timestamp': DateTime.now().toIso8601String(),
+          'data': {
+            'tool_id': tool.id,
+            'tool_name': tool.name,
+            'requester_id': requesterId,
+            'requester_name': requesterName,
+            'requester_email': requesterEmail,
+            'owner_id': ownerId,
+          },
+        });
+        debugPrint('✅ Created technician notification for tool request');
+        debugPrint('✅ Notification sent to technician: $ownerId');
+      } catch (e) {
+        debugPrint('❌ Failed to create technician notification: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
+        // Still show success message even if notification fails
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
