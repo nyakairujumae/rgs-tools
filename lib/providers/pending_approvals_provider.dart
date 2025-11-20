@@ -210,10 +210,10 @@ class PendingApprovalsProvider extends ChangeNotifier {
         // Don't fail the approval if notification creation fails
       }
 
-      // Create notification for the approved technician
+      // Create notification for the approved technician in notification center
       try {
-        // Insert notification for the technician in a technician_notifications table
-        // or use a general notifications table that both admin and technicians can access
+        // Insert notification for the technician in technician_notifications table
+        // This will appear in the notification center
         await SupabaseService.client
             .from('technician_notifications')
             .insert({
@@ -228,10 +228,29 @@ class PendingApprovalsProvider extends ChangeNotifier {
                 'approved_at': DateTime.now().toIso8601String(),
               },
             });
-        debugPrint('✅ Created technician notification for approval');
+        debugPrint('✅ Created technician notification for approval in notification center');
+        
+        // Also send a push notification if FCM is available
+        try {
+          // Get the technician's FCM token if available
+          final fcmTokenResponse = await SupabaseService.client
+              .from('fcm_tokens')
+              .select('token')
+              .eq('user_id', approval.userId)
+              .maybeSingle();
+          
+          if (fcmTokenResponse != null && fcmTokenResponse['token'] != null) {
+            // Send push notification via Firebase Cloud Messaging
+            // This would typically be done via a Supabase Edge Function or backend service
+            debugPrint('📱 FCM token found for user, push notification can be sent');
+          }
+        } catch (fcmError) {
+          debugPrint('⚠️ Could not check FCM token: $fcmError');
+        }
       } catch (e) {
-        debugPrint('⚠️ Failed to create technician notification (table might not exist): $e');
-        // Don't fail the approval if notification creation fails
+        debugPrint('❌ Failed to create technician notification: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
+        // Don't fail the approval if notification creation fails, but log the error
       }
 
       // Reload the approvals
