@@ -79,9 +79,11 @@ class AuthErrorHandler {
     // Email sending errors (when email confirmation is enabled but email service fails)
     if (errorString.contains('error sending confirmation email') ||
         errorString.contains('error sending email') ||
-        errorString.contains('confirmation email') && errorString.contains('error') ||
-        errorString.contains('unexpected_failure') && errorString.contains('email')) {
-      return '📧 Email service error. Please disable email confirmation in Supabase settings or check your email configuration.';
+        (errorString.contains('confirmation email') && errorString.contains('error')) ||
+        (errorString.contains('unexpected_failure') && errorString.contains('email'))) {
+      // Check if this is for an admin (they need email confirmation)
+      // For technicians, this shouldn't happen if the auto-confirm trigger is working
+      return '📧 Email service error. For admins, email confirmation is required. Please check your email service configuration in Supabase.';
     }
     
     // Server errors - be more specific to avoid false positives

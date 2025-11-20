@@ -507,19 +507,40 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       );
 
       if (mounted) {
-        AuthErrorHandler.showSuccessSnackBar(
-          context,
-          '🎉 Admin account created successfully! Welcome to RGS HVAC Services.',
-        );
+        // Check if user has a session (email confirmation might be required for admins)
+        final hasSession = authProvider.isAuthenticated;
+        
+        if (hasSession) {
+          // Email was auto-confirmed or confirmation is disabled
+          AuthErrorHandler.showSuccessSnackBar(
+            context,
+            '🎉 Admin account created successfully! Welcome to RGS HVAC Services.',
+          );
 
-        // Navigate to admin home screen
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AdminHomeScreen(),
-          ),
-          (route) => false,
-        );
+          // Navigate to admin home screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminHomeScreen(),
+            ),
+            (route) => false,
+          );
+        } else {
+          // Email confirmation required for admin
+          AuthErrorHandler.showInfoSnackBar(
+            context,
+            '📧 Admin account created! Please check your email to verify your account. '
+            'You must confirm your email before you can log in.',
+          );
+
+          // Navigate back to login screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

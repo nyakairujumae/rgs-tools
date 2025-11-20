@@ -143,7 +143,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('🔍 signUp called for: $email, role: ${role?.value ?? "null"}');
+      final isAdmin = role == UserRole.admin;
+      debugPrint('🔍 signUp called for: $email, role: ${role?.value ?? "null"}, isAdmin: $isAdmin');
+      
+      // For admins, email confirmation is required (enforced by Supabase)
+      // For technicians, we'll use a database trigger to auto-confirm
       final response = await SupabaseService.client.auth.signUp(
         email: email,
         password: password,
@@ -151,7 +155,9 @@ class AuthProvider with ChangeNotifier {
           'full_name': fullName,
           'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
         },
-        emailRedirectTo: 'com.rgs.app://email-confirmation',
+        emailRedirectTo: isAdmin 
+            ? 'com.rgs.app://email-confirmation' // Admins need to confirm email
+            : 'com.rgs.app://email-confirmation', // Technicians will be auto-confirmed by trigger
       );
 
       debugPrint('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
