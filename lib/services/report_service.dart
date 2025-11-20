@@ -72,8 +72,15 @@ class ReportService {
     final excel = Excel.createExcel();
     final targetSheetName = _getSheetName(reportType);
 
+    // Rename the default Sheet1 to the target name
+    // Avoid using delete() as it may cause unmodifiable list errors
     if (excel.sheets.containsKey('Sheet1')) {
-      excel.rename('Sheet1', targetSheetName);
+      try {
+        excel.rename('Sheet1', targetSheetName);
+      } catch (e) {
+        debugPrint('Could not rename Sheet1: $e');
+        // If rename fails, we'll just use Sheet1
+      }
     }
 
     switch (reportType) {
