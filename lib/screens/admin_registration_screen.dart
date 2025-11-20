@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
 import 'auth/login_screen.dart';
@@ -50,7 +51,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     );
     final hintStyle = TextStyle(
       color: colorScheme.onSurface.withValues(alpha: 0.5),
-      fontSize: 12,
+      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
       fontWeight: FontWeight.w400,
     );
 
@@ -90,33 +91,17 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header
-                    Column(
-                      children: [
-                        const SizedBox(height: 16),
-                        Text(
-                          'Admin Registration',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Register as an administrator for RGS HVAC Services',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    // Onboarding hint
+                    Text(
+                      'Register as an administrator for RGS HVAC Services',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-
-                    const SizedBox(height: 32),
-
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
                     // Name Field
                     Container(
                       decoration: BoxDecoration(
