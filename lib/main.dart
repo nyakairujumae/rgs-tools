@@ -374,51 +374,16 @@ class HvacToolsManagerApp extends StatelessWidget {
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, child) {
-          // Set custom error widget builder to prevent red screen during logout
+          // Remove custom error widget to prevent blank error screens on back navigation
+          // Flutter will handle errors with its default behavior
           ErrorWidget.builder = (FlutterErrorDetails details) {
             // During logout, silently handle errors
             if (authProvider.isLoggingOut) {
               return const SizedBox.shrink();
             }
-            // For other errors, show a custom error widget
-            return Material(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Something went wrong',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          // Use root navigator and schedule after frame to avoid missing Navigator context
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (context) => const RoleSelectionScreen(),
-                                settings: const RouteSettings(name: '/role-selection'),
-                              ),
-                              (route) => false,
-                            );
-                          });
-                        },
-                        child: const Text('Go to Login'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            // For other errors, return empty widget to prevent blank screen
+            // This prevents users from getting stuck on error screens when pressing back
+            return const SizedBox.shrink();
           };
           
           return MaterialApp(
