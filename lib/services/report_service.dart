@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:convert' as convert;
 import 'dart:typed_data';
-import 'package:archive/archive.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -123,9 +121,9 @@ class ReportService {
     final file = File(filePath);
     
     // Save Excel file - wrap in try-catch to handle any unmodifiable list errors
-    Uint8List? bytes;
+    List<int>? bytesList;
     try {
-      bytes = excel.save();
+      bytesList = excel.save();
     } catch (e, stackTrace) {
       debugPrint('❌ Error saving Excel file: $e');
       debugPrint('❌ Error type: ${e.runtimeType}');
@@ -150,8 +148,10 @@ class ReportService {
       rethrow;
     }
     
-    if (bytes != null) {
+    if (bytesList != null) {
       try {
+        // Convert List<int> to Uint8List for file writing
+        final bytes = Uint8List.fromList(bytesList);
         await file.writeAsBytes(bytes);
       } catch (e) {
         debugPrint('Error writing Excel file to disk: $e');
