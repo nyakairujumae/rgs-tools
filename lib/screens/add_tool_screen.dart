@@ -934,11 +934,40 @@ class _AddToolScreenState extends State<AddToolScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
+      debugPrint('❌ Error in _handleSave: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       if (mounted) {
+        // Show detailed error message
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error adding tool: $e'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Error adding tool',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  errorMessage,
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }

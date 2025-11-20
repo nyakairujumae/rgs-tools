@@ -32,19 +32,40 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<Tool> addTool(Tool tool) async {
     try {
+      final toolMap = tool.toMap();
+      debugPrint('🔍 Attempting to add tool with data: $toolMap');
+      
       final response = await SupabaseService.client
           .from('tools')
-          .insert(tool.toMap())
+          .insert(toolMap)
           .select()
           .single();
 
       final createdTool = Tool.fromMap(response);
       _tools.add(createdTool);
       notifyListeners();
+      debugPrint('✅ Tool added successfully: ${createdTool.id}');
       return createdTool;
-    } catch (e) {
-      debugPrint('Error adding tool: $e');
-      rethrow;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error adding tool: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Stack trace: $stackTrace');
+      
+      // Provide more detailed error information
+      String errorMessage = 'Failed to add tool';
+      if (e.toString().contains('permission denied') || e.toString().contains('PGRST301')) {
+        errorMessage = 'Permission denied. Please check your database policies.';
+      } else if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
+        errorMessage = 'A tool with this serial number already exists.';
+      } else if (e.toString().contains('column') && e.toString().contains('does not exist')) {
+        errorMessage = 'Database schema mismatch. Please check if all required columns exist.';
+      } else if (e.toString().contains('null value') && e.toString().contains('violates not-null constraint')) {
+        errorMessage = 'Required fields are missing. Please fill all required fields.';
+      } else {
+        errorMessage = 'Error adding tool: ${e.toString()}';
+      }
+      
+      throw Exception(errorMessage);
     }
   }
 
