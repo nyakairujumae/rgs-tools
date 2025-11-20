@@ -10,6 +10,9 @@ import 'tool_instances_screen.dart';
 import 'technicians_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/loading_widget.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
+import '../utils/navigation_helper.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
@@ -117,7 +120,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () => NavigationHelper.safePop(context),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -556,15 +559,28 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
                   // Tools List
                   Expanded(
-                    child: toolProvider.isLoading
-                        ? const ToolCardGridSkeleton(
+                    child: Consumer<ConnectivityProvider>(
+                      builder: (context, connectivityProvider, _) {
+                        final isOffline = !connectivityProvider.isOnline;
+                        
+                        if (isOffline && !toolProvider.isLoading) {
+                          // Show offline skeleton when offline
+                          return OfflineToolGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 12.0,
-                            childAspectRatio: 0.75,
-                          )
-                        : filteredTools.isEmpty
+                            message: 'You are offline. Showing cached data.',
+                          );
+                        }
+                        
+                        return toolProvider.isLoading
+                            ? const ToolCardGridSkeleton(
+                                itemCount: 6,
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10.0,
+                                mainAxisSpacing: 12.0,
+                                childAspectRatio: 0.75,
+                              )
+                            : filteredTools.isEmpty
                             ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -620,7 +636,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   final toolGroup = toolGroups[index];
                                   return _buildToolCard(toolGroup);
                                 },
-                              ),
+                              );
+                      },
+                    ),
                   ),
                 ],
               ),

@@ -14,6 +14,7 @@ import '../widgets/common/loading_widget.dart';
 import '../utils/error_handler.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
@@ -114,7 +115,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => NavigationHelper.safePop(context),
           ),
         ),
         title: Column(
@@ -145,63 +146,252 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             icon: Icon(Icons.more_vert),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+              ),
+            ),
+            elevation: 8,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.surface
+                : Colors.white,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem<String>(
                 value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, size: 20),
-                    SizedBox(width: 8),
-                    Text('Edit Tool'),
-                  ],
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'image',
                 child: Row(
                   children: [
-                    Icon(Icons.camera_alt, size: 20),
-                    SizedBox(width: 8),
-                    Text('Add Photo'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'maintenance',
-                child: Row(
-                  children: [
-                    Icon(
-                      _currentTool.status == 'Maintenance' 
-                          ? Icons.check_circle 
-                          : Icons.build, 
-                      size: 20,
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        color: AppTheme.primaryColor,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
                     ),
-                    SizedBox(width: 8),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    Text(
+                      'Edit Tool',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'image',
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        color: Colors.blue,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    Text(
+                      'Add Photo',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'shared',
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: (_currentTool.toolType == 'shared' 
+                            ? Colors.green 
+                            : Colors.orange).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        _currentTool.toolType == 'shared' 
+                            ? Icons.share 
+                            : Icons.share_outlined,
+                        color: _currentTool.toolType == 'shared' 
+                            ? Colors.green 
+                            : Colors.orange,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    Text(
+                      _currentTool.toolType == 'shared' 
+                          ? 'Make Tool Inventory' 
+                          : 'Make Tool Shared',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'maintenance',
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: (_currentTool.status == 'Maintenance' 
+                            ? Colors.green 
+                            : Colors.orange).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        _currentTool.status == 'Maintenance' 
+                            ? Icons.check_circle 
+                            : Icons.build,
+                        color: _currentTool.status == 'Maintenance' 
+                            ? Colors.green 
+                            : Colors.orange,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                     Text(
                       _currentTool.status == 'Maintenance' 
                           ? 'Complete Maintenance' 
                           : 'Mark for Maintenance',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem<String>(
                 value: 'history',
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.history, size: 20),
-                    SizedBox(width: 8),
-                    Text('View History'),
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.history,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    Text(
+                      'View History',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
                 value: 'delete',
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.delete, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete Tool', style: TextStyle(color: Colors.red)),
+                    Container(
+                      padding: EdgeInsets.all(
+                        ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    Text(
+                      'Delete Tool',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1043,6 +1233,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       case 'image':
         _addImage();
         break;
+      case 'shared':
+        _toggleToolShared();
+        break;
       case 'maintenance':
         _scheduleMaintenance();
         break;
@@ -1110,6 +1303,104 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  void _toggleToolShared() async {
+    final toolProvider = context.read<SupabaseToolProvider>();
+    final isShared = _currentTool.toolType == 'shared';
+    final newToolType = isShared ? 'inventory' : 'shared';
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Create updated tool with new tool type
+      final updatedTool = _currentTool.copyWith(
+        toolType: newToolType,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await toolProvider.updateTool(updatedTool);
+      
+      // Reload tools to ensure the change is reflected everywhere
+      await toolProvider.loadTools();
+
+      setState(() {
+        _currentTool = updatedTool;
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isShared 
+                        ? 'Tool changed to inventory. It will no longer appear in shared tools.' 
+                        : 'Tool is now shared! It will appear in the shared tools section.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.fixed,
+            duration: const Duration(seconds: 3),
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error updating tool type: ${e.toString()}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.fixed,
+            duration: const Duration(seconds: 3),
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        );
       }
     }
   }

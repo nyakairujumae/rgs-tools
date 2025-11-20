@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
 
 class ApprovalWorkflowsScreen extends StatefulWidget {
   const ApprovalWorkflowsScreen({super.key});
@@ -58,7 +59,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                         Icons.arrow_back_ios_new,
                         size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => NavigationHelper.safePop(context),
                     ),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -1304,7 +1305,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
               child: TextFormField(
                 controller: _unitPriceController,
                 decoration: InputDecoration(
-                  labelText: 'Unit Price (\$)',
+                  labelText: 'Unit Price (AED)',
                   border: OutlineInputBorder(),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -1324,7 +1325,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
         TextFormField(
           controller: _totalCostController,
           decoration: InputDecoration(
-            labelText: 'Total Cost (\$)',
+            labelText: 'Total Cost (AED)',
             border: OutlineInputBorder(),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),

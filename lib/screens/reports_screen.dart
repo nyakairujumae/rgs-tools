@@ -12,6 +12,7 @@ import '../services/report_service.dart';
 import 'report_detail_screen.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/navigation_helper.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -115,7 +116,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           Icons.arrow_back_ios_new,
                           size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                         ),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => NavigationHelper.safePop(context),
                       ),
                     ),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),

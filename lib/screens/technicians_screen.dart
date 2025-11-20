@@ -6,6 +6,8 @@ import '../providers/supabase_tool_provider.dart';
 import '../models/technician.dart';
 import '../theme/app_theme.dart';
 import '../services/supabase_service.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
 
@@ -39,9 +41,10 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SupabaseTechnicianProvider, SupabaseToolProvider>(
-      builder: (context, technicianProvider, toolProvider, child) {
+    return Consumer3<SupabaseTechnicianProvider, SupabaseToolProvider, ConnectivityProvider>(
+      builder: (context, technicianProvider, toolProvider, connectivityProvider, child) {
         final technicians = technicianProvider.technicians;
+        final isOffline = !connectivityProvider.isOnline;
 
         // Get unique departments for filter
         final departments = technicians
@@ -262,9 +265,15 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
                   // Technicians List
                   Expanded(
-                    child: technicianProvider.isLoading
-                        ? Center(child: CircularProgressIndicator())
-                    : filteredTechnicians.isEmpty
+                    child: isOffline && !technicianProvider.isLoading
+                        ? OfflineListSkeleton(
+                            itemCount: 5,
+                            itemHeight: 100,
+                            message: 'You are offline. Showing cached technicians.',
+                          )
+                        : technicianProvider.isLoading
+                            ? Center(child: CircularProgressIndicator())
+                            : filteredTechnicians.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,

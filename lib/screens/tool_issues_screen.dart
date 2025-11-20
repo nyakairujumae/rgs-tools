@@ -6,7 +6,10 @@ import '../theme/app_theme.dart';
 import 'add_tool_issue_screen.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/navigation_helper.dart';
 import '../widgets/common/loading_widget.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
 
 class ToolIssuesScreen extends StatefulWidget {
   const ToolIssuesScreen({super.key});
@@ -78,7 +81,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                         Icons.arrow_back_ios_new,
                         size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => NavigationHelper.safePop(context),
                     ),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -168,8 +171,18 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
               ),
             ),
             Expanded(
-              child: Consumer<ToolIssueProvider>(
-                builder: (context, issueProvider, child) {
+              child: Consumer2<ToolIssueProvider, ConnectivityProvider>(
+                builder: (context, issueProvider, connectivityProvider, child) {
+                  final isOffline = !connectivityProvider.isOnline;
+                  
+                  if (isOffline && !issueProvider.isLoading) {
+                    return OfflineListSkeleton(
+                      itemCount: 5,
+                      itemHeight: 120,
+                      message: 'You are offline. Showing cached issues.',
+                    );
+                  }
+                  
                   if (issueProvider.isLoading) {
                     return ListSkeletonLoader(
                       itemCount: 5,

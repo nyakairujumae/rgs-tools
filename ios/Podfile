@@ -67,12 +67,29 @@ post_install do |installer|
   
   # Fix for Firebase Messaging plugin specifically
   installer.pods_project.targets.each do |target|
-    if target.name == 'FLTFirebaseMessagingPlugin' || target.name.include?('Firebase') || target.name.include?('firebase')
+    # Apply general Firebase settings to all Firebase targets
+    if target.name.include?('Firebase') || target.name.include?('firebase')
       target.build_configurations.each do |config|
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         config.build_settings['DEFINES_MODULE'] = 'YES'
         config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
         config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
+      end
+    end
+    
+    # Only add explicit FirebaseMessaging framework link to the Flutter plugin target
+    # NOT to FirebaseCore or other Firebase targets to avoid circular dependencies
+    if target.name == 'FLTFirebaseMessagingPlugin'
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
+        # Ensure FirebaseMessaging module is properly linked (only for the plugin, not FirebaseCore)
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        unless config.build_settings['OTHER_LDFLAGS'].any? { |flag| flag.include?('FirebaseMessaging') }
+          config.build_settings['OTHER_LDFLAGS'] << '-framework' << 'FirebaseMessaging'
+        end
       end
     end
     
@@ -106,9 +123,19 @@ post_install do |installer|
       header_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.h')
       if File.exist?(header_path)
         file_content = File.read(header_path)
+        needs_write = false
+        
         if file_content.include?('#import <Firebase/Firebase.h>')
           # Replace with proper imports
           file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+          needs_write = true
+        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && file_content.include?('FIRMessagingDelegate')
+          # Add FirebaseMessaging import if FIRMessagingDelegate is used but import is missing
+          file_content.gsub!('#import <FirebaseCore/FirebaseCore.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+          needs_write = true
+        end
+        
+        if needs_write
           File.write(header_path, file_content)
           puts "✅ Patched FLTFirebaseMessagingPlugin.h at #{header_path}"
         end
@@ -118,19 +145,31 @@ post_install do |installer|
       impl_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.m')
       if File.exist?(impl_path)
         file_content = File.read(impl_path)
+        needs_write = false
+        
         if file_content.include?('#import <Firebase/Firebase.h>')
           file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+          needs_write = true
+        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && (file_content.include?('FIRMessaging') || file_content.include?('FIRMessagingDelegate'))
+          # Add FirebaseMessaging import if FIRMessaging is used but import is missing
+          if file_content.include?('#import <FirebaseCore/FirebaseCore.h>')
+            file_content.gsub!('#import <FirebaseCore/FirebaseCore.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
+            needs_write = true
+          else
+            # Find the first import line and add after it
+            lines = file_content.lines
+            import_line_index = lines.index { |line| line.include?('#import') && !line.include?('FLTFirebaseMessagingPlugin.h') }
+            if import_line_index
+              lines.insert(import_line_index + 1, "#import <FirebaseMessaging/FirebaseMessaging.h>\n")
+              file_content = lines.join
+              needs_write = true
+            end
+          end
+        end
+        
+        if needs_write
           File.write(impl_path, file_content)
           puts "✅ Patched FLTFirebaseMessagingPlugin.m at #{impl_path}"
-        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && file_content.include?('FIRMessaging')
-          # Add FirebaseMessaging import if FIRMessaging is used but import is missing
-          lines = file_content.lines
-          import_line_index = lines.index { |line| line.include?('#import') && !line.include?('FLTFirebaseMessagingPlugin.h') }
-          if import_line_index
-            lines.insert(import_line_index + 1, "#import <FirebaseMessaging/FirebaseMessaging.h>\n")
-            File.write(impl_path, lines.join)
-            puts "✅ Added FirebaseMessaging import to FLTFirebaseMessagingPlugin.m at #{impl_path}"
-          end
         end
       end
       break

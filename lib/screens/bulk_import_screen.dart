@@ -269,7 +269,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 title: Text(item['name'] ?? 'Unknown'),
                 subtitle: Text('${item['category']} • ${item['brand']}'),
                 trailing: Text(
-                  '\$${item['purchasePrice'] ?? '0.00'}',
+                  'AED ${item['purchasePrice'] ?? '0.00'}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -487,8 +487,35 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully imported ${_parsedData.length} tools'),
-            backgroundColor: Colors.green,
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Successfully imported ${_parsedData.length} tools',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+            behavior: SnackBarBehavior.fixed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            duration: const Duration(seconds: 3),
+            dismissDirection: DismissDirection.horizontal,
           ),
         );
         Navigator.pop(context);

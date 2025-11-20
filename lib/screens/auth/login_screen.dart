@@ -406,31 +406,120 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email first'),
-          backgroundColor: Colors.orange,
+    // Show dialog to enter email
+    final emailController = TextEditingController(
+      text: _emailController.text, // Pre-fill with existing email if any
+    );
+    
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Reset Password',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      );
-      return;
-    }
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter your email address and we\'ll send you a link to reset your password.',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                hintText: 'your.email@example.com',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (emailController.text.trim().isNotEmpty) {
+                Navigator.pop(context, true);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
 
-    try {
-      final authProvider = context.read<AuthProvider>();
-      await authProvider.resetPassword(_emailController.text.trim());
-      
-      if (mounted) {
-        AuthErrorHandler.showSuccessSnackBar(
-          context, 
-          '📧 Password reset email sent! Check your inbox.'
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final errorMessage = AuthErrorHandler.getErrorMessage(e);
-        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+    if (result == true && emailController.text.trim().isNotEmpty) {
+      try {
+        final authProvider = context.read<AuthProvider>();
+        await authProvider.resetPassword(emailController.text.trim());
+        
+        if (mounted) {
+          // Update the email field with the entered email
+          _emailController.text = emailController.text.trim();
+          
+          // Show success dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 24),
+                  SizedBox(width: 12),
+                  Text(
+                    'Email Sent!',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                'We\'ve sent a password reset link to ${emailController.text.trim()}. Please check your inbox and follow the instructions to reset your password.',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          final errorMessage = AuthErrorHandler.getErrorMessage(e);
+          AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+        }
       }
     }
+    
+    emailController.dispose();
   }
 }

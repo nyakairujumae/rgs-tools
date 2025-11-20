@@ -94,18 +94,6 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.refresh,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                      onPressed: () {
-                        context
-                            .read<PendingApprovalsProvider>()
-                            .loadPendingApprovals();
-                      },
-                    ),
                   ],
                 ),
               ),

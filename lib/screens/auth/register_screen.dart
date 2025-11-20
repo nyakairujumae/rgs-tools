@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../models/user_role.dart';
 import '../../config/app_config.dart';
 import '../../utils/auth_error_handler.dart';
+import '../../utils/responsive_helper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -35,63 +36,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 24,
+            vertical: 40,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 40),
-              
-              // Back Button
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: 20),
-              
-              // Logo and Title
+              // Branding Section
               Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      Icons.build_circle_outlined,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      size: 40,
+                  Text(
+                    'RGS',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 48),
+                      fontWeight: FontWeight.w900,
+                      color: colorScheme.onSurface,
+                      letterSpacing: 1.0,
                     ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                   Text(
-                    'Create Account',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 28,
+                    'HVAC SERVICES',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Text(
-                    'Join RGS HVAC Services',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[400],
+                    'Create your account to get started.',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
               
-              SizedBox(height: 40),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
               
               // Registration Form
               Form(
@@ -102,27 +98,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Full Name Field
                     TextFormField(
                       controller: _nameController,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[400],
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                        prefixIcon: Icon(
+                          Icons.person_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
                         filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
+                        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: AppTheme.secondaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -132,33 +156,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     
                     // Email Field
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[400],
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
                         filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
+                        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: AppTheme.secondaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -174,23 +226,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[400],
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.grey,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                           ),
                           onPressed: () {
                             setState(() {
@@ -198,20 +259,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             });
                           },
                         ),
+                        filled: true,
+                        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: AppTheme.secondaryColor,
+                            width: 2,
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -224,23 +305,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     
                     // Confirm Password Field
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
-                        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[400],
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.grey,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                           ),
                           onPressed: () {
                             setState(() {
@@ -248,20 +338,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             });
                           },
                         ),
+                        filled: true,
+                        fillColor: isDarkMode ? colorScheme.surface : Colors.white,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                          ),
+                          borderSide: BorderSide(
+                            color: AppTheme.secondaryColor,
+                            width: 2,
+                          ),
                         ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -274,30 +384,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     
-                    SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     
                     // Role Selection Field
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey),
+                        color: isDarkMode ? colorScheme.surface : Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+                        ),
+                        border: Border.all(
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
                       ),
                       child: DropdownButtonFormField<UserRole>(
-                        initialValue: _selectedRole,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                        value: _selectedRole,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Role',
-                          labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[400],
+                          labelStyle: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                           ),
-                          prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
+                          prefixIcon: Icon(
+                            Icons.person_outline,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                          ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
+                          contentPadding: ResponsiveHelper.getResponsivePadding(
+                            context,
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                         ),
-                        dropdownColor: Theme.of(context).cardTheme.color,
+                        dropdownColor: isDarkMode ? colorScheme.surface : Colors.white,
                         items: UserRole.values.map((role) {
                           return DropdownMenuItem<UserRole>(
                             value: role,
@@ -311,7 +438,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 SizedBox(width: 12),
                                 Text(
                                   role.displayName,
-                                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                  ),
                                 ),
                               ],
                             ),
@@ -327,64 +457,92 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     
-                    SizedBox(height: 24),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                     
                     // Register Button
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, child) {
-                        return ElevatedButton(
-                          onPressed: authProvider.isLoading ? null : _handleRegister,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2196F3),
-                            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: authProvider.isLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white),
-                                  ),
-                                )
-                              : Text(
-                                  'Create Account',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                        return SizedBox(
+                          width: double.infinity,
+                          height: ResponsiveHelper.getResponsiveListItemHeight(context, 56),
+                          child: ElevatedButton(
+                            onPressed: authProvider.isLoading ? null : _handleRegister,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                                 ),
+                              ),
+                              elevation: 0,
+                              padding: ResponsiveHelper.getResponsiveButtonPadding(context),
+                            ),
+                            child: authProvider.isLoading
+                                ? SizedBox(
+                                    height: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                    width: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Text(
+                                    'Create Account',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                          ),
                         );
                       },
                     ),
                     
-                    SizedBox(height: 32),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     
                     // Sign In Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Already have an account? ',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
-                          ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          vertical: 8,
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            'Sign In',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.blue, // Fixed blue color for visibility in dark mode
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      ),
+                      child: Text(
+                        'Already have an account? Sign In',
+                        style: TextStyle(
+                          color: AppTheme.secondaryColor,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
+                      ),
+                    ),
+                    
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    
+                    // Back to Role Selection
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: TextButton.styleFrom(
+                        padding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: Text(
+                        '← Back to Role Selection',
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),

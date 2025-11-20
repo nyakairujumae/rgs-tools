@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class CurrencyFormatter {
   // Currency symbols mapping
   static const Map<String, String> currencySymbols = {
-    'AED': 'د.إ', // UAE Dirham Arabic symbol
+    'AED': 'AED', // UAE Dirham
     'USD': '\$',
     'EUR': '€',
     'GBP': '£',

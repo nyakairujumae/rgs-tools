@@ -76,13 +76,19 @@ class AuthErrorHandler {
       return '⏰ Too many attempts. Please wait a few minutes before trying again.';
     }
     
-    // Server errors
+    // Server errors - be more specific to avoid false positives
     if (errorString.contains('server error') ||
         errorString.contains('internal server error') ||
         errorString.contains('service unavailable') ||
-        errorString.contains('500') ||
-        errorString.contains('502') ||
-        errorString.contains('503')) {
+        errorString.contains('http 500') ||
+        errorString.contains('http 502') ||
+        errorString.contains('http 503') ||
+        errorString.contains('status code: 500') ||
+        errorString.contains('status code: 502') ||
+        errorString.contains('status code: 503') ||
+        (errorString.contains('500') && (errorString.contains('internal') || errorString.contains('server'))) ||
+        (errorString.contains('502') && (errorString.contains('bad gateway') || errorString.contains('server'))) ||
+        (errorString.contains('503') && (errorString.contains('service') || errorString.contains('unavailable')))) {
       return '🔧 Our servers are temporarily down. Please try again in a few minutes.';
     }
     
@@ -156,20 +162,35 @@ class AuthErrorHandler {
   static void showSuccessSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
+        content: Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: Colors.white,
+              size: 20,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+        behavior: SnackBarBehavior.fixed,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.zero,
         ),
-        margin: const EdgeInsets.all(16),
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         duration: const Duration(seconds: 3),
+        dismissDirection: DismissDirection.horizontal,
       ),
     );
   }

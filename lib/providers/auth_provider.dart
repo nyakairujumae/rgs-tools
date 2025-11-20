@@ -403,8 +403,11 @@ class AuthProvider with ChangeNotifier {
       }
 
       return response;
-    } catch (e) {
-      debugPrint('Error signing in: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error signing in: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Error string: ${e.toString()}');
+      debugPrint('❌ Stack trace: $stackTrace');
       rethrow;
     } finally {
       _isLoading = false;
@@ -446,9 +449,15 @@ _isLoading = false;
     }
   }
 
-  Future<void> resetPassword(String email) async {
+  Future<void> resetPassword(String email, {String? redirectTo}) async {
     try {
-      await SupabaseService.client.auth.resetPasswordForEmail(email);
+      // Use the app's deep link URL for password reset
+      final redirectUrl = redirectTo ?? 'com.rgs.app://reset-password';
+      
+      await SupabaseService.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: redirectUrl,
+      );
     } catch (e) {
       debugPrint('Error resetting password: $e');
       rethrow;

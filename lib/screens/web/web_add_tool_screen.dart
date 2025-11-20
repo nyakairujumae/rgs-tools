@@ -697,9 +697,36 @@ class _WebAddToolScreenState extends State<WebAddToolScreen> {
       if (kIsWeb) {
         await Future.delayed(const Duration(seconds: 1));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tool added successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tool added successfully!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+            behavior: SnackBarBehavior.fixed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            duration: const Duration(seconds: 3),
+            dismissDirection: DismissDirection.horizontal,
           ),
         );
         Navigator.pop(context);

@@ -208,7 +208,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                         labelText: 'Purchase Price',
                         border: OutlineInputBorder(),
                         hintText: '0.00',
-                        prefixText: '\$ ',
+                        prefixText: 'AED ',
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -221,7 +221,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                         labelText: 'Current Value',
                         border: OutlineInputBorder(),
                         hintText: '0.00',
-                        prefixText: '\$ ',
+                        prefixText: 'AED ',
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -409,9 +409,36 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tool updated successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tool updated successfully!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+            behavior: SnackBarBehavior.fixed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            duration: const Duration(seconds: 3),
+            dismissDirection: DismissDirection.horizontal,
           ),
         );
         Navigator.pop(context, updatedTool);

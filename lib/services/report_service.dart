@@ -238,7 +238,9 @@ class ReportService {
       
       for (final file in archive.files) {
         if (file.isFile) {
-          var fileContent = file.content as List<int>;
+          // Create a copy of the file content to avoid unmodifiable list issues
+          final originalContent = file.content as List<int>;
+          var fileContent = List<int>.from(originalContent);
           
           // Check if this is a worksheet XML file (xl/worksheets/sheet*.xml)
           if (file.name.startsWith('xl/worksheets/sheet') && file.name.endsWith('.xml')) {
@@ -306,9 +308,10 @@ class ReportService {
             }
             
             modifiedFiles[file.name] = convert.utf8.encode(xmlContent);
+          } else {
+            // For non-worksheet files, create a copy of the content
+            modifiedFiles[file.name] = List<int>.from(fileContent);
           }
-          
-          modifiedFiles[file.name] = fileContent;
         }
       }
       
@@ -318,10 +321,16 @@ class ReportService {
         outputArchive.addFile(ArchiveFile(entry.key, entry.value.length, entry.value));
       }
       
-      // Add any other files that weren't modified
+      // Add any other files that weren't modified (create copies to avoid unmodifiable list issues)
       for (final file in archive.files) {
         if (!file.isFile || !modifiedFiles.containsKey(file.name)) {
-          outputArchive.addFile(file);
+          if (file.isFile) {
+            final fileContent = file.content as List<int>;
+            final contentCopy = List<int>.from(fileContent);
+            outputArchive.addFile(ArchiveFile(file.name, contentCopy.length, contentCopy));
+          } else {
+            outputArchive.addFile(file);
+          }
         }
       }
       

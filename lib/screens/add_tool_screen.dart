@@ -508,7 +508,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Purchase Price',
                           hintText: '0.00',
-                          prefixText: '\$ ',
+                          prefixText: 'AED ',
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -879,19 +879,56 @@ class _AddToolScreenState extends State<AddToolScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Tool added successfully!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'View All Tools',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pop(context); // Close add tool screen
-                // Navigate to All Tools screen (index 1 in the bottom navigation)
-                // Navigate to All Tools screen
-                _navigateToAllTools(context);
-              },
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tool added successfully!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    Navigator.pop(context); // Close add tool screen
+                    _navigateToAllTools(context);
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'View All Tools',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
+            backgroundColor: AppTheme.secondaryColor,
+            behavior: SnackBarBehavior.fixed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            duration: const Duration(seconds: 3),
+            dismissDirection: DismissDirection.horizontal,
           ),
         );
         Navigator.pop(context);

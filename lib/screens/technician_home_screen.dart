@@ -17,6 +17,7 @@ import '../models/tool.dart';
 import '../widgets/common/rgs_logo.dart';
 import 'package:provider/provider.dart';
 import '../services/supabase_service.dart';
+import 'settings_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
 import '../theme/app_theme.dart';
 import '../providers/admin_notification_provider.dart';
@@ -344,7 +345,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
               return PopupMenuButton<String>(
                 icon: Icon(Icons.account_circle),
                 onSelected: (value) async {
-                  if (value == 'logout') {
+                  if (value == 'settings') {
+                    // Navigate to Settings screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  } else if (value == 'logout') {
                       if (Navigator.of(context).canPop()) {
                         Navigator.of(context).pop();
                       }

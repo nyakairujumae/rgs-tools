@@ -8,6 +8,8 @@ import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/common/loading_widget.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
 import 'technician_add_tool_screen.dart';
 import 'tool_detail_screen.dart';
 
@@ -101,9 +103,10 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
         color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           bottom: false,
-          child: Consumer2<SupabaseToolProvider, AuthProvider>(
-            builder: (context, toolProvider, authProvider, child) {
+          child: Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
+            builder: (context, toolProvider, authProvider, connectivityProvider, child) {
               final currentUserId = authProvider.userId;
+              final isOffline = !connectivityProvider.isOnline;
               final allMyTools = currentUserId == null
                   ? <Tool>[]
                   : toolProvider.tools
@@ -510,15 +513,21 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
 
                   // Tools List
                   Expanded(
-                    child: toolProvider.isLoading
-                        ? const ToolCardGridSkeleton(
+                    child: isOffline && !toolProvider.isLoading
+                        ? OfflineToolGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 12.0,
-                            childAspectRatio: 0.75,
+                            message: 'You are offline. Showing cached tools.',
                           )
-                        : filteredTools.isEmpty
+                        : toolProvider.isLoading
+                            ? const ToolCardGridSkeleton(
+                                itemCount: 6,
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10.0,
+                                mainAxisSpacing: 12.0,
+                                childAspectRatio: 0.75,
+                              )
+                            : filteredTools.isEmpty
                             ? RefreshIndicator(
                                 onRefresh: () async {
                                   await toolProvider.loadTools();

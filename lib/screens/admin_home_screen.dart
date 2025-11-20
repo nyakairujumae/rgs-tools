@@ -36,6 +36,8 @@ import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
 import '../widgets/common/rgs_logo.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final int initialTab;
@@ -317,7 +319,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                             return PopupMenuButton<String>(
                               icon: Icon(Icons.account_circle),
                               onSelected: (value) async {
-                                if (value == 'logout' &&
+                                if (value == 'settings') {
+                                  // Navigate to Settings screen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const SettingsScreen(),
+                                    ),
+                                  );
+                                } else if (value == 'logout' &&
                                     !_isDisposed &&
                                     mounted) {
                                   try {
@@ -645,12 +655,13 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider,
-        AuthProvider>(
+    return Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider,
+        AuthProvider, ConnectivityProvider>(
       builder:
-          (context, toolProvider, technicianProvider, authProvider, child) {
+          (context, toolProvider, technicianProvider, authProvider, connectivityProvider, child) {
         final tools = toolProvider.tools;
         final technicians = technicianProvider.technicians;
+        final isOffline = !connectivityProvider.isOnline;
         final totalTools = tools.length;
         final totalValue = toolProvider.getTotalValue();
         final toolsNeedingMaintenance =
@@ -659,6 +670,14 @@ class DashboardScreen extends StatelessWidget {
         final assignedTools = toolProvider.getAssignedTools();
 
         final cardRadius = BorderRadius.circular(_cardRadiusValue);
+
+        // Show offline skeleton when offline and not loading
+        if (isOffline && !toolProvider.isLoading && !technicianProvider.isLoading) {
+          return OfflineDashboardSkeleton(
+            cardCount: 4,
+            message: 'You are offline. Showing cached dashboard data.',
+          );
+        }
 
         return SingleChildScrollView(
           padding: ResponsiveHelper.getResponsivePadding(

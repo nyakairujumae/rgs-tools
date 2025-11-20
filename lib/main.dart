@@ -16,6 +16,7 @@ import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'models/tool.dart';
@@ -27,6 +28,7 @@ import 'providers/tool_issue_provider.dart';
 import 'providers/request_thread_provider.dart';
 import 'providers/pending_approvals_provider.dart';
 import 'providers/admin_notification_provider.dart';
+import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
@@ -146,6 +148,22 @@ void main() async {
         anonKey: SupabaseConfig.anonKey,
       );
       print('Supabase initialized successfully');
+      
+      // Listen for auth state changes to handle password reset links
+      if (!kIsWeb) {
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+          final event = data.event;
+          final session = data.session;
+          
+          print('🔐 Auth state changed: $event');
+          
+          // Handle password recovery - the deep link will navigate to reset screen
+          if (event == AuthChangeEvent.passwordRecovery && session != null) {
+            print('🔐 Password recovery detected - session available');
+            // The reset password screen will handle the session via deep link
+          }
+        });
+      }
     } catch (supabaseError) {
       print('Supabase initialization failed: $supabaseError');
       // Continue without Supabase - this is not critical for basic app functionality
@@ -334,6 +352,7 @@ class HvacToolsManagerApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseToolProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseTechnicianProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
@@ -412,6 +431,14 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/role-selection': (context) => const RoleSelectionScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
+              '/reset-password': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                return ResetPasswordScreen(
+                  accessToken: args?['access_token'] as String?,
+                  refreshToken: args?['refresh_token'] as String?,
+                  type: args?['type'] as String?,
+                );
+              },
               '/pending-approval': (context) => const PendingApprovalScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -437,6 +464,42 @@ class HvacToolsManagerApp extends StatelessWidget {
                 final tool = ModalRoute.of(context)!.settings.arguments as Tool;
                 return ToolDetailScreen(tool: tool);
               },
+            },
+            onGenerateRoute: (settings) {
+              // Handle password reset deep links
+              if (settings.name != null && settings.name!.contains('reset-password')) {
+                print('🔐 Password reset route detected: ${settings.name}');
+                final uri = Uri.parse(settings.name!);
+                final accessToken = uri.queryParameters['access_token'];
+                final refreshToken = uri.queryParameters['refresh_token'];
+                final type = uri.queryParameters['type'];
+                
+                return MaterialPageRoute(
+                  builder: (context) => ResetPasswordScreen(
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                    type: type,
+                  ),
+                  settings: RouteSettings(name: '/reset-password'),
+                );
+              }
+              
+              // Handle unknown routes - prevent blank screens
+              print('⚠️ Unknown route: ${settings.name}');
+              
+              // Default to role selection for unknown routes
+              return MaterialPageRoute(
+                builder: (context) => const RoleSelectionScreen(),
+                settings: RouteSettings(name: '/role-selection'),
+              );
+            },
+            onUnknownRoute: (settings) {
+              // Fallback for any unhandled routes
+              print('⚠️ Unknown route (onUnknownRoute): ${settings.name}');
+              return MaterialPageRoute(
+                builder: (context) => const RoleSelectionScreen(),
+                settings: RouteSettings(name: '/role-selection'),
+              );
             },
             debugShowCheckedModeBanner: false,
           );

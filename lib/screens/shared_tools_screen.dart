@@ -13,7 +13,10 @@ import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
 import 'tool_detail_screen.dart';
 
 class SharedToolsScreen extends StatefulWidget {
@@ -78,7 +81,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => NavigationHelper.safePop(context),
           ),
         ),
         title: Text(
@@ -99,10 +102,19 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               _buildSearchSection(),
               _buildFilterChips(),
               Expanded(
-                child:
-                    Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
-                  builder: (context, toolProvider, technicianProvider, child) {
+                child: Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider, ConnectivityProvider>(
+                  builder: (context, toolProvider, technicianProvider, connectivityProvider, child) {
                     final tools = _getFilteredTools(toolProvider.tools);
+                    final isOffline = !connectivityProvider.isOnline;
+
+                    if (isOffline && !toolProvider.isLoading) {
+                      // Show offline skeleton when offline
+                      return OfflineToolGridSkeleton(
+                        itemCount: 6,
+                        crossAxisCount: 2,
+                        message: 'You are offline. Showing cached shared tools.',
+                      );
+                    }
 
                     if (toolProvider.isLoading) {
                       return const ToolCardGridSkeleton(
