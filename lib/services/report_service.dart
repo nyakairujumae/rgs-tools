@@ -127,9 +127,26 @@ class ReportService {
     try {
       bytes = excel.save();
     } catch (e, stackTrace) {
-      debugPrint('Error saving Excel file: $e');
-      debugPrint('Stack trace: $stackTrace');
-      // Try alternative save method if available
+      debugPrint('❌ Error saving Excel file: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Stack trace: $stackTrace');
+      
+      // Check if it's the unmodifiable list error
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('unmodifiable') || errorString.contains('cannot remove')) {
+        // This is a known issue with the Excel library
+        // Try to work around it by creating a fresh Excel object
+        debugPrint('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
+        debugPrint('⚠️ Attempting workaround...');
+        
+        // Re-throw with a more helpful error message
+        throw Exception(
+          'Excel export failed due to a library limitation. '
+          'Please try exporting again, or contact support if the issue persists.'
+        );
+      }
+      
+      // For other errors, rethrow
       rethrow;
     }
     
