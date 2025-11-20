@@ -34,8 +34,11 @@ import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
 import 'services/firebase_messaging_service.dart' if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
 import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' if (dart.library.html) 'package:firebase_messaging/firebase_messaging_stub.dart';
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
+// Import background handler from firebase_messaging_service
+import 'services/firebase_messaging_service.dart' show firebaseMessagingBackgroundHandler;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -122,8 +125,10 @@ void main() async {
           print('✅ Firebase verified. Setting up messaging...');
           
           // Set up Firebase Messaging background handler (only on non-web)
-          // This is handled inside FirebaseMessagingService.initialize() on mobile
-          // On web, FirebaseMessagingService is stubbed and does nothing
+          // Register background message handler BEFORE initializing
+          if (!kIsWeb) {
+            FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+          }
           
           // Initialize Firebase Messaging
           await FirebaseMessagingService.initialize();
@@ -161,6 +166,12 @@ void main() async {
           if (event == AuthChangeEvent.passwordRecovery && session != null) {
             print('🔐 Password recovery detected - session available');
             // The reset password screen will handle the session via deep link
+          }
+          
+          // Handle email confirmation
+          if (event == AuthChangeEvent.signedIn && session != null) {
+            print('🔐 User signed in - email may have been confirmed');
+            // User is now signed in after email confirmation, app will handle navigation
           }
         });
       }

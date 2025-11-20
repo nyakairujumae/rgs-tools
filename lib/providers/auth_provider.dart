@@ -150,6 +150,7 @@ class AuthProvider with ChangeNotifier {
           'full_name': fullName,
           'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
         },
+        emailRedirectTo: 'com.rgs.app://email-confirmation',
       );
 
       if (response.user != null) {

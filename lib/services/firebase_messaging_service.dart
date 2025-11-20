@@ -346,9 +346,10 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Increment stored count and update badge immediately; also show a local notif
   try {
     final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getInt(FirebaseMessagingService._badgeKey) ?? 0;
+    const badgeKey = 'app_badge_count';
+    final current = prefs.getInt(badgeKey) ?? 0;
     final updated = current + 1;
-    await prefs.setInt(FirebaseMessagingService._badgeKey, updated);
+    await prefs.setInt(badgeKey, updated);
     if (await FlutterAppBadger.isAppBadgeSupported()) {
       FlutterAppBadger.updateBadgeCount(updated);
     }
@@ -362,10 +363,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     );
     final plugin = FlutterLocalNotificationsPlugin();
     await plugin.initialize(initializationSettings);
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      FirebaseMessagingService._androidChannelId,
-      FirebaseMessagingService._androidChannelName,
-      description: FirebaseMessagingService._androidChannelDesc,
+    const androidChannelId = 'default_channel';
+    const androidChannelName = 'General';
+    const androidChannelDesc = 'General notifications';
+    final AndroidNotificationChannel channel = AndroidNotificationChannel(
+      androidChannelId,
+      androidChannelName,
+      description: androidChannelDesc,
       importance: Importance.defaultImportance,
       showBadge: true,
     );
@@ -373,9 +377,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(channel);
     final androidDetails = AndroidNotificationDetails(
-      FirebaseMessagingService._androidChannelId,
-      FirebaseMessagingService._androidChannelName,
-      channelDescription: FirebaseMessagingService._androidChannelDesc,
+      androidChannelId,
+      androidChannelName,
+      channelDescription: androidChannelDesc,
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       showWhen: true,

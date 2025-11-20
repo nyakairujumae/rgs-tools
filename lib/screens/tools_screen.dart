@@ -573,14 +573,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         }
                         
                         return toolProvider.isLoading
-                            ? const ToolCardGridSkeleton(
-                                itemCount: 6,
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 10.0,
-                                mainAxisSpacing: 12.0,
-                                childAspectRatio: 0.75,
-                              )
-                            : filteredTools.isEmpty
+                        ? const ToolCardGridSkeleton(
+                            itemCount: 6,
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10.0,
+                            mainAxisSpacing: 12.0,
+                            childAspectRatio: 0.75,
+                          )
+                        : filteredTools.isEmpty
                             ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -637,8 +637,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   return _buildToolCard(toolGroup);
                                 },
                               );
-                      },
-                    ),
+                                },
+                              ),
                   ),
                 ],
               ),
@@ -828,8 +828,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   child: (() {
                                     final localImage = buildLocalFileImage(
                                       representativeTool.imagePath!,
-                                      fit: BoxFit.cover,
-                                    );
+                                          fit: BoxFit.cover,
+                                        );
                                     if (localImage != null) {
                                       return localImage;
                                     }

@@ -464,15 +464,15 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Text('Send Reset Link'),
           ),
         ],
-      ),
-    );
+        ),
+      );
 
     if (result == true && emailController.text.trim().isNotEmpty) {
-      try {
-        final authProvider = context.read<AuthProvider>();
+    try {
+      final authProvider = context.read<AuthProvider>();
         await authProvider.resetPassword(emailController.text.trim());
-        
-        if (mounted) {
+      
+      if (mounted) {
           // Update the email field with the entered email
           _emailController.text = emailController.text.trim();
           
@@ -510,14 +510,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          final errorMessage = AuthErrorHandler.getErrorMessage(e);
-          AuthErrorHandler.showErrorSnackBar(context, errorMessage);
-        }
+        );
       }
+    } catch (e) {
+      if (mounted) {
+        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+      }
+    }
     }
     
     emailController.dispose();

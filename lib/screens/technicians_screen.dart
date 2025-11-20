@@ -272,8 +272,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             message: 'You are offline. Showing cached technicians.',
                           )
                         : technicianProvider.isLoading
-                            ? Center(child: CircularProgressIndicator())
-                            : filteredTechnicians.isEmpty
+                        ? Center(child: CircularProgressIndicator())
+                    : filteredTechnicians.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,

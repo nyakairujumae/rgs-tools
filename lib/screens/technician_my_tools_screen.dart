@@ -520,14 +520,14 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                             message: 'You are offline. Showing cached tools.',
                           )
                         : toolProvider.isLoading
-                            ? const ToolCardGridSkeleton(
-                                itemCount: 6,
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 10.0,
-                                mainAxisSpacing: 12.0,
-                                childAspectRatio: 0.75,
-                              )
-                            : filteredTools.isEmpty
+                        ? const ToolCardGridSkeleton(
+                            itemCount: 6,
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10.0,
+                            mainAxisSpacing: 12.0,
+                            childAspectRatio: 0.75,
+                          )
+                        : filteredTools.isEmpty
                             ? RefreshIndicator(
                                 onRefresh: () async {
                                   await toolProvider.loadTools();
