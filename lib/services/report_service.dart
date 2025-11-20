@@ -112,8 +112,14 @@ class ReportService {
     final bytes = excel.save();
     if (bytes != null) {
       await file.writeAsBytes(bytes);
-      // Set landscape orientation by modifying the Excel file XML
-      await _setExcelLandscapeOrientation(file);
+      // Try to set landscape orientation, but don't fail if it doesn't work
+      // The Excel file will still be valid and exportable
+      try {
+        await _setExcelLandscapeOrientation(file);
+      } catch (e) {
+        // Silently fail - landscape orientation is a nice-to-have, not critical
+        debugPrint('Note: Could not set landscape orientation, but file is still valid: $e');
+      }
     }
     
     return file;
@@ -228,7 +234,14 @@ class ReportService {
   }
 
   /// Set landscape orientation by modifying Excel file XML
+  /// DISABLED: This feature is causing unmodifiable list errors
+  /// The Excel file will still be generated correctly - users can manually set landscape orientation
   static Future<void> _setExcelLandscapeOrientation(File excelFile) async {
+    // Feature disabled - Excel file is still valid and exportable
+    // Users can set landscape orientation manually when opening the file in Excel
+    return;
+    
+    /* Original implementation - disabled due to unmodifiable list issues with archive library
     try {
       // Read the Excel file as a ZIP archive (Excel files are ZIP archives)
       final bytes = await excelFile.readAsBytes();
