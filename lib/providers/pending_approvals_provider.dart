@@ -4,6 +4,7 @@ import '../services/supabase_service.dart';
 import '../models/admin_notification.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
+import 'admin_notification_provider.dart';
 
 class PendingApproval {
   final String id;
