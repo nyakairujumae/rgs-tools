@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -175,6 +176,14 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     // Name (Required)
                     TextFormField(
                       controller: _nameController,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Full Name *',
                         hintText: 'Enter technician\'s full name',
@@ -424,7 +433,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
 
       final technician = Technician(
         id: widget.technician?.id,
-        name: _nameController.text.trim(),
+        name: _nameController.text.trim().toUpperCase(),
         employeeId: _employeeIdController.text.trim().isEmpty ? null : _employeeIdController.text.trim(),
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),

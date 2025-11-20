@@ -281,7 +281,7 @@ class AuthProvider with ChangeNotifier {
       await signUp(
         email: email,
         password: password,
-        fullName: name,
+        fullName: name.toUpperCase(), // Force uppercase for technician names
         role: UserRole.technician, // Explicitly set as technician
       );
       debugPrint('✅ signUp completed for: $email');
@@ -335,7 +335,7 @@ class AuthProvider with ChangeNotifier {
             final insertData = {
               'user_id': _user!.id,
               'email': email,
-              'full_name': name,
+              'full_name': name.toUpperCase(), // Force uppercase for technician names
               'employee_id': employeeId,
               'phone': phone,
               'department': department,

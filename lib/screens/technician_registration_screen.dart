@@ -98,7 +98,7 @@ class _TechnicianRegistrationScreenState
             ),
           ),
           body: SafeArea(
-            child: SingleChildScrollView(
+          child: SingleChildScrollView(
               padding: ResponsiveHelper.getResponsivePadding(
                 context,
                 horizontal: 24,
@@ -106,9 +106,9 @@ class _TechnicianRegistrationScreenState
               ),
               child: Form(
                 key: _formKey,
-                child: Column(
+            child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+              children: [
                     // Onboarding hint
                     Text(
                       'Create your technician account to access tool tracking, assignments, and maintenance workflows.',
@@ -128,8 +128,8 @@ class _TechnicianRegistrationScreenState
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
 
                     // Name Field
-                    Container(
-                      decoration: BoxDecoration(
+        Container(
+          decoration: BoxDecoration(
                         color: cardColor,
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 24),
@@ -144,6 +144,14 @@ class _TechnicianRegistrationScreenState
                       ),
                       child: TextFormField(
                         controller: _nameController,
+                        inputFormatters: [
+                          TextInputFormatter.withFunction((oldValue, newValue) {
+                            return TextEditingValue(
+                              text: newValue.text.toUpperCase(),
+                              selection: newValue.selection,
+                            );
+                          }),
+                        ],
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
@@ -189,13 +197,13 @@ class _TechnicianRegistrationScreenState
                             vertical: 16,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your full name';
-                          }
-                          return null;
-                        },
-                      ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your full name';
+                }
+                return null;
+              },
+            ),
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -216,8 +224,8 @@ class _TechnicianRegistrationScreenState
                             : null,
                       ),
                       child: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
@@ -263,17 +271,17 @@ class _TechnicianRegistrationScreenState
                             vertical: 16,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email address';
-                          }
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your email address';
+                }
                           // Use AppConfig for consistent email validation
                           if (!AppConfig.isValidEmailFormat(value)) {
                             return 'Please enter a valid email address (e.g., name@example.com)';
-                          }
-                          return null;
-                        },
-                      ),
+                }
+                return null;
+              },
+            ),
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -294,8 +302,8 @@ class _TechnicianRegistrationScreenState
                             : null,
                       ),
                       child: TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
@@ -341,13 +349,13 @@ class _TechnicianRegistrationScreenState
                             vertical: 16,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your phone number';
-                          }
-                          return null;
-                        },
-                      ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your phone number';
+                }
+                return null;
+              },
+            ),
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -368,7 +376,7 @@ class _TechnicianRegistrationScreenState
                             : null,
                       ),
                       child: TextFormField(
-                        controller: _departmentController,
+              controller: _departmentController,
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
@@ -414,13 +422,13 @@ class _TechnicianRegistrationScreenState
                             vertical: 16,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your department';
-                          }
-                          return null;
-                        },
-                      ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your department';
+                }
+                return null;
+              },
+            ),
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -441,8 +449,8 @@ class _TechnicianRegistrationScreenState
                             : null,
                       ),
                       child: TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
+              controller: _passwordController,
+              obscureText: _obscurePassword,
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
@@ -469,10 +477,10 @@ class _TechnicianRegistrationScreenState
                               size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                             ),
                             onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
                           ),
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           hintText: 'Minimum 6 characters',
@@ -502,50 +510,50 @@ class _TechnicianRegistrationScreenState
                             vertical: 16,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a password';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            ),
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Confirm Password Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
+        Container(
+          decoration: BoxDecoration(
+            color: cardColor,
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 24),
                         ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
+            boxShadow: [cardShadow],
+            border: isDarkMode
+                ? Border.all(
                                 color:
                                     colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
+                  )
+                : null,
+          ),
+          child: TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         style: TextStyle(
                           color: colorScheme.onSurface,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                         ),
-                        decoration: InputDecoration(
+            decoration: InputDecoration(
                           labelText: 'Confirm Password',
                           labelStyle: TextStyle(
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                           ),
-                          filled: true,
-                          fillColor: cardColor,
+              filled: true,
+              fillColor: cardColor,
                           prefixIcon: Icon(
                             Icons.lock_outline,
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -569,19 +577,19 @@ class _TechnicianRegistrationScreenState
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           hintText: 'Re-enter password',
                           hintStyle: hintStyle,
-                          border: OutlineInputBorder(
+              border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               ResponsiveHelper.getResponsiveBorderRadius(context, 24),
                             ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               ResponsiveHelper.getResponsiveBorderRadius(context, 24),
                             ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               ResponsiveHelper.getResponsiveBorderRadius(context, 24),
                             ),
@@ -611,24 +619,24 @@ class _TechnicianRegistrationScreenState
                     // Register Button
                     Container(
                       height: ResponsiveHelper.getResponsiveCardHeight(context, 56),
-                      decoration: BoxDecoration(
+        decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.primaryColor,
+                  AppTheme.primaryColor,
                             AppTheme.primaryColor.withValues(alpha: 0.9)
                           ],
                         ),
                         borderRadius: BorderRadius.circular(
                           ResponsiveHelper.getResponsiveBorderRadius(context, 28),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 16,
+          boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                blurRadius: 16,
                             offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
+              ),
+          ],
+        ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -678,16 +686,16 @@ class _TechnicianRegistrationScreenState
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
-                            children: [
+                  children: [
                               const TextSpan(text: 'Already have an account? '),
                               TextSpan(
                                 text: 'Sign in',
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                      ),
+                    ),
+                  ],
                           ),
                         ),
                       ),
@@ -696,7 +704,7 @@ class _TechnicianRegistrationScreenState
                 ),
               ),
             ),
-          ),
+                ),
         ),
       ),
     );
@@ -718,92 +726,92 @@ class _TechnicianRegistrationScreenState
             : null,
       ),
       child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+      children: [
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
                   color: cardColor,
-                ),
-                child: CircleAvatar(
-                  radius: ResponsiveHelper.getResponsiveIconSize(context, 50),
-                  backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
-                  backgroundImage:
-                      _profileImage != null ? FileImage(_profileImage!) : null,
-                  child: _profileImage == null
-                      ? Icon(
-                          Icons.account_circle_rounded,
-                          size: ResponsiveHelper.getResponsiveIconSize(context, 60),
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        )
-                      : null,
-                ),
               ),
-              Positioned(
-                bottom: 6,
-                right: 6,
-                child: GestureDetector(
-                  onTap: _selectProfileImage,
-                  child: Container(
+              child: CircleAvatar(
+                  radius: ResponsiveHelper.getResponsiveIconSize(context, 50),
+                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                backgroundImage:
+                    _profileImage != null ? FileImage(_profileImage!) : null,
+                child: _profileImage == null
+                    ? Icon(
+                        Icons.account_circle_rounded,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 60),
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      )
+                    : null,
+              ),
+            ),
+            Positioned(
+              bottom: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: _selectProfileImage,
+                child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF22D3EE),
-                          Color(0xFF0EA5E9),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blueAccent.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF22D3EE),
+                        Color(0xFF0EA5E9),
                       ],
                     ),
-                    child: const Icon(Icons.camera_alt_outlined,
-                        color: Colors.white, size: 16),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blueAccent.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: const Icon(Icons.camera_alt_outlined,
+                        color: Colors.white, size: 16),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-          Wrap(
+        Wrap(
             spacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
             runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-            alignment: WrapAlignment.center,
-            children: [
-              _buildProfileActionChip(
-                icon: Icons.photo_library_outlined,
-                label: 'Choose Photo',
-                onTap: _selectProfileImage,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildProfileActionChip(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose Photo',
+              onTap: _selectProfileImage,
                 colorScheme: colorScheme,
                 context: context,
-              ),
-              _buildProfileActionChip(
-                icon: Icons.camera_alt_outlined,
-                label: 'Take Photo',
-                onTap: _takeProfileImage,
+            ),
+            _buildProfileActionChip(
+              icon: Icons.camera_alt_outlined,
+              label: 'Take Photo',
+              onTap: _takeProfileImage,
                 colorScheme: colorScheme,
                 context: context,
-              ),
-              if (_profileImage != null)
-                _buildProfileActionChip(
-                  icon: Icons.delete_outline,
-                  label: 'Remove',
-                  onTap: _removeProfileImage,
-                  isDestructive: true,
+            ),
+            if (_profileImage != null)
+              _buildProfileActionChip(
+                icon: Icons.delete_outline,
+                label: 'Remove',
+                onTap: _removeProfileImage,
+                isDestructive: true,
                   colorScheme: colorScheme,
                   context: context,
-                ),
-            ],
-          ),
-        ],
+              ),
+          ],
+        ),
+      ],
       ),
     );
   }
@@ -922,7 +930,7 @@ class _TechnicianRegistrationScreenState
 
       // Phone and department are required - validators ensure they're not empty
       await authProvider.registerTechnician(
-        _nameController.text.trim(),
+        _nameController.text.trim().toUpperCase(),
         _emailController.text.trim(),
         _passwordController.text,
         _employeeIdController.text.trim().isEmpty
@@ -938,7 +946,7 @@ class _TechnicianRegistrationScreenState
         // Check if user was created (even if no session due to email confirmation)
         final userCreated = authProvider.user != null;
         final hasSession = authProvider.isAuthenticated;
-        
+
         debugPrint(
           '🔍 Technician registration complete - '
           'User created: $userCreated, '
