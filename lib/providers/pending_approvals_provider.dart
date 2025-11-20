@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../services/supabase_service.dart';
 import '../models/admin_notification.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
 
 class PendingApproval {
   final String id;
@@ -187,8 +189,9 @@ class PendingApprovalsProvider extends ChangeNotifier {
       }
 
       // Create notification for admin (confirmation) - save directly to Supabase
+      // This will appear in the admin notification center
       try {
-        await SupabaseService.client
+        final notificationResponse = await SupabaseService.client
             .from('admin_notifications')
             .insert({
               'title': 'User Approved',
@@ -203,10 +206,28 @@ class PendingApprovalsProvider extends ChangeNotifier {
                 'user_id': approval.userId,
                 'approved_at': DateTime.now().toIso8601String(),
               },
-            });
-        debugPrint('✅ Created admin notification for user approval');
+            })
+            .select()
+            .single();
+        debugPrint('✅ Created admin notification for user approval in notification center');
+        debugPrint('✅ Notification ID: ${notificationResponse['id']}');
+        
+        // If context is provided, immediately add notification to provider's list
+        // This ensures it appears in the notification center without needing a reload
+        if (context != null) {
+          try {
+            final adminNotificationProvider = Provider.of<AdminNotificationProvider>(context, listen: false);
+            final notification = AdminNotification.fromJson(notificationResponse);
+            adminNotificationProvider.addNotification(notification);
+            debugPrint('✅ Added notification to AdminNotificationProvider');
+          } catch (e) {
+            debugPrint('⚠️ Could not add notification to provider: $e');
+            // This is not critical - the notification is in the database and will appear on next reload
+          }
+        }
       } catch (e) {
-        debugPrint('⚠️ Failed to create admin notification: $e');
+        debugPrint('❌ Failed to create admin notification: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
         // Don't fail the approval if notification creation fails
       }
 

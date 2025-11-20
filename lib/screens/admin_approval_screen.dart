@@ -787,7 +787,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
     if (confirmed == true) {
       final provider = context.read<PendingApprovalsProvider>();
-      final success = await provider.approveUser(approval);
+      final success = await provider.approveUser(approval, context: context);
 
       if (success && mounted) {
         await context.read<SupabaseTechnicianProvider>().loadTechnicians();
