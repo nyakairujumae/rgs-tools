@@ -158,48 +158,65 @@ class AuthProvider with ChangeNotifier {
 
       if (response.user != null) {
         _user = response.user;
+        final hasSession = response.session != null;
+        debugPrint('🔍 User created: ${_user!.id}, hasSession: $hasSession, emailConfirmed: ${_user!.emailConfirmedAt != null}');
         
         // For technicians, create pending approval instead of user record
         if (role == UserRole.technician || role == null) {
-          try {
-            debugPrint('🔍 Creating pending approval for technician...');
-            // Create pending approval record
-            await SupabaseService.client
-                .from('pending_user_approvals')
-                .insert({
-                  'user_id': _user!.id,
-                  'email': email,
-                  'full_name': fullName,
-                  'status': 'pending',
-                });
-            
-            debugPrint('✅ Pending approval created for technician: $email');
-            
-            // Delete any user record created by trigger (technicians shouldn't have one until approved)
+          // Only try to create pending approval if we have a session
+          // If email confirmation is required, the pending approval will be created
+          // via a database trigger or when they confirm their email
+          if (hasSession) {
             try {
+              debugPrint('🔍 Creating pending approval for technician (has session)...');
+              // Create pending approval record
               await SupabaseService.client
-                  .from('users')
-                  .delete()
-                  .eq('id', _user!.id);
-              debugPrint('✅ Removed user record for pending technician');
-            } catch (deleteError) {
-              debugPrint('⚠️ Could not delete user record: $deleteError');
+                  .from('pending_user_approvals')
+                  .insert({
+                    'user_id': _user!.id,
+                    'email': email,
+                    'full_name': fullName,
+                    'status': 'pending',
+                  });
+              
+              debugPrint('✅ Pending approval created for technician: $email');
+              
+              // Delete any user record created by trigger (technicians shouldn't have one until approved)
+              try {
+                await SupabaseService.client
+                    .from('users')
+                    .delete()
+                    .eq('id', _user!.id);
+                debugPrint('✅ Removed user record for pending technician');
+              } catch (deleteError) {
+                debugPrint('⚠️ Could not delete user record: $deleteError');
+              }
+              
+              // Set role to pending IMMEDIATELY (before notifyListeners)
+              _userRole = UserRole.pending;
+              await _saveUserRole(_userRole);
+              debugPrint('✅ User role set to pending: ${_userRole.value}');
+              notifyListeners(); // Notify immediately so UI can check isPendingApproval
+            } catch (e, stackTrace) {
+              debugPrint('❌ Error creating pending approval: $e');
+              debugPrint('❌ Stack trace: $stackTrace');
+              // Continue anyway - user is created, pending approval can be created later
             }
-            
-            // Set role to pending IMMEDIATELY (before notifyListeners)
-            _userRole = UserRole.pending;
-            await _saveUserRole(_userRole);
-            debugPrint('✅ User role set to pending: ${_userRole.value}');
-            notifyListeners(); // Notify immediately so UI can check isPendingApproval
-          } catch (e, stackTrace) {
-            debugPrint('❌ Error creating pending approval: $e');
-            debugPrint('❌ Stack trace: $stackTrace');
-            // Continue anyway - user is created
+          } else {
+            // No session - email confirmation required
+            debugPrint('⚠️ No session after signup - email confirmation required');
+            debugPrint('⚠️ Pending approval will be created after email confirmation');
+            // Don't set role here - user needs to confirm email first
+            // The pending approval should be created via a database trigger or function
           }
         } else {
-          // For admins, load role normally
-          debugPrint('🔍 Loading role for admin...');
-          await _loadUserRole();
+          // For admins, load role normally (only if we have a session)
+          if (hasSession) {
+            debugPrint('🔍 Loading role for admin...');
+            await _loadUserRole();
+          } else {
+            debugPrint('⚠️ No session for admin - email confirmation required');
+          }
         }
       } else {
         debugPrint('⚠️ signUp returned null user');
@@ -269,9 +286,13 @@ class AuthProvider with ChangeNotifier {
         debugPrint('✅ Profile image uploaded: $profilePictureUrl');
       }
       
-      // Then update the pending approval with additional details if it exists
-      // OR create it if signUp didn't create one (shouldn't happen, but just in case)
-      if (_user != null) {
+      // Check if we have a session (email confirmation might be required)
+      final hasSession = SupabaseService.client.auth.currentSession != null;
+      debugPrint('🔍 After signUp - hasSession: $hasSession, user: ${_user?.id ?? "null"}');
+      
+      // Only try to update/create pending approval if we have a session
+      // If email confirmation is required, these operations will fail due to RLS
+      if (_user != null && hasSession) {
         try {
           debugPrint('🔍 Checking for existing pending approval...');
           // Check if a pending approval already exists (created by signUp)
@@ -304,7 +325,7 @@ class AuthProvider with ChangeNotifier {
             debugPrint('✅ Updated existing pending approval with additional details: $email');
           } else {
             debugPrint('⚠️ No existing approval found, creating new one...');
-            // Create new pending approval if it doesn't exist (shouldn't happen normally)
+            // Create new pending approval if it doesn't exist
             final insertData = {
               'user_id': _user!.id,
               'email': email,
@@ -347,11 +368,26 @@ class AuthProvider with ChangeNotifier {
         } catch (e, stackTrace) {
           debugPrint('❌ Error updating pending approval: $e');
           debugPrint('❌ Stack trace: $stackTrace');
-          // Don't throw error here, user is already created
+          // If email confirmation is required, this is expected - don't throw
+          // The pending approval will be created after email confirmation
+          if (e.toString().contains('permission denied') || 
+              e.toString().contains('row-level security') ||
+              e.toString().contains('RLS')) {
+            debugPrint('⚠️ RLS blocked pending approval creation - this is expected when email confirmation is required');
+            debugPrint('⚠️ Pending approval will be created after email confirmation');
+          } else {
+            // Other errors should still be logged but not thrown
+            debugPrint('⚠️ Non-RLS error occurred, but continuing anyway');
+          }
         }
-      } else {
+      } else if (_user == null) {
         debugPrint('❌ User is null after signUp');
         throw Exception('User creation failed - no user returned from signUp');
+      } else {
+        // User exists but no session - email confirmation required
+        debugPrint('⚠️ User created but no session - email confirmation required');
+        debugPrint('⚠️ Pending approval details will be saved after email confirmation');
+        // Don't throw error - this is expected when email confirmation is enabled
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error in registerTechnician: $e');

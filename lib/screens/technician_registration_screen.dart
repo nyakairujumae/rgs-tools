@@ -934,23 +934,20 @@ class _TechnicianRegistrationScreenState
       );
 
       if (mounted) {
-        // Wait for role to be set and ensure user is authenticated
-        await Future.delayed(const Duration(milliseconds: 800));
-
-        // Don't call initialize() as it resets state - just check current role
-
-        // Wait a bit more for the role to be fully set
-        await Future.delayed(const Duration(milliseconds: 300));
-
+        // Check if user was created (even if no session due to email confirmation)
+        final userCreated = authProvider.user != null;
+        final hasSession = authProvider.isAuthenticated;
+        
         debugPrint(
           '🔍 Technician registration complete - '
+          'User created: $userCreated, '
+          'hasSession: $hasSession, '
           'Role: ${authProvider.userRole.value}, '
-          'isPendingApproval: ${authProvider.isPendingApproval}, '
-          'isAuthenticated: ${authProvider.isAuthenticated}',
+          'isPendingApproval: ${authProvider.isPendingApproval}',
         );
 
         // Check if user is authenticated (has a session)
-        if (authProvider.isAuthenticated) {
+        if (hasSession && userCreated) {
           // User has a session - navigate to pending approval screen
           AuthErrorHandler.showInfoSnackBar(
             context,
@@ -964,11 +961,11 @@ class _TechnicianRegistrationScreenState
             '/pending-approval',
             (route) => false,
           );
-        } else {
-          // No session (email confirmation required) - navigate to login
+        } else if (userCreated) {
+          // User created but no session (email confirmation required) - this is expected
           AuthErrorHandler.showInfoSnackBar(
             context,
-            '📧 Registration submitted! Please check your email to verify '
+            '📧 Registration successful! Please check your email to verify '
             'your account. After verification, your account will be pending '
             'admin approval.',
           );
@@ -979,10 +976,14 @@ class _TechnicianRegistrationScreenState
               builder: (context) => const LoginScreen(),
             ),
           );
+        } else {
+          // User was not created - this is an actual error
+          throw Exception('Registration failed - user was not created');
         }
       }
     } catch (e) {
       if (mounted) {
+        debugPrint('❌ Registration error: $e');
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
