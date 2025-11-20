@@ -233,14 +233,24 @@ class ReportService {
       final bytes = await excelFile.readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
       
-      // Find and modify worksheet files
-      final modifiedFiles = <String, List<int>>{};
+      // Collect all files first, creating copies to avoid unmodifiable list issues
+      final allFiles = <String, List<int>>{};
       
       for (final file in archive.files) {
         if (file.isFile) {
-          // Create a copy of the file content to avoid unmodifiable list issues
-          final originalContent = file.content as List<int>;
-          var fileContent = List<int>.from(originalContent);
+          // Always create a copy of the file content to avoid unmodifiable list issues
+          final originalContent = file.content;
+          List<int> fileContent;
+          
+          if (originalContent is List<int>) {
+            fileContent = List<int>.from(originalContent);
+          } else if (originalContent is List) {
+            // Handle case where content might be a different list type
+            fileContent = List<int>.from(originalContent.cast<int>());
+          } else {
+            // Fallback: convert to bytes
+            fileContent = List<int>.from(originalContent.toString().codeUnits);
+          }
           
           // Check if this is a worksheet XML file (xl/worksheets/sheet*.xml)
           if (file.name.startsWith('xl/worksheets/sheet') && file.name.endsWith('.xml')) {
@@ -307,31 +317,20 @@ class ReportService {
               }
             }
             
-            modifiedFiles[file.name] = convert.utf8.encode(xmlContent);
+            // Create a new list from the encoded content
+            allFiles[file.name] = List<int>.from(convert.utf8.encode(xmlContent));
           } else {
-            // For non-worksheet files, create a copy of the content
-            modifiedFiles[file.name] = List<int>.from(fileContent);
+            // For non-worksheet files, use the copy we already created
+            allFiles[file.name] = fileContent;
           }
         }
       }
       
-      // Create a new archive with modified files
+      // Create a new archive with all files (all content is now modifiable copies)
       final outputArchive = Archive();
-      for (final entry in modifiedFiles.entries) {
+      for (final entry in allFiles.entries) {
+        // Create a new ArchiveFile with the copied content
         outputArchive.addFile(ArchiveFile(entry.key, entry.value.length, entry.value));
-      }
-      
-      // Add any other files that weren't modified (create copies to avoid unmodifiable list issues)
-      for (final file in archive.files) {
-        if (!file.isFile || !modifiedFiles.containsKey(file.name)) {
-          if (file.isFile) {
-            final fileContent = file.content as List<int>;
-            final contentCopy = List<int>.from(fileContent);
-            outputArchive.addFile(ArchiveFile(file.name, contentCopy.length, contentCopy));
-          } else {
-            outputArchive.addFile(file);
-          }
-        }
       }
       
       // Encode the archive back to bytes and write to file
@@ -340,8 +339,9 @@ class ReportService {
       if (outputBytes != null) {
         await excelFile.writeAsBytes(outputBytes);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Warning: Could not set landscape orientation: $e');
+      debugPrint('Stack trace: $stackTrace');
       // Continue anyway - the file is still valid, just won't have landscape orientation
     }
   }
