@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:convert' as convert;
+import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
@@ -233,23 +234,31 @@ class ReportService {
       final bytes = await excelFile.readAsBytes();
       final archive = ZipDecoder().decodeBytes(bytes);
       
-      // Collect all files first, creating copies to avoid unmodifiable list issues
-      final allFiles = <String, List<int>>{};
+      // Collect all files first, creating deep copies to avoid unmodifiable list issues
+      final allFiles = <String, Uint8List>{};
       
-      for (final file in archive.files) {
+      // Create a list copy of archive.files to avoid iteration issues
+      final filesList = List<ArchiveFile>.from(archive.files);
+      
+      for (final file in filesList) {
         if (file.isFile) {
-          // Always create a copy of the file content to avoid unmodifiable list issues
+          // Always create a deep copy of the file content to avoid unmodifiable list issues
           final originalContent = file.content;
-          List<int> fileContent;
+          Uint8List fileContent;
           
-          if (originalContent is List<int>) {
-            fileContent = List<int>.from(originalContent);
+          if (originalContent is Uint8List) {
+            // Create a new Uint8List copy
+            fileContent = Uint8List.fromList(originalContent);
+          } else if (originalContent is List<int>) {
+            // Convert List<int> to Uint8List
+            fileContent = Uint8List.fromList(originalContent);
           } else if (originalContent is List) {
             // Handle case where content might be a different list type
-            fileContent = List<int>.from(originalContent.cast<int>());
+            fileContent = Uint8List.fromList(originalContent.cast<int>());
           } else {
             // Fallback: convert to bytes
-            fileContent = List<int>.from(originalContent.toString().codeUnits);
+            final stringBytes = convert.utf8.encode(originalContent.toString());
+            fileContent = Uint8List.fromList(stringBytes);
           }
           
           // Check if this is a worksheet XML file (xl/worksheets/sheet*.xml)
@@ -317,8 +326,9 @@ class ReportService {
               }
             }
             
-            // Create a new list from the encoded content
-            allFiles[file.name] = List<int>.from(convert.utf8.encode(xmlContent));
+            // Create a new Uint8List from the encoded content
+            final encodedBytes = convert.utf8.encode(xmlContent);
+            allFiles[file.name] = Uint8List.fromList(encodedBytes);
           } else {
             // For non-worksheet files, use the copy we already created
             allFiles[file.name] = fileContent;
@@ -326,10 +336,11 @@ class ReportService {
         }
       }
       
-      // Create a new archive with all files (all content is now modifiable copies)
+      // Create a completely new archive with all files (all content is now modifiable copies)
       final outputArchive = Archive();
       for (final entry in allFiles.entries) {
-        // Create a new ArchiveFile with the copied content
+        // Create a new ArchiveFile with the copied Uint8List content
+        // Use Uint8List directly to avoid any list modification issues
         outputArchive.addFile(ArchiveFile(entry.key, entry.value.length, entry.value));
       }
       
@@ -337,7 +348,10 @@ class ReportService {
       final zipEncoder = ZipEncoder();
       final outputBytes = zipEncoder.encode(outputArchive);
       if (outputBytes != null) {
-        await excelFile.writeAsBytes(outputBytes);
+        // Write to a temporary file first, then replace the original
+        final tempFile = File('${excelFile.path}.tmp');
+        await tempFile.writeAsBytes(outputBytes);
+        await tempFile.rename(excelFile.path);
       }
     } catch (e, stackTrace) {
       debugPrint('Warning: Could not set landscape orientation: $e');
