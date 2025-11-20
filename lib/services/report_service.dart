@@ -100,8 +100,13 @@ class ReportService {
         break;
     }
 
-    // Set all sheets to landscape orientation
-    _setSheetsToLandscape(excel);
+    // Set all sheets to landscape orientation (optional - wrapped in try-catch)
+    try {
+      _setSheetsToLandscape(excel);
+    } catch (e) {
+      debugPrint('Warning: Could not set sheet landscape settings: $e');
+      // Continue anyway - Excel file will still be generated
+    }
 
     // Get directory and create file
     final directory = await _getDownloadsDirectory();
@@ -109,17 +114,29 @@ class ReportService {
     final filePath = '${directory.path}/$fileName';
     
     final file = File(filePath);
-    final bytes = excel.save();
+    
+    // Save Excel file - wrap in try-catch to handle any unmodifiable list errors
+    Uint8List? bytes;
+    try {
+      bytes = excel.save();
+    } catch (e, stackTrace) {
+      debugPrint('Error saving Excel file: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // Try alternative save method if available
+      rethrow;
+    }
+    
     if (bytes != null) {
-      await file.writeAsBytes(bytes);
-      // Try to set landscape orientation, but don't fail if it doesn't work
-      // The Excel file will still be valid and exportable
       try {
-        await _setExcelLandscapeOrientation(file);
+        await file.writeAsBytes(bytes);
       } catch (e) {
-        // Silently fail - landscape orientation is a nice-to-have, not critical
-        debugPrint('Note: Could not set landscape orientation, but file is still valid: $e');
+        debugPrint('Error writing Excel file to disk: $e');
+        rethrow;
       }
+      // Landscape orientation modification is disabled - was causing errors
+      // Users can set landscape orientation manually in Excel
+    } else {
+      throw Exception('Failed to generate Excel file - save returned null');
     }
     
     return file;
@@ -210,25 +227,36 @@ class ReportService {
   /// Set all sheets to landscape orientation and optimize column widths
   static void _setSheetsToLandscape(Excel excel) {
     try {
-      for (var sheetName in excel.sheets.keys) {
-        final sheet = excel[sheetName];
-        
-        // Optimize column widths for landscape viewing
-        // Since we don't have direct access to maxCols, we'll set widths
-        // for columns that are likely to be used (up to 25 columns)
-        // Landscape allows more columns to be visible, so we can use wider columns
-        for (int col = 0; col < 25; col++) {
-          // Set much wider default width for landscape viewing (40 to accommodate longer text)
-          // The setColumnWidth method will handle columns that exist
-          try {
-            sheet.setColumnWidth(col, 40.0);
-          } catch (e) {
-            // Column might not exist yet, continue
+      // Create a copy of the keys to avoid unmodifiable list issues
+      final sheetNames = List<String>.from(excel.sheets.keys);
+      
+      for (var sheetName in sheetNames) {
+        try {
+          final sheet = excel[sheetName];
+          
+          // Optimize column widths for landscape viewing
+          // Since we don't have direct access to maxCols, we'll set widths
+          // for columns that are likely to be used (up to 25 columns)
+          // Landscape allows more columns to be visible, so we can use wider columns
+          for (int col = 0; col < 25; col++) {
+            // Set much wider default width for landscape viewing (40 to accommodate longer text)
+            // The setColumnWidth method will handle columns that exist
+            try {
+              sheet.setColumnWidth(col, 40.0);
+            } catch (e) {
+              // Column might not exist yet, continue
+              continue;
+            }
           }
+        } catch (e) {
+          debugPrint('Warning: Could not optimize sheet $sheetName: $e');
+          // Continue with other sheets
+          continue;
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Warning: Could not optimize sheets for landscape: $e');
+      debugPrint('Stack trace: $stackTrace');
       // Continue anyway - the Excel file will still be generated
     }
   }
@@ -345,7 +373,7 @@ class ReportService {
       final assignedTools = tools.where((t) => t.assignedTo == techId).toList();
       final toolNames = assignedTools.map((t) => t.name).join(', ');
 
-      sheet.appendRow([
+      sheet.appendRow(List<dynamic>.from([
         technician.name ?? '',
         technician.employeeId ?? '',
         technician.phone ?? '',
@@ -354,7 +382,7 @@ class ReportService {
         technician.status ?? '',
         assignedTools.length.toString(),
         toolNames,
-      ]);
+      ]));
     }
 
     _formatTable(sheet, 3, headers.length);
@@ -375,7 +403,7 @@ class ReportService {
       final issues = await _fetchToolIssues(startDate, endDate);
 
       if (issues.isEmpty) {
-        sheet.appendRow(['No issues found in the selected period.']);
+        sheet.appendRow(List<dynamic>.from(['No issues found in the selected period.']));
         return;
       }
 
@@ -400,7 +428,7 @@ class ReportService {
             ? _currencyFormat.format(issue['estimated_cost'])
             : '';
 
-        sheet.appendRow([
+        sheet.appendRow(List<dynamic>.from([
           issue['tool_name'] ?? '',
           issue['issue_type'] ?? '',
           issue['priority'] ?? '',
@@ -412,7 +440,7 @@ class ReportService {
           _formatDateTime(issue['reported_at']),
           _formatDateTime(issue['resolved_at']),
           issue['resolution'] ?? '',
-        ]);
+        ]));
 
         final rowIndex = sheet.maxRows - 1;
         final numericColumns = <int>{headers.indexOf('Estimated Cost')};
@@ -431,7 +459,7 @@ class ReportService {
 
       _formatTable(sheet, 3, headers.length);
     } catch (e) {
-      sheet.appendRow(['Error fetching issues: $e']);
+      sheet.appendRow(List<dynamic>.from(['Error fetching issues: $e']));
     }
   }
 
@@ -482,7 +510,7 @@ class ReportService {
     }).toList();
 
     for (final tool in filteredTools) {
-      sheet.appendRow([
+      sheet.appendRow(List<dynamic>.from([
         tool.name,
         tool.category,
         tool.brand ?? '',
@@ -492,7 +520,7 @@ class ReportService {
         tool.assignedTo ?? 'Available',
         _formatDateTime(tool.updatedAt),
         _formatDateTime(tool.createdAt),
-      ]);
+      ]));
     }
 
     _formatTable(sheet, 3, headers.length);
@@ -673,7 +701,9 @@ class ReportService {
         tool.toolType,
       ]);
 
-      sheet.appendRow(row);
+      // Create a modifiable copy of the row list before appending
+      final modifiableRow = List<dynamic>.from(row);
+      sheet.appendRow(modifiableRow);
 
       final rowIndex = sheet.maxRows - 1;
       final numericColumns = <int>{}
@@ -781,14 +811,14 @@ class ReportService {
           final isReturned = assignment['status'] == 'Returned' || 
                            assignment['actual_return_date'] != null;
 
-          sheet.appendRow([
+          sheet.appendRow(List<dynamic>.from([
             tool.name,
             tool.category,
             technicianName,
             _formatDateTime(assignment['assigned_date']),
             assignment['status'] ?? 'Active',
             isReturned ? 'Yes' : 'No',
-          ]);
+          ]));
         }
       } else {
         // Derive assignments from tools table
@@ -810,7 +840,7 @@ class ReportService {
         }).toList();
 
         if (filteredTools.isEmpty) {
-          sheet.appendRow(['No assignments found in the selected period.']);
+          sheet.appendRow(List<dynamic>.from(['No assignments found in the selected period.']));
           return;
         }
 
@@ -818,14 +848,14 @@ class ReportService {
           final technicianName = _getTechnicianName(tool.assignedTo, technicians);
           final isReturned = tool.status == 'Available';
           
-          sheet.appendRow([
+          sheet.appendRow(List<dynamic>.from([
             tool.name,
             tool.category,
             technicianName,
             _formatDateTime(tool.updatedAt), // Use updatedAt as proxy for assignment date
             tool.status,
             isReturned ? 'Yes' : 'No',
-          ]);
+          ]));
         }
       }
 
@@ -834,7 +864,7 @@ class ReportService {
           : tools.where((t) => t.assignedTo != null && t.assignedTo!.isNotEmpty && t.status != 'Available').length;
       _formatTable(sheet, sheet.maxRows - rowCount, headers.length);
     } catch (e) {
-      sheet.appendRow(['Error fetching assignments: $e']);
+      sheet.appendRow(List<dynamic>.from(['Error fetching assignments: $e']));
       debugPrint('Error in _addAssignmentsTable: $e');
     }
   }
@@ -842,8 +872,8 @@ class ReportService {
   static void _addFinancialData(Sheet sheet, List<Tool> tools) {
     final totalPurchasePrice = tools.fold(0.0, (sum, tool) => sum + (tool.purchasePrice ?? 0));
 
-    sheet.appendRow(['Metric', 'Value']);
-    sheet.appendRow(['Total Purchase Value', 'AED ${totalPurchasePrice.toStringAsFixed(2)}']);
+    sheet.appendRow(List<dynamic>.from(['Metric', 'Value']));
+    sheet.appendRow(List<dynamic>.from(['Total Purchase Value', 'AED ${totalPurchasePrice.toStringAsFixed(2)}']));
 
     // Set column widths for financial summary to ensure text fits
     sheet.setColumnWidth(0, 50.0); // Metric column - needs extra space for long labels
@@ -865,11 +895,11 @@ class ReportService {
       statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
     }
 
-    sheet.appendRow(['Status', 'Count', 'Percentage']);
+    sheet.appendRow(List<dynamic>.from(['Status', 'Count', 'Percentage']));
     final total = tools.length;
     for (final entry in statusCounts.entries) {
       final percentage = (entry.value / total * 100).toStringAsFixed(1);
-      sheet.appendRow([entry.key, entry.value.toString(), '$percentage%']);
+      sheet.appendRow(List<dynamic>.from([entry.key, entry.value.toString(), '$percentage%']));
     }
   }
 
@@ -879,11 +909,11 @@ class ReportService {
       conditionCounts[tool.condition] = (conditionCounts[tool.condition] ?? 0) + 1;
     }
 
-    sheet.appendRow(['Condition', 'Count', 'Percentage']);
+    sheet.appendRow(List<dynamic>.from(['Condition', 'Count', 'Percentage']));
     final total = tools.length;
     for (final entry in conditionCounts.entries) {
       final percentage = (entry.value / total * 100).toStringAsFixed(1);
-      sheet.appendRow([entry.key, entry.value.toString(), '$percentage%']);
+      sheet.appendRow(List<dynamic>.from([entry.key, entry.value.toString(), '$percentage%']));
     }
   }
 
