@@ -145,21 +145,24 @@ class AdminNotificationProvider extends ChangeNotifier {
     Map<String, dynamic>? data,
   }) async {
     try {
-      final notificationData = {
-        'title': title ?? _getNotificationTitle(type, technicianName),
-        'message': message ?? _getNotificationMessage(type, technicianName),
-        'technician_name': technicianName,
-        'technician_email': technicianEmail,
-        'type': type.value,
-        'is_read': false,
-        'timestamp': DateTime.now().toIso8601String(),
-        if (data != null) 'data': data,
-      };
+      // Use function to bypass RLS
+      final notificationId = await SupabaseService.client.rpc(
+        'create_admin_notification',
+        params: {
+          'p_title': title ?? _getNotificationTitle(type, technicianName),
+          'p_message': message ?? _getNotificationMessage(type, technicianName),
+          'p_technician_name': technicianName,
+          'p_technician_email': technicianEmail,
+          'p_type': type.value,
+          if (data != null) 'p_data': data,
+        },
+      ) as String;
 
+      // Fetch the notification
       final response = await SupabaseService.client
           .from('admin_notifications')
-          .insert(notificationData)
           .select()
+          .eq('id', notificationId)
           .single();
 
       final notification = AdminNotification.fromJson(response);

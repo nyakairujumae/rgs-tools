@@ -1597,23 +1597,24 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       
       // Create notification in admin_notifications table (for admin visibility)
       try {
-        await SupabaseService.client.from('admin_notifications').insert({
-          'title': 'Tool Request: ${tool.name}',
-          'message': '$requesterName requested the tool "${tool.name}"',
-          'technician_name': requesterName,
-          'technician_email': requesterEmail,
-          'type': 'tool_request',
-          'is_read': false,
-          'timestamp': DateTime.now().toIso8601String(),
-          'data': {
-            'tool_id': tool.id,
-            'tool_name': tool.name,
-            'requester_id': requesterId,
-            'requester_name': requesterName,
-            'requester_email': requesterEmail,
-            'owner_id': ownerId,
+        await SupabaseService.client.rpc(
+          'create_admin_notification',
+          params: {
+            'p_title': 'Tool Request: ${tool.name}',
+            'p_message': '$requesterName requested the tool "${tool.name}"',
+            'p_technician_name': requesterName,
+            'p_technician_email': requesterEmail,
+            'p_type': 'tool_request',
+            'p_data': {
+              'tool_id': tool.id,
+              'tool_name': tool.name,
+              'requester_id': requesterId,
+              'requester_name': requesterName,
+              'requester_email': requesterEmail,
+              'owner_id': ownerId,
+            },
           },
-        });
+        );
         debugPrint('✅ Created admin notification for tool request');
       } catch (e) {
         debugPrint('⚠️ Failed to create admin notification: $e');
