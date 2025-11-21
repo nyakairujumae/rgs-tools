@@ -91,16 +91,29 @@ CREATE TRIGGER on_technician_notifications_updated
 DROP POLICY IF EXISTS "Allow system to insert notifications" ON admin_notifications;
 DROP POLICY IF EXISTS "Allow authenticated users to insert notifications" ON admin_notifications;
 
--- Create a new policy that allows both admins and technicians to insert notifications
+-- Create a new policy that allows any authenticated user to insert notifications
+-- This is more permissive and works even if the users table doesn't have a record
 -- Technicians need to be able to create notifications for tool requests, issue reports, etc.
+-- If you want to restrict to only users with records in the users table, use the commented version below
 CREATE POLICY "Allow authenticated users to insert notifications" ON admin_notifications
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE users.id = auth.uid() 
-      AND users.role IN ('admin', 'technician')
-    )
-  );
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Alternative more restrictive policy (uncomment to use instead of above):
+-- This checks the users table but also allows if user is authenticated (fallback)
+-- CREATE POLICY "Allow authenticated users to insert notifications" ON admin_notifications
+--   FOR INSERT WITH CHECK (
+--     auth.uid() IS NOT NULL AND (
+--       -- User exists in users table with correct role
+--       EXISTS (
+--         SELECT 1 FROM users 
+--         WHERE users.id = auth.uid() 
+--         AND users.role IN ('admin', 'technician')
+--       )
+--       OR
+--       -- Fallback: if users table doesn't have record, allow if authenticated
+--       NOT EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid())
+--     )
+--   );
 
 -- ============================================================================
 -- VERIFICATION
