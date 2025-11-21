@@ -114,7 +114,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
           .map((item) => PendingApproval.fromMap(item))
           .toList();
 
-      debugPrint('✅ Loaded ${_pendingApprovals.length} pending approvals');
+      debugPrint('[OK] Loaded ${_pendingApprovals.length} pending approvals');
     } catch (e) {
       _error = e.toString();
       debugPrint('❌ Error loading pending approvals: $e');
