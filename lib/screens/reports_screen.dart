@@ -2076,7 +2076,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         const Icon(Icons.file_download_rounded, color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        _isExporting ? 'Exporting...' : 'Export to Excel',
+                        _isExporting ? 'Exporting...' : 'Export Report',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
