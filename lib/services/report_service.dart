@@ -194,8 +194,8 @@ class ReportService {
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+        pageFormat: PdfPageFormat.a4.landscape, // Use landscape for wider columns
+        margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         build: (context) {
           final widgets = <pw.Widget>[
             _buildPdfHeader(reportTitle, dateRangeText),
@@ -1469,22 +1469,22 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: headers,
           data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
           columnWidths: const {
-            0: pw.FlexColumnWidth(2.0),
-            1: pw.FlexColumnWidth(1.5),
-            2: pw.FlexColumnWidth(1.2),
-            3: pw.FlexColumnWidth(1.2),
-            4: pw.FlexColumnWidth(1.5),
-            5: pw.FlexColumnWidth(1.0),
-            6: pw.FlexColumnWidth(1.0),
-            7: pw.FlexColumnWidth(1.5),
-            8: pw.FlexColumnWidth(1.8),
-            9: pw.FlexColumnWidth(1.5),
-            10: pw.FlexColumnWidth(1.3),
+            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
+            1: pw.FlexColumnWidth(2.0), // Category - wider
+            2: pw.FlexColumnWidth(2.0), // Brand - wider
+            3: pw.FlexColumnWidth(2.0), // Model - wider
+            4: pw.FlexColumnWidth(2.5), // Serial Number - wider
+            5: pw.FlexColumnWidth(1.5), // Status
+            6: pw.FlexColumnWidth(1.5), // Condition
+            7: pw.FlexColumnWidth(2.5), // Location - wider
+            8: pw.FlexColumnWidth(2.5), // Assigned To - wider
+            9: pw.FlexColumnWidth(2.0), // Purchase Date - wider
+            10: pw.FlexColumnWidth(2.0), // Purchase Price - wider
           },
         ),
       ],
@@ -1659,10 +1659,14 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: const ['Status', 'Count'],
           data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+          columnWidths: const {
+            0: pw.FlexColumnWidth(2.0), // Status - wider
+            1: pw.FlexColumnWidth(1.0), // Count
+          },
         ),
       ],
     );
