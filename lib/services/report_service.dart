@@ -222,26 +222,98 @@ class ReportService {
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
             case ReportType.comprehensive:
-              // Add comprehensive report sections - MultiPage will handle pagination naturally
+              // Add comprehensive report sections - break down Columns to allow natural page breaks
               widgets.add(pw.Text(
                 'Comprehensive Report',
                 style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
               ));
               widgets.add(pw.SizedBox(height: 12));
-              // Add all sections - they will flow naturally across pages
-              widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
+              
+              // Tools Inventory Section - add title and table separately
+              widgets.add(pw.Text(
+                'Tools Inventory',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              if (tools.isNotEmpty) {
+                widgets.add(pw.Text(
+                  'Total Tools: ${tools.length}',
+                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
+                ));
+                widgets.add(pw.SizedBox(height: 8));
+              }
+              widgets.add(_buildToolsInventoryTable(tools, technicians));
               widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
+              
+              // Tool Assignments Section
+              widgets.add(pw.Text(
+                'Tool Assignments',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildToolAssignmentsTable(tools, technicians, startDate, endDate));
               widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
+              
+              // Technician Summary Section
+              widgets.add(pw.Text(
+                'Technician Summary',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildTechnicianSummaryTable(tools, technicians));
               widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
+              
+              // Financial Summary Section
+              widgets.add(pw.Text(
+                'Financial Summary',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildFinancialSummaryTable(tools, toolIssues));
+              widgets.add(pw.SizedBox(height: 12));
+              final statusCounts = <String, int>{};
+              for (final tool in tools) {
+                statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
+              }
+              widgets.add(pw.Text(
+                'Status Distribution',
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(pw.Table.fromTextArray(
+                headers: const ['Status', 'Count'],
+                data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+                border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(2.0),
+                  1: pw.FlexColumnWidth(1.0),
+                },
+              ));
+              
+              // Tool Issues Section (if any)
               if (toolIssues.isNotEmpty) {
                 widgets.add(pw.SizedBox(height: 16));
                 widgets.add(_buildToolIssuesPdfSection(toolIssues));
               }
+              
+              // Tool History Section
               widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
+              widgets.add(pw.Text(
+                'Tool History',
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              if (tools.isNotEmpty) {
+                widgets.add(pw.Text(
+                  'Total Tools: ${tools.length}',
+                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
+                ));
+                widgets.add(pw.SizedBox(height: 8));
+              }
+              widgets.add(_buildToolHistoryTable(tools, startDate, endDate));
               break;
           }
 
