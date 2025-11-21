@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import "../providers/supabase_technician_provider.dart";
 import '../models/tool.dart';
+import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
 
 class TemporaryReturnScreen extends StatefulWidget {
   final Tool tool;
@@ -43,42 +45,72 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Back',
+        title: Text(
+          'Temporary Return: ${widget.tool.name}',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontWeight: FontWeight.w600,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
-        title: Text('Temporary Return: ${widget.tool.name}'),
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
-        foregroundColor: colorScheme.onSurface,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tool Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradientFor(context),
+        ),
+        child: SingleChildScrollView(
+          padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tool Info Card
+              Container(
+                width: double.infinity,
+                padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cardGradientFor(context),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue,
+                        Container(
+                          width: ResponsiveHelper.getResponsiveIconSize(context, 56),
+                          height: ResponsiveHelper.getResponsiveIconSize(context, 56),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.blue.shade600, Colors.blue.shade700],
+                            ),
+                            borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                          ),
                           child: Icon(
                             Icons.build,
                             color: Colors.white,
+                            size: ResponsiveHelper.getResponsiveIconSize(context, 28),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,27 +118,33 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                               Text(
                                 widget.tool.name,
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.textTheme.bodyLarge?.color,
                                 ),
                               ),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                               Text(
                                 '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                  color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
                               if (widget.tool.assignedTo != null)
                                 Consumer<SupabaseTechnicianProvider>(
                                   builder: (context, technicianProvider, child) {
                                     final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
-                                    return Text(
-                                      'Currently assigned to: $technicianName',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                    return Padding(
+                                      padding: EdgeInsets.only(top: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                                      child: Text(
+                                        'Currently assigned to: $technicianName',
+                                        style: TextStyle(
+                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                          color: Colors.blue.shade400,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     );
                                   },
                                 ),
@@ -118,140 +156,246 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                   ],
                 ),
               ),
-            ),
-            SizedBox(height: 24),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
-            // Return Info
-            Text(
-              'Temporary Return',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'This tool will be temporarily returned to the company. The technician will get it back when they return.',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Return Reason
-            Text(
-              'Reason for Return',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: DropdownButtonFormField<String>(
-                  value: _returnReason,
-                  decoration: const InputDecoration(
-                    labelText: 'Select reason',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: _returnReasons.map((reason) {
-                    return DropdownMenuItem(
-                      value: reason,
-                      child: Text(reason),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _returnReason = value!;
-                    });
-                  },
+              // Return Info
+              Text(
+                'Temporary Return',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
-            ),
-            SizedBox(height: 24),
-
-            // Expected Return Date
-            Text(
-              'Expected Return Date',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 12),
-            InkWell(
-              onTap: _selectReturnDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'When will the technician return?',
-                  border: OutlineInputBorder(),
-                ),
-                child: Text(
-                  _expectedReturnDate != null
-                      ? '${_expectedReturnDate!.day}/${_expectedReturnDate!.month}/${_expectedReturnDate!.year}'
-                      : 'Select expected return date',
-                  style: TextStyle(
-                    color: _expectedReturnDate != null ? Colors.black : Colors.grey,
-                  ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+              Text(
+                'This tool will be temporarily returned to the company. The technician will get it back when they return.',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
-            ),
-            SizedBox(height: 24),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
-            // Notes
-            Text(
-              'Return Notes (Optional)',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                hintText: 'Add any notes about this temporary return...',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(16),
-              ),
-              maxLines: 3,
-            ),
-            SizedBox(height: 32),
-
-            // Return Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _expectedReturnDate != null && !_isLoading
-                    ? _temporaryReturn
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              // Return Reason
+              Text(
+                'Reason for Return',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Temporary Return',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cardGradientFor(context),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                  child: DropdownButtonFormField<String>(
+                    value: _returnReason,
+                    style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Select reason',
+                      labelStyle: TextStyle(
+                        color: theme.textTheme.bodySmall?.color,
                       ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.transparent,
+                    ),
+                    dropdownColor: isDarkMode ? AppTheme.cardColor : Colors.white,
+                    items: _returnReasons.map((reason) {
+                      return DropdownMenuItem(
+                        value: reason,
+                        child: Text(
+                          reason,
+                          style: TextStyle(
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _returnReason = value!;
+                      });
+                    },
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+
+              // Expected Return Date
+              Text(
+                'Expected Return Date',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cardGradientFor(context),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: InkWell(
+                  onTap: _selectReturnDate,
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'When will the technician return?',
+                      labelStyle: TextStyle(
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      contentPadding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                    ),
+                    child: Text(
+                      _expectedReturnDate != null
+                          ? '${_expectedReturnDate!.day}/${_expectedReturnDate!.month}/${_expectedReturnDate!.year}'
+                          : 'Select expected return date',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        color: _expectedReturnDate != null 
+                            ? theme.textTheme.bodyLarge?.color 
+                            : theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+
+              // Notes
+              Text(
+                'Return Notes (Optional)',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.cardGradientFor(context),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _notesController,
+                  style: TextStyle(
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Add any notes about this temporary return...',
+                    hintStyle: TextStyle(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
+
+              // Return Button
+              Container(
+                width: double.infinity,
+                height: ResponsiveHelper.getResponsiveSpacing(context, 56),
+                decoration: BoxDecoration(
+                  gradient: _expectedReturnDate != null && !_isLoading
+                      ? LinearGradient(
+                          colors: [Colors.orange.shade600, Colors.orange.shade700],
+                        )
+                      : null,
+                  color: _expectedReturnDate == null || _isLoading
+                      ? Colors.grey.withOpacity(0.3)
+                      : null,
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                  boxShadow: _expectedReturnDate != null && !_isLoading
+                      ? [
+                          BoxShadow(
+                            color: Colors.orange.withOpacity(0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _expectedReturnDate != null && !_isLoading
+                        ? _temporaryReturn
+                        : null,
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: _isLoading
+                          ? SizedBox(
+                              width: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                              height: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'Temporary Return',
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
