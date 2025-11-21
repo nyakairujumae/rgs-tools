@@ -222,7 +222,30 @@ class ReportService {
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
             case ReportType.comprehensive:
-              widgets.add(_buildComprehensivePdfSection(tools, technicians, toolIssues, startDate, endDate));
+              // Add comprehensive report sections individually to allow proper page breaks
+              widgets.add(pw.Text(
+                'Comprehensive Report',
+                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+              ));
+              widgets.add(pw.SizedBox(height: 12));
+              widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
+              widgets.add(pw.SizedBox(height: 16));
+              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
+              widgets.add(pw.SizedBox(height: 16));
+              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
+              widgets.add(pw.SizedBox(height: 16));
+              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
+              if (toolIssues.isNotEmpty) {
+                widgets.add(pw.SizedBox(height: 16));
+                widgets.add(pw.PageBreak()); // Force page break
+                widgets.add(_buildToolIssuesPdfSection(toolIssues));
+              }
+              widgets.add(pw.SizedBox(height: 16));
+              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
           }
 
