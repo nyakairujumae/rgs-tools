@@ -210,36 +210,40 @@ class AuthErrorHandler {
   
   /// Show success snackbar
   static void showSuccessSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Hide any existing snackbars
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.check_circle,
               color: Colors.white,
-              size: 20,
+              size: 18,
             ),
-            SizedBox(width: 12),
-            Expanded(
+            SizedBox(width: 8),
+            Flexible(
               child: Text(
                 message,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
         backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
+          borderRadius: BorderRadius.circular(12),
         ),
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        duration: const Duration(seconds: 2), // Shorter duration
         dismissDirection: DismissDirection.horizontal,
       ),
     );
