@@ -64,11 +64,16 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
           builder: (context, technicianProvider, child) {
             final technicians = technicianProvider.getActiveTechniciansSync();
             
-            return SingleChildScrollView(
-              padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    ...ResponsiveHelper.getResponsivePadding(context, all: 16).resolve(TextDirection.ltr),
+                    bottom: ResponsiveHelper.getResponsiveSpacing(context, 100), // Add bottom padding for floating button
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                   // Current Assignment Info
                   Container(
                     width: double.infinity,
@@ -333,66 +338,83 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                       maxLines: 3,
                     ),
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
-
-                  // Reassign Button
-                  Container(
-                    width: double.infinity,
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 56),
-                    decoration: BoxDecoration(
-                      gradient: _selectedTechnicians.isNotEmpty && !_isLoading
-                          ? LinearGradient(
-                              colors: [Colors.orange.shade600, Colors.orange.shade700],
-                            )
-                          : null,
-                      color: _selectedTechnicians.isEmpty || _isLoading
-                          ? Colors.grey.withOpacity(0.3)
-                          : null,
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                      boxShadow: _selectedTechnicians.isNotEmpty && !_isLoading
-                          ? [
-                              BoxShadow(
-                                color: Colors.orange.withOpacity(0.3),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _selectedTechnicians.isNotEmpty && !_isLoading
-                            ? _reassignTool
+                    ],
+                  ),
+                ),
+                // Floating Reassign Button
+                Positioned(
+                  left: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                  right: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                  bottom: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                  child: SafeArea(
+                    child: Container(
+                      height: ResponsiveHelper.getResponsiveSpacing(context, 56),
+                      decoration: BoxDecoration(
+                        gradient: _selectedTechnicians.isNotEmpty && !_isLoading
+                            ? LinearGradient(
+                                colors: [Colors.orange.shade600, Colors.orange.shade700],
+                              )
+                            : null,
+                        color: _selectedTechnicians.isEmpty || _isLoading
+                            ? Colors.grey.withOpacity(0.3)
                             : null,
                         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                        child: Container(
-                          alignment: Alignment.center,
-                          child: _isLoading
-                              ? SizedBox(
-                                  width: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                                  height: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  _selectedTechnicians.length == 1
-                                      ? 'Reassign Tool'
-                                      : 'Reassign to ${_selectedTechnicians.length} Users',
-                                  style: TextStyle(
-                                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                        boxShadow: _selectedTechnicians.isNotEmpty && !_isLoading
+                            ? [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
+                              ]
+                            : null,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _selectedTechnicians.isNotEmpty && !_isLoading
+                              ? _reassignTool
+                              : null,
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+                          child: Container(
+                            alignment: Alignment.center,
+                            child: _isLoading
+                                ? SizedBox(
+                                    width: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                                    height: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.swap_horiz,
+                                        color: Colors.white,
+                                        size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                      ),
+                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                                      Text(
+                                        _selectedTechnicians.length == 1
+                                            ? 'Reassign Tool'
+                                            : 'Reassign to ${_selectedTechnicians.length} Users',
+                                        style: TextStyle(
+                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
@@ -417,52 +439,79 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
         try {
           String? userId;
           
-          // First, try using technician.id directly if it's a valid UUID (might be user_id)
+          // Try multiple methods to find user_id
+          // Method 1: Use technician.id directly if it's a UUID (technicians table might store user_id)
           if (technician.id != null && technician.id!.isNotEmpty) {
-            // Check if technician.id is a valid UUID that exists in auth.users
-            try {
-              final userCheck = await SupabaseService.client
-                  .from('users')
-                  .select('id')
-                  .eq('id', technician.id!)
-                  .maybeSingle();
-              
-              if (userCheck != null) {
+            // Check if it's a valid UUID format
+            final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+            if (uuidRegex.hasMatch(technician.id!)) {
+              // Try to verify it exists in users table
+              try {
+                final userCheck = await SupabaseService.client
+                    .from('users')
+                    .select('id')
+                    .eq('id', technician.id!)
+                    .maybeSingle();
+                
+                if (userCheck != null) {
+                  userId = technician.id;
+                }
+              } catch (e) {
+                debugPrint('Could not check technician.id as user_id: $e');
+                // If check fails, still try using it directly (might work for assignments)
                 userId = technician.id;
               }
-            } catch (e) {
-              debugPrint('Could not check technician.id as user_id: $e');
+            } else {
+              // Not a UUID, might be a technician table ID - we'll need to find the user_id
+              debugPrint('Technician ID is not a UUID: ${technician.id}');
             }
           }
           
-          // If not found, try to find by email
+          // Method 2: If not found, try to find by email
           if (userId == null && technician.email != null && technician.email!.isNotEmpty) {
             final technicianEmail = technician.email!.trim();
             
             // First, check if there's an approved pending approval record
-            final approvalRecord = await SupabaseService.client
-                .from('pending_user_approvals')
-                .select('user_id, status')
-                .eq('email', technicianEmail)
-                .eq('status', 'approved')
-                .order('created_at', ascending: false)
-                .limit(1)
-                .maybeSingle();
-            
-            if (approvalRecord != null && approvalRecord['user_id'] != null) {
-              userId = approvalRecord['user_id'] as String;
-            } else {
-              // If no approval record, try to find user in users table
-              final userResponse = await SupabaseService.client
-                  .from('users')
-                  .select('id')
-                  .ilike('email', technicianEmail)
+            try {
+              final approvalRecord = await SupabaseService.client
+                  .from('pending_user_approvals')
+                  .select('user_id, status')
+                  .eq('email', technicianEmail)
+                  .eq('status', 'approved')
+                  .order('created_at', ascending: false)
+                  .limit(1)
                   .maybeSingle();
               
-              if (userResponse != null && userResponse['id'] != null) {
-                userId = userResponse['id'] as String;
+              if (approvalRecord != null && approvalRecord['user_id'] != null) {
+                userId = approvalRecord['user_id'] as String;
+              }
+            } catch (e) {
+              debugPrint('Could not check pending approvals: $e');
+            }
+            
+            // If still not found, try to find user in users table
+            if (userId == null) {
+              try {
+                final userResponse = await SupabaseService.client
+                    .from('users')
+                    .select('id')
+                    .ilike('email', technicianEmail)
+                    .maybeSingle();
+                
+                if (userResponse != null && userResponse['id'] != null) {
+                  userId = userResponse['id'] as String;
+                }
+              } catch (e) {
+                debugPrint('Could not check users table: $e');
               }
             }
+          }
+          
+          // Method 3: If still not found and technician.id exists, use it anyway
+          // (Some systems might use technician.id directly for assignments)
+          if (userId == null && technician.id != null && technician.id!.isNotEmpty) {
+            userId = technician.id;
+            debugPrint('Using technician.id directly as fallback: $userId');
           }
           
           if (userId != null) {
@@ -527,7 +576,11 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
             message = '${widget.tool.name} reassigned to ${assignedNames.length} users: ${assignedNames.join(", ")}';
           }
         } else {
-          message = 'Assigned to ${assignedNames.join(", ")}. Failed for: ${failedNames.join(", ")}';
+          if (assignedNames.isEmpty) {
+            message = 'Failed to assign to: ${failedNames.join(", ")}. Please ensure these users have registered and been approved.';
+          } else {
+            message = 'Assigned to ${assignedNames.join(", ")}. Failed for: ${failedNames.join(", ")}';
+          }
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
