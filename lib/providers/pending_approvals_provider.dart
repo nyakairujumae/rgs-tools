@@ -213,11 +213,11 @@ class PendingApprovalsProvider extends ChangeNotifier {
         debugPrint('✅ Created admin notification for user approval in notification center');
         debugPrint('✅ Notification ID: ${notificationResponse['id']}');
         
-        // If context is provided, immediately add notification to provider's list
+        // If buildContext is provided, immediately add notification to provider's list
         // This ensures it appears in the notification center without needing a reload
-        if (context != null) {
+        if (buildContext != null) {
           try {
-            final adminNotificationProvider = Provider.of<AdminNotificationProvider>(context, listen: false);
+            final adminNotificationProvider = Provider.of<AdminNotificationProvider>(buildContext, listen: false);
             final notification = AdminNotification.fromJson(notificationResponse);
             adminNotificationProvider.addNotification(notification);
             debugPrint('✅ Added notification to AdminNotificationProvider');
