@@ -2180,6 +2180,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }
       }
 
+      if (file == null) {
+        throw Exception('Failed to generate report file');
+      }
+
       if (mounted) {
         setState(() {
           _isExporting = false;
