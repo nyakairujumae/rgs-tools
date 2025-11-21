@@ -32,8 +32,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
   String _selectedCategory = '';
   DateTime? _purchaseDate;
   bool _isLoading = false;
-  File? _selectedImage;
+  List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
+  late PageController _imagePageController;
 
   final List<String> _categories = [
     'Hand Tools',
@@ -72,6 +73,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
   }
 
   @override
+  @override
+  void initState() {
+    super.initState();
+    _imagePageController = PageController();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _categoryController.dispose();
@@ -81,6 +89,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     _purchasePriceController.dispose();
     _locationController.dispose();
     _notesController.dispose();
+    _imagePageController.dispose();
     super.dispose();
   }
 
@@ -824,46 +833,51 @@ class _AddToolScreenState extends State<AddToolScreen> {
       final addedTool =
           await context.read<SupabaseToolProvider>().addTool(tool);
 
-      // Now upload image if selected and update the tool with image URL
-      if (_selectedImage != null && addedTool.id != null) {
-        try {
-          final imageUrl = await ImageUploadService.uploadImage(
-              _selectedImage!, addedTool.id!);
-          if (imageUrl != null) {
-            // Update the tool with the image URL
-            final updatedTool = addedTool.copyWith(imagePath: imageUrl);
-            await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-          }
-        } catch (e) {
-          // If Supabase upload fails, fall back to local storage
+      // Now upload images if selected and update the tool with image URLs
+      if (_selectedImages.isNotEmpty && addedTool.id != null) {
+        List<String> uploadedImageUrls = [];
+        List<String> localImagePaths = [];
+        
+        for (var imageFile in _selectedImages) {
           try {
-            final localImagePath =
-                await _saveImageLocally(_selectedImage!, addedTool.id!);
-            final updatedTool = addedTool.copyWith(imagePath: localImagePath);
-            await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Tool saved with local image (cloud upload failed: ${e.toString().split(':').last})'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 4),
-                ),
-              );
+            final imageUrl = await ImageUploadService.uploadImage(
+                imageFile, addedTool.id!);
+            if (imageUrl != null) {
+              uploadedImageUrls.add(imageUrl);
             }
-          } catch (e2) {
-            // If both fail, just show the original error
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Tool saved but image upload failed: ${e.toString().split(':').last}'),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 4),
-                ),
-              );
+          } catch (e) {
+            // If Supabase upload fails, fall back to local storage
+            try {
+              final localImagePath =
+                  await _saveImageLocally(imageFile, addedTool.id!);
+              localImagePaths.add(localImagePath);
+            } catch (e2) {
+              // Skip this image if both fail
             }
+          }
+        }
+        
+        // Combine all image URLs
+        final allImageUrls = [...uploadedImageUrls, ...localImagePaths];
+        
+        if (allImageUrls.isNotEmpty) {
+          // Store as JSON array if multiple images, single string if one image
+          final imagePathValue = allImageUrls.length > 1
+              ? allImageUrls.join(',') // For now, use comma-separated. Later can use JSON
+              : allImageUrls.first;
+          
+          final updatedTool = addedTool.copyWith(imagePath: imagePathValue);
+          await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+          
+          if (mounted && localImagePaths.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Tool saved with ${allImageUrls.length} image(s). Some images saved locally.'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
           }
         }
       }
@@ -1014,45 +1028,100 @@ class _AddToolScreenState extends State<AddToolScreen> {
               ),
             ],
           ),
-          child: _selectedImage != null
+          child: _selectedImages.isNotEmpty
               ? Stack(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Image.file(
-                        _selectedImage!,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                    PageView.builder(
+                      controller: _imagePageController,
+                      itemCount: _selectedImages.length,
+                      itemBuilder: (context, index) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: Image.file(
+                            _selectedImages[index],
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      },
                     ),
+                    if (_selectedImages.length > 1)
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            _selectedImages.length,
+                            (index) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       top: 12,
                       right: 12,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.92),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_selectedImages.length < 10)
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha:0.92),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.add,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha:0.75)),
+                                onPressed: _showImagePickerOptions,
+                              ),
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.close,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha:0.75)),
-                          onPressed: () {
-                            setState(() {
-                              _selectedImage = null;
-                            });
-                          },
-                        ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha:0.92),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.close,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha:0.75)),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedImages.clear();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1087,7 +1156,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Add Tool Image',
+                          _selectedImages.isEmpty
+                              ? 'Add Tool Images'
+                              : 'Add More Images',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontSize: 15,
@@ -1100,7 +1171,10 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tap to select from gallery or camera',
+                          _selectedImages.isEmpty
+                              ? 'Tap to select from gallery or camera\n(Up to 10 images)'
+                              : '${_selectedImages.length} image(s) selected',
+                          textAlign: TextAlign.center,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1207,6 +1281,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
+      if (_selectedImages.length >= 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Maximum 10 images allowed'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
       final XFile? image = await _picker.pickImage(
         source: source,
         maxWidth: 1024,
@@ -1216,7 +1300,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
       if (image != null) {
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedImages.add(File(image.path));
         });
       }
     } catch (e) {

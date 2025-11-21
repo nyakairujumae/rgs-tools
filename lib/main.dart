@@ -504,10 +504,16 @@ class HvacToolsManagerApp extends StatelessWidget {
       }
       
       // Show loading screen during initialization or any loading state
+      // But add a timeout to prevent infinite loading when offline
       if (!authProvider.isInitialized || authProvider.isLoading) {
         print('🔍 Showing loading screen');
-        // Return an invisible widget so only the native splash is visible
-        return const SizedBox.shrink();
+        // Return a loading screen with timeout indicator
+        return _LoadingScreenWithTimeout(
+          onTimeout: () {
+            // After timeout, proceed anyway
+            print('⚠️ Initialization timeout - proceeding with app');
+          },
+        );
       }
 
       if (authProvider.isAuthenticated) {
@@ -537,6 +543,65 @@ class HvacToolsManagerApp extends StatelessWidget {
       print('❌ Stack trace: $stackTrace');
       return const RoleSelectionScreen();
     }
+  }
+}
+
+// Loading screen with timeout to prevent infinite loading when offline
+class _LoadingScreenWithTimeout extends StatefulWidget {
+  final VoidCallback onTimeout;
+  
+  const _LoadingScreenWithTimeout({required this.onTimeout});
+
+  @override
+  State<_LoadingScreenWithTimeout> createState() => _LoadingScreenWithTimeoutState();
+}
+
+class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
+  bool _hasTimedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set a timeout of 8 seconds - if initialization takes longer, proceed anyway
+    Future.delayed(const Duration(seconds: 8), () {
+      if (mounted && !_hasTimedOut) {
+        setState(() {
+          _hasTimedOut = true;
+        });
+        widget.onTimeout();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Return an invisible widget so only the native splash is visible
+    // But if timeout occurs, show a message
+    if (_hasTimedOut) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              Text(
+                'Loading...',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'If this takes too long, you may be offline.',
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }
 

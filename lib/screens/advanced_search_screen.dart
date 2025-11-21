@@ -647,6 +647,22 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     );
   }
 
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
+  }
+
   Widget _buildPlaceholderImage() {
     return Container(
       width: double.infinity,

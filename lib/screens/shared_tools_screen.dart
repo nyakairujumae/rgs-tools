@@ -503,53 +503,96 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   Widget _buildToolImage(Tool tool) {
-    if (tool.imagePath == null) {
+    final imageUrls = _getToolImageUrls(tool);
+    
+    if (imageUrls.isEmpty) {
       return _buildPlaceholderImage();
     }
 
-    if (tool.imagePath!.startsWith('http')) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Image.network(
-          tool.imagePath!,
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildPlaceholderImage(),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              decoration: BoxDecoration(
-                gradient: AppTheme.cardGradientFor(context),
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
-                  strokeWidth: 2,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        children: [
+          _buildImageWidget(imageUrls[0]),
+          if (imageUrls.length > 1)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '+${imageUrls.length - 1}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
+  }
+
+  Widget _buildImageWidget(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildPlaceholderImage(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradientFor(context),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
       );
     }
 
-    final file = File(tool.imagePath!);
+    final file = File(imageUrl);
     if (file.existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Image.file(
-          file,
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildPlaceholderImage(),
-        ),
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildPlaceholderImage(),
       );
     }
 

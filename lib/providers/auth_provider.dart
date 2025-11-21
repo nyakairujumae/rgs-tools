@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'dart:async';
 import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
 import '../models/user_role.dart';
@@ -87,9 +88,20 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // Set a maximum timeout for initialization (8 seconds)
+    // After this, we'll proceed even if not fully initialized
+    Timer(const Duration(seconds: 8), () {
+      if (_isLoading || !_isInitialized) {
+        print('⚠️ Initialization timeout - forcing completion');
+        _isLoading = false;
+        _isInitialized = true;
+        notifyListeners();
+      }
+    });
+
     try {
       print('🔍 Getting current session...');
-      // Get current session
+      // Get current session (this is local, no network call)
       final session = SupabaseService.client.auth.currentSession;
       _user = session?.user;
       print('🔍 Current user: ${_user?.email ?? "None"}');
@@ -103,16 +115,52 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       });
 
-      // Load user role if user exists
+      // Load user role if user exists - with timeout to prevent hanging when offline
       if (_user != null) {
         print('🔍 Loading user role...');
-        await _loadUserRole();
-        
-        // Send FCM token to server after initialization if available
         try {
-          final fcmToken = await _getFCMTokenIfAvailable();
+          // Add timeout to prevent hanging when offline (5 seconds max)
+          await _loadUserRole().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              debugPrint('⚠️ User role loading timed out (likely offline) - using saved role');
+              // Try to load from local storage as fallback
+              _getSavedUserRole().then((savedRole) {
+                if (savedRole != null) {
+                  _userRole = savedRole;
+                  notifyListeners();
+                }
+              });
+            },
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error loading user role (likely offline): $e');
+          // Try to load from local storage as fallback
+          final savedRole = await _getSavedUserRole();
+          if (savedRole != null) {
+            _userRole = savedRole;
+            debugPrint('✅ Loaded user role from local storage: ${_userRole.value}');
+          }
+        }
+        
+        // Send FCM token to server after initialization if available (non-blocking)
+        try {
+          final fcmToken = await _getFCMTokenIfAvailable().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {
+              debugPrint('⚠️ FCM token fetch timed out');
+              return null;
+            },
+          );
           if (fcmToken != null) {
-            await _sendFCMTokenToServer(fcmToken, _user!.id);
+            _sendFCMTokenToServer(fcmToken, _user!.id).timeout(
+              const Duration(seconds: 3),
+              onTimeout: () {
+                debugPrint('⚠️ FCM token send timed out');
+              },
+            ).catchError((e) {
+              debugPrint('⚠️ Could not send FCM token: $e');
+            });
           }
         } catch (e) {
           debugPrint('⚠️ Could not send FCM token after initialization: $e');
@@ -562,7 +610,12 @@ _isLoading = false;
       if (session != null && session.isExpired) {
         debugPrint('🔄 Session expired, attempting to refresh...');
         try {
-          final refreshResponse = await SupabaseService.client.auth.refreshSession();
+          final refreshResponse = await SupabaseService.client.auth.refreshSession().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {
+              throw TimeoutException('Session refresh timed out', const Duration(seconds: 3));
+            },
+          );
           if (refreshResponse.session != null) {
             debugPrint('✅ Session refreshed successfully');
             _user = refreshResponse.session!.user;
@@ -580,9 +633,9 @@ _isLoading = false;
         }
       }
 
-      // Try to get role from database (online)
+      // Try to get role from database (online) - with timeout
       int retryCount = 0;
-      const maxRetries = 3;
+      const maxRetries = 2; // Reduced retries for faster timeout
       
       while (retryCount < maxRetries) {
         try {
@@ -590,7 +643,13 @@ _isLoading = false;
               .from('users')
               .select('role')
               .eq('id', _user!.id)
-              .single();
+              .single()
+              .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () {
+                  throw TimeoutException('Database query timed out', const Duration(seconds: 3));
+                },
+              );
 
           if (response['role'] != null) {
             final newRole = UserRoleExtension.fromString(response['role']);
@@ -615,7 +674,13 @@ _isLoading = false;
                   .from('pending_user_approvals')
                   .select('status')
                   .eq('user_id', _user!.id)
-                  .maybeSingle();
+                  .maybeSingle()
+                  .timeout(
+                    const Duration(seconds: 3),
+                    onTimeout: () {
+                      throw TimeoutException('Pending approval query timed out', const Duration(seconds: 3));
+                    },
+                  );
               
               if (pendingApproval != null) {
                 final status = pendingApproval['status'] as String?;
@@ -648,7 +713,13 @@ _isLoading = false;
                 .from('pending_user_approvals')
                 .select('status')
                 .eq('user_id', _user!.id)
-                .maybeSingle();
+                .maybeSingle()
+                .timeout(
+                  const Duration(seconds: 3),
+                  onTimeout: () {
+                    throw TimeoutException('Pending approval query timed out', const Duration(seconds: 3));
+                  },
+                );
             
             if (pendingApproval != null) {
               final status = pendingApproval['status'] as String?;

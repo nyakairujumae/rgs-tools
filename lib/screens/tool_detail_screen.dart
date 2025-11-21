@@ -19,6 +19,7 @@ import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
 import 'tools_screen.dart';
+import 'image_viewer_screen.dart';
 
 class ToolDetailScreen extends StatefulWidget {
   final Tool tool;
@@ -497,6 +498,22 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     );
   }
 
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
+  }
+
   Widget _buildImageSection() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -528,106 +545,162 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         ],
       ),
       child: _currentTool.imagePath != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: _currentTool.imagePath!.startsWith('http')
-                  ? Image.network(
-                      _currentTool.imagePath!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 250,
-                      errorBuilder: (context, error, stackTrace) {
-                        final theme = Theme.of(context);
-                        final colorScheme = theme.colorScheme;
-                        final isDarkMode = theme.brightness == Brightness.dark;
-                        return Container(
-                          height: 250,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? colorScheme.surface : Colors.white,
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.error, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                SizedBox(height: 8),
-                                Text('Failed to load image', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        final theme = Theme.of(context);
-                        final colorScheme = theme.colorScheme;
-                        final isDarkMode = theme.brightness == Brightness.dark;
-                        return Container(
-                          height: 250,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? colorScheme.surface : Colors.white,
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
-                      ? (() {
-                          final localImage = buildLocalFileImage(
+          ? GestureDetector(
+              onTap: () {
+                final imageUrls = _getToolImageUrls(_currentTool);
+                if (imageUrls.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImageViewerScreen(
+                        imageUrls: imageUrls,
+                        initialIndex: 0,
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Stack(
+                  children: [
+                    _currentTool.imagePath!.startsWith('http')
+                        ? Image.network(
                             _currentTool.imagePath!,
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: 250,
-                          );
-                          if (localImage != null) {
-                            return localImage;
-                          }
-                          return Container(
-                            width: double.infinity,
-                            height: 250,
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
-                          );
-                        })()
-                      : (_currentTool.imagePath != null && _currentTool.imagePath!.isNotEmpty)
-                          ? Image.network(
-                              _currentTool.imagePath!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: 250,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              final theme = Theme.of(context);
+                              final colorScheme = theme.colorScheme;
+                              final isDarkMode = theme.brightness == Brightness.dark;
+                              return Container(
                                 height: 250,
-                                color: Colors.grey[200],
-                                child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
-                              ),
-                            )
-                          : Container(
-                          height: 250,
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? colorScheme.surface : Colors.white,
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.error, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                      SizedBox(height: 8),
+                                      Text('Failed to load image', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              final theme = Theme.of(context);
+                              final colorScheme = theme.colorScheme;
+                              final isDarkMode = theme.brightness == Brightness.dark;
+                              return Container(
+                                height: 250,
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? colorScheme.surface : Colors.white,
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
+                            ? (() {
+                                final localImage = buildLocalFileImage(
+                                  _currentTool.imagePath!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: 250,
+                                );
+                                if (localImage != null) {
+                                  return localImage;
+                                }
+                                return Container(
+                                  width: double.infinity,
+                                  height: 250,
+                                  color: Colors.grey[200],
+                                  child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+                                );
+                              })()
+                            : (_currentTool.imagePath != null && _currentTool.imagePath!.isNotEmpty)
+                                ? Image.network(
+                                    _currentTool.imagePath!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 250,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: double.infinity,
+                                      height: 250,
+                                      color: Colors.grey[200],
+                                      child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+                                    ),
+                                  )
+                                : Container(
+                                    height: 250,
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode ? colorScheme.surface : Colors.white,
+                                      borderRadius: BorderRadius.circular(28),
+                                    ),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.image_not_supported, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                          SizedBox(height: 8),
+                                          Text('Image not found', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    if (_getToolImageUrls(_currentTool).length > 1)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? colorScheme.surface : Colors.white,
-                            borderRadius: BorderRadius.circular(28),
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image_not_supported, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                SizedBox(height: 8),
-                                Text('Image not found', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
-                              ],
+                          child: Text(
+                            '${_getToolImageUrls(_currentTool).length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
+                      ),
+                  ],
+                ),
+              ),
             )
           : Container(
               height: 250,

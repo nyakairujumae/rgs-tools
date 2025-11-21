@@ -1382,8 +1382,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(
                   ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-              ),
-              child: tool.imagePath != null
+                ),
+                child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
                           ? Image.network(
                               tool.imagePath!,
@@ -1719,8 +1719,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(
                   ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-              ),
-              child: tool.imagePath != null
+                ),
+                child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
                           ? Image.network(
                               tool.imagePath!,
@@ -1853,6 +1853,22 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       ),
     ),
     );
+  }
+
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
   }
 
   Widget _buildPlaceholderImage(bool isFeatured) {
