@@ -146,7 +146,7 @@ class AdminNotificationProvider extends ChangeNotifier {
   }) async {
     try {
       // Use function to bypass RLS
-      final notificationId = await SupabaseService.client.rpc(
+      final result = await SupabaseService.client.rpc(
         'create_admin_notification',
         params: {
           'p_title': title ?? _getNotificationTitle(type, technicianName),
@@ -156,20 +156,34 @@ class AdminNotificationProvider extends ChangeNotifier {
           'p_type': type.value,
           if (data != null) 'p_data': data,
         },
-      ) as String;
+      );
+
+      if (result == null) {
+        throw Exception('Function returned null - notification was not created');
+      }
+
+      final notificationId = result.toString();
+      debugPrint('✅ Notification created with ID: $notificationId');
 
       // Fetch the notification
       final response = await SupabaseService.client
           .from('admin_notifications')
           .select()
           .eq('id', notificationId)
-          .single();
+          .maybeSingle();
+
+      if (response == null) {
+        throw Exception('Notification was created but could not be retrieved');
+      }
 
       final notification = AdminNotification.fromJson(response);
       _notifications.insert(0, notification);
       notifyListeners();
     } catch (e) {
-      debugPrint('Error creating notification: $e');
+      debugPrint('❌ Error creating notification: $e');
+      if (e.toString().contains('Could not find the function')) {
+        throw Exception('Database function not found. Please run FINAL_WORKING_FIX.sql in Supabase SQL Editor.');
+      }
       rethrow;
     }
   }

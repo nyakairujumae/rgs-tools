@@ -63,6 +63,22 @@ CREATE POLICY "Admins can delete notifications" ON admin_notifications
     EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin')
   );
 
--- Verify
-SELECT 'SUCCESS: Function create_admin_notification created!' as status;
+-- Verify function was created
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_proc 
+        WHERE proname = 'create_admin_notification' 
+        AND pronamespace = 'public'::regnamespace
+    ) THEN
+        RAISE NOTICE 'SUCCESS: Function create_admin_notification created!';
+    ELSE
+        RAISE EXCEPTION 'ERROR: Function was not created!';
+    END IF;
+END $$;
+
+-- List all policies to verify
+SELECT 'Current policies on admin_notifications:' as info;
+SELECT policyname, cmd FROM pg_policies 
+WHERE tablename = 'admin_notifications' AND schemaname = 'public';
 
