@@ -53,19 +53,13 @@ post_install do |installer|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
       
-      # Fix for pdf/printing package - ensure objective_c framework is linked
-      if target.name == 'objective_c' || target.name.include?('pdf') || target.name.include?('printing')
+      # Fix for pdf/printing package - ensure objective_c framework is properly configured
+      if target.name == 'objective_c'
         config.build_settings['DEFINES_MODULE'] = 'YES'
         config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        # Ensure OTHER_LDFLAGS is an array
-        other_ldflags = config.build_settings['OTHER_LDFLAGS'] || []
-        other_ldflags = [other_ldflags] unless other_ldflags.is_a?(Array)
-        other_ldflags = ['$(inherited)'] if other_ldflags.empty?
-        # Ensure the framework is properly linked
-        unless other_ldflags.any? { |flag| flag.to_s.include?('objective_c') }
-          other_ldflags << '-framework' << 'objective_c'
-        end
-        config.build_settings['OTHER_LDFLAGS'] = other_ldflags
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        # Ensure the framework is built as a static library for proper linking
+        config.build_settings['MACH_O_TYPE'] = 'staticlib'
       end
       
       # Additional compiler flags for Firebase (only for Firebase targets)
