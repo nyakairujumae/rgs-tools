@@ -165,20 +165,42 @@ class AdminNotificationProvider extends ChangeNotifier {
       final notificationId = result.toString();
       debugPrint('✅ Notification created with ID: $notificationId');
 
-      // Fetch the notification
-      final response = await SupabaseService.client
-          .from('admin_notifications')
-          .select()
-          .eq('id', notificationId)
-          .maybeSingle();
+      // Create notification object from the data we already have
+      // (We can't fetch it because technicians don't have SELECT permission on admin_notifications)
+      final notification = AdminNotification(
+        id: notificationId,
+        title: title ?? _getNotificationTitle(type, technicianName),
+        message: message ?? _getNotificationMessage(type, technicianName),
+        technicianName: technicianName,
+        technicianEmail: technicianEmail,
+        type: type,
+        timestamp: DateTime.now(),
+        isRead: false,
+        data: data,
+      );
 
-      if (response == null) {
-        throw Exception('Notification was created but could not be retrieved');
+      // Only add to local list if user is admin (technicians don't need to see admin notifications)
+      // The notification is successfully created in the database, which is what matters
+      try {
+        final currentUser = SupabaseService.client.auth.currentUser;
+        if (currentUser != null) {
+          // Try to check if user is admin - if we can't check, just skip adding to list
+          final userRecord = await SupabaseService.client
+              .from('users')
+              .select('role')
+              .eq('id', currentUser.id)
+              .maybeSingle();
+          
+          if (userRecord != null && userRecord['role'] == 'admin') {
+            _notifications.insert(0, notification);
+            notifyListeners();
+          }
+        }
+      } catch (e) {
+        // If we can't check role or add to list, that's okay
+        // The notification was successfully created in the database
+        debugPrint('Note: Could not add notification to local list (user may not be admin): $e');
       }
-
-      final notification = AdminNotification.fromJson(response);
-      _notifications.insert(0, notification);
-      notifyListeners();
     } catch (e) {
       debugPrint('❌ Error creating notification: $e');
       if (e.toString().contains('Could not find the function')) {
