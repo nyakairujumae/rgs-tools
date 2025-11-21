@@ -67,9 +67,11 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
             return Stack(
               children: [
                 SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                    ...ResponsiveHelper.getResponsivePadding(context, all: 16).resolve(TextDirection.ltr),
-                    bottom: ResponsiveHelper.getResponsiveSpacing(context, 100), // Add bottom padding for floating button
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsiveHelper.getResponsiveSpacing(context, 16),
+                    ResponsiveHelper.getResponsiveSpacing(context, 16),
+                    ResponsiveHelper.getResponsiveSpacing(context, 16),
+                    ResponsiveHelper.getResponsiveSpacing(context, 100), // Add bottom padding for floating button
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
