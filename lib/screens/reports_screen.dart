@@ -2132,51 +2132,77 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final endDate = DateTime.now();
 
       File? file;
-      try {
-        // Try Excel export first
+      
+      // On iOS, use PDF by default to avoid native framework issues in release builds
+      // Excel export has known issues with iOS native frameworks
+      final bool isIOS = Platform.isIOS;
+      final bool shouldUsePDF = isIOS;
+      
+      if (shouldUsePDF) {
+        // Use PDF directly on iOS to avoid native framework errors
+        debugPrint('📱 iOS detected - using PDF format to avoid native framework issues');
         file = await ReportService.generateReport(
           reportType: _selectedReportType,
           tools: toolProvider.tools,
           technicians: technicianProvider.technicians,
           startDate: startDate,
           endDate: endDate,
-          format: ReportFormat.excel,
+          format: ReportFormat.pdf,
         );
-      } catch (excelError) {
-        // Check if it's the iOS native framework error
-        final errorString = excelError.toString().toLowerCase();
-        if (errorString.contains('dobjc_initializeapi') || 
-            errorString.contains('objective_c.framework') ||
-            errorString.contains('native function') ||
-            errorString.contains('symbol not found')) {
-          // iOS native framework issue - try PDF as fallback
-          debugPrint('⚠️ Excel export failed due to iOS native framework issue, trying PDF fallback...');
-          try {
-            file = await ReportService.generateReport(
-              reportType: _selectedReportType,
-              tools: toolProvider.tools,
-              technicians: technicianProvider.technicians,
-              startDate: startDate,
-              endDate: endDate,
-              format: ReportFormat.pdf,
-            );
-            // Show info that PDF was used instead
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Excel export unavailable on iOS. Exported as PDF instead.'),
-                  backgroundColor: Colors.orange,
-                  duration: Duration(seconds: 3),
-                ),
+      } else {
+        // Try Excel export first on other platforms
+        try {
+          file = await ReportService.generateReport(
+            reportType: _selectedReportType,
+            tools: toolProvider.tools,
+            technicians: technicianProvider.technicians,
+            startDate: startDate,
+            endDate: endDate,
+            format: ReportFormat.excel,
+          );
+        } catch (excelError) {
+          // Check if it's the iOS native framework error or any Excel-related error
+          final errorString = excelError.toString().toLowerCase();
+          if (errorString.contains('dobjc_initializeapi') || 
+              errorString.contains('dobjc_initialize') ||
+              errorString.contains('objective_c') ||
+              errorString.contains('objective_c.framework') ||
+              errorString.contains('native function') ||
+              errorString.contains('symbol not found') ||
+              errorString.contains('couldn\'t resolve') ||
+              errorString.contains('no asset with id') ||
+              errorString.contains('excel') && errorString.contains('error')) {
+            // Native framework or Excel library issue - try PDF as fallback
+            debugPrint('⚠️ Excel export failed, trying PDF fallback...');
+            debugPrint('Error details: $excelError');
+            try {
+              file = await ReportService.generateReport(
+                reportType: _selectedReportType,
+                tools: toolProvider.tools,
+                technicians: technicianProvider.technicians,
+                startDate: startDate,
+                endDate: endDate,
+                format: ReportFormat.pdf,
               );
+              // Show info that PDF was used instead
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Excel export unavailable. Exported as PDF instead.'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            } catch (pdfError) {
+              // If PDF also fails, show a more helpful error
+              debugPrint('❌ PDF export also failed: $pdfError');
+              throw Exception('Both Excel and PDF export failed. Please try again or contact support.');
             }
-          } catch (pdfError) {
-            // If PDF also fails, rethrow the original Excel error
-            throw excelError;
+          } else {
+            // Other error, rethrow
+            rethrow;
           }
-        } else {
-          // Other error, rethrow
-          rethrow;
         }
       }
 
