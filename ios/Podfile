@@ -53,13 +53,29 @@ post_install do |installer|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
       
-      # Fix for pdf/printing package - ensure objective_c framework is properly configured
+      # Fix for objective_c framework - used by path_provider_foundation (which is used by pdf package)
+      # The objective_c package uses FFI to dynamically load Objective-C runtime functions
+      # In release builds, we need to ensure the framework is properly linked and symbols are available
       if target.name == 'objective_c'
         config.build_settings['DEFINES_MODULE'] = 'YES'
         config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        # Ensure proper linking for FFI-based packages
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
         # Ensure the framework is built as a static library for proper linking
         config.build_settings['MACH_O_TYPE'] = 'staticlib'
+        # Disable bitcode for better compatibility
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
+        # Ensure all symbols are exported for FFI lookup
+        config.build_settings['EXPORTED_SYMBOLS_FILE'] = ''
+        # Ensure visibility is set to default (not hidden) so FFI can find symbols
+        config.build_settings['GCC_SYMBOLS_PRIVATE_EXTERN'] = 'NO'
+      end
+      
+      # Also ensure path_provider_foundation (which depends on objective_c) is properly configured
+      if target.name == 'path_provider_foundation'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
       end
       
       # Additional compiler flags for Firebase (only for Firebase targets)
