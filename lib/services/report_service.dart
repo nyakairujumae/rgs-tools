@@ -293,10 +293,105 @@ class ReportService {
                 },
               ));
               
-              // Tool Issues Section (if any)
+              // Tool Issues Section (if any) - break down Column to allow page breaks
               if (toolIssues.isNotEmpty) {
                 widgets.add(pw.SizedBox(height: 16));
-                widgets.add(_buildToolIssuesPdfSection(toolIssues));
+                widgets.add(pw.Text(
+                  'Tool Issues Overview',
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey900,
+                  ),
+                ));
+                widgets.add(pw.SizedBox(height: 12));
+                
+                // Calculate metrics
+                final statusCounts = <String, int>{};
+                final priorityCounts = <String, int>{};
+                double totalCost = 0.0;
+                for (final item in toolIssues) {
+                  final issue = item as Map<String, dynamic>;
+                  final status = (issue['status'] ?? 'Unknown').toString();
+                  final priority = (issue['priority'] ?? 'Unspecified').toString();
+                  statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+                  priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
+                  final cost = issue['estimated_cost'];
+                  if (cost is num) {
+                    totalCost += cost.toDouble();
+                  }
+                }
+                final openIssues = toolIssues.where((item) {
+                  final status = (item['status'] ?? '').toString().toLowerCase();
+                  return status != 'resolved' && status != 'closed';
+                }).length;
+                
+                // Add metric cards
+                widgets.add(pw.Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildMetricCard('Total Issues', toolIssues.length.toString(), PdfColors.indigo),
+                    _buildMetricCard('Open Issues', openIssues.toString(), PdfColors.deepOrange),
+                    _buildMetricCard('Estimated Cost', _currencyFormat.format(totalCost), PdfColors.teal),
+                  ],
+                ));
+                widgets.add(pw.SizedBox(height: 18));
+                
+                // Add summary tables
+                widgets.add(pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(child: _buildSummaryTable('By Status', statusCounts)),
+                    pw.SizedBox(width: 12),
+                    pw.Expanded(child: _buildSummaryTable('By Priority', priorityCounts)),
+                  ],
+                ));
+                widgets.add(pw.SizedBox(height: 18));
+                
+                // Add main issues table
+                final tableHeaders = [
+                  'Tool',
+                  'Type',
+                  'Priority',
+                  'Status',
+                  'Reported',
+                  'Reporter',
+                  'Cost',
+                  'Summary',
+                ];
+                final tableData = toolIssues.map<List<String>>((item) {
+                  final issue = item as Map<String, dynamic>;
+                  final cost = issue['estimated_cost'];
+                  return [
+                    issue['tool_name']?.toString() ?? '',
+                    issue['issue_type']?.toString() ?? '',
+                    issue['priority']?.toString() ?? '',
+                    issue['status']?.toString() ?? '',
+                    _formatFriendlyDateTime(issue['reported_at']),
+                    issue['reported_by']?.toString() ?? '',
+                    cost is num ? _currencyFormat.format(cost.toDouble()) : '-',
+                    _composeIssueSummary(issue),
+                  ];
+                }).toList();
+                widgets.add(pw.Table.fromTextArray(
+                  headers: tableHeaders,
+                  data: tableData,
+                  headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+                  border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                  cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                  columnWidths: const {
+                    0: pw.FlexColumnWidth(2.5),
+                    1: pw.FlexColumnWidth(1.8),
+                    2: pw.FlexColumnWidth(1.5),
+                    3: pw.FlexColumnWidth(1.8),
+                    4: pw.FlexColumnWidth(2.0),
+                    5: pw.FlexColumnWidth(2.0),
+                    6: pw.FlexColumnWidth(1.8),
+                    7: pw.FlexColumnWidth(4.0),
+                  },
+                ));
               }
               
               // Tool History Section
