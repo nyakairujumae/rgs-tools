@@ -77,13 +77,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             bottomRight: Radius.circular(24),
           ),
         ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () => NavigationHelper.safePop(context),
-          ),
-        ),
+        automaticallyImplyLeading: false, // Remove back button since this is a main screen
         title: Text(
           'Shared Tools',
           style: TextStyle(
