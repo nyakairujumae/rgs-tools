@@ -1536,10 +1536,19 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: headers,
           data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          columnWidths: const {
+            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
+            1: pw.FlexColumnWidth(2.0), // Category - wider
+            2: pw.FlexColumnWidth(2.5), // Assigned To - wider
+            3: pw.FlexColumnWidth(1.5), // Status
+            4: pw.FlexColumnWidth(1.5), // Condition
+            5: pw.FlexColumnWidth(2.5), // Location - wider
+            6: pw.FlexColumnWidth(2.0), // Assigned Date - wider
+          },
         ),
       ],
     );
@@ -1587,10 +1596,15 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: headers,
           data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          columnWidths: const {
+            0: pw.FlexColumnWidth(3.0), // Technician - wider
+            1: pw.FlexColumnWidth(1.5), // Tools Assigned
+            2: pw.FlexColumnWidth(5.0), // Tool Names - much wider for list
+          },
         ),
       ],
     );
@@ -1645,10 +1659,14 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: headers,
           data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 2), // Allow text wrapping
+          columnWidths: const {
+            0: pw.FlexColumnWidth(2.5), // Metric - wider
+            1: pw.FlexColumnWidth(3.5), // Value - wider for currency
+          },
         ),
         pw.SizedBox(height: 18),
         pw.Text(
@@ -1715,10 +1733,19 @@ class ReportService {
         pw.Table.fromTextArray(
           headers: headers,
           data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          columnWidths: const {
+            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
+            1: pw.FlexColumnWidth(2.0), // Category - wider
+            2: pw.FlexColumnWidth(1.5), // Status
+            3: pw.FlexColumnWidth(1.5), // Condition
+            4: pw.FlexColumnWidth(2.0), // Created - wider
+            5: pw.FlexColumnWidth(2.0), // Last Updated - wider
+            6: pw.FlexColumnWidth(2.5), // Location - wider
+          },
         ),
       ],
     );
