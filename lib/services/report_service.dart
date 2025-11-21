@@ -222,27 +222,61 @@ class ReportService {
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
             case ReportType.comprehensive:
-              // Add comprehensive report sections individually to allow proper page breaks
-              // MultiPage will automatically handle page breaks between sections
+              // Add comprehensive report sections individually
+              // MultiPage will automatically handle page breaks
               widgets.add(pw.Text(
                 'Comprehensive Report',
                 style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
               ));
               widgets.add(pw.SizedBox(height: 12));
-              widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
-              // Force page break using container with page height
-              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
-              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
-              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
-              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
-              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
-              if (toolIssues.isNotEmpty) {
-                widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
-                widgets.add(_buildToolIssuesPdfSection(toolIssues));
+              // Add section titles and content separately to allow proper page breaks
+              widgets.add(_buildSectionTitle('Tools Inventory'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildToolsInventoryTable(tools, technicians));
+              widgets.add(pw.SizedBox(height: 20));
+              widgets.add(_buildSectionTitle('Tool Assignments'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildToolAssignmentsTable(tools, technicians, startDate, endDate));
+              widgets.add(pw.SizedBox(height: 20));
+              widgets.add(_buildSectionTitle('Technician Summary'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildTechnicianSummaryTable(tools, technicians));
+              widgets.add(pw.SizedBox(height: 20));
+              widgets.add(_buildSectionTitle('Financial Summary'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildFinancialSummaryTable(tools, toolIssues));
+              widgets.add(pw.SizedBox(height: 12));
+              widgets.add(pw.Text(
+                'Status Distribution',
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+              ));
+              widgets.add(pw.SizedBox(height: 8));
+              final statusCounts = <String, int>{};
+              for (final tool in tools) {
+                statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
               }
-              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
-              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
+              widgets.add(pw.Table.fromTextArray(
+                headers: const ['Status', 'Count'],
+                data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+                border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(2.0),
+                  1: pw.FlexColumnWidth(1.0),
+                },
+              ));
+              if (toolIssues.isNotEmpty) {
+                widgets.add(pw.SizedBox(height: 20));
+              widgets.add(_buildSectionTitle('Tool Issues'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildToolIssuesPdfSection(toolIssues));
+              }
+              widgets.add(pw.SizedBox(height: 20));
+              widgets.add(_buildSectionTitle('Tool History'));
+              widgets.add(pw.SizedBox(height: 8));
+              widgets.add(_buildToolHistoryTable(tools, startDate, endDate));
               break;
           }
 
@@ -1443,7 +1477,16 @@ class ReportService {
 
   // PDF Report Sections - Table-based reports similar to Excel
   
-  static pw.Widget _buildToolsInventoryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+  // Helper to build section titles
+  static pw.Widget _buildSectionTitle(String title) {
+    return pw.Text(
+      title,
+      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+    );
+  }
+
+  // Extract table building methods for comprehensive report
+  static pw.Widget _buildToolsInventoryTable(List<Tool> tools, List<dynamic> technicians) {
     if (tools.isEmpty) {
       return _buildPdfPlaceholder('No tools found in inventory.');
     }
@@ -1478,6 +1521,34 @@ class ReportService {
       ];
     }).toList();
 
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: tableData,
+      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(3.0),
+        1: pw.FlexColumnWidth(2.0),
+        2: pw.FlexColumnWidth(2.0),
+        3: pw.FlexColumnWidth(2.0),
+        4: pw.FlexColumnWidth(2.5),
+        5: pw.FlexColumnWidth(1.5),
+        6: pw.FlexColumnWidth(1.5),
+        7: pw.FlexColumnWidth(2.5),
+        8: pw.FlexColumnWidth(2.5),
+        9: pw.FlexColumnWidth(2.0),
+        10: pw.FlexColumnWidth(2.0),
+      },
+    );
+  }
+
+  static pw.Widget _buildToolsInventoryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+    if (tools.isEmpty) {
+      return _buildPdfPlaceholder('No tools found in inventory.');
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1491,32 +1562,12 @@ class ReportService {
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
-          columnWidths: const {
-            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
-            1: pw.FlexColumnWidth(2.0), // Category - wider
-            2: pw.FlexColumnWidth(2.0), // Brand - wider
-            3: pw.FlexColumnWidth(2.0), // Model - wider
-            4: pw.FlexColumnWidth(2.5), // Serial Number - wider
-            5: pw.FlexColumnWidth(1.5), // Status
-            6: pw.FlexColumnWidth(1.5), // Condition
-            7: pw.FlexColumnWidth(2.5), // Location - wider
-            8: pw.FlexColumnWidth(2.5), // Assigned To - wider
-            9: pw.FlexColumnWidth(2.0), // Purchase Date - wider
-            10: pw.FlexColumnWidth(2.0), // Purchase Price - wider
-          },
-        ),
+        _buildToolsInventoryTable(tools, technicians),
       ],
     );
   }
 
-  static pw.Widget _buildToolAssignmentsPdfSection(List<Tool> tools, List<dynamic> technicians, DateTime? startDate, DateTime? endDate) {
+  static pw.Widget _buildToolAssignmentsTable(List<Tool> tools, List<dynamic> technicians, DateTime? startDate, DateTime? endDate) {
     final assignedTools = tools.where((tool) => tool.assignedTo != null && tool.assignedTo!.isNotEmpty).toList();
     
     if (assignedTools.isEmpty) {
@@ -1545,6 +1596,32 @@ class ReportService {
       ];
     }).toList();
 
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: tableData,
+      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(3.0),
+        1: pw.FlexColumnWidth(2.0),
+        2: pw.FlexColumnWidth(2.5),
+        3: pw.FlexColumnWidth(1.5),
+        4: pw.FlexColumnWidth(1.5),
+        5: pw.FlexColumnWidth(2.5),
+        6: pw.FlexColumnWidth(2.0),
+      },
+    );
+  }
+
+  static pw.Widget _buildToolAssignmentsPdfSection(List<Tool> tools, List<dynamic> technicians, DateTime? startDate, DateTime? endDate) {
+    final assignedTools = tools.where((tool) => tool.assignedTo != null && tool.assignedTo!.isNotEmpty).toList();
+    
+    if (assignedTools.isEmpty) {
+      return _buildPdfPlaceholder('No tool assignments found for the selected period.');
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1558,28 +1635,12 @@ class ReportService {
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
-          columnWidths: const {
-            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
-            1: pw.FlexColumnWidth(2.0), // Category - wider
-            2: pw.FlexColumnWidth(2.5), // Assigned To - wider
-            3: pw.FlexColumnWidth(1.5), // Status
-            4: pw.FlexColumnWidth(1.5), // Condition
-            5: pw.FlexColumnWidth(2.5), // Location - wider
-            6: pw.FlexColumnWidth(2.0), // Assigned Date - wider
-          },
-        ),
+        _buildToolAssignmentsTable(tools, technicians, startDate, endDate),
       ],
     );
   }
 
-  static pw.Widget _buildTechnicianSummaryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+  static pw.Widget _buildTechnicianSummaryTable(List<Tool> tools, List<dynamic> technicians) {
     final techToolCounts = <String, int>{};
     final techToolNames = <String, List<String>>{};
 
@@ -1605,6 +1666,37 @@ class ReportService {
       ];
     }).toList();
 
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: tableData,
+      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(3.0),
+        1: pw.FlexColumnWidth(1.5),
+        2: pw.FlexColumnWidth(5.0),
+      },
+    );
+  }
+
+  static pw.Widget _buildTechnicianSummaryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+    final techToolCounts = <String, int>{};
+    final techToolNames = <String, List<String>>{};
+
+    for (final tool in tools) {
+      if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
+        final techName = _getTechnicianName(tool.assignedTo, technicians);
+        techToolCounts[techName] = (techToolCounts[techName] ?? 0) + 1;
+        techToolNames.putIfAbsent(techName, () => []).add(tool.name);
+      }
+    }
+
+    if (techToolCounts.isEmpty) {
+      return _buildPdfPlaceholder('No technician assignments found.');
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1618,28 +1710,15 @@ class ReportService {
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
-          columnWidths: const {
-            0: pw.FlexColumnWidth(3.0), // Technician - wider
-            1: pw.FlexColumnWidth(1.5), // Tools Assigned
-            2: pw.FlexColumnWidth(5.0), // Tool Names - much wider for list
-          },
-        ),
+        _buildTechnicianSummaryTable(tools, technicians),
       ],
     );
   }
 
-  static pw.Widget _buildFinancialSummaryPdfSection(List<Tool> tools, List<dynamic> toolIssues) {
+  static pw.Widget _buildFinancialSummaryTable(List<Tool> tools, List<dynamic> toolIssues) {
     double totalPurchasePrice = 0.0;
     double totalExpenditures = 0.0;
     final statusCounts = <String, int>{};
-    final conditionCounts = <String, int>{};
 
     // Calculate total purchase price
     for (final tool in tools) {
@@ -1647,7 +1726,6 @@ class ReportService {
         totalPurchasePrice += tool.purchasePrice!;
       }
       statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
-      conditionCounts[tool.condition] = (conditionCounts[tool.condition] ?? 0) + 1;
     }
 
     // Calculate total expenditures from tool issues
@@ -1673,6 +1751,27 @@ class ReportService {
       ['Total Investment', _currencyFormat.format(totalPurchasePrice + totalExpenditures)],
     ];
 
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: tableData,
+      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(2.5),
+        1: pw.FlexColumnWidth(3.5),
+      },
+    );
+  }
+
+  static pw.Widget _buildFinancialSummaryPdfSection(List<Tool> tools, List<dynamic> toolIssues) {
+    final statusCounts = <String, int>{};
+
+    for (final tool in tools) {
+      statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1681,18 +1780,7 @@ class ReportService {
           style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
         ),
         pw.SizedBox(height: 12),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
-          columnWidths: const {
-            0: pw.FlexColumnWidth(2.5), // Metric - wider
-            1: pw.FlexColumnWidth(3.5), // Value - wider for currency
-          },
-        ),
+        _buildFinancialSummaryTable(tools, toolIssues),
         pw.SizedBox(height: 18),
         pw.Text(
           'Status Distribution',
@@ -1707,15 +1795,15 @@ class ReportService {
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
           cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
           columnWidths: const {
-            0: pw.FlexColumnWidth(2.0), // Status - wider
-            1: pw.FlexColumnWidth(1.0), // Count
+            0: pw.FlexColumnWidth(2.0),
+            1: pw.FlexColumnWidth(1.0),
           },
         ),
       ],
     );
   }
 
-  static pw.Widget _buildToolHistoryPdfSection(List<Tool> tools, DateTime? startDate, DateTime? endDate) {
+  static pw.Widget _buildToolHistoryTable(List<Tool> tools, DateTime? startDate, DateTime? endDate) {
     if (tools.isEmpty) {
       return _buildPdfPlaceholder('No tool history found for the selected period.');
     }
@@ -1742,6 +1830,30 @@ class ReportService {
       ];
     }).toList();
 
+    return pw.Table.fromTextArray(
+      headers: headers,
+      data: tableData,
+      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+      columnWidths: const {
+        0: pw.FlexColumnWidth(3.0),
+        1: pw.FlexColumnWidth(2.0),
+        2: pw.FlexColumnWidth(1.5),
+        3: pw.FlexColumnWidth(1.5),
+        4: pw.FlexColumnWidth(2.0),
+        5: pw.FlexColumnWidth(2.0),
+        6: pw.FlexColumnWidth(2.5),
+      },
+    );
+  }
+
+  static pw.Widget _buildToolHistoryPdfSection(List<Tool> tools, DateTime? startDate, DateTime? endDate) {
+    if (tools.isEmpty) {
+      return _buildPdfPlaceholder('No tool history found for the selected period.');
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -1755,23 +1867,7 @@ class ReportService {
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        pw.Table.fromTextArray(
-          headers: headers,
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
-          columnWidths: const {
-            0: pw.FlexColumnWidth(3.0), // Tool Name - wider
-            1: pw.FlexColumnWidth(2.0), // Category - wider
-            2: pw.FlexColumnWidth(1.5), // Status
-            3: pw.FlexColumnWidth(1.5), // Condition
-            4: pw.FlexColumnWidth(2.0), // Created - wider
-            5: pw.FlexColumnWidth(2.0), // Last Updated - wider
-            6: pw.FlexColumnWidth(2.5), // Location - wider
-          },
-        ),
+        _buildToolHistoryTable(tools, startDate, endDate),
       ],
     );
   }
