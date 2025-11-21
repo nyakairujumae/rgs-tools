@@ -349,7 +349,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                           ? Colors.grey.withOpacity(0.3)
                           : null,
                       borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                      boxShadow: _selectedTechnician != null && !_isLoading
+                      boxShadow: _selectedTechnicians.isNotEmpty && !_isLoading
                           ? [
                               BoxShadow(
                                 color: Colors.orange.withOpacity(0.3),
