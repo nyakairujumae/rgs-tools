@@ -289,6 +289,10 @@ class FirebaseMessagingService {
     );
     final darwinDetails = DarwinNotificationDetails(
       badgeNumber: badgeCount,
+      presentAlert: true, // Show alert even in foreground
+      presentBadge: true, // Show badge
+      presentSound: true, // Play sound
+      interruptionLevel: InterruptionLevel.active, // iOS 15+ - show as active notification
     );
     final details = NotificationDetails(android: androidDetails, iOS: darwinDetails);
     await _local.show(
