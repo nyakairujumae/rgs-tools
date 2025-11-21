@@ -36,29 +36,16 @@ class ReportService {
     required List<dynamic> technicians,
     DateTime? startDate,
     DateTime? endDate,
-    ReportFormat format = ReportFormat.excel,
+    ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
   }) async {
-    // Wrap in try-catch to handle native framework errors gracefully
-    try {
-      switch (format) {
-        case ReportFormat.pdf:
-          return _generatePdfReport(
-            reportType: reportType,
-            tools: tools,
-            technicians: technicians,
-            startDate: startDate,
-            endDate: endDate,
-          );
-        case ReportFormat.excel:
-        default:
-          return _generateExcelReport(
-            reportType: reportType,
-            tools: tools,
-            technicians: technicians,
-            startDate: startDate,
-            endDate: endDate,
-          );
-      }
+    // All reports now use PDF format with table-based sheets
+    return _generatePdfReport(
+      reportType: reportType,
+      tools: tools,
+      technicians: technicians,
+      startDate: startDate,
+      endDate: endDate,
+    );
     } catch (e) {
       // Check if it's the iOS native framework error
       final errorString = e.toString().toLowerCase();
