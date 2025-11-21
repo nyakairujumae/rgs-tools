@@ -46,22 +46,6 @@ class ReportService {
       startDate: startDate,
       endDate: endDate,
     );
-    } catch (e) {
-      // Check if it's the iOS native framework error
-      final errorString = e.toString().toLowerCase();
-      if (errorString.contains('dobjc_initializeapi') || 
-          errorString.contains('objective_c.framework') ||
-          errorString.contains('native function') ||
-          errorString.contains('symbol not found')) {
-        debugPrint('❌ iOS native framework error detected: $e');
-        throw Exception(
-          'Excel export is not available on iOS due to a native framework limitation. '
-          'Please use PDF export instead, or export from a different device.'
-        );
-      }
-      // Rethrow other errors
-      rethrow;
-    }
   }
 
   /// Generate and save an Excel report
