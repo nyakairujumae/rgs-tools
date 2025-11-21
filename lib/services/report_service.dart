@@ -1107,7 +1107,7 @@ class ReportService {
     if (endDate == null) {
       return 'From $startText';
     }
-    return '$startText – $endText';
+    return '$startText - $endText'; // Use ASCII hyphen instead of en dash
   }
 
   static pw.Widget _buildPdfHeader(String title, String dateRangeText) {
@@ -1218,7 +1218,7 @@ class ReportService {
         issue['status']?.toString() ?? '',
         _formatFriendlyDateTime(issue['reported_at']),
         issue['reported_by']?.toString() ?? '',
-        cost is num ? _currencyFormat.format(cost.toDouble()) : '—',
+        cost is num ? _currencyFormat.format(cost.toDouble()) : '-', // Use ASCII hyphen instead of em dash
         _composeIssueSummary(issue),
       ];
     }).toList();
@@ -1397,7 +1397,7 @@ class ReportService {
       }
     }
 
-    return parts.isEmpty ? '—' : parts.join('\n');
+    return parts.isEmpty ? '-' : parts.join('\n'); // Use ASCII hyphen instead of em dash
   }
 
   static final DateFormat _friendlyDateFormat = DateFormat('dd MMM yyyy HH:mm');
