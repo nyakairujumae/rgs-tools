@@ -2236,7 +2236,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
         // Try to open the file
         try {
-          await OpenFile.open(file.path);
+          if (file != null) {
+            await OpenFile.open(file.path);
+          }
         } catch (e) {
           debugPrint('Could not open file: $e');
         }
