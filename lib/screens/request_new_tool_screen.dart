@@ -715,24 +715,40 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      // Map priority to match approval_workflows format
+      String workflowPriority = 'Medium';
+      if (_priority == 'Low') workflowPriority = 'Low';
+      else if (_priority == 'High') workflowPriority = 'High';
+      else if (_priority == 'Urgent') workflowPriority = 'Critical';
+      
+      // Create request data for approval_workflows table
       final requestData = {
-        'tool_name': _nameCtrl.text.trim(),
-        'category': _categoryCtrl.text.trim(),
-        'brand': _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
-        'model': _modelCtrl.text.trim().isEmpty ? null : _modelCtrl.text.trim(),
-        'quantity': int.parse(_quantityCtrl.text.trim()),
-        'priority': _priority,
-        'needed_by': _neededBy?.toIso8601String(),
-        'site': _siteCtrl.text.trim().isEmpty ? null : _siteCtrl.text.trim(),
-        'reason': _reasonCtrl.text.trim(),
-        'status': 'pending',
-        'requested_by': user?.id,
-        'requested_by_email': user?.email,
-        'requested_by_name': authProvider.userFullName,
-        'created_at': DateTime.now().toIso8601String(),
+        'request_type': 'Tool Purchase',
+        'title': 'Tool Purchase Request: ${_nameCtrl.text.trim()}',
+        'description': _reasonCtrl.text.trim().isNotEmpty 
+            ? _reasonCtrl.text.trim() 
+            : 'Request to purchase ${_quantityCtrl.text.trim()} x ${_nameCtrl.text.trim()}',
+        'requester_id': user?.id,
+        'requester_name': authProvider.userFullName ?? (user?.email ?? 'Technician'),
+        'requester_role': 'technician',
+        'status': 'Pending',
+        'priority': workflowPriority,
+        'request_date': DateTime.now().toIso8601String(),
+        'due_date': _neededBy?.toIso8601String(),
+        'location': _siteCtrl.text.trim().isEmpty ? null : _siteCtrl.text.trim(),
+        'request_data': {
+          'tool_name': _nameCtrl.text.trim(),
+          'category': _categoryCtrl.text.trim(),
+          'brand': _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
+          'model': _modelCtrl.text.trim().isEmpty ? null : _modelCtrl.text.trim(),
+          'quantity': int.parse(_quantityCtrl.text.trim()),
+          'needed_by': _neededBy?.toIso8601String(),
+          'site': _siteCtrl.text.trim().isEmpty ? null : _siteCtrl.text.trim(),
+          'reason': _reasonCtrl.text.trim(),
+        },
       };
 
-      await SupabaseService.client.from('tool_requests').insert(requestData);
+      await SupabaseService.client.from('approval_workflows').insert(requestData);
 
       try {
         await adminNotificationProvider.createNotification(
