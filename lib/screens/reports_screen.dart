@@ -2224,13 +2224,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            action: SnackBarAction(
+            action: file != null ? SnackBarAction(
               label: 'Open',
               textColor: Colors.white,
-              onPressed: file != null ? () async {
+              onPressed: () async {
                 await OpenFile.open(file!.path);
-              } : null,
-            ),
+              },
+            ) : null,
           ),
         );
 
