@@ -2158,15 +2158,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
         children: [
                 const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, color: Colors.white),
+                    Icon(Icons.check_circle, color: Colors.white, size: 18),
                     SizedBox(width: 8),
-          Text(
-                      'Report exported successfully!',
-            style: TextStyle(
-                        fontWeight: FontWeight.bold,
-            ),
-          ),
+                    Text(
+                      'Exported!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
