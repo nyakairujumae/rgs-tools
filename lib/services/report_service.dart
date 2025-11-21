@@ -223,28 +223,25 @@ class ReportService {
               break;
             case ReportType.comprehensive:
               // Add comprehensive report sections individually to allow proper page breaks
+              // MultiPage will automatically handle page breaks between sections
               widgets.add(pw.Text(
                 'Comprehensive Report',
                 style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
               ));
               widgets.add(pw.SizedBox(height: 12));
               widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(pw.PageBreak()); // Force page break
+              // Force page break using container with page height
+              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
               widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
               widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
               widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
               if (toolIssues.isNotEmpty) {
-                widgets.add(pw.SizedBox(height: 16));
-                widgets.add(pw.PageBreak()); // Force page break
+                widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
                 widgets.add(_buildToolIssuesPdfSection(toolIssues));
               }
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(pw.PageBreak()); // Force page break
+              widgets.add(pw.Container(height: PdfPageFormat.a4.landscape.height));
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
           }
