@@ -1,8 +1,6 @@
 import Flutter
 import UIKit
 import UserNotifications
-import FirebaseCore
-import FirebaseMessaging
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, UNUserNotificationCenterDelegate {
@@ -10,9 +8,6 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Initialize Firebase first
-    FirebaseApp.configure()
-    
     GeneratedPluginRegistrant.register(with: self)
     
     // Set notification delegate BEFORE requesting permissions
@@ -41,9 +36,6 @@ import FirebaseMessaging
       application.registerForRemoteNotifications()
     }
     
-    // Set Firebase Messaging delegate
-    Messaging.messaging().delegate = self
-    
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
@@ -53,9 +45,8 @@ import FirebaseMessaging
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
     print("✅ APNs token registered: \(tokenString)")
     
-    // Pass token to Firebase Messaging
-    Messaging.messaging().apnsToken = deviceToken
-    
+    // Pass token to Flutter Firebase Messaging plugin
+    // The Flutter plugin will handle passing it to Firebase
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
   
@@ -95,20 +86,5 @@ import FirebaseMessaging
     // The Flutter side will handle this via onMessageOpenedApp
     
     completionHandler()
-  }
-}
-
-// MARK: - MessagingDelegate
-extension AppDelegate: MessagingDelegate {
-  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-    print("🔥 Firebase Messaging token: \(fcmToken ?? "nil")")
-    
-    // Send token to Flutter side if needed
-    let dataDict: [String: String] = ["token": fcmToken ?? ""]
-    NotificationCenter.default.post(
-      name: Notification.Name("FCMToken"),
-      object: nil,
-      userInfo: dataDict
-    )
   }
 }
