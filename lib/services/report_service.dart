@@ -195,11 +195,11 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape, // Use landscape for wider columns
-        margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         build: (context) {
           final widgets = <pw.Widget>[
             _buildPdfHeader(reportTitle, dateRangeText),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 8), // Reduced gap after header
           ];
 
           switch (reportType) {
@@ -1117,37 +1117,42 @@ class ReportService {
         pw.Text(
           'RGS HVAC Services',
           style: pw.TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.blueGrey700,
           ),
         ),
-        pw.SizedBox(height: 4),
+        pw.SizedBox(height: 2), // Reduced spacing
         pw.Text(
           title,
           style: pw.TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.blueGrey900,
           ),
         ),
-        pw.SizedBox(height: 6),
-        pw.Text(
-          'Reporting period: $dateRangeText',
-          style: pw.TextStyle(
-            fontSize: 11,
-            color: PdfColors.blueGrey600,
-          ),
+        pw.SizedBox(height: 4), // Reduced spacing
+        pw.Row(
+          children: [
+            pw.Text(
+              'Reporting period: $dateRangeText',
+              style: pw.TextStyle(
+                fontSize: 10,
+                color: PdfColors.blueGrey600,
+              ),
+            ),
+            pw.SizedBox(width: 12),
+            pw.Text(
+              'Generated: ${_formatFriendlyDateTime(DateTime.now().toIso8601String())}',
+              style: pw.TextStyle(
+                fontSize: 9,
+                color: PdfColors.blueGrey500,
+              ),
+            ),
+          ],
         ),
-        pw.Text(
-          'Generated ${_formatFriendlyDateTime(DateTime.now().toIso8601String())}',
-          style: pw.TextStyle(
-            fontSize: 10,
-            color: PdfColors.blueGrey500,
-          ),
-        ),
-        pw.SizedBox(height: 12),
-        pw.Divider(color: PdfColors.blueGrey200),
+        pw.SizedBox(height: 8), // Reduced spacing before divider
+        pw.Divider(color: PdfColors.blueGrey200, height: 1),
       ],
     );
   }
