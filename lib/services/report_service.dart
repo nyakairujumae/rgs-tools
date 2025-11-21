@@ -1472,7 +1472,7 @@ class ReportService {
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
           columnWidths: const {
             0: pw.FlexColumnWidth(3.0), // Tool Name - wider
             1: pw.FlexColumnWidth(2.0), // Category - wider
@@ -1539,7 +1539,7 @@ class ReportService {
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
           columnWidths: const {
             0: pw.FlexColumnWidth(3.0), // Tool Name - wider
             1: pw.FlexColumnWidth(2.0), // Category - wider
@@ -1599,7 +1599,7 @@ class ReportService {
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
           columnWidths: const {
             0: pw.FlexColumnWidth(3.0), // Technician - wider
             1: pw.FlexColumnWidth(1.5), // Tools Assigned
@@ -1662,7 +1662,7 @@ class ReportService {
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 2), // Allow text wrapping
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
           columnWidths: const {
             0: pw.FlexColumnWidth(2.5), // Metric - wider
             1: pw.FlexColumnWidth(3.5), // Value - wider for currency
@@ -1736,7 +1736,7 @@ class ReportService {
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800, maxLines: 3), // Allow text wrapping
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800), // Text wraps automatically in table cells
           columnWidths: const {
             0: pw.FlexColumnWidth(3.0), // Tool Name - wider
             1: pw.FlexColumnWidth(2.0), // Category - wider
