@@ -110,24 +110,25 @@ class ToolIssueProvider with ChangeNotifier {
           }
         }
 
-        // Create notification in Supabase using the function to bypass RLS
-        await SupabaseService.client.rpc(
-          'insert_admin_notification',
-          params: {
-            'p_title': 'Issue Report',
-            'p_message': '${technicianName} reported a ${issue.issueType.toLowerCase()} issue for ${issue.toolName}',
-            'p_technician_name': technicianName,
-            'p_technician_email': technicianEmail,
-            'p_type': NotificationType.issueReport.value,
-            'p_data': {
-              'issue_id': newIssue.id,
-              'tool_id': issue.toolId,
-              'tool_name': issue.toolName,
-              'issue_type': issue.issueType,
-              'priority': issue.priority,
-            },
-          },
-        );
+        // Create notification in Supabase
+        await SupabaseService.client
+            .from('admin_notifications')
+            .insert({
+              'title': 'Issue Report',
+              'message': '${technicianName} reported a ${issue.issueType.toLowerCase()} issue for ${issue.toolName}',
+              'technician_name': technicianName,
+              'technician_email': technicianEmail,
+              'type': NotificationType.issueReport.value,
+              'is_read': false,
+              'timestamp': DateTime.now().toIso8601String(),
+              'data': {
+                'issue_id': newIssue.id,
+                'tool_id': issue.toolId,
+                'tool_name': issue.toolName,
+                'issue_type': issue.issueType,
+                'priority': issue.priority,
+              },
+            });
         
         debugPrint('✅ Created notification for tool issue: ${newIssue.id}');
       } catch (notificationError) {
