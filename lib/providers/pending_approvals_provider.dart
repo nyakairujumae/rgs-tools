@@ -162,7 +162,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
     throw Exception('Failed after $maxRetries attempts');
   }
 
-  Future<bool> approveUser(PendingApproval approval) async {
+  Future<bool> approveUser(PendingApproval approval, {BuildContext? buildContext}) async {
     try {
       final currentUser = SupabaseService.client.auth.currentUser;
       if (currentUser == null) {
