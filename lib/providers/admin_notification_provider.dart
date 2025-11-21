@@ -145,25 +145,6 @@ class AdminNotificationProvider extends ChangeNotifier {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Debug: Check authentication state
-      final currentUser = SupabaseService.client.auth.currentUser;
-      debugPrint('🔍 Creating notification - Current user: ${currentUser?.id ?? "null"}');
-      debugPrint('🔍 User email: ${currentUser?.email ?? "null"}');
-      
-      // Debug: Check if user exists in users table
-      if (currentUser != null) {
-        try {
-          final userRecord = await SupabaseService.client
-              .from('users')
-              .select('role')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-          debugPrint('🔍 User record in users table: ${userRecord != null ? "exists (role: ${userRecord['role']})" : "NOT FOUND"}');
-        } catch (e) {
-          debugPrint('⚠️ Could not check users table: $e');
-        }
-      }
-      
       final notificationData = {
         'title': title ?? _getNotificationTitle(type, technicianName),
         'message': message ?? _getNotificationMessage(type, technicianName),
@@ -175,7 +156,6 @@ class AdminNotificationProvider extends ChangeNotifier {
         if (data != null) 'data': data,
       };
 
-      debugPrint('🔍 Attempting to insert notification: ${notificationData['title']}');
       final response = await SupabaseService.client
           .from('admin_notifications')
           .insert(notificationData)
@@ -185,10 +165,8 @@ class AdminNotificationProvider extends ChangeNotifier {
       final notification = AdminNotification.fromJson(response);
       _notifications.insert(0, notification);
       notifyListeners();
-      debugPrint('✅ Notification created successfully: ${notification.id}');
     } catch (e) {
-      debugPrint('❌ Error creating notification: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('Error creating notification: $e');
       rethrow;
     }
   }
