@@ -187,7 +187,8 @@ class ReportService {
     final dateRangeText = _buildDateRangeText(startDate, endDate);
 
     List<dynamic> toolIssues = [];
-    if (reportType == ReportType.toolIssues) {
+    // Fetch tool issues for reports that need them (tool issues report and financial summary)
+    if (reportType == ReportType.toolIssues || reportType == ReportType.financialSummary || reportType == ReportType.comprehensive) {
       toolIssues = await _fetchToolIssues(startDate, endDate);
     }
 
@@ -215,7 +216,7 @@ class ReportService {
               widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
               break;
             case ReportType.financialSummary:
-              widgets.add(_buildFinancialSummaryPdfSection(tools));
+              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
               break;
             case ReportType.toolHistory:
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
@@ -1595,29 +1596,42 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildFinancialSummaryPdfSection(List<Tool> tools) {
+  static pw.Widget _buildFinancialSummaryPdfSection(List<Tool> tools, List<dynamic> toolIssues) {
     double totalPurchasePrice = 0.0;
-    double totalCurrentValue = 0.0;
+    double totalExpenditures = 0.0;
     final statusCounts = <String, int>{};
     final conditionCounts = <String, int>{};
 
+    // Calculate total purchase price
     for (final tool in tools) {
       if (tool.purchasePrice != null) {
         totalPurchasePrice += tool.purchasePrice!;
       }
-      if (tool.currentValue != null) {
-        totalCurrentValue += tool.currentValue!;
-      }
       statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
       conditionCounts[tool.condition] = (conditionCounts[tool.condition] ?? 0) + 1;
+    }
+
+    // Calculate total expenditures from tool issues
+    for (final issue in toolIssues) {
+      final cost = issue['estimated_cost'];
+      if (cost != null) {
+        if (cost is num) {
+          totalExpenditures += cost.toDouble();
+        } else if (cost is String) {
+          final parsedCost = double.tryParse(cost);
+          if (parsedCost != null) {
+            totalExpenditures += parsedCost;
+          }
+        }
+      }
     }
 
     final headers = ['Metric', 'Value'];
     final tableData = [
       ['Total Tools', tools.length.toString()],
       ['Total Purchase Price', _currencyFormat.format(totalPurchasePrice)],
-      ['Total Current Value', _currencyFormat.format(totalCurrentValue)],
-      ['Depreciation', _currencyFormat.format(totalPurchasePrice - totalCurrentValue)],
+      ['Total Expenditures', _currencyFormat.format(totalExpenditures)],
+      ['Total Investment', _currencyFormat.format(totalPurchasePrice + totalExpenditures)],
     ];
 
     return pw.Column(
@@ -1727,7 +1741,7 @@ class ReportService {
         pw.SizedBox(height: 24),
         _buildTechnicianSummaryPdfSection(tools, technicians),
         pw.SizedBox(height: 24),
-        _buildFinancialSummaryPdfSection(tools),
+        _buildFinancialSummaryPdfSection(tools, toolIssues),
         if (toolIssues.isNotEmpty) ...[
           pw.SizedBox(height: 24),
           _buildToolIssuesPdfSection(toolIssues),
