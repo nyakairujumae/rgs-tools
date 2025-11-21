@@ -176,16 +176,34 @@ class AdminNotificationProvider extends ChangeNotifier {
       };
 
       debugPrint('🔍 Attempting to insert notification: ${notificationData['title']}');
+      
+      // Use the database function to bypass RLS
+      final functionResponse = await SupabaseService.client.rpc(
+        'insert_admin_notification',
+        params: {
+          'p_title': notificationData['title'],
+          'p_message': notificationData['message'],
+          'p_technician_name': notificationData['technician_name'],
+          'p_technician_email': notificationData['technician_email'],
+          'p_type': notificationData['type'],
+          if (data != null) 'p_data': data,
+        },
+      );
+      
+      final notificationId = functionResponse as String;
+      debugPrint('✅ Notification created with ID: $notificationId');
+      
+      // Fetch the full notification to add to the list
       final response = await SupabaseService.client
           .from('admin_notifications')
-          .insert(notificationData)
           .select()
+          .eq('id', notificationId)
           .single();
 
       final notification = AdminNotification.fromJson(response);
       _notifications.insert(0, notification);
       notifyListeners();
-      debugPrint('✅ Notification created successfully: ${notification.id}');
+      debugPrint('✅ Notification added to list successfully');
     } catch (e) {
       debugPrint('❌ Error creating notification: $e');
       debugPrint('❌ Error type: ${e.runtimeType}');
