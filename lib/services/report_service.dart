@@ -38,24 +38,42 @@ class ReportService {
     DateTime? endDate,
     ReportFormat format = ReportFormat.excel,
   }) async {
-    switch (format) {
-      case ReportFormat.pdf:
-        return _generatePdfReport(
-          reportType: reportType,
-          tools: tools,
-          technicians: technicians,
-          startDate: startDate,
-          endDate: endDate,
+    // Wrap in try-catch to handle native framework errors gracefully
+    try {
+      switch (format) {
+        case ReportFormat.pdf:
+          return _generatePdfReport(
+            reportType: reportType,
+            tools: tools,
+            technicians: technicians,
+            startDate: startDate,
+            endDate: endDate,
+          );
+        case ReportFormat.excel:
+        default:
+          return _generateExcelReport(
+            reportType: reportType,
+            tools: tools,
+            technicians: technicians,
+            startDate: startDate,
+            endDate: endDate,
+          );
+      }
+    } catch (e) {
+      // Check if it's the iOS native framework error
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('dobjc_initializeapi') || 
+          errorString.contains('objective_c.framework') ||
+          errorString.contains('native function') ||
+          errorString.contains('symbol not found')) {
+        debugPrint('❌ iOS native framework error detected: $e');
+        throw Exception(
+          'Excel export is not available on iOS due to a native framework limitation. '
+          'Please use PDF export instead, or export from a different device.'
         );
-      case ReportFormat.excel:
-      default:
-        return _generateExcelReport(
-          reportType: reportType,
-          tools: tools,
-          technicians: technicians,
-          startDate: startDate,
-          endDate: endDate,
-        );
+      }
+      // Rethrow other errors
+      rethrow;
     }
   }
 

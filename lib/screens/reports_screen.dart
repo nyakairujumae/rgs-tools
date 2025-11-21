@@ -2131,13 +2131,54 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final startDate = _getStartDate();
       final endDate = DateTime.now();
 
-      final file = await ReportService.generateReport(
-        reportType: _selectedReportType,
-        tools: toolProvider.tools,
-        technicians: technicianProvider.technicians,
-        startDate: startDate,
-        endDate: endDate,
-      );
+      File? file;
+      try {
+        // Try Excel export first
+        file = await ReportService.generateReport(
+          reportType: _selectedReportType,
+          tools: toolProvider.tools,
+          technicians: technicianProvider.technicians,
+          startDate: startDate,
+          endDate: endDate,
+          format: ReportFormat.excel,
+        );
+      } catch (excelError) {
+        // Check if it's the iOS native framework error
+        final errorString = excelError.toString().toLowerCase();
+        if (errorString.contains('dobjc_initializeapi') || 
+            errorString.contains('objective_c.framework') ||
+            errorString.contains('native function') ||
+            errorString.contains('symbol not found')) {
+          // iOS native framework issue - try PDF as fallback
+          debugPrint('⚠️ Excel export failed due to iOS native framework issue, trying PDF fallback...');
+          try {
+            file = await ReportService.generateReport(
+              reportType: _selectedReportType,
+              tools: toolProvider.tools,
+              technicians: technicianProvider.technicians,
+              startDate: startDate,
+              endDate: endDate,
+              format: ReportFormat.pdf,
+            );
+            // Show info that PDF was used instead
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Excel export unavailable on iOS. Exported as PDF instead.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          } catch (pdfError) {
+            // If PDF also fails, rethrow the original Excel error
+            throw excelError;
+          }
+        } else {
+          // Other error, rethrow
+          rethrow;
+        }
+      }
 
       if (mounted) {
         setState(() {
