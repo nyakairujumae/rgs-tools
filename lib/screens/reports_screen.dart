@@ -2227,9 +2227,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             action: SnackBarAction(
               label: 'Open',
               textColor: Colors.white,
-              onPressed: () async {
-                await OpenFile.open(file.path);
-              },
+              onPressed: file != null ? () async {
+                await OpenFile.open(file!.path);
+              } : null,
             ),
           ),
         );
