@@ -58,6 +58,7 @@ class FirebaseMessagingService {
         requestAlertPermission: true,
         requestBadgePermission: true,
         requestSoundPermission: true,
+        onDidReceiveLocalNotification: null,
       );
       const initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
@@ -163,14 +164,21 @@ class FirebaseMessagingService {
   /// Set up message handlers
   static void _setupMessageHandlers() {
     // Handle messages when app is in foreground
+    // Note: On iOS, if AppDelegate implements willPresent, the system will show the notification
+    // We still show a local notification as backup and to ensure badge is updated
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       debugPrint('🔥 Received foreground message: ${message.messageId}');
       debugPrint('🔥 Message data: ${message.data}');
       debugPrint('🔥 Message notification: ${message.notification?.title}');
       
-      // Show local notification or handle in-app
+      // Handle foreground message
       _handleForegroundMessage(message);
+      
+      // Update badge count
       final newCount = await _incrementBadgeCount();
+      
+      // Show local notification (iOS will also show via AppDelegate if configured)
+      // This ensures badge is updated and notification appears
       await _showLocalFromMessage(message, badgeCount: newCount);
     });
 
