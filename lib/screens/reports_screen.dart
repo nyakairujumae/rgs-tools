@@ -2210,7 +2210,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
                 const SizedBox(height: 4),
           Text(
-                  file.path,
+                  file?.path ?? 'Unknown path',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.white70,
