@@ -340,9 +340,13 @@ post_install do |installer|
     
     # Fix for FFI/native code plugins on real devices
     # Exclude arm64 for simulator builds to avoid conflicts
+    # BUT don't exclude it for Flutter's App.framework
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        # Only exclude arm64 for pods, not for Flutter framework
+        if target.name != 'Flutter' && !target.name.include?('Flutter')
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        end
       end
     end
 end
