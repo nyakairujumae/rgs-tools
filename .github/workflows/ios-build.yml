@@ -49,6 +49,7 @@ jobs:
       run: |
         cd ios
         sudo gem install cocoapods
+        pod repo update || true
         pod install --verbose
       
     - name: Build iOS app
