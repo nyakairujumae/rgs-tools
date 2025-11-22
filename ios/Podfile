@@ -272,7 +272,28 @@ post_install do |installer|
     end
   end
   
-    # Fix for Swift-only plugins (like app_links) when using static frameworks
+  # Patch GeneratedPluginRegistrant.m to fix Swift-only plugin module import issues
+  # This is needed because Swift-only plugins don't work with @import when using static frameworks
+  generated_plugin_file = File.join(Dir.pwd, 'Runner', 'GeneratedPluginRegistrant.m')
+  if File.exist?(generated_plugin_file)
+    content = File.read(generated_plugin_file)
+    original_content = content.dup
+    
+    # Fix app_links - replace @import with comment
+    content.gsub!(/#if __has_include\(<app_links\/AppLinksIosPlugin\.h>\)\s*#import <app_links\/AppLinksIosPlugin\.h>\s*#else\s*@import app_links;\s*#endif/m,
+      "#if __has_include(<app_links/AppLinksIosPlugin.h>)\n#import <app_links/AppLinksIosPlugin.h>\n#elif __has_include(<app_links/app_links-Swift.h>)\n#import <app_links/app_links-Swift.h>\n#else\n// app_links is Swift-only\n#endif")
+    
+    # Fix connectivity_plus - replace @import with comment  
+    content.gsub!(/#if __has_include\(<connectivity_plus\/ConnectivityPlusPlugin\.h>\)\s*#import <connectivity_plus\/ConnectivityPlusPlugin\.h>\s*#else\s*@import connectivity_plus;\s*#endif/m,
+      "#if __has_include(<connectivity_plus/ConnectivityPlusPlugin.h>)\n#import <connectivity_plus/ConnectivityPlusPlugin.h>\n#elif __has_include(<connectivity_plus/connectivity_plus-Swift.h>)\n#import <connectivity_plus/connectivity_plus-Swift.h>\n#else\n// connectivity_plus is Swift-only\n#endif")
+    
+    if content != original_content
+      File.write(generated_plugin_file, content)
+      puts "✅ Patched GeneratedPluginRegistrant.m to fix Swift-only plugin imports"
+    end
+  end
+  
+  # Fix for Swift-only plugins (like app_links) when using static frameworks
     # Ensure the Swift module is properly exported and accessible from Objective-C
     installer.pods_project.targets.each do |target|
       if target.name == 'app_links'
