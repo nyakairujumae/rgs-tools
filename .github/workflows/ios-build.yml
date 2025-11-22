@@ -45,15 +45,17 @@ jobs:
     - name: Flutter pub get
       run: flutter pub get
       
-    - name: Update CocoaPods repo
+    - name: Install CocoaPods
       run: |
         sudo gem install cocoapods
-        pod repo update || true
+        pod repo update || echo "Pod repo update failed, continuing..."
         
     - name: Install CocoaPods dependencies
       run: |
         cd ios
-        pod install --verbose
+        # Ensure Flutter plugin symlinks are generated
+        flutter precache --ios
+        pod install --repo-update --verbose
       
     - name: Build iOS app
       run: flutter build ios --release --no-codesign --verbose
