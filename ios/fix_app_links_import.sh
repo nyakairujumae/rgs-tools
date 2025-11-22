@@ -17,40 +17,23 @@ if [ -f "$GENERATED_FILE" ]; then
         sed -i '' "s/@import ${plugin};/\/\/ @import ${plugin}; \/\/ Swift-only, auto-registered/g" "$GENERATED_FILE"
     done
     
-    # Comment out registration calls for Swift-only plugins since we can't import them
-    # Flutter's plugin system will auto-register Swift plugins, so this is safe
-    sed -i '' 's/\[AppLinksIosPlugin registerWithRegistrar:/\/\/ [AppLinksIosPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[ConnectivityPlusPlugin registerWithRegistrar:/\/\/ [ConnectivityPlusPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FLTFirebaseCorePlugin registerWithRegistrar:/\/\/ [FLTFirebaseCorePlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FLTFirebaseMessagingPlugin registerWithRegistrar:/\/\/ [FLTFirebaseMessagingPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FlutterAppBadgerPlugin registerWithRegistrar:/\/\/ [FlutterAppBadgerPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FlutterLocalNotificationsPlugin registerWithRegistrar:/\/\/ [FlutterLocalNotificationsPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FlutterNativeSplashPlugin registerWithRegistrar:/\/\/ [FlutterNativeSplashPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FLTImagePickerPlugin registerWithRegistrar:/\/\/ [FLTImagePickerPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[MobileScannerPlugin registerWithRegistrar:/\/\/ [MobileScannerPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[OpenFilePlugin registerWithRegistrar:/\/\/ [OpenFilePlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[PrintingPlugin registerWithRegistrar:/\/\/ [PrintingPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[SharedPreferencesPlugin registerWithRegistrar:/\/\/ [SharedPreferencesPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[SqflitePlugin registerWithRegistrar:/\/\/ [SqflitePlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[URLLauncherPlugin registerWithRegistrar:/\/\/ [URLLauncherPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[FVPVideoPlayerPlugin registerWithRegistrar:/\/\/ [FVPVideoPlayerPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    
-    # Also comment out the closing brackets for these registrations
-    sed -i '' 's/\[registry registrarForPlugin:@"AppLinksIosPlugin"\]\];/\/\/ [registry registrarForPlugin:@"AppLinksIosPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"ConnectivityPlusPlugin"\]\];/\/\/ [registry registrarForPlugin:@"ConnectivityPlusPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FLTFirebaseCorePlugin"\]\];/\/\/ [registry registrarForPlugin:@"FLTFirebaseCorePlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FlutterAppBadgerPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FlutterAppBadgerPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FlutterNativeSplashPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FlutterNativeSplashPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FLTImagePickerPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FLTImagePickerPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"MobileScannerPlugin"\]\];/\/\/ [registry registrarForPlugin:@"MobileScannerPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"OpenFilePlugin"\]\];/\/\/ [registry registrarForPlugin:@"OpenFilePlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"PrintingPlugin"\]\];/\/\/ [registry registrarForPlugin:@"PrintingPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"SharedPreferencesPlugin"\]\];/\/\/ [registry registrarForPlugin:@"SharedPreferencesPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"SqflitePlugin"\]\];/\/\/ [registry registrarForPlugin:@"SqflitePlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"URLLauncherPlugin"\]\];/\/\/ [registry registrarForPlugin:@"URLLauncherPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"FVPVideoPlayerPlugin"\]\];/\/\/ [registry registrarForPlugin:@"FVPVideoPlayerPlugin"]]; \/\/ Swift-only/g' "$GENERATED_FILE"
+    # Comment out entire registration lines for Swift-only plugins
+    # Use perl for multiline matching to handle the full registration call
+    perl -i -0pe 's/^\s*\[AppLinksIosPlugin registerWithRegistrar:\[registry registrarForPlugin:@"AppLinksIosPlugin"\]\];\s*$/\n  \/\/ [AppLinksIosPlugin registerWithRegistrar:[registry registrarForPlugin:@"AppLinksIosPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[ConnectivityPlusPlugin registerWithRegistrar:\[registry registrarForPlugin:@"ConnectivityPlusPlugin"\]\];\s*$/\n  \/\/ [ConnectivityPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"ConnectivityPlusPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FLTFirebaseCorePlugin registerWithRegistrar:\[registry registrarForPlugin:@"FLTFirebaseCorePlugin"\]\];\s*$/\n  \/\/ [FLTFirebaseCorePlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseCorePlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FLTFirebaseMessagingPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"\]\];\s*$/\n  \/\/ [FLTFirebaseMessagingPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FlutterAppBadgerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FlutterAppBadgerPlugin"\]\];\s*$/\n  \/\/ [FlutterAppBadgerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterAppBadgerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FlutterLocalNotificationsPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"\]\];\s*$/\n  \/\/ [FlutterLocalNotificationsPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FlutterNativeSplashPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FlutterNativeSplashPlugin"\]\];\s*$/\n  \/\/ [FlutterNativeSplashPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterNativeSplashPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FLTImagePickerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FLTImagePickerPlugin"\]\];\s*$/\n  \/\/ [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[MobileScannerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"MobileScannerPlugin"\]\];\s*$/\n  \/\/ [MobileScannerPlugin registerWithRegistrar:[registry registrarForPlugin:@"MobileScannerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[OpenFilePlugin registerWithRegistrar:\[registry registrarForPlugin:@"OpenFilePlugin"\]\];\s*$/\n  \/\/ [OpenFilePlugin registerWithRegistrar:[registry registrarForPlugin:@"OpenFilePlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[PrintingPlugin registerWithRegistrar:\[registry registrarForPlugin:@"PrintingPlugin"\]\];\s*$/\n  \/\/ [PrintingPlugin registerWithRegistrar:[registry registrarForPlugin:@"PrintingPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[SharedPreferencesPlugin registerWithRegistrar:\[registry registrarForPlugin:@"SharedPreferencesPlugin"\]\];\s*$/\n  \/\/ [SharedPreferencesPlugin registerWithRegistrar:[registry registrarForPlugin:@"SharedPreferencesPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[SqflitePlugin registerWithRegistrar:\[registry registrarForPlugin:@"SqflitePlugin"\]\];\s*$/\n  \/\/ [SqflitePlugin registerWithRegistrar:[registry registrarForPlugin:@"SqflitePlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[URLLauncherPlugin registerWithRegistrar:\[registry registrarForPlugin:@"URLLauncherPlugin"\]\];\s*$/\n  \/\/ [URLLauncherPlugin registerWithRegistrar:[registry registrarForPlugin:@"URLLauncherPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
+    perl -i -0pe 's/^\s*\[FVPVideoPlayerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FVPVideoPlayerPlugin"\]\];\s*$/\n  \/\/ [FVPVideoPlayerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FVPVideoPlayerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     
     echo "✅ Fixed Swift-only module imports in GeneratedPluginRegistrant.m"
 fi
