@@ -162,9 +162,11 @@ class AuthErrorHandler {
   /// Show error snackbar with appropriate styling - small, beautiful, and auto-dismissing
   static void showErrorSnackBar(BuildContext context, String errorMessage) {
     // First, hide any existing snackbars to prevent stacking
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.hideCurrentSnackBar();
+    scaffoldMessenger.clearSnackBars(); // Clear all snackbars to prevent stacking
     
-    ScaffoldMessenger.of(context).showSnackBar(
+    scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -195,13 +197,15 @@ class AuthErrorHandler {
         ),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        duration: const Duration(seconds: 3), // Shorter duration - auto-dismiss after 3 seconds
-        dismissDirection: DismissDirection.horizontal, // Allow swipe to dismiss
+        duration: const Duration(seconds: 4), // Auto-dismiss after 4 seconds
+        dismissDirection: DismissDirection.horizontal | DismissDirection.vertical, // Allow swipe in any direction
         action: SnackBarAction(
           label: 'Dismiss',
           textColor: Colors.white,
+          disabledTextColor: Colors.white70,
           onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            // Always dismiss when button is pressed
+            scaffoldMessenger.hideCurrentSnackBar();
           },
         ),
       ),
