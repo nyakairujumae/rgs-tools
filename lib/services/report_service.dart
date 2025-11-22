@@ -2035,8 +2035,14 @@ class ReportService {
   }
 
   static Future<Directory> _getDownloadsDirectory() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      // For mobile, use app documents directory
+    if (Platform.isIOS) {
+      // For iOS, use app documents directory
+      // On iOS, we must use path_provider which uses objective_c framework
+      // If this fails, we'll get the DOBJC_initializeApi error
+      // The fix is to ensure objective_c framework is properly linked in Podfile
+      return await getApplicationDocumentsDirectory();
+    } else if (Platform.isAndroid) {
+      // For Android, use app documents directory
       return await getApplicationDocumentsDirectory();
     } else if (Platform.isMacOS) {
       // For macOS, use Downloads directory
@@ -2058,8 +2064,8 @@ class ReportService {
       }
     }
     
-    // Fallback to application documents directory
-    return await getApplicationDocumentsDirectory();
+    // Fallback: use a temp directory that definitely exists
+    return Directory.systemTemp;
   }
 }
 

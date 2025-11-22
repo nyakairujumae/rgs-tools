@@ -154,6 +154,30 @@ post_install do |installer|
     config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
   end
   
+  # Fix Runner target to ensure objective_c framework is properly linked
+  # This is critical for FFI-based packages in release builds
+  installer.pods_project.targets.each do |target|
+    if target.name == 'Pods-Runner'
+      target.build_configurations.each do |config|
+        # Ensure framework search paths include Pods
+        framework_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || []
+        framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
+        framework_paths << '$(PODS_ROOT)/objective_c' unless framework_paths.any? { |path| path.to_s.include?('objective_c') }
+        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
+        
+        # Ensure linker flags include the framework
+        other_ldflags = config.build_settings['OTHER_LDFLAGS'] || []
+        other_ldflags = [other_ldflags] unless other_ldflags.is_a?(Array)
+        other_ldflags = ['$(inherited)'] if other_ldflags.empty?
+        # Add objective_c to linker flags if not already present
+        unless other_ldflags.any? { |flag| flag.to_s.include?('objective_c') }
+          other_ldflags << '-ObjC' # Ensure Objective-C symbols are linked
+        end
+        config.build_settings['OTHER_LDFLAGS'] = other_ldflags
+      end
+    end
+  end
+  
   # Patch Firebase Messaging plugin files to fix import issue
   # The files are in pub cache, so we'll patch them there
   base_paths = [
