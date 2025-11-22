@@ -1,4 +1,6 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
 // Override EXCLUDED_ARCHS to allow arm64 for App.framework on simulator
+// Generated.xcconfig excludes arm64, but we need it for App.framework on Apple Silicon
+// MLKit frameworks will be excluded via Podfile configuration
 EXCLUDED_ARCHS[sdk=iphonesimulator*] = i386

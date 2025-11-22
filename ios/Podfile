@@ -135,7 +135,10 @@ post_install do |installer|
       end
     end
     
-    # Fix for MLKit frameworks - ensure they're built for simulator correctly
+    # Fix for MLKit frameworks - exclude arm64 for simulator builds
+    # MLKit frameworks are pre-built with arm64 for iOS device only, not simulator
+    # Note: mobile_scanner uses MLKit, but we don't exclude it here to allow it to build
+    # The MLKit frameworks themselves will be excluded, preventing the linker error
     if target.name.include?('MLKit') || target.name.include?('MLImage') || target.name.include?('GoogleMLKit')
       target.build_configurations.each do |config|
         # Exclude arm64 for simulator to avoid linking device frameworks
@@ -195,6 +198,9 @@ post_install do |installer|
         framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
         framework_paths << '$(PODS_CONFIGURATION_BUILD_DIR)' unless framework_paths.include?('$(PODS_CONFIGURATION_BUILD_DIR)')
         config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
+        # Allow arm64 for Pods-Runner target on simulator (needed for App.framework)
+        # MLKit targets will still exclude arm64 via their own configuration
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
       end
     end
   end
