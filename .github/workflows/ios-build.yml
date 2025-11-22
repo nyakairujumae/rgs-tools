@@ -45,17 +45,22 @@ jobs:
     - name: Flutter pub get
       run: flutter pub get
       
+    - name: Verify Flutter plugin symlinks
+      run: |
+        echo "Checking Flutter plugin symlinks..."
+        ls -la ios/.symlinks/plugins/ | head -20 || echo "Plugin symlinks not found yet"
+        flutter precache --ios
+        
     - name: Install CocoaPods
       run: |
         sudo gem install cocoapods
-        pod repo update || echo "Pod repo update failed, continuing..."
         
     - name: Install CocoaPods dependencies
       run: |
         cd ios
-        # Ensure Flutter plugin symlinks are generated
-        flutter precache --ios
-        pod install --repo-update --verbose
+        # Flutter plugins are local, not from CocoaPods specs repo
+        # Use --repo-update only for non-Flutter pods
+        pod install --verbose
       
     - name: Build iOS app
       run: flutter build ios --release --no-codesign --verbose
