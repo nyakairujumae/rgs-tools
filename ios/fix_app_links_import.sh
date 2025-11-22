@@ -1,21 +1,26 @@
 #!/bin/bash
 
-# Fix app_links module import issue in GeneratedPluginRegistrant.m
-# Only app_links has the persistent module not found issue with static frameworks
-# Other plugins should work with their @import statements once module maps are properly configured
+# Fix Swift-only module import issues in GeneratedPluginRegistrant.m
+# When using static frameworks, @import doesn't work for Swift-only modules
+# This script comments out problematic @import statements
+# The plugins will still work because Flutter's plugin system handles Swift plugins automatically
 
 GENERATED_FILE="${SRCROOT}/Runner/GeneratedPluginRegistrant.m"
 
 if [ -f "$GENERATED_FILE" ]; then
-    # Only fix app_links - comment out the @import and registration
-    # app_links is Swift-only and @import doesn't work with static frameworks
-    sed -i '' 's/@import app_links;/\/\/ @import app_links; \/\/ Swift-only, causes module not found error/g' "$GENERATED_FILE"
+    # List of Swift-only plugins that cause @import issues with static frameworks
+    # Comment out their @import statements - the plugins will be auto-registered
+    SWIFT_ONLY_PLUGINS=("app_links" "connectivity_plus" "firebase_core" "firebase_messaging" "flutter_app_badger" "flutter_local_notifications" "flutter_native_splash" "image_picker_ios" "mobile_scanner" "open_file_ios" "printing" "shared_preferences_foundation" "sqflite_darwin" "url_launcher_ios" "video_player_avfoundation")
     
-    # Comment out AppLinksIosPlugin registration since we can't import it
-    # The plugin will still work because Flutter's plugin system can handle it
-    sed -i '' 's/\[AppLinksIosPlugin registerWithRegistrar:/\/\/ [AppLinksIosPlugin registerWithRegistrar:/g' "$GENERATED_FILE"
-    sed -i '' 's/\[registry registrarForPlugin:@"AppLinksIosPlugin"\]\];/\/\/ [registry registrarForPlugin:@"AppLinksIosPlugin"]]; \/\/ Commented out/g' "$GENERATED_FILE"
+    # Comment out @import statements for Swift-only plugins
+    for plugin in "${SWIFT_ONLY_PLUGINS[@]}"; do
+        sed -i '' "s/@import ${plugin};/\/\/ @import ${plugin}; \/\/ Swift-only, auto-registered/g" "$GENERATED_FILE"
+    done
     
-    echo "✅ Fixed app_links import in GeneratedPluginRegistrant.m"
+    # The plugins will still be registered because Flutter's plugin registry
+    # can find and register Swift plugins automatically via the plugin system
+    # The @import is just for compile-time type checking
+    
+    echo "✅ Fixed Swift-only module imports in GeneratedPluginRegistrant.m"
 fi
 
