@@ -10,7 +10,8 @@ GENERATED_FILE="${SRCROOT}/Runner/GeneratedPluginRegistrant.m"
 if [ -f "$GENERATED_FILE" ]; then
     # List of Swift-only plugins that cause @import issues with static frameworks
     # Comment out their @import statements - the plugins will be auto-registered
-    SWIFT_ONLY_PLUGINS=("app_links" "connectivity_plus" "firebase_core" "firebase_messaging" "flutter_app_badger" "flutter_local_notifications" "flutter_native_splash" "image_picker_ios" "mobile_scanner" "open_file_ios" "printing" "shared_preferences_foundation" "sqflite_darwin" "url_launcher_ios" "video_player_avfoundation")
+    # Note: open_file_ios is NOT in this list because we need it to work for PDF opening
+    SWIFT_ONLY_PLUGINS=("app_links" "connectivity_plus" "firebase_core" "firebase_messaging" "flutter_app_badger" "flutter_local_notifications" "flutter_native_splash" "image_picker_ios" "mobile_scanner" "printing" "shared_preferences_foundation" "sqflite_darwin" "url_launcher_ios" "video_player_avfoundation")
     
     # Comment out @import statements for Swift-only plugins
     for plugin in "${SWIFT_ONLY_PLUGINS[@]}"; do
@@ -28,9 +29,19 @@ if [ -f "$GENERATED_FILE" ]; then
     perl -i -0pe 's/^\s*\[FlutterNativeSplashPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FlutterNativeSplashPlugin"\]\];\s*$/\n  \/\/ [FlutterNativeSplashPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterNativeSplashPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     perl -i -0pe 's/^\s*\[FLTImagePickerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FLTImagePickerPlugin"\]\];\s*$/\n  \/\/ [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     perl -i -0pe 's/^\s*\[MobileScannerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"MobileScannerPlugin"\]\];\s*$/\n  \/\/ [MobileScannerPlugin registerWithRegistrar:[registry registrarForPlugin:@"MobileScannerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
-    # Uncomment OpenFilePlugin registration - it's needed for opening PDFs
-    # Use dynamic registration to avoid import issues
-    sed -i '' 's|^  // \[OpenFilePlugin registerWithRegistrar:\[registry registrarForPlugin:@"OpenFilePlugin"\]\]; // Swift-only$|  // Use dynamic registration for OpenFilePlugin to avoid import issues\n  Class OpenFilePluginClass = NSClassFromString(@"OpenFilePlugin");\n  if (OpenFilePluginClass) {\n    [OpenFilePluginClass performSelector:@selector(registerWithRegistrar:) withObject:[registry registrarForPlugin:@"OpenFilePlugin"]];\n  }|g' "$GENERATED_FILE"
+    # Ensure OpenFilePlugin is NOT commented out - it's needed for opening PDFs
+    # The plugin is Swift-only, so we need to import the Swift-generated header
+    # Replace the commented @import with an active @import
+    sed -i '' 's|// @import open_file_ios; // Swift-only, auto-registered|@import open_file_ios;|g' "$GENERATED_FILE"
+    # Uncomment the registration if it was commented
+    sed -i '' 's|^  // \[OpenFilePlugin registerWithRegistrar:\[registry registrarForPlugin:@"OpenFilePlugin"\]\]; // Swift-only$|  [OpenFilePlugin registerWithRegistrar:[registry registrarForPlugin:@"OpenFilePlugin"]];|g' "$GENERATED_FILE"
+    # Also handle if it was commented with dynamic registration - remove those lines
+    perl -i -0pe 's/  \/\/ Use dynamic registration for OpenFilePlugin to avoid import issues\n  Class OpenFilePluginClass = NSClassFromString\(@"OpenFilePlugin"\);\n  if \(OpenFilePluginClass\) \{\n    \[OpenFilePluginClass performSelector:@selector\(registerWithRegistrar:\) withObject:\[registry registrarForPlugin:@"OpenFilePlugin"\]\];\n  \}//g' "$GENERATED_FILE"
+    # Ensure the registration line exists and is not commented
+    if ! grep -q "^  \[OpenFilePlugin registerWithRegistrar:" "$GENERATED_FILE"; then
+        # Find the line after MobileScannerPlugin and add OpenFilePlugin registration
+        perl -i -0pe 's/(\[MobileScannerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"MobileScannerPlugin"\]\]; \/\/ Swift-only\n)/$1  [OpenFilePlugin registerWithRegistrar:[registry registrarForPlugin:@"OpenFilePlugin"]];\n/g' "$GENERATED_FILE"
+    fi
     perl -i -0pe 's/^\s*\[PrintingPlugin registerWithRegistrar:\[registry registrarForPlugin:@"PrintingPlugin"\]\];\s*$/\n  \/\/ [PrintingPlugin registerWithRegistrar:[registry registrarForPlugin:@"PrintingPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     perl -i -0pe 's/^\s*\[SharedPreferencesPlugin registerWithRegistrar:\[registry registrarForPlugin:@"SharedPreferencesPlugin"\]\];\s*$/\n  \/\/ [SharedPreferencesPlugin registerWithRegistrar:[registry registrarForPlugin:@"SharedPreferencesPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     perl -i -0pe 's/^\s*\[SqflitePlugin registerWithRegistrar:\[registry registrarForPlugin:@"SqflitePlugin"\]\];\s*$/\n  \/\/ [SqflitePlugin registerWithRegistrar:[registry registrarForPlugin:@"SqflitePlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
