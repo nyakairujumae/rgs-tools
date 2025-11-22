@@ -128,6 +128,18 @@ post_install do |installer|
       end
     end
     
+    # Fix for app_links module not found issue
+    if target.name == 'app_links'
+      target.build_configurations.each do |config|
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        # Ensure proper module map generation
+        config.build_settings['MODULEMAP_FILE'] = '' if config.build_settings['MODULEMAP_FILE']
+      end
+    end
+    
     # Fix for pdf/printing package - ensure objective_c framework is properly linked
     if target.name == 'objective_c' || target.name.include?('pdf') || target.name.include?('printing')
       target.build_configurations.each do |config|
