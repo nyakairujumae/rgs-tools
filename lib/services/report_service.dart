@@ -2036,11 +2036,26 @@ class ReportService {
 
   static Future<Directory> _getDownloadsDirectory() async {
     if (Platform.isIOS) {
-      // For iOS, use app documents directory
-      // On iOS, we must use path_provider which uses objective_c framework
-      // If this fails, we'll get the DOBJC_initializeApi error
-      // The fix is to ensure objective_c framework is properly linked in Podfile
-      return await getApplicationDocumentsDirectory();
+      // For iOS, try to use path_provider first
+      // If it fails due to objective_c FFI issue, use a fallback path
+      try {
+        return await getApplicationDocumentsDirectory();
+      } catch (e) {
+        // Fallback: Use system temp directory if path_provider fails
+        // This can happen if objective_c framework FFI lookup fails in release builds
+        if (e.toString().contains('DOBJC_initializeApi') || 
+            e.toString().contains('objective_c.framework')) {
+          debugPrint('⚠️ path_provider failed due to objective_c FFI issue, using fallback directory');
+          final tempDir = Directory.systemTemp;
+          final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
+          if (!await fallbackDir.exists()) {
+            await fallbackDir.create(recursive: true);
+          }
+          return fallbackDir;
+        }
+        // Re-throw if it's a different error
+        rethrow;
+      }
     } else if (Platform.isAndroid) {
       // For Android, use app documents directory
       return await getApplicationDocumentsDirectory();
