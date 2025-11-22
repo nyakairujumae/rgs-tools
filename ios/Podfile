@@ -29,12 +29,9 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks! :linkage => :static
+  use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  
-  # Exclude path_provider_foundation to avoid FFI dependency (objective_c)
-  # We use a method channel instead for iOS directory access
-  pod 'path_provider_foundation', :modular_headers => false, :inhibit_warnings => true
   target 'RunnerTests' do
     inherit! :search_paths
   end
