@@ -135,6 +135,15 @@ post_install do |installer|
       end
     end
     
+    # Fix for MLKit frameworks - ensure they're built for simulator correctly
+    if target.name.include?('MLKit') || target.name.include?('MLImage') || target.name.include?('GoogleMLKit')
+      target.build_configurations.each do |config|
+        # Exclude arm64 for simulator to avoid linking device frameworks
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      end
+    end
+    
     # Fix for app_links module not found issue
     if target.name == 'app_links'
       target.build_configurations.each do |config|
