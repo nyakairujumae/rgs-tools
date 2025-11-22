@@ -31,8 +31,8 @@ if [ -f "$GENERATED_FILE" ]; then
     perl -i -0pe 's/^\s*\[MobileScannerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"MobileScannerPlugin"\]\];\s*$/\n  \/\/ [MobileScannerPlugin registerWithRegistrar:[registry registrarForPlugin:@"MobileScannerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     # Ensure OpenFilePlugin is NOT commented out - it's needed for opening PDFs
     # The plugin is Swift-only, so we need to import the Swift-generated header
-    # Replace the commented @import with an active @import
-    sed -i '' 's|// @import open_file_ios; // Swift-only, auto-registered|@import open_file_ios;|g' "$GENERATED_FILE"
+    # Replace the entire #if block to include Swift header import
+    perl -i -0pe 's|#if __has_include\(<open_file_ios/OpenFilePlugin\.h>\)\n#import <open_file_ios/OpenFilePlugin\.h>\n#else\n// @import open_file_ios; // Swift-only, auto-registered\n#endif|#if __has_include(<open_file_ios/OpenFilePlugin.h>)\n#import <open_file_ios/OpenFilePlugin.h>\n#elif __has_include(<open_file_ios/open_file_ios-Swift.h>)\n#import <open_file_ios/open_file_ios-Swift.h>\n#else\n@import open_file_ios;\n#endif|g' "$GENERATED_FILE"
     # Uncomment the registration if it was commented
     sed -i '' 's|^  // \[OpenFilePlugin registerWithRegistrar:\[registry registrarForPlugin:@"OpenFilePlugin"\]\]; // Swift-only$|  [OpenFilePlugin registerWithRegistrar:[registry registrarForPlugin:@"OpenFilePlugin"]];|g' "$GENERATED_FILE"
     # Also handle if it was commented with dynamic registration - remove those lines
