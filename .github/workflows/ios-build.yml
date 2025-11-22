@@ -44,12 +44,16 @@ jobs:
         
     - name: Flutter pub get
       run: flutter pub get
+      
+    - name: Update CocoaPods repo
+      run: |
+        sudo gem install cocoapods
+        pod repo update || true
         
-    - name: Install CocoaPods
+    - name: Install CocoaPods dependencies
       run: |
         cd ios
-        sudo gem install cocoapods
-        pod install --repo-update --verbose
+        pod install --verbose
       
     - name: Build iOS app
       run: flutter build ios --release --no-codesign --verbose
