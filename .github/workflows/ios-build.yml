@@ -41,15 +41,13 @@ jobs:
         rm -rf build/
         rm -rf ios/Pods/
         rm -rf ios/Podfile.lock
+        # Don't remove .symlinks - Flutter needs them
         
-    - name: Flutter pub get
-      run: flutter pub get
-      
-    - name: Verify Flutter plugin symlinks
+    - name: Flutter pub get and generate plugin registry
       run: |
-        echo "Checking Flutter plugin symlinks..."
-        ls -la ios/.symlinks/plugins/ | head -20 || echo "Plugin symlinks not found yet"
-        flutter precache --ios
+        flutter pub get
+        # Force Flutter to regenerate plugin registry
+        flutter pub cache repair || true
         
     - name: Install CocoaPods
       run: |
@@ -58,8 +56,8 @@ jobs:
     - name: Install CocoaPods dependencies
       run: |
         cd ios
-        # Flutter plugins are local, not from CocoaPods specs repo
-        # Use --repo-update only for non-Flutter pods
+        # Flutter's pod install script handles plugin discovery
+        # Run pod install from ios directory where Flutter expects it
         pod install --verbose
       
     - name: Build iOS app
