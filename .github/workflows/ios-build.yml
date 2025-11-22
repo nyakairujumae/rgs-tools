@@ -34,20 +34,17 @@ jobs:
     - name: Xcode version
       run: xcodebuild -version
       
-    - name: Clean project
+    - name: Clean build artifacts
       run: |
-        flutter clean
         rm -rf ios/build/
         rm -rf build/
         rm -rf ios/Pods/
         rm -rf ios/Podfile.lock
-        # Don't remove .symlinks - Flutter needs them
+        # Don't run flutter clean - it removes plugin symlinks that CocoaPods needs
         
-    - name: Flutter pub get and generate plugin registry
+    - name: Install Flutter dependencies
       run: |
         flutter pub get
-        # Force Flutter to regenerate plugin registry
-        flutter pub cache repair || true
         
     - name: Install CocoaPods
       run: |
