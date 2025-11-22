@@ -336,12 +336,4 @@ post_install do |installer|
       config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
       config.build_settings['SWIFT_INCLUDE_PATHS'] << '$(PODS_ROOT)/Target Support Files/app_links' unless config.build_settings['SWIFT_INCLUDE_PATHS'].include?('$(PODS_ROOT)/Target Support Files/app_links')
     end
-    
-    # Fix for FFI/native code plugins on real devices
-    # Exclude arm64 for simulator builds to avoid conflicts
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
-      end
-    end
 end
