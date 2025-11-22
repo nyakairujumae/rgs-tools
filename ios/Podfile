@@ -28,7 +28,7 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks! :linkage => :static
+  use_frameworks!
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
@@ -48,7 +48,6 @@ post_install do |installer|
       
       # Enable module support for all pods (required for static frameworks)
       # This ensures @import statements work correctly
-      # Note: App.framework is handled by Flutter, not CocoaPods
       config.build_settings['DEFINES_MODULE'] = 'YES'
       config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
       
@@ -135,18 +134,6 @@ post_install do |installer|
       end
     end
     
-    # Fix for MLKit frameworks - exclude arm64 for simulator builds
-    # MLKit frameworks are pre-built with arm64 for iOS device only, not simulator
-    # Note: mobile_scanner uses MLKit, but we don't exclude it here to allow it to build
-    # The MLKit frameworks themselves will be excluded, preventing the linker error
-    if target.name.include?('MLKit') || target.name.include?('MLImage') || target.name.include?('GoogleMLKit')
-      target.build_configurations.each do |config|
-        # Exclude arm64 for simulator to avoid linking device frameworks
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
-        config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
-      end
-    end
-    
     # Fix for app_links module not found issue
     if target.name == 'app_links'
       target.build_configurations.each do |config|
@@ -198,9 +185,6 @@ post_install do |installer|
         framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
         framework_paths << '$(PODS_CONFIGURATION_BUILD_DIR)' unless framework_paths.include?('$(PODS_CONFIGURATION_BUILD_DIR)')
         config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
-        # Allow arm64 for Pods-Runner target on simulator (needed for App.framework)
-        # MLKit targets will still exclude arm64 via their own configuration
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
       end
     end
   end
@@ -353,6 +337,11 @@ post_install do |installer|
       config.build_settings['SWIFT_INCLUDE_PATHS'] << '$(PODS_ROOT)/Target Support Files/app_links' unless config.build_settings['SWIFT_INCLUDE_PATHS'].include?('$(PODS_ROOT)/Target Support Files/app_links')
     end
     
-    # Note: EXCLUDED_ARCHS is handled by Flutter's Generated.xcconfig
-    # We don't override it here to avoid conflicts with App.framework generation
+    # Fix for FFI/native code plugins on real devices
+    # Exclude arm64 for simulator builds to avoid conflicts
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      end
+    end
 end
