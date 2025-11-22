@@ -2038,29 +2038,28 @@ class ReportService {
   static Future<Directory> _getDownloadsDirectory() async {
     if (Platform.isIOS) {
       // For iOS, use native method channel to bypass path_provider and objective_c FFI
-      // This is a production fix for DOBJC_initializeApi error
+      // This completely avoids FFI dependency which causes issues on real devices
       try {
         const platform = MethodChannel('com.rgs.app/documents_path');
         final String documentsPath = await platform.invokeMethod('getDocumentsPath');
-        return Directory(documentsPath);
-      } catch (e) {
-        // Fallback to path_provider if method channel fails (shouldn't happen)
-        debugPrint('⚠️ Method channel failed, falling back to path_provider: $e');
-        try {
-          return await getApplicationDocumentsDirectory();
-        } catch (pathProviderError) {
-          // Last resort: use temp directory
-          debugPrint('⚠️ path_provider also failed, using temp directory: $pathProviderError');
-          final tempDir = Directory.systemTemp;
-          final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
-          if (!await fallbackDir.exists()) {
-            await fallbackDir.create(recursive: true);
-          }
-          return fallbackDir;
+        final directory = Directory(documentsPath);
+        // Ensure directory exists
+        if (!await directory.exists()) {
+          await directory.create(recursive: true);
         }
+        return directory;
+      } catch (e) {
+        // Last resort: use temp directory (no path_provider fallback to avoid FFI)
+        debugPrint('⚠️ Method channel failed, using temp directory: $e');
+        final tempDir = Directory.systemTemp;
+        final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
+        if (!await fallbackDir.exists()) {
+          await fallbackDir.create(recursive: true);
+        }
+        return fallbackDir;
       }
     } else if (Platform.isAndroid) {
-      // For Android, use app documents directory
+      // For Android, use app documents directory (path_provider_android doesn't use FFI)
       return await getApplicationDocumentsDirectory();
     } else if (Platform.isMacOS) {
       // For macOS, use Downloads directory
