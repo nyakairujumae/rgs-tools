@@ -10,6 +10,30 @@ import UserNotifications
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     
+    // Set up method channel for getting documents directory without path_provider
+    // This bypasses objective_c FFI dependency that causes DOBJC_initializeApi error
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+    
+    let documentsChannel = FlutterMethodChannel(
+      name: "com.rgs.app/documents_path",
+      binaryMessenger: controller.binaryMessenger
+    )
+    
+    documentsChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
+      if call.method == "getDocumentsPath" {
+        // Get documents directory directly using FileManager - no FFI needed
+        let documentsPath = FileManager.default.urls(
+          for: .documentDirectory,
+          in: .userDomainMask
+        )[0].path
+        result(documentsPath)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    
     // Set notification delegate BEFORE requesting permissions
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self

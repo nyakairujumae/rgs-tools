@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -2036,16 +2037,20 @@ class ReportService {
 
   static Future<Directory> _getDownloadsDirectory() async {
     if (Platform.isIOS) {
-      // For iOS, try to use path_provider first
-      // If it fails due to objective_c FFI issue, use a fallback path
+      // For iOS, use native method channel to bypass path_provider and objective_c FFI
+      // This is a production fix for DOBJC_initializeApi error
       try {
-        return await getApplicationDocumentsDirectory();
+        const platform = MethodChannel('com.rgs.app/documents_path');
+        final String documentsPath = await platform.invokeMethod('getDocumentsPath');
+        return Directory(documentsPath);
       } catch (e) {
-        // Fallback: Use system temp directory if path_provider fails
-        // This can happen if objective_c framework FFI lookup fails in release builds
-        if (e.toString().contains('DOBJC_initializeApi') || 
-            e.toString().contains('objective_c.framework')) {
-          debugPrint('⚠️ path_provider failed due to objective_c FFI issue, using fallback directory');
+        // Fallback to path_provider if method channel fails (shouldn't happen)
+        debugPrint('⚠️ Method channel failed, falling back to path_provider: $e');
+        try {
+          return await getApplicationDocumentsDirectory();
+        } catch (pathProviderError) {
+          // Last resort: use temp directory
+          debugPrint('⚠️ path_provider also failed, using temp directory: $pathProviderError');
           final tempDir = Directory.systemTemp;
           final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
           if (!await fallbackDir.exists()) {
@@ -2053,8 +2058,6 @@ class ReportService {
           }
           return fallbackDir;
         }
-        // Re-throw if it's a different error
-        rethrow;
       }
     } else if (Platform.isAndroid) {
       // For Android, use app documents directory
