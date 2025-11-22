@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fix Swift-only module import issues in GeneratedPluginRegistrant.m
-# When using static frameworks, @import doesn't work for Swift-only modules
+# When using dynamic frameworks, @import may not work for Swift-only modules
 # This script comments out problematic @import statements
 # The plugins will still work because Flutter's plugin system handles Swift plugins automatically
 
