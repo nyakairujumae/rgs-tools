@@ -272,20 +272,32 @@ post_install do |installer|
     end
   end
   
-  # Fix for Swift-only plugins (like app_links) when using static frameworks
-  # Ensure the Swift module is properly exported and accessible from Objective-C
-  installer.pods_project.targets.each do |target|
-    if target.name == 'app_links'
-      target.build_configurations.each do |config|
-        # Enable Swift-Objective-C interoperability
-        config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'YES'
-        config.build_settings['SWIFT_OBJC_INTEROP_MODE'] = 'objc'
-        # Ensure the generated Swift header is accessible
-        config.build_settings['SWIFT_OBJC_BRIDGING_HEADER'] ||= ''
-        # Ensure module visibility
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+    # Fix for Swift-only plugins (like app_links) when using static frameworks
+    # Ensure the Swift module is properly exported and accessible from Objective-C
+    installer.pods_project.targets.each do |target|
+      if target.name == 'app_links'
+        target.build_configurations.each do |config|
+          # Enable Swift-Objective-C interoperability
+          config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'YES'
+          config.build_settings['SWIFT_OBJC_INTEROP_MODE'] = 'objc'
+          # Ensure the generated Swift header is accessible
+          config.build_settings['SWIFT_OBJC_BRIDGING_HEADER'] ||= ''
+          # Ensure module visibility
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+          # Explicitly set module map path for Swift-only static frameworks
+          modulemap_path = File.join(installer.sandbox.root, 'Target Support Files', 'app_links', 'app_links.modulemap')
+          if File.exist?(modulemap_path)
+            config.build_settings['MODULEMAP_FILE'] = "${PODS_ROOT}/Target Support Files/app_links/app_links.modulemap"
+          end
+        end
       end
     end
-  end
+    
+    # Also ensure Runner target can find the module map
+    installer.pods_project.build_configurations.each do |config|
+      # Add module map search paths
+      config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
+      config.build_settings['SWIFT_INCLUDE_PATHS'] << '$(PODS_ROOT)/Target Support Files/app_links' unless config.build_settings['SWIFT_INCLUDE_PATHS'].include?('$(PODS_ROOT)/Target Support Files/app_links')
+    end
 end
