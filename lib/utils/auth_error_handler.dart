@@ -198,7 +198,8 @@ class AuthErrorHandler {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         duration: const Duration(seconds: 4), // Auto-dismiss after 4 seconds
-        dismissDirection: DismissDirection.horizontal | DismissDirection.vertical, // Allow swipe in any direction
+        // Allow the snackbar to be dismissed with a simple horizontal swipe
+        dismissDirection: DismissDirection.horizontal,
         action: SnackBarAction(
           label: 'Dismiss',
           textColor: Colors.white,
