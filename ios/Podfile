@@ -42,6 +42,17 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
 
     target.build_configurations.each do |config|
+      # Exclude arm64 for MLKit frameworks on simulator (they're device-only)
+      # This prevents "building for simulator but linking in object file built for iOS" errors
+      if target.name.include?('MLKit') || target.name.include?('MLImage') || target.name.include?('GoogleMLKit')
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      end
+      
+      # Allow arm64 for Pods-Runner on simulator (needed for App.framework)
+      # This overrides the default exclusion from Pods-Runner xcconfig
+      if target.name == 'Pods-Runner'
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      end
       # Fix for Firebase Messaging header issue - apply to ALL targets
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
