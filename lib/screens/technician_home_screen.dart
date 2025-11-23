@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -8,14 +7,12 @@ import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import 'role_selection_screen.dart';
 import 'checkin_screen.dart';
-import 'web/checkin_screen_web.dart';
 import 'shared_tools_screen.dart';
 import 'add_tool_issue_screen.dart';
 import 'request_new_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
 import '../widgets/common/rgs_logo.dart';
-import 'package:provider/provider.dart';
 import '../services/supabase_service.dart';
 import 'settings_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
@@ -502,9 +499,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => kIsWeb
-                        ? const CheckinScreenWeb()
-                        : const CheckinScreen(),
+                    builder: (context) => const CheckinScreen(),
                   ),
                 );
               },

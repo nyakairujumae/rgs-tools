@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '13.0'
+platform :ios, '15.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -79,6 +79,28 @@ post_install do |installer|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
 
+      # Enable Swift 6.0 experimental features for Firebase pods (while using Swift 5.0)
+      # Firebase uses some Swift 6.0 features that can be enabled as experimental in Swift 5.0
+      if target.name.include?('Firebase') || target.name.include?('Google')
+        swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] || ''
+        swift_flags = swift_flags.is_a?(String) ? swift_flags.split(' ') : swift_flags
+        swift_flags = [swift_flags] unless swift_flags.is_a?(Array)
+        swift_flags = swift_flags.flatten.reject(&:empty?)
+        # Add experimental features if not already present
+        if !swift_flags.any? { |flag| flag.include?('AccessLevelOnImport') }
+          swift_flags << '-enable-experimental-feature'
+          swift_flags << 'AccessLevelOnImport'
+        end
+        if !swift_flags.any? { |flag| flag.include?('SendingArgsAndResults') }
+          swift_flags << '-enable-experimental-feature'
+          swift_flags << 'SendingArgsAndResults'
+        end
+        config.build_settings['OTHER_SWIFT_FLAGS'] = swift_flags.join(' ')
+        # Ensure Swift 5.0 is used
+        config.build_settings['SWIFT_VERSION'] = '5.0'
+      end
+
+
       # Fix for objective_c framework - used by path_provider_foundation (which is used by pdf package)
       # The objective_c package uses FFI to dynamically load Objective-C runtime functions
       # In release builds, we need to ensure the framework is properly linked and symbols are available
@@ -107,11 +129,11 @@ post_install do |installer|
       # Additional compiler flags for Firebase (only for Firebase targets)
       if target.name.include?('Firebase') || target.name.include?('firebase')
         config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_CFLAGS'] << '-Wno-error=non-modular-include-in-framework-module'
+        # Removed invalid flag -Wno-error=non-modular-include-in-framework-module
 
         # Swift compiler flags
         config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_SWIFT_FLAGS'] << '-Xcc -Wno-error=non-modular-include-in-framework-module'
+        # Removed invalid flag -Wno-error=non-modular-include-in-framework-module
       end
     end
   end

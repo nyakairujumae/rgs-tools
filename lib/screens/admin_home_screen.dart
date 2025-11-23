@@ -18,7 +18,6 @@ import 'tools_screen.dart';
 import 'technicians_screen.dart';
 import 'add_tool_screen.dart';
 import 'checkin_screen.dart';
-import 'web/checkin_screen_web.dart';
 import 'reports_screen.dart';
 import 'report_detail_screen.dart';
 import 'permanent_assignment_screen.dart';

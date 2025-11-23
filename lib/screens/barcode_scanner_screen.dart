@@ -70,27 +70,29 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: cameraController.torchState,
-              builder: (context, state, child) {
-                return Icon(
-                  state == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                );
-              },
-            ),
-            onPressed: _toggleTorch,
-            tooltip: 'Toggle Flashlight',
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: cameraController,
+            builder: (context, state, child) {
+              return IconButton(
+                icon: Icon(
+                  state.torchState == TorchState.on
+                      ? Icons.flash_on
+                      : Icons.flash_off,
+                ),
+                onPressed: _toggleTorch,
+                tooltip: 'Toggle Flashlight',
+              );
+            },
           ),
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: cameraController.cameraFacingState,
-              builder: (context, state, child) {
-                return const Icon(Icons.cameraswitch);
-              },
-            ),
-            onPressed: _switchCamera,
-            tooltip: 'Switch Camera',
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: cameraController,
+            builder: (context, state, child) {
+              return IconButton(
+                icon: const Icon(Icons.cameraswitch),
+                onPressed: _switchCamera,
+                tooltip: 'Switch Camera',
+              );
+            },
           ),
         ],
       ),
@@ -334,4 +336,3 @@ class _ManualEntryDialogState extends State<_ManualEntryDialog> {
     );
   }
 }
-

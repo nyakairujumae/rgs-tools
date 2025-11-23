@@ -3,9 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/web/web_login_screen.dart';
-import 'screens/web/web_admin_dashboard.dart';
-import 'screens/web/web_technician_dashboard.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
@@ -19,6 +16,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
+import 'screens/splash_screen.dart';
 import 'models/tool.dart';
 import 'models/user_role.dart';
 import 'providers/auth_provider.dart';
@@ -32,13 +30,14 @@ import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
 import 'services/image_upload_service.dart';
-import 'services/firebase_messaging_service.dart' if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
+import 'services/firebase_messaging_service.dart'
+    if (dart.library.html) 'services/firebase_messaging_service_stub.dart'
+    as messaging_service;
 import 'firebase_options.dart';
-import 'package:firebase_messaging/firebase_messaging.dart' if (dart.library.html) 'package:firebase_messaging/firebase_messaging_stub.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'
+    if (dart.library.html) 'services/firebase_messaging_stub.dart';
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
-// Import background handler from firebase_messaging_service
-import 'services/firebase_messaging_service.dart' show firebaseMessagingBackgroundHandler;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,11 +126,13 @@ void main() async {
           // Set up Firebase Messaging background handler (only on non-web)
           // Register background message handler BEFORE initializing
           if (!kIsWeb) {
-            FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+            FirebaseMessaging.onBackgroundMessage(
+              messaging_service.firebaseMessagingBackgroundHandler,
+            );
           }
           
           // Initialize Firebase Messaging
-          await FirebaseMessagingService.initialize();
+          await messaging_service.FirebaseMessagingService.initialize();
           print('✅ Firebase Messaging initialized successfully');
         }
       } catch (firebaseError, stackTrace) {
@@ -265,22 +266,6 @@ void main() async {
         ),
       ),
     ));
-  }
-}
-
-// Completely simplified web app that bypasses all complex initialization
-class SimpleWebApp extends StatelessWidget {
-  const SimpleWebApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    print('🌐 SimpleWebApp building...');
-    return MaterialApp(
-      title: 'RGS Tools',
-      theme: AppTheme.lightTheme,
-      home: const WebLoginScreen(),
-      debugShowCheckedModeBanner: false,
-    );
   }
 }
 
@@ -419,23 +404,11 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                 final initialTab = args?['initialTab'] as int? ?? 0;
-                // Use web dashboard for web, original for mobile
-                if (kIsWeb) {
-                  return const WebAdminDashboard();
-                } else {
-                  return AdminHomeScreenErrorBoundary(
-                    child: AdminHomeScreen(initialTab: initialTab),
-                  );
-                }
+                return AdminHomeScreenErrorBoundary(
+                  child: AdminHomeScreen(initialTab: initialTab),
+                );
               },
-                  '/technician': (context) {
-                    // Use web dashboard for web, original for mobile
-                    if (kIsWeb) {
-                      return const WebTechnicianDashboard();
-                    } else {
-                      return const TechnicianHomeScreen();
-                    }
-                  },
+              '/technician': (context) => const TechnicianHomeScreen(),
               '/tool-detail': (context) {
                 final tool = ModalRoute.of(context)!.settings.arguments as Tool;
                 return ToolDetailScreen(tool: tool);
@@ -508,7 +481,7 @@ class HvacToolsManagerApp extends StatelessWidget {
       if (!authProvider.isInitialized || authProvider.isLoading) {
         print('🔍 Showing loading screen');
         // Return a loading screen with timeout indicator
-        return _LoadingScreenWithTimeout(
+        return SplashScreen(
           onTimeout: () {
             // After timeout, proceed anyway
             print('⚠️ Initialization timeout - proceeding with app');
@@ -543,65 +516,6 @@ class HvacToolsManagerApp extends StatelessWidget {
       print('❌ Stack trace: $stackTrace');
       return const RoleSelectionScreen();
     }
-  }
-}
-
-// Loading screen with timeout to prevent infinite loading when offline
-class _LoadingScreenWithTimeout extends StatefulWidget {
-  final VoidCallback onTimeout;
-  
-  const _LoadingScreenWithTimeout({required this.onTimeout});
-
-  @override
-  State<_LoadingScreenWithTimeout> createState() => _LoadingScreenWithTimeoutState();
-}
-
-class _LoadingScreenWithTimeoutState extends State<_LoadingScreenWithTimeout> {
-  bool _hasTimedOut = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Set a timeout of 8 seconds - if initialization takes longer, proceed anyway
-    Future.delayed(const Duration(seconds: 8), () {
-      if (mounted && !_hasTimedOut) {
-        setState(() {
-          _hasTimedOut = true;
-        });
-        widget.onTimeout();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Return an invisible widget so only the native splash is visible
-    // But if timeout occurs, show a message
-    if (_hasTimedOut) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 24),
-              Text(
-                'Loading...',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'If this takes too long, you may be offline.',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return const SizedBox.shrink();
   }
 }
 

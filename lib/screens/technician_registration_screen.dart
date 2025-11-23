@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
-import '../services/supabase_service.dart';
 import '../models/user_role.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../config/app_config.dart';
-import 'technician_home_screen.dart';
-import 'role_selection_screen.dart';
 import 'auth/login_screen.dart';
-import 'pending_approval_screen.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
@@ -57,6 +52,12 @@ class _TechnicianRegistrationScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hintStyle = TextStyle(
+      color: colorScheme.onSurface.withValues(alpha: 0.5),
+      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+      fontWeight: FontWeight.w400,
+    );
+    final borderColor = colorScheme.onSurface.withValues(alpha: 0.2);
     final isDarkMode = theme.brightness == Brightness.dark;
     final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
     final cardShadow = BoxShadow(
@@ -64,51 +65,36 @@ class _TechnicianRegistrationScreenState
       blurRadius: 22,
       offset: const Offset(0, 10),
     );
-    final hintStyle = TextStyle(
-      color: colorScheme.onSurface.withValues(alpha: 0.5),
-      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-      fontWeight: FontWeight.w400,
-    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            title: const Text(
-              'Technician Sign Up',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            backgroundColor: colorScheme.surface,
-            foregroundColor: colorScheme.onSurface,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-              onPressed: () => Navigator.pop(context),
-            ),
+      appBar: AppBar(
+        title: const Text(
+          'Technician Sign Up',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
           ),
-          body: SafeArea(
-          child: SingleChildScrollView(
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 24,
-                vertical: 24,
-              ),
-              child: Form(
-                key: _formKey,
+        ),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 24,
+            vertical: 24,
+          ),
+          child: Form(
+            key: _formKey,
             child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                     // Onboarding hint
                     Text(
@@ -129,490 +115,388 @@ class _TechnicianRegistrationScreenState
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
 
                     // Name Field
-        Container(
-          decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
+                    TextFormField(
+                      controller: _nameController,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
-                      child: TextFormField(
-                        controller: _nameController,
-                        inputFormatters: [
-                          TextInputFormatter.withFunction((oldValue, newValue) {
-                            return TextEditingValue(
-                              text: newValue.text.toUpperCase(),
-                              selection: newValue.selection,
-                            );
-                          }),
-                        ],
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        decoration: InputDecoration(
-                          labelText: 'Full Name',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.person,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter full name',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                        prefixIcon: Icon(
+                          Icons.person,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your full name';
-                }
-                return null;
-              },
-            ),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter full name',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your full name';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Email Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
-                      child: TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      decoration: InputDecoration(
+                        labelText: 'Email Address',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        decoration: InputDecoration(
-                          labelText: 'Email Address',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.email,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter email address',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your email address';
-                }
-                          // Use AppConfig for consistent email validation
-                          if (!AppConfig.isValidEmailFormat(value)) {
-                            return 'Please enter a valid email address (e.g., name@example.com)';
-                }
-                return null;
-              },
-            ),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter email address',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email address';
+                        }
+                        // Use AppConfig for consistent email validation
+                        if (!AppConfig.isValidEmailFormat(value)) {
+                          return 'Please enter a valid email address (e.g., name@example.com)';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Phone Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
-                      child: TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        decoration: InputDecoration(
-                          labelText: 'Phone Number',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.phone,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter phone number',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                        prefixIcon: Icon(
+                          Icons.phone,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your phone number';
-                }
-                return null;
-              },
-            ),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter phone number',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your phone number';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Department Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
+                    TextFormField(
+                      controller: _departmentController,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
-                      child: TextFormField(
-              controller: _departmentController,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      decoration: InputDecoration(
+                        labelText: 'Department',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        decoration: InputDecoration(
-                          labelText: 'Department',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.apartment,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter department',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                        prefixIcon: Icon(
+                          Icons.apartment,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your department';
-                }
-                return null;
-              },
-            ),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter department',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your department';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Password Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
-                      child: TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.lock,
+                        prefixIcon: Icon(
+                          Icons.lock,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
                             size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                           ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                            ),
-                            onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Minimum 6 characters',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a password';
-                }
-                if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
-                }
-                return null;
-              },
-            ),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Minimum 6 characters',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     // Confirm Password Field
-        Container(
-          decoration: BoxDecoration(
-            color: cardColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         ),
-            boxShadow: [cardShadow],
-            border: isDarkMode
-                ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                  )
-                : null,
-          ),
-          child: TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
-            decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          labelStyle: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          ),
-              filled: true,
-              fillColor: cardColor,
-                          prefixIcon: Icon(
-                            Icons.lock_outline,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
                             size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                           ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Re-enter password',
-                          hintStyle: hintStyle,
-              border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Re-enter password',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                          ),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding: ResponsiveHelper.getResponsivePadding(
+                          context,
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
                     ),
 
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
@@ -701,118 +585,108 @@ class _TechnicianRegistrationScreenState
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+              ],
             ),
-                ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildProfilePictureSection(Color cardColor, BoxShadow cardShadow, bool isDarkMode, ColorScheme colorScheme, BuildContext context) {
+    final borderColor = colorScheme.onSurface.withValues(alpha: 0.2);
     return Container(
       padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
       decoration: BoxDecoration(
-        color: cardColor,
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 24),
         ),
-        boxShadow: [cardShadow],
-        border: isDarkMode
-            ? Border.all(
-                color: colorScheme.onSurface.withValues(alpha: 0.12),
-              )
-            : null,
+        border: Border.all(color: borderColor, width: 1.5),
       ),
       child: Column(
-      children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                  color: cardColor,
-              ),
-              child: CircleAvatar(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
                   radius: ResponsiveHelper.getResponsiveIconSize(context, 50),
-                backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
-                backgroundImage:
-                    _profileImage != null ? FileImage(_profileImage!) : null,
-                child: _profileImage == null
-                    ? Icon(
-                        Icons.account_circle_rounded,
+                  backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                  backgroundImage:
+                      _profileImage != null ? FileImage(_profileImage!) : null,
+                  child: _profileImage == null
+                      ? Icon(
+                          Icons.account_circle_rounded,
                           size: ResponsiveHelper.getResponsiveIconSize(context, 60),
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      )
-                    : null,
-              ),
-            ),
-            Positioned(
-              bottom: 6,
-              right: 6,
-              child: GestureDetector(
-                onTap: _selectProfileImage,
-                child: Container(
-                    padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF22D3EE),
-                        Color(0xFF0EA5E9),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blueAccent.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.camera_alt_outlined,
-                        color: Colors.white, size: 16),
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        )
+                      : null,
                 ),
-              ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _selectProfileImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF22D3EE),
+                            Color(0xFF0EA5E9),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.camera_alt_outlined,
+                          color: Colors.white, size: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-        Wrap(
+          Wrap(
             spacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
             runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-          alignment: WrapAlignment.center,
-          children: [
-            _buildProfileActionChip(
-              icon: Icons.photo_library_outlined,
-              label: 'Choose Photo',
-              onTap: _selectProfileImage,
-                colorScheme: colorScheme,
-                context: context,
-            ),
-            _buildProfileActionChip(
-              icon: Icons.camera_alt_outlined,
-              label: 'Take Photo',
-              onTap: _takeProfileImage,
-                colorScheme: colorScheme,
-                context: context,
-            ),
-            if (_profileImage != null)
+            alignment: WrapAlignment.center,
+            children: [
               _buildProfileActionChip(
-                icon: Icons.delete_outline,
-                label: 'Remove',
-                onTap: _removeProfileImage,
-                isDestructive: true,
+                icon: Icons.photo_library_outlined,
+                label: 'Choose Photo',
+                onTap: _selectProfileImage,
+                colorScheme: colorScheme,
+                context: context,
+              ),
+              _buildProfileActionChip(
+                icon: Icons.camera_alt_outlined,
+                label: 'Take Photo',
+                onTap: _takeProfileImage,
+                colorScheme: colorScheme,
+                context: context,
+              ),
+              if (_profileImage != null)
+                _buildProfileActionChip(
+                  icon: Icons.delete_outline,
+                  label: 'Remove',
+                  onTap: _removeProfileImage,
+                  isDestructive: true,
                   colorScheme: colorScheme,
                   context: context,
-              ),
-          ],
-        ),
-      ],
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

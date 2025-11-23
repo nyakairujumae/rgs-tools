@@ -101,9 +101,70 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('🔍 Getting current session...');
+      // Small delay to ensure Supabase has restored any persisted session
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       // Get current session (this is local, no network call)
-      final session = SupabaseService.client.auth.currentSession;
+      var session = SupabaseService.client.auth.currentSession;
+      
+      // If session exists but is expired, try to refresh it
+      if (session != null && session.isExpired) {
+        print('🔄 Session expired, attempting to refresh...');
+        try {
+          final refreshResponse = await SupabaseService.client.auth
+              .refreshSession()
+              .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print('⚠️ Session refresh timed out');
+              throw TimeoutException('Session refresh timed out');
+            },
+          );
+          if (refreshResponse?.session != null) {
+            session = refreshResponse!.session;
+            print('✅ Session refreshed successfully');
+          } else {
+            print('⚠️ Session refresh returned null - session may be invalid');
+          }
+        } catch (e) {
+          print('❌ Failed to refresh session: $e');
+          // Continue with expired session - will be handled later
+        }
+      }
+      
       _user = session?.user;
+      
+      // Fallback: Check if there's a user stored even if session is null
+      // This can happen if session storage is cleared but user data persists
+      if (_user == null) {
+        try {
+          final currentUser = SupabaseService.client.auth.currentUser;
+          if (currentUser != null) {
+            print('🔍 Found user from currentUser (session was null)');
+            _user = currentUser;
+            // Try to get a fresh session for this user
+            try {
+              final refreshResponse = await SupabaseService.client.auth
+                  .refreshSession()
+                  .timeout(
+                const Duration(seconds: 3),
+                onTimeout: () =>
+                    throw TimeoutException('Session refresh timed out'),
+              );
+              if (refreshResponse?.session != null) {
+                _user = refreshResponse!.session!.user;
+                print('✅ Restored session for user: ${_user?.email}');
+              }
+            } catch (e) {
+              print('⚠️ Could not refresh session for existing user: $e');
+              // Continue with the user anyway - they might still be authenticated
+            }
+          }
+        } catch (e) {
+          print('⚠️ Error checking currentUser: $e');
+        }
+      }
+      
       print('🔍 Current user: ${_user?.email ?? "None"}');
 
       // Listen to auth state changes

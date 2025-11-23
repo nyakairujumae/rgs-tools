@@ -15,6 +15,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedLanguage = 'English';
   String _selectedCurrency = 'AED';
 
+  EdgeInsets _tilePadding(BuildContext context) => EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
+        vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
+      );
+
+  Widget _buildCard(BuildContext context, Widget child) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surface
+            : Colors.white,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _iconBadge({
+    required BuildContext context,
+    required Color color,
+    required Widget child,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(
+        ResponsiveHelper.getResponsiveSpacing(context, 10),
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 12),
+        ),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,35 +178,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
   Widget _buildLanguageCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-        leading: Container(
-          padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-          ),
+    return _buildCard(
+      context,
+      ListTile(
+        contentPadding: _tilePadding(context),
+        leading: _iconBadge(
+          context: context,
+          color: AppTheme.primaryColor,
           child: Icon(
             Icons.language,
             color: AppTheme.primaryColor,
@@ -189,35 +217,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCurrencyCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-        leading: Container(
-          padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-          ),
+    return _buildCard(
+      context,
+      ListTile(
+        contentPadding: _tilePadding(context),
+        leading: _iconBadge(
+          context: context,
+          color: AppTheme.primaryColor,
           child: Text(
             'د.إ',
             style: TextStyle(
@@ -253,35 +259,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildNotificationCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-        secondary: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return _buildCard(
+      context,
+      SwitchListTile(
+        contentPadding: _tilePadding(context),
+        secondary: _iconBadge(
+          context: context,
+          color: AppTheme.secondaryColor,
           child: Icon(
             Icons.notifications,
             color: AppTheme.secondaryColor,
@@ -314,37 +298,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildBackupCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
+    return _buildCard(
+      context,
+      Column(
         children: [
           SwitchListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            secondary: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            secondary: _iconBadge(
+              context: context,
+              color: AppTheme.primaryColor,
               child: Icon(
                 Icons.backup,
                 color: AppTheme.primaryColor,
@@ -374,22 +336,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           Divider(
-            height: 1, 
-            indent: 16, 
+            height: 1,
+            indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.2),
           ),
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.secondaryColor,
               child: Icon(
                 Icons.download,
                 color: AppTheme.secondaryColor,
@@ -414,27 +373,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
             ),
             onTap: _exportData,
           ),
           Divider(
-            height: 1, 
-            indent: 16, 
+            height: 1,
+            indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.2),
           ),
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.secondaryColor,
               child: Icon(
                 Icons.upload,
                 color: AppTheme.secondaryColor,
@@ -459,7 +418,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
             ),
             onTap: _importData,
           ),
@@ -469,37 +431,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAboutCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
+    return _buildCard(
+      context,
+      Column(
         children: [
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.primaryColor,
               child: Icon(
                 Icons.info,
                 color: AppTheme.primaryColor,
@@ -529,22 +469,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _showVersionInfo,
           ),
           Divider(
-            height: 1, 
-            indent: 16, 
+            height: 1,
+            indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.2),
           ),
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.secondaryColor,
               child: Icon(Icons.help, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
@@ -570,22 +507,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _showHelp,
           ),
           Divider(
-            height: 1, 
-            indent: 16, 
+            height: 1,
+            indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.2),
           ),
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.secondaryColor,
               child: Icon(Icons.privacy_tip, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
@@ -611,22 +545,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _showPrivacyPolicy,
           ),
           Divider(
-            height: 1, 
-            indent: 16, 
+            height: 1,
+            indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.2),
           ),
           ListTile(
-            contentPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
-        ),
-            leading: Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-              ),
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(
+              context: context,
+              color: AppTheme.secondaryColor,
               child: Icon(Icons.description, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
@@ -796,23 +727,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Export feature coming soon!'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
+  void _exportData() => _showComingSoon('Export feature coming soon!');
 
-  void _importData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Import feature coming soon!'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
+  void _importData() => _showComingSoon('Import feature coming soon!');
 
   void _showVersionInfo() {
     showDialog(
@@ -860,31 +777,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showHelp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Help & Support coming soon!'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
+  void _showHelp() => _showComingSoon('Help & Support coming soon!');
 
-  void _showPrivacyPolicy() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Privacy Policy coming soon!'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
-  }
+  void _showPrivacyPolicy() =>
+      _showComingSoon('Privacy Policy coming soon!');
 
-  void _showTermsOfService() {
+  void _showTermsOfService() =>
+      _showComingSoon('Terms of Service coming soon!');
+
+  void _showComingSoon(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Terms of Service coming soon!'),
+      SnackBar(
+        content: Text(message),
         backgroundColor: AppTheme.primaryColor,
       ),
     );
   }
 }
-

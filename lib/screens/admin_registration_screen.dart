@@ -42,55 +42,39 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final cardColor = isDarkMode ? colorScheme.surface : Colors.white;
-    final cardShadow = BoxShadow(
-      color: Colors.black.withValues(alpha: isDarkMode ? 0.18 : 0.1),
-      blurRadius: 22,
-      offset: const Offset(0, 10),
-    );
     final hintStyle = TextStyle(
       color: colorScheme.onSurface.withValues(alpha: 0.5),
       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
       fontWeight: FontWeight.w400,
     );
+    final borderColor = colorScheme.onSurface.withValues(alpha: 0.2);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            title: const Text(
-              'Admin Registration',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            backgroundColor: colorScheme.surface,
-            foregroundColor: colorScheme.onSurface,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-            ),
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-              onPressed: () => Navigator.pop(context),
-            ),
+      appBar: AppBar(
+        title: const Text(
+          'Admin Registration',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
           ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+        ),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                     // Onboarding hint
                     Text(
                       'Register as an administrator for RGS HVAC Services',
@@ -103,301 +87,226 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
                     // Name Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Full Name',
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(Icons.person,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.6)),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter full name',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter full name',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your full name';
-                          }
-                          return null;
-                        },
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your full name';
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 16),
 
                     // Email Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'Email Address',
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(Icons.email,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.6)),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Enter company email',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: Icon(Icons.email,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Enter company email',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email address';
-                          }
-                          if (!value.contains('@royalgulf.ae') &&
-                              !value.contains('@mekar.ae')) {
-                            return 'Invalid email domain for admin registration';
-                          }
-                          return null;
-                        },
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email address';
+                        }
+                        if (!value.contains('@royalgulf.ae') &&
+                            !value.contains('@mekar.ae')) {
+                          return 'Invalid email domain for admin registration';
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 16),
 
                     // Position Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
-                        controller: _positionController,
-                        decoration: InputDecoration(
-                          labelText: 'Position/Title',
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(Icons.work,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.6)),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'e.g., Operations Manager, Director',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    TextFormField(
+                      controller: _positionController,
+                      decoration: InputDecoration(
+                        labelText: 'Position/Title',
+                        prefixIcon: Icon(Icons.work,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'e.g., Operations Manager, Director',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your position';
-                          }
-                          return null;
-                        },
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your position';
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 16),
 
                     // Password Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(Icons.lock,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.6)),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Minimum 6 characters',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Minimum 6 characters',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 16),
 
                     // Confirm Password Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [cardShadow],
-                        border: isDarkMode
-                            ? Border.all(
-                                color:
-                                    colorScheme.onSurface.withValues(alpha: 0.12),
-                              )
-                            : null,
-                      ),
-                      child: TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          filled: true,
-                          fillColor: cardColor,
-                          prefixIcon: Icon(Icons.lock_outline,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.6)),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        prefixIcon: Icon(Icons.lock_outline,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
-                          hintText: 'Re-enter password',
-                          hintStyle: hintStyle,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide(
-                                color: AppTheme.primaryColor, width: 2),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: 'Re-enter password',
+                        hintStyle: hintStyle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(color: borderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor, width: 2),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
                     ),
 
                     const SizedBox(height: 32),
@@ -479,9 +388,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         ),
