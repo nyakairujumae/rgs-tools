@@ -1,9 +1,8 @@
+# Uncomment this line to define a global platform for your project
 platform :ios, '13.0'
 
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-# Needed for FirebaseCoreInternal + GoogleUtilities to generate modules
-use_modular_headers!
 
 project 'Runner', {
   'Debug' => :debug,
@@ -21,7 +20,6 @@ def flutter_root
     matches = line.match(/FLUTTER_ROOT\=(.*)/)
     return matches[1].strip if matches
   end
-
   raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
 end
 
@@ -31,9 +29,9 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
+  use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
   target 'RunnerTests' do
     inherit! :search_paths
   end
