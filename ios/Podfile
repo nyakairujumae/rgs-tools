@@ -1,8 +1,9 @@
-# Uncomment this line to define a global platform for your project
 platform :ios, '13.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+# Needed for FirebaseCoreInternal + GoogleUtilities to generate modules
+use_modular_headers!
 
 project 'Runner', {
   'Debug' => :debug,
@@ -20,6 +21,7 @@ def flutter_root
     matches = line.match(/FLUTTER_ROOT\=(.*)/)
     return matches[1].strip if matches
   end
+
   raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
 end
 
@@ -28,9 +30,8 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_modular_headers!
-
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -39,290 +40,5 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    
-    target.build_configurations.each do |config|
-      # Fix for Firebase Messaging header issue - apply to ALL targets
-      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-      
-      # Enable module support for all pods (required for static frameworks)
-      # This ensures @import statements work correctly
-      config.build_settings['DEFINES_MODULE'] = 'YES'
-      config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-      
-      # Fix for Xcode 14+ dependency scanning issues
-      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-      
-      # Fix for Xcode 14+
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      end
-      
-      # Fix for objective_c framework - used by path_provider_foundation (which is used by pdf package)
-      # The objective_c package uses FFI to dynamically load Objective-C runtime functions
-      # In release builds, we need to ensure the framework is properly linked and symbols are available
-      if target.name == 'objective_c'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        # Ensure proper linking for FFI-based packages
-        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
-        # Ensure the framework is built as a static library for proper linking
-        config.build_settings['MACH_O_TYPE'] = 'staticlib'
-        # Disable bitcode for better compatibility
-        config.build_settings['ENABLE_BITCODE'] = 'NO'
-        # Ensure all symbols are exported for FFI lookup
-        config.build_settings['EXPORTED_SYMBOLS_FILE'] = ''
-        # Ensure visibility is set to default (not hidden) so FFI can find symbols
-        config.build_settings['GCC_SYMBOLS_PRIVATE_EXTERN'] = 'NO'
-      end
-      
-      # Also ensure path_provider_foundation (which depends on objective_c) is properly configured
-      if target.name == 'path_provider_foundation'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-      end
-      
-      # Additional compiler flags for Firebase (only for Firebase targets)
-      if target.name.include?('Firebase') || target.name.include?('firebase')
-        config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_CFLAGS'] << '-Wno-error=non-modular-include-in-framework-module'
-        
-        # Swift compiler flags
-        config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_SWIFT_FLAGS'] << '-Xcc -Wno-error=non-modular-include-in-framework-module'
-      end
-    end
   end
-  
-  # Fix for Firebase Messaging plugin specifically
-  installer.pods_project.targets.each do |target|
-    # Apply general Firebase settings to all Firebase targets
-    if target.name.include?('Firebase') || target.name.include?('firebase')
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
-      end
-    end
-    
-    # Only add explicit FirebaseMessaging framework link to the Flutter plugin target
-    # NOT to FirebaseCore or other Firebase targets to avoid circular dependencies
-    if target.name == 'FLTFirebaseMessagingPlugin'
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
-        # Ensure FirebaseMessaging module is properly linked (only for the plugin, not FirebaseCore)
-        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
-        unless config.build_settings['OTHER_LDFLAGS'].any? { |flag| flag.include?('FirebaseMessaging') }
-          config.build_settings['OTHER_LDFLAGS'] << '-framework' << 'FirebaseMessaging'
-        end
-      end
-    end
-    
-    # Fix for video_player_avfoundation dependency scanning issue
-    if target.name == 'video_player_avfoundation'
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        # Ensure proper module map generation
-        config.build_settings['MODULEMAP_FILE'] = '' if config.build_settings['MODULEMAP_FILE']
-      end
-    end
-    
-    # Fix for app_links module not found issue
-    if target.name == 'app_links'
-      target.build_configurations.each do |config|
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        # Ensure module map is used (don't clear it)
-        # The module map is generated by CocoaPods and should be in:
-        # Pods/Target Support Files/app_links/app_links.modulemap
-      end
-    end
-    
-    # Fix for pdf/printing package - ensure objective_c framework is properly linked
-    if target.name == 'objective_c' || target.name.include?('pdf') || target.name.include?('printing')
-      target.build_configurations.each do |config|
-        config.build_settings['DEFINES_MODULE'] = 'YES'
-        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        # Ensure proper linking for release builds
-        other_ldflags = config.build_settings['OTHER_LDFLAGS'] || []
-        other_ldflags = [other_ldflags] unless other_ldflags.is_a?(Array)
-        other_ldflags = ['$(inherited)'] if other_ldflags.empty?
-        config.build_settings['OTHER_LDFLAGS'] = other_ldflags
-        # Add framework search paths
-        framework_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || []
-        framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
-        framework_paths << '$(PODS_ROOT)/objective_c' unless framework_paths.include?('$(PODS_ROOT)/objective_c')
-        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
-      end
-    end
-  end
-  
-  # Also fix the main project
-  installer.pods_project.build_configurations.each do |config|
-    config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-    config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-    # Ensure module search paths include pods module maps
-    config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-  end
-  
-  # Ensure Runner target can find all frameworks in the build directory
-  # This is critical for static frameworks
-  installer.pods_project.targets.each do |target|
-    if target.name == 'Pods-Runner'
-      target.build_configurations.each do |config|
-        # Ensure framework search paths include the Pods build directory
-        framework_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || []
-        framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
-        framework_paths << '$(PODS_CONFIGURATION_BUILD_DIR)' unless framework_paths.include?('$(PODS_CONFIGURATION_BUILD_DIR)')
-        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
-      end
-    end
-  end
-  
-  # Fix Runner target configuration to ensure modules can be found
-  # This is important for GeneratedPluginRegistrant.m which uses @import statements
-  flutter_project_path = File.join('..', 'Runner.xcodeproj')
-  if Dir.exist?(File.expand_path(flutter_project_path))
-    # Note: We can't directly modify Runner.xcodeproj from Podfile, but we ensure pods are configured correctly
-    # The Runner target should inherit these settings through the xcconfig files
-  end
-  
-  # Fix Runner target to ensure objective_c framework is properly linked
-  # This is critical for FFI-based packages in release builds
-  installer.pods_project.targets.each do |target|
-    if target.name == 'Pods-Runner'
-      target.build_configurations.each do |config|
-        # Ensure framework search paths include Pods
-        framework_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || []
-        framework_paths = [framework_paths] unless framework_paths.is_a?(Array)
-        framework_paths << '$(PODS_ROOT)/objective_c' unless framework_paths.any? { |path| path.to_s.include?('objective_c') }
-        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths
-        
-        # Ensure linker flags include the framework
-        other_ldflags = config.build_settings['OTHER_LDFLAGS'] || []
-        other_ldflags = [other_ldflags] unless other_ldflags.is_a?(Array)
-        other_ldflags = ['$(inherited)'] if other_ldflags.empty?
-        # Add objective_c to linker flags if not already present
-        unless other_ldflags.any? { |flag| flag.to_s.include?('objective_c') }
-          other_ldflags << '-ObjC' # Ensure Objective-C symbols are linked
-        end
-        config.build_settings['OTHER_LDFLAGS'] = other_ldflags
-      end
-    end
-  end
-  
-  # Patch Firebase Messaging plugin files to fix import issue
-  # The files are in pub cache, so we'll patch them there
-  base_paths = [
-    File.join(Dir.home, '.pub-cache', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes'),
-    File.join(ENV['PUB_CACHE'] || '', 'hosted', 'pub.dev', 'firebase_messaging-14.7.10', 'ios', 'Classes'),
-  ]
-  
-  base_paths.each do |base_path|
-    if File.directory?(base_path)
-      # Patch header file
-      header_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.h')
-      if File.exist?(header_path)
-        file_content = File.read(header_path)
-        needs_write = false
-        
-        if file_content.include?('#import <Firebase/Firebase.h>')
-          # Replace with proper imports
-          file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
-          needs_write = true
-        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && file_content.include?('FIRMessagingDelegate')
-          # Add FirebaseMessaging import if FIRMessagingDelegate is used but import is missing
-          file_content.gsub!('#import <FirebaseCore/FirebaseCore.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
-          needs_write = true
-        end
-        
-        if needs_write
-          File.write(header_path, file_content)
-          puts "✅ Patched FLTFirebaseMessagingPlugin.h at #{header_path}"
-        end
-      end
-      
-      # Patch implementation file if needed
-      impl_path = File.join(base_path, 'FLTFirebaseMessagingPlugin.m')
-      if File.exist?(impl_path)
-        file_content = File.read(impl_path)
-        needs_write = false
-        
-        if file_content.include?('#import <Firebase/Firebase.h>')
-          file_content.gsub!('#import <Firebase/Firebase.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
-          needs_write = true
-        elsif !file_content.include?('#import <FirebaseMessaging/FirebaseMessaging.h>') && (file_content.include?('FIRMessaging') || file_content.include?('FIRMessagingDelegate'))
-          # Add FirebaseMessaging import if FIRMessaging is used but import is missing
-          if file_content.include?('#import <FirebaseCore/FirebaseCore.h>')
-            file_content.gsub!('#import <FirebaseCore/FirebaseCore.h>', "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>")
-            needs_write = true
-          else
-            # Find the first import line and add after it
-            lines = file_content.lines
-            import_line_index = lines.index { |line| line.include?('#import') && !line.include?('FLTFirebaseMessagingPlugin.h') }
-            if import_line_index
-              lines.insert(import_line_index + 1, "#import <FirebaseMessaging/FirebaseMessaging.h>\n")
-              file_content = lines.join
-              needs_write = true
-            end
-          end
-        end
-        
-        if needs_write
-          File.write(impl_path, file_content)
-          puts "✅ Patched FLTFirebaseMessagingPlugin.m at #{impl_path}"
-        end
-      end
-      break
-    end
-  end
-  
-  # Patch GeneratedPluginRegistrant.m to fix Swift-only plugin module import issues
-  # This is needed because Swift-only plugins don't work with @import when using static frameworks
-  generated_plugin_file = File.join(Dir.pwd, 'Runner', 'GeneratedPluginRegistrant.m')
-  if File.exist?(generated_plugin_file)
-    content = File.read(generated_plugin_file)
-    original_content = content.dup
-    
-    # Fix app_links - replace @import with comment
-    content.gsub!(/#if __has_include\(<app_links\/AppLinksIosPlugin\.h>\)\s*#import <app_links\/AppLinksIosPlugin\.h>\s*#else\s*@import app_links;\s*#endif/m,
-      "#if __has_include(<app_links/AppLinksIosPlugin.h>)\n#import <app_links/AppLinksIosPlugin.h>\n#elif __has_include(<app_links/app_links-Swift.h>)\n#import <app_links/app_links-Swift.h>\n#else\n// app_links is Swift-only\n#endif")
-    
-    # Fix connectivity_plus - replace @import with comment  
-    content.gsub!(/#if __has_include\(<connectivity_plus\/ConnectivityPlusPlugin\.h>\)\s*#import <connectivity_plus\/ConnectivityPlusPlugin\.h>\s*#else\s*@import connectivity_plus;\s*#endif/m,
-      "#if __has_include(<connectivity_plus/ConnectivityPlusPlugin.h>)\n#import <connectivity_plus/ConnectivityPlusPlugin.h>\n#elif __has_include(<connectivity_plus/connectivity_plus-Swift.h>)\n#import <connectivity_plus/connectivity_plus-Swift.h>\n#else\n// connectivity_plus is Swift-only\n#endif")
-    
-    if content != original_content
-      File.write(generated_plugin_file, content)
-      puts "✅ Patched GeneratedPluginRegistrant.m to fix Swift-only plugin imports"
-    end
-  end
-  
-  # Fix for Swift-only plugins (like app_links and open_file_ios)
-    # Ensure the Swift module is properly exported and accessible from Objective-C
-    installer.pods_project.targets.each do |target|
-      if target.name == 'app_links' || target.name == 'open_file_ios'
-        target.build_configurations.each do |config|
-          # Enable Swift-Objective-C interoperability
-          config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'YES'
-          config.build_settings['SWIFT_OBJC_INTEROP_MODE'] = 'objc'
-          # Ensure the generated Swift header is accessible
-          config.build_settings['SWIFT_OBJC_BRIDGING_HEADER'] ||= ''
-          # Ensure module visibility
-          config.build_settings['DEFINES_MODULE'] = 'YES'
-          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-          # Don't explicitly set MODULEMAP_FILE - let CocoaPods handle it
-          # Removing explicit module map path to avoid double path issues
-        end
-      end
-    end
 end
