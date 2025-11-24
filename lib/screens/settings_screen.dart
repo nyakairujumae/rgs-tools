@@ -790,6 +790,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: AppTheme.primaryColor,
+        duration: const Duration(seconds: 3),
       ),
     );
   }

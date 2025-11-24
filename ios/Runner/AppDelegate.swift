@@ -1,6 +1,9 @@
 import Flutter
 import UIKit
 import UserNotifications
+import shared_preferences_foundation
+import sqflite_darwin
+import image_picker_ios
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -9,6 +12,17 @@ import UserNotifications
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    
+    // Manually register critical plugins to recover from intermittent auto-registration issues
+    if let sharedPrefsRegistrar = self.registrar(forPlugin: "SharedPreferencesPlugin") {
+      SharedPreferencesPlugin.register(with: sharedPrefsRegistrar)
+    }
+    if let sqfliteRegistrar = self.registrar(forPlugin: "SqflitePlugin") {
+      SqflitePlugin.register(with: sqfliteRegistrar)
+    }
+    if let imagePickerRegistrar = self.registrar(forPlugin: "FLTImagePickerPlugin") {
+      FLTImagePickerPlugin.register(with: imagePickerRegistrar)
+    }
     
     // Set up method channel for getting documents directory without path_provider
     // This bypasses objective_c FFI dependency that causes DOBJC_initializeApi error

@@ -202,15 +202,6 @@ class AuthErrorHandler {
         duration: const Duration(seconds: 4), // Auto-dismiss after 4 seconds
         // Allow the snackbar to be dismissed with a simple horizontal swipe
         dismissDirection: DismissDirection.horizontal,
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          disabledTextColor: Colors.white70,
-          onPressed: () {
-            // Always dismiss when button is pressed
-            scaffoldMessenger.hideCurrentSnackBar();
-          },
-        ),
       ),
     );
   }

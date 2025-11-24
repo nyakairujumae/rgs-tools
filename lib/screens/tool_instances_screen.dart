@@ -6,6 +6,7 @@ import '../models/tool_group.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
 import 'tool_detail_screen.dart';
+import 'technicians_screen.dart';
 
 class ToolInstancesScreen extends StatefulWidget {
   final ToolGroup toolGroup;
@@ -159,7 +160,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   child: Text(
                     'Clear',
                     style: TextStyle(
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.secondaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -224,7 +225,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       'In Use',
                       '${updatedToolGroup.inUseCount}',
                       Icons.build,
-                      Colors.blue,
+                      AppTheme.secondaryColor,
                     ),
                   ),
                 ],
@@ -255,7 +256,11 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: widget.isSelectionMode ? 80 : 16,
+                      ),
                       itemCount: instances.length,
                       itemBuilder: (context, index) {
                         final tool = instances[index];
@@ -266,6 +271,64 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       },
                     ),
             ),
+            // Assign Button - Only show in selection mode
+            if (widget.isSelectionMode && _selectedToolIds.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  border: Border(
+                    top: BorderSide(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TechniciansScreen(),
+                            settings: RouteSettings(
+                              arguments: {
+                                'selectedTools': _selectedToolIds.toList()
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.people, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Assign ${_selectedToolIds.length} Tool${_selectedToolIds.length > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -398,10 +461,10 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryColor,
+                              color: AppTheme.secondaryColor,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.secondaryColor,
                                 width: 2,
                               ),
                             ),
@@ -501,7 +564,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
       case 'Available':
         return Colors.green;
       case 'In Use':
-        return Colors.blue;
+        return AppTheme.secondaryColor;
       case 'Maintenance':
         return Colors.orange;
       case 'Retired':

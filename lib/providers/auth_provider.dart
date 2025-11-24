@@ -102,19 +102,21 @@ class AuthProvider with ChangeNotifier {
     try {
       print('🔍 Getting current session...');
       // Small delay to ensure Supabase has restored any persisted session
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Reduced delay since we're now waiting in the UI layer
+      await Future.delayed(const Duration(milliseconds: 200));
       
       // Get current session (this is local, no network call)
       var session = SupabaseService.client.auth.currentSession;
+      print('🔍 Current session: ${session != null ? "Found (user: ${session.user.email})" : "None"}');
       
-      // If session exists but is expired, try to refresh it
+      // If session exists but is expired, try to refresh it (non-blocking for UI)
       if (session != null && session.isExpired) {
         print('🔄 Session expired, attempting to refresh...');
         try {
           final refreshResponse = await SupabaseService.client.auth
               .refreshSession()
               .timeout(
-            const Duration(seconds: 5),
+            const Duration(seconds: 3),
             onTimeout: () {
               print('⚠️ Session refresh timed out');
               throw TimeoutException('Session refresh timed out');
@@ -128,7 +130,8 @@ class AuthProvider with ChangeNotifier {
           }
         } catch (e) {
           print('❌ Failed to refresh session: $e');
-          // Continue with expired session - will be handled later
+          // If refresh fails, clear the expired session
+          session = null;
         }
       }
       
@@ -142,12 +145,12 @@ class AuthProvider with ChangeNotifier {
           if (currentUser != null) {
             print('🔍 Found user from currentUser (session was null)');
             _user = currentUser;
-            // Try to get a fresh session for this user
+            // Try to get a fresh session for this user (non-blocking)
             try {
               final refreshResponse = await SupabaseService.client.auth
                   .refreshSession()
                   .timeout(
-                const Duration(seconds: 3),
+                const Duration(seconds: 2),
                 onTimeout: () =>
                     throw TimeoutException('Session refresh timed out'),
               );

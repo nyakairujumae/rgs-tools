@@ -2153,33 +2153,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
         // Show success message and open file
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Column(
+            content: const Row(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'Exported!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Success',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
                 ),
-                const SizedBox(height: 4),
-          Text(
-                  file?.path ?? 'Unknown path',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-            ),
-          ),
-        ],
+              ],
             ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),
@@ -2187,13 +2173,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            action: file != null ? SnackBarAction(
-              label: 'Open',
-              textColor: Colors.white,
-              onPressed: () async {
-                await OpenFile.open(file!.path);
-              },
-            ) : null,
           ),
         );
 

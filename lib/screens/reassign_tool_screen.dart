@@ -600,6 +600,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
           SnackBar(
             content: Text('Error reassigning tool: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

@@ -6,6 +6,7 @@ import 'dart:io';
 import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
+import '../theme/app_theme.dart';
 
 class AddTechnicianScreen extends StatefulWidget {
   final Technician? technician;
@@ -77,7 +78,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
               child: Text(
                 widget.technician == null ? 'Save' : 'Update',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: AppTheme.secondaryColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -116,12 +117,12 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withValues(alpha: 0.2),
+                                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   Icons.person_add,
-                                  color: Colors.blue,
+                                  color: AppTheme.secondaryColor,
                                   size: 24,
                                 ),
                               ),
@@ -640,6 +641,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             margin: EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -670,6 +672,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             margin: EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -715,6 +718,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             margin: EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

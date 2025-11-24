@@ -15,13 +15,6 @@ class ErrorHandler {
         content: Text(userMessage),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
       ),
     );
   }

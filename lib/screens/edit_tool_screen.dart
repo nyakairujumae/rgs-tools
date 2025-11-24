@@ -17,7 +17,6 @@ class EditToolScreen extends StatefulWidget {
 class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _brandController = TextEditingController();
   final _modelController = TextEditingController();
   final _serialNumberController = TextEditingController();
@@ -26,6 +25,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
 
+  String _category = '';
   String _condition = 'Good';
   String _status = 'Available';
   DateTime? _purchaseDate;
@@ -50,7 +50,9 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
 
   void _initializeFields() {
     _nameController.text = widget.tool.name;
-    _categoryController.text = widget.tool.category;
+    // Ensure category is in the list, otherwise set to empty
+    final toolCategory = widget.tool.category;
+    _category = _categories.contains(toolCategory) ? toolCategory : '';
     _brandController.text = widget.tool.brand ?? '';
     _modelController.text = widget.tool.model ?? '';
     _serialNumberController.text = widget.tool.serialNumber ?? '';
@@ -58,8 +60,15 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
     _currentValueController.text = widget.tool.currentValue?.toString() ?? '';
     _locationController.text = widget.tool.location ?? '';
     _notesController.text = widget.tool.notes ?? '';
-    _condition = widget.tool.condition;
-    _status = widget.tool.status;
+    
+    // Ensure condition and status are valid values
+    const validConditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'];
+    final toolCondition = widget.tool.condition;
+    _condition = validConditions.contains(toolCondition) ? toolCondition : 'Good';
+    
+    const validStatuses = ['Available', 'Assigned', 'In Use', 'Maintenance', 'Retired'];
+    final toolStatus = widget.tool.status;
+    _status = validStatuses.contains(toolStatus) ? toolStatus : 'Available';
     
     if (widget.tool.purchaseDate != null) {
       _purchaseDate = DateTime.tryParse(widget.tool.purchaseDate!);
@@ -69,7 +78,6 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
   @override
   void dispose() {
     _nameController.dispose();
-    _categoryController.dispose();
     _brandController.dispose();
     _modelController.dispose();
     _serialNumberController.dispose();
@@ -82,288 +90,254 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Edit Tool'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
         elevation: 0,
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveTool,
-            child: _isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    'Save',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+        title: Text(
+          'Edit Tool',
+          style: TextStyle(
+            color: theme.textTheme.bodyLarge?.color,
           ),
+        ),
+        actions: [
+          if (!_isLoading)
+            TextButton(
+              onPressed: _saveTool,
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  color: AppTheme.secondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Basic Information
-              _buildSectionHeader('Basic Information'),
-              SizedBox(height: 16),
-              
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Tool Name *',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g., Digital Multimeter',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter tool name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              DropdownButtonFormField<String>(
-                value: _categoryController.text.isEmpty ? null : _categoryController.text,
-                decoration: const InputDecoration(
-                  labelText: 'Category *',
-                  border: OutlineInputBorder(),
-                ),
-                items: _categories.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  _categoryController.text = value!;
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a category';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              Row(
+      body: SafeArea(
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _brandController,
-                      decoration: const InputDecoration(
-                        labelText: 'Brand',
-                        border: OutlineInputBorder(),
-                        hintText: 'e.g., Fluke',
-                      ),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tool Name *',
+                      border: OutlineInputBorder(),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter tool name';
+                      }
+                      return null;
+                    },
                   ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _modelController,
-                      decoration: const InputDecoration(
-                        labelText: 'Model',
-                        border: OutlineInputBorder(),
-                        hintText: 'e.g., 87V',
-                      ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    value: _category.isEmpty ? null : (_categories.contains(_category) ? _category : null),
+                    decoration: const InputDecoration(
+                      labelText: 'Category *',
+                      border: OutlineInputBorder(),
                     ),
+                    items: _categories.map((category) {
+                      return DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _category = value ?? '';
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a category';
+                      }
+                      return null;
+                    },
                   ),
-                ],
-              ),
-              SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _serialNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Serial Number',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g., FL123456789',
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Purchase Information
-              _buildSectionHeader('Purchase Information'),
-              SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _purchasePriceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Purchase Price',
-                        border: OutlineInputBorder(),
-                        hintText: '0.00',
-                        prefixText: 'AED ',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _currentValueController,
-                      decoration: const InputDecoration(
-                        labelText: 'Current Value',
-                        border: OutlineInputBorder(),
-                        hintText: '0.00',
-                        prefixText: 'AED ',
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-
-              InkWell(
-                onTap: _selectPurchaseDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Purchase Date',
-                    border: OutlineInputBorder(),
-                  ),
-                  child: Text(
-                    _purchaseDate != null
-                        ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
-                        : 'Select date',
-                    style: TextStyle(
-                      color: _purchaseDate != null ? AppTheme.textPrimary : AppTheme.textHint,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Status and Condition
-              _buildSectionHeader('Status & Condition'),
-              SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _condition,
-                      decoration: const InputDecoration(
-                        labelText: 'Condition',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Excellent', child: Text('Excellent')),
-                        DropdownMenuItem(value: 'Good', child: Text('Good')),
-                        DropdownMenuItem(value: 'Fair', child: Text('Fair')),
-                        DropdownMenuItem(value: 'Poor', child: Text('Poor')),
-                        DropdownMenuItem(value: 'Needs Repair', child: Text('Needs Repair')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _condition = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _status,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Available', child: Text('Available')),
-                        DropdownMenuItem(value: 'Assigned', child: Text('Assigned')),
-                        DropdownMenuItem(value: 'In Use', child: Text('In Use')),
-                        DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
-                        DropdownMenuItem(value: 'Retired', child: Text('Retired')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _status = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g., Tool Room A, Van 1',
-                ),
-              ),
-              SizedBox(height: 16),
-
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                  hintText: 'Additional information...',
-                ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 32),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveTool,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          'Update Tool',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _brandController,
+                          decoration: const InputDecoration(
+                            labelText: 'Brand',
+                            border: OutlineInputBorder(),
                           ),
                         ),
-                ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _modelController,
+                          decoration: const InputDecoration(
+                            labelText: 'Model',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _serialNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Serial Number',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _purchasePriceController,
+                          decoration: const InputDecoration(
+                            labelText: 'Purchase Price',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _currentValueController,
+                          decoration: const InputDecoration(
+                            labelText: 'Current Value',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  InkWell(
+                    onTap: _selectPurchaseDate,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Purchase Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _purchaseDate != null
+                            ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
+                            : 'Select date',
+                        style: TextStyle(
+                          color: _purchaseDate != null ? Colors.black87 : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _condition,
+                          decoration: const InputDecoration(
+                            labelText: 'Condition',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Excellent', child: Text('Excellent')),
+                            DropdownMenuItem(value: 'Good', child: Text('Good')),
+                            DropdownMenuItem(value: 'Fair', child: Text('Fair')),
+                            DropdownMenuItem(value: 'Poor', child: Text('Poor')),
+                            DropdownMenuItem(value: 'Needs Repair', child: Text('Needs Repair')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _condition = value!;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _status,
+                          decoration: const InputDecoration(
+                            labelText: 'Status',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Available', child: Text('Available')),
+                            DropdownMenuItem(value: 'Assigned', child: Text('Assigned')),
+                            DropdownMenuItem(value: 'In Use', child: Text('In Use')),
+                            DropdownMenuItem(value: 'Maintenance', child: Text('Maintenance')),
+                            DropdownMenuItem(value: 'Retired', child: Text('Retired')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _status = value!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Location',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _notesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.textPrimary,
-      ),
-    );
-  }
 
   Future<void> _selectPurchaseDate() async {
     final date = await showDatePicker(
@@ -391,7 +365,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
     try {
       final updatedTool = widget.tool.copyWith(
         name: _nameController.text.trim().toUpperCase(),
-        category: _categoryController.text.trim(),
+        category: _category.trim(),
         brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
         model: _modelController.text.trim().isEmpty ? null : _modelController.text.trim(),
         serialNumber: _serialNumberController.text.trim().isEmpty ? null : _serialNumberController.text.trim(),
@@ -454,4 +428,3 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
     }
   }
 }
-

@@ -651,14 +651,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withOpacity(0.85),
+                            AppTheme.secondaryColor,
+                            AppTheme.secondaryColor.withOpacity(0.85),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
+                            color: AppTheme.secondaryColor.withOpacity(0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -782,9 +782,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: widget.isSelectionMode && isSelected
-                            ? AppTheme.primaryColor
+                            ? AppTheme.secondaryColor
                             : widget.isSelectionMode
-                                ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                                ? AppTheme.secondaryColor.withValues(alpha: 0.3)
                                 : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                         width: widget.isSelectionMode && isSelected ? 3 : 1.5,
                       ),
@@ -797,7 +797,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         ),
                         if (widget.isSelectionMode && !isSelected)
                           BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                             spreadRadius: 0,
@@ -896,10 +896,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: AppTheme.secondaryColor,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.secondaryColor,
                             width: 2,
                           ),
                           boxShadow: [
@@ -1048,7 +1048,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       case 'testing equipment':
         return Colors.purple;
       case 'hand tools':
-        return Colors.blue;
+        return AppTheme.secondaryColor;
       case 'power tools':
         return Colors.blueGrey;
       case 'measuring tools':
@@ -1116,7 +1116,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
             SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.share, color: AppTheme.primaryColor),
+              leading: Icon(Icons.share, color: AppTheme.secondaryColor),
               title: Text(
                 tool.toolType == 'inventory'
                     ? 'Make Shared Tool'

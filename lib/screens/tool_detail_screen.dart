@@ -34,12 +34,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   late Tool _currentTool;
   bool _isLoading = false;
   bool _toolNotFound = false;
+  final PageController _imagePageController = PageController();
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _currentTool = widget.tool;
     _verifyToolExists();
+  }
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
   }
 
   /// Verify that the tool still exists in the provider
@@ -83,7 +91,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           if (updatedTool != null && mounted) {
             setState(() {
               _currentTool = updatedTool;
+              _currentImageIndex = 0; // Reset to first image
             });
+            // Reset PageController to first page
+            _imagePageController.jumpToPage(0);
           }
         }
       }
@@ -99,96 +110,48 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
-        scrolledUnderElevation: 6,
-        foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: theme.appBarTheme.foregroundColor,
+        elevation: 0,
+        title: Text(
+          _currentTool.name,
+          style: TextStyle(
+            color: theme.textTheme.bodyLarge?.color,
           ),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () => NavigationHelper.safePop(context),
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _currentTool.name,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-                letterSpacing: -0.3,
-              ),
-            ),
-            if (_currentTool.category.isNotEmpty)
-              Text(
-                _currentTool.category,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-          ],
         ),
         actions: [
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             icon: Icon(Icons.more_vert),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppTheme.subtleBorder,
+                width: 1,
               ),
             ),
-            elevation: 8,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.surface
-                : Colors.white,
+            elevation: 4,
+            color: theme.scaffoldBackgroundColor,
             itemBuilder: (context) => [
               PopupMenuItem<String>(
                 value: 'edit',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        color: AppTheme.primaryColor,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      Icons.edit_outlined,
+                      color: theme.textTheme.bodyLarge?.color,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       'Edit Tool',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -196,36 +159,21 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
               PopupMenuItem<String>(
                 value: 'image',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        color: Colors.blue,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      Icons.camera_alt_outlined,
+                      color: theme.textTheme.bodyLarge?.color,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       'Add Photo',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -233,44 +181,25 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
               PopupMenuItem<String>(
                 value: 'shared',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: (_currentTool.toolType == 'shared' 
-                            ? Colors.green 
-                            : Colors.orange).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        _currentTool.toolType == 'shared' 
-                            ? Icons.share 
-                            : Icons.share_outlined,
-                        color: _currentTool.toolType == 'shared' 
-                            ? Colors.green 
-                            : Colors.orange,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      _currentTool.toolType == 'shared' 
+                          ? Icons.share 
+                          : Icons.share_outlined,
+                      color: theme.textTheme.bodyLarge?.color,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       _currentTool.toolType == 'shared' 
                           ? 'Make Tool Inventory' 
                           : 'Make Tool Shared',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -278,44 +207,25 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
               PopupMenuItem<String>(
                 value: 'maintenance',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: (_currentTool.status == 'Maintenance' 
-                            ? Colors.green 
-                            : Colors.orange).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        _currentTool.status == 'Maintenance' 
-                            ? Icons.check_circle 
-                            : Icons.build,
-                        color: _currentTool.status == 'Maintenance' 
-                            ? Colors.green 
-                            : Colors.orange,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      _currentTool.status == 'Maintenance' 
+                          ? Icons.check_circle_outline 
+                          : Icons.build_outlined,
+                      color: theme.textTheme.bodyLarge?.color,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       _currentTool.status == 'Maintenance' 
                           ? 'Complete Maintenance' 
                           : 'Mark for Maintenance',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -323,36 +233,21 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
               PopupMenuItem<String>(
                 value: 'history',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.history,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      Icons.history_outlined,
+                      color: theme.textTheme.bodyLarge?.color,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       'View History',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -361,34 +256,19 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               const PopupMenuDivider(),
               PopupMenuItem<String>(
                 value: 'delete',
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsiveSpacing(context, 6),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
+                    Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                      size: 20,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                    const SizedBox(width: 12),
                     Text(
                       'Delete Tool',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        fontSize: 14,
                         color: Colors.red,
                         fontWeight: FontWeight.w500,
                       ),
@@ -514,154 +394,146 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return [imagePath];
   }
 
+  Widget _buildImageItem(String imageUrl, ColorScheme colorScheme, bool isDarkMode) {
+    // Check if it's a network URL
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: 250,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: isDarkMode ? colorScheme.surface : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                  SizedBox(height: 8),
+                  Text('Failed to load image', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
+                ],
+              ),
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: 250,
+            decoration: BoxDecoration(
+              color: isDarkMode ? colorScheme.surface : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    
+    // Check if it's a local file (not web)
+    if (!kIsWeb && !imageUrl.startsWith('http')) {
+      final localImage = buildLocalFileImage(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: 250,
+      );
+      if (localImage != null) {
+        return localImage;
+      }
+      return Container(
+        width: double.infinity,
+        height: 250,
+        color: Colors.grey[200],
+        child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+      );
+    }
+    
+    // Fallback for other cases
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: isDarkMode ? colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+            SizedBox(height: 8),
+            Text('Image not found', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildImageSection() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final imageUrls = _getToolImageUrls(_currentTool);
     
     return Container(
       width: double.infinity,
       height: 250,
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: isDarkMode
-            ? Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
-                width: 1,
-              )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.1)
+              : AppTheme.subtleBorder,
+          width: 1,
+        ),
       ),
-      child: _currentTool.imagePath != null
+      child: imageUrls.isNotEmpty
           ? GestureDetector(
               onTap: () {
-                final imageUrls = _getToolImageUrls(_currentTool);
                 if (imageUrls.isNotEmpty) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ImageViewerScreen(
                         imageUrls: imageUrls,
-                        initialIndex: 0,
+                        initialIndex: _currentImageIndex,
                       ),
                     ),
                   );
                 }
               },
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(12),
                 child: Stack(
                   children: [
-                    _currentTool.imagePath!.startsWith('http')
-                        ? Image.network(
-                            _currentTool.imagePath!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: 250,
-                            errorBuilder: (context, error, stackTrace) {
-                              final theme = Theme.of(context);
-                              final colorScheme = theme.colorScheme;
-                              final isDarkMode = theme.brightness == Brightness.dark;
-                              return Container(
-                                height: 250,
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? colorScheme.surface : Colors.white,
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.error, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                      SizedBox(height: 8),
-                                      Text('Failed to load image', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              final theme = Theme.of(context);
-                              final colorScheme = theme.colorScheme;
-                              final isDarkMode = theme.brightness == Brightness.dark;
-                              return Container(
-                                height: 250,
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? colorScheme.surface : Colors.white,
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : (!kIsWeb && _currentTool.imagePath != null && !_currentTool.imagePath!.startsWith('http'))
-                            ? (() {
-                                final localImage = buildLocalFileImage(
-                                  _currentTool.imagePath!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 250,
-                                );
-                                if (localImage != null) {
-                                  return localImage;
-                                }
-                                return Container(
-                                  width: double.infinity,
-                                  height: 250,
-                                  color: Colors.grey[200],
-                                  child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
-                                );
-                              })()
-                            : (_currentTool.imagePath != null && _currentTool.imagePath!.isNotEmpty)
-                                ? Image.network(
-                                    _currentTool.imagePath!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: 250,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: double.infinity,
-                                      height: 250,
-                                      color: Colors.grey[200],
-                                      child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 250,
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode ? colorScheme.surface : Colors.white,
-                                      borderRadius: BorderRadius.circular(28),
-                                    ),
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.image_not_supported, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                                          SizedBox(height: 8),
-                                          Text('Image not found', style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                    // Image Carousel
+                    PageView.builder(
+                      controller: _imagePageController,
+                      itemCount: imageUrls.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentImageIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final imageUrl = imageUrls[index];
+                        return _buildImageItem(imageUrl, colorScheme, isDarkMode);
+                      },
+                    ),
+                    // Fullscreen icon
                     Positioned(
                       top: 8,
                       right: 8,
@@ -678,7 +550,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         ),
                       ),
                     ),
-                    if (_getToolImageUrls(_currentTool).length > 1)
+                    // Image count badge (only show if more than 1 image)
+                    if (imageUrls.length > 1)
                       Positioned(
                         top: 8,
                         left: 8,
@@ -689,11 +562,35 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${_getToolImageUrls(_currentTool).length}',
+                            '${_currentImageIndex + 1}/${imageUrls.length}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    // Page indicators (dots at the bottom)
+                    if (imageUrls.length > 1)
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            imageUrls.length,
+                            (index) => Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentImageIndex == index
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.4),
+                              ),
                             ),
                           ),
                         ),
@@ -775,47 +672,33 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: isDarkMode
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppTheme.subtleBorder,
+                width: 1,
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getStatusColor(_currentTool.status).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.info,
-                    color: AppTheme.getStatusColor(_currentTool.status),
-                    size: 24,
-                  ),
+                Icon(
+                  Icons.info_outline,
+                  color: AppTheme.getStatusColor(_currentTool.status),
+                  size: 20,
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 8),
                 Text(
                   'Status',
                   style: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 6),
+                SizedBox(height: 4),
                 StatusChip(
                   status: _currentTool.status,
                   label: _currentTool.status == 'Maintenance' ? 'Maint.' : null,
@@ -829,47 +712,33 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: isDarkMode
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppTheme.subtleBorder,
+                width: 1,
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getConditionColor(_currentTool.condition).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.assessment,
-                    color: AppTheme.getConditionColor(_currentTool.condition),
-                    size: 24,
-                  ),
+                Icon(
+                  Icons.assessment_outlined,
+                  color: AppTheme.getConditionColor(_currentTool.condition),
+                  size: 20,
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 8),
                 Text(
                   'Condition',
                   style: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 6),
+                SizedBox(height: 4),
                 ConditionChip(condition: _currentTool.condition),
               ],
             ),
@@ -880,56 +749,43 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: isDarkMode
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppTheme.subtleBorder,
+                width: 1,
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: (_currentTool.purchasePrice != null ? Colors.green : Colors.grey).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.attach_money,
-                    color: _currentTool.purchasePrice != null ? Colors.green : Colors.grey,
-                    size: 24,
-                  ),
+                Icon(
+                  Icons.attach_money,
+                  color: _currentTool.purchasePrice != null ? Colors.green : Colors.grey,
+                  size: 20,
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 8),
                 Text(
                   'Purchase Price',
                   style: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 6),
+                SizedBox(height: 4),
                 Text(
                   _currentTool.purchasePrice != null 
                       ? CurrencyFormatter.formatCurrencyWhole(_currentTool.purchasePrice!)
                       : 'N/A',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 13,
                     color: colorScheme.onSurface,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -965,26 +821,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: isDarkMode
-                  ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppTheme.subtleBorder,
+                width: 1,
+              ),
             ),
             child: Column(
               children: children,
@@ -1365,6 +1209,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             const SnackBar(
               content: Text('Image added successfully!'),
               backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
             ),
           );
         }
@@ -1526,6 +1371,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             ),
             backgroundColor: isInMaintenance ? Colors.green : Colors.orange,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1540,6 +1386,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             content: Text('Error updating maintenance status: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1598,6 +1445,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           SnackBar(
             content: Text('Tool badged successfully! Other technicians will see you have this tool.'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
         
@@ -1612,6 +1460,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           SnackBar(
             content: Text('Error badging tool: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1646,6 +1495,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           SnackBar(
             content: const Text('Badge released. Tool is now available to others.'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
 
@@ -1659,6 +1509,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           SnackBar(
             content: Text('Error releasing badge: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1677,6 +1528,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       const SnackBar(
         content: Text('Tool history coming soon!'),
         backgroundColor: Colors.blue,
+        duration: Duration(seconds: 3),
       ),
     );
   }

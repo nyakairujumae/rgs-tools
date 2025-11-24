@@ -111,12 +111,12 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       Container(
                         padding: ResponsiveHelper.getResponsivePadding(context, all: 12),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: AppTheme.secondaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
                         ),
                         child: Icon(
                           Icons.info_outline,
-                          color: Colors.blue,
+                          color: AppTheme.secondaryColor,
                           size: ResponsiveHelper.getResponsiveIconSize(context, 24),
                         ),
                       ),
@@ -196,7 +196,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     decoration: BoxDecoration(
                       gradient: _selectedTools.isNotEmpty
                           ? LinearGradient(
-                              colors: [Colors.blue.shade600, Colors.blue.shade700],
+                              colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withOpacity(0.85)],
                             )
                           : null,
                       color: _selectedTools.isEmpty ? Colors.grey[300] : null,
@@ -204,7 +204,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       boxShadow: _selectedTools.isNotEmpty
                           ? [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
+                                color: AppTheme.secondaryColor.withOpacity(0.3),
                                 blurRadius: 16,
                                 offset: const Offset(0, 6),
                               ),
@@ -316,7 +316,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     ],
                     border: isSelected
                         ? Border.all(
-                            color: Colors.blue,
+                            color: AppTheme.secondaryColor,
                             width: 3,
                           )
                         : null,
@@ -357,10 +357,10 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                     width: ResponsiveHelper.getResponsiveIconSize(context, 28),
                     height: ResponsiveHelper.getResponsiveIconSize(context, 28),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.white,
+                      color: isSelected ? AppTheme.secondaryColor : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey[300]!,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey[300]!,
                         width: 2,
                       ),
                       boxShadow: [

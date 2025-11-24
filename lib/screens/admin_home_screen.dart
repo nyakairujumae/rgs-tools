@@ -147,10 +147,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   }
 
   void _startPeriodicRefresh() {
-    // Refresh pending approvals every 30 seconds to catch new registrations
+    // Refresh pending approvals and notifications every 30 seconds to catch new registrations/notifications
     Future.delayed(Duration(seconds: 30), () {
       if (!_isDisposed && mounted) {
         context.read<PendingApprovalsProvider>().loadPendingApprovals();
+        context.read<AdminNotificationProvider>().loadNotifications();
         _startPeriodicRefresh(); // Schedule next refresh
       }
     });
@@ -164,6 +165,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         context.read<SupabaseToolProvider>().loadTools(),
         context.read<SupabaseTechnicianProvider>().loadTechnicians(),
         context.read<PendingApprovalsProvider>().loadPendingApprovals(),
+        context.read<AdminNotificationProvider>().loadNotifications(),
       ]);
     } catch (e) {
       debugPrint('Error loading admin data: $e');

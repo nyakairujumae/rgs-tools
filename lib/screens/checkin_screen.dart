@@ -1006,6 +1006,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           SnackBar(
             content: Text('${_selectedTool!.name} checked in successfully'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
         Navigator.pop(context);

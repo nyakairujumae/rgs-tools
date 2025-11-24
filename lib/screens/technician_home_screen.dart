@@ -1557,6 +1557,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         const SnackBar(
           content: Text('You need to be signed in to request a tool.'),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -1568,6 +1569,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         const SnackBar(
           content: Text('This tool is not assigned to anyone.'),
           backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -1648,6 +1650,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             content: Text('Tool request sent to ${tool.assignedTo == requesterId ? 'the owner' : 'the tool holder'}'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1659,6 +1662,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             content: Text('Failed to send request: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -2104,7 +2108,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
-                                            content: Text('Token refreshed')),
+                                            content: Text('Token refreshed'),
+                                            duration: const Duration(seconds: 2)),
                                       );
                                       Navigator.pop(context);
                                       _showNotifications(context);
@@ -2122,7 +2127,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                           .showSnackBar(
                                         SnackBar(
                                             content: Text(
-                                                'FCM initialized. Please check again.')),
+                                                'FCM initialized. Please check again.'),
+                                            duration: const Duration(seconds: 3)),
                                       );
                                       Navigator.pop(context);
                                       _showNotifications(context);

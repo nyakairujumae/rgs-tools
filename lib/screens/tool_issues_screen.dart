@@ -685,6 +685,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                   SnackBar(
                     content: Text('Issue assigned successfully'),
                     backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 3),
                   ),
                 );
               }
@@ -729,6 +730,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
                   SnackBar(
                     content: Text('Issue resolved successfully'),
                     backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 3),
                   ),
                 );
               }

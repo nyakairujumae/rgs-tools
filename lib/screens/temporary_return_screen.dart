@@ -437,6 +437,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
           SnackBar(
             content: Text('${widget.tool.name} temporarily returned. Expected back: ${_expectedReturnDate!.toIso8601String().split('T')[0]}'),
             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
           ),
         );
         Navigator.pop(context);
@@ -447,6 +448,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
           SnackBar(
             content: Text('Error processing return: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

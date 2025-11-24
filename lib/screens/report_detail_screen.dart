@@ -123,30 +123,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         // Show success message and open file
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Column(
+            content: const Row(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'Exported!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 8),
                 Text(
-                  file.path,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
+                  'Success',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -156,13 +142,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-            ),
-            action: SnackBarAction(
-              label: 'Open',
-              textColor: Colors.white,
-              onPressed: () async {
-                await OpenFile.open(file.path);
-              },
             ),
           ),
         );

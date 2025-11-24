@@ -454,6 +454,26 @@ class HvacToolsManagerApp extends StatelessWidget {
             return const SizedBox.shrink();
           };
           
+          // Wait for initialization to complete before showing any screen
+          // This prevents the brief flash of role selection screen
+          if (!authProvider.isInitialized || authProvider.isLoading) {
+            return MaterialApp(
+              title: 'RGS HVAC Tools',
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeProvider.themeMode,
+              home: Scaffold(
+                backgroundColor: AppTheme.appBackground,
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+                  ),
+                ),
+              ),
+              debugShowCheckedModeBanner: false,
+            );
+          }
+          
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
@@ -545,6 +565,7 @@ class HvacToolsManagerApp extends StatelessWidget {
     print('🔍 isInitialized: ${authProvider.isInitialized}');
     print('🔍 isLoading: ${authProvider.isLoading}');
     print('🔍 isAuthenticated: ${authProvider.isAuthenticated}');
+    print('🔍 Current user: ${authProvider.user?.email ?? "None"}');
     
     try {
       // If we're in the middle of logging out, immediately show role selection.
@@ -553,24 +574,24 @@ class HvacToolsManagerApp extends StatelessWidget {
         print('🔍 isLoggingOut=true → Showing RoleSelectionScreen immediately');
         return const RoleSelectionScreen();
       }
+      
       // For web, show role selection screen initially (no backend for now)
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
         return const RoleSelectionScreen();
       }
-      
-      // Skip splash screen - go directly to role selection or authenticated screen
-      // The app will initialize in the background
-      if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 App initializing - showing role selection screen directly');
-        // Show role selection screen immediately instead of splash screen
-        return const RoleSelectionScreen();
-      }
 
+      // At this point, initialization is complete (checked in Consumer2 builder)
+      // Check authentication status and route accordingly
       if (authProvider.isAuthenticated) {
         print('🔍 User is authenticated, routing to appropriate screen');
+        print('🔍 User role: ${authProvider.userRole}');
+        print('🔍 Is admin: ${authProvider.isAdmin}');
+        print('🔍 Is pending: ${authProvider.isPendingApproval}');
+        
         // Route based on user role
         if (authProvider.isAdmin) {
+          print('🔍 Routing to AdminHomeScreen');
           return AdminHomeScreenErrorBoundary(
             child: AdminHomeScreen(
               key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
@@ -582,6 +603,7 @@ class HvacToolsManagerApp extends StatelessWidget {
           return const PendingApprovalScreen();
         } else {
           // Technician is approved - send to home screen
+          print('🔍 Routing to TechnicianHomeScreen');
           return const TechnicianHomeScreen();
         }
       } else {

@@ -622,6 +622,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
               '${widget.tool.name} assigned to ${_selectedTechnician!.name}',
             ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
         // Refresh tools to get updated data

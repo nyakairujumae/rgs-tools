@@ -374,7 +374,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.auto_awesome,
-                                          color: Colors.blue),
+                                          color: AppTheme.secondaryColor),
                                       tooltip: 'Generate Model Number',
                                       onPressed: _generateModelNumber,
                                     ),
@@ -739,7 +739,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.withValues(alpha:0.3),
+                            color: AppTheme.secondaryColor.withValues(alpha:0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -975,13 +975,6 @@ class _AddToolScreenState extends State<AddToolScreen> {
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Dismiss',
-              textColor: Colors.white,
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              },
-            ),
           ),
         );
       }
@@ -1258,18 +1251,18 @@ class _AddToolScreenState extends State<AddToolScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.blue.withValues(alpha:0.1),
+          color: AppTheme.secondaryColor.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
+          border: Border.all(color: AppTheme.secondaryColor.withValues(alpha:0.3)),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: Colors.blue),
+            Icon(icon, size: 32, color: AppTheme.secondaryColor),
             SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: Colors.blue,
+                color: AppTheme.secondaryColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
