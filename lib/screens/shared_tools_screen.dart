@@ -77,7 +77,13 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             bottomRight: Radius.circular(24),
           ),
         ),
-        automaticallyImplyLeading: false, // Remove back button since this is a main screen
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        automaticallyImplyLeading: Navigator.canPop(context),
         title: Text(
           'Shared Tools',
           style: TextStyle(
