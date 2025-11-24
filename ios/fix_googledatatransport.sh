@@ -20,3 +20,5 @@ sed -i '' 's/GoogleDataTransport ([^)]*9\.[^)]*)/GoogleDataTransport (10.1.0)/g'
 echo "Modified Podfile.lock. You may need to run 'pod install --repo-update' again."
 echo "Note: This is a workaround. MLKit may not work correctly with GoogleDataTransport 10.1.0."
 
+
+

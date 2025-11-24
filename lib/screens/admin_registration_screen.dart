@@ -312,44 +312,31 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     const SizedBox(height: 32),
 
                     // Register Button
-                    Container(
+                    SizedBox(
                       height: 56,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withValues(alpha: 0.9)
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600] ?? Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _isLoading ? null : _handleRegister,
-                          borderRadius: BorderRadius.circular(28),
-                          child: Center(
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white)
-                                : const Text(
-                                    'Register as Admin',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                          ),
+                          elevation: 3,
+                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text(
+                                'Register as Admin',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                       ),
                     ),
 
@@ -406,6 +393,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     try {
       final authProvider = context.read<AuthProvider>();
 
+      debugPrint('🔍 Starting admin registration...');
       await authProvider.registerAdmin(
         _nameController.text.trim(),
         _emailController.text.trim(),
@@ -413,12 +401,22 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         _positionController.text.trim(),
       );
 
+      debugPrint('✅ Admin registration method completed successfully');
+
       if (mounted) {
-        // Check if user has a session (email confirmation might be required for admins)
+        // Check if user was actually created
+        final userCreated = authProvider.user != null;
         final hasSession = authProvider.isAuthenticated;
+        
+        debugPrint('🔍 Registration check - User created: $userCreated, hasSession: $hasSession');
+        
+        if (!userCreated) {
+          throw Exception('Registration failed: User was not created. Please try again.');
+        }
         
         if (hasSession) {
           // Email was auto-confirmed or confirmation is disabled
+          debugPrint('✅ Admin has session, navigating to home screen');
           AuthErrorHandler.showSuccessSnackBar(
             context,
             '🎉 Admin account created successfully! Welcome to RGS HVAC Services.',
@@ -434,6 +432,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           );
         } else {
           // Email confirmation required for admin
+          debugPrint('⚠️ No session - email confirmation required');
           AuthErrorHandler.showInfoSnackBar(
             context,
             '📧 Admin account created! Please check your email to verify your account. '
@@ -451,7 +450,23 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        debugPrint('❌ Admin registration error: $e');
+        debugPrint('❌ Error type: ${e.runtimeType}');
+        debugPrint('❌ Error string: ${e.toString()}');
+        
+        String errorMessage = AuthErrorHandler.getErrorMessage(e);
+        
+        // Provide more specific error messages
+        if (e.toString().contains('connection') || e.toString().contains('network') || e.toString().contains('timeout')) {
+          errorMessage = 'Connection error: Please check your internet connection and try again.';
+        } else if (e.toString().contains('email already registered') || e.toString().contains('already exists')) {
+          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        } else if (e.toString().contains('invalid email')) {
+          errorMessage = 'Invalid email address. Please check and try again.';
+        } else if (e.toString().contains('weak password') || e.toString().contains('password')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        }
+        
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     } finally {

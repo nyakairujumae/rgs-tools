@@ -255,19 +255,63 @@ class AuthProvider with ChangeNotifier {
       final isAdmin = role == UserRole.admin;
       debugPrint('🔍 signUp called for: $email, role: ${role?.value ?? "null"}, isAdmin: $isAdmin');
       
-      // For admins, email confirmation is required (enforced by Supabase)
-      // For technicians, we'll use a database trigger to auto-confirm
-      final response = await SupabaseService.client.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': fullName,
-          'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
-        },
-        emailRedirectTo: isAdmin 
-            ? 'com.rgs.app://email-confirmation' // Admins need to confirm email
-            : 'com.rgs.app://email-confirmation', // Technicians will be auto-confirmed by trigger
-      );
+      // Check database connection first
+      debugPrint('🔍 Checking database connection...');
+      final isConnected = await SupabaseService.ensureConnection(retries: 2);
+      if (!isConnected) {
+        throw Exception('Cannot connect to database. Please check your internet connection and try again.');
+      }
+      debugPrint('✅ Database connection verified');
+      
+      // Email confirmation is disabled in Supabase, so users will have a session immediately
+      debugPrint('🔍 Calling Supabase auth.signUp...');
+      debugPrint('🔍 SignUp parameters: email=$email, role=${role?.value ?? "technician"}');
+      
+      // Try signUp with retry logic
+      AuthResponse? response;
+      int maxRetries = 2;
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          debugPrint('🔍 SignUp attempt $attempt/$maxRetries...');
+          
+          // Timeout set to 30 seconds (email confirmation is disabled, so should be faster)
+          response = await SupabaseService.client.auth.signUp(
+            email: email,
+            password: password,
+            data: {
+              'full_name': fullName,
+              'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
+            },
+            // emailRedirectTo is optional when email confirmation is disabled
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              debugPrint('❌ SignUp attempt $attempt timed out after 30 seconds');
+              if (attempt < maxRetries) {
+                debugPrint('⏳ Will retry...');
+              }
+              throw TimeoutException('Registration is taking longer than expected. Please check your internet connection and try again.');
+            },
+          );
+          
+          debugPrint('✅ SignUp API call completed on attempt $attempt');
+          break; // Success, exit retry loop
+        } catch (e) {
+          if (attempt == maxRetries) {
+            // Last attempt failed, rethrow
+            debugPrint('❌ All signUp attempts failed');
+            rethrow;
+          } else {
+            // Wait before retrying
+            debugPrint('⏳ Waiting 3 seconds before retry...');
+            await Future.delayed(const Duration(seconds: 3));
+          }
+        }
+      }
+      
+      if (response == null) {
+        throw Exception('SignUp failed after $maxRetries attempts');
+      }
 
       debugPrint('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
 
@@ -278,13 +322,12 @@ class AuthProvider with ChangeNotifier {
         
         // For technicians, create pending approval instead of user record
         if (role == UserRole.technician || role == null) {
-          // Only try to create pending approval if we have a session
-          // If email confirmation is required, the pending approval will be created
-          // via a database trigger or when they confirm their email
+          // Email confirmation is disabled, so we should have a session immediately
+          // Create pending approval if we have a session
           if (hasSession) {
             try {
               debugPrint('🔍 Creating pending approval for technician (has session)...');
-              // Create pending approval record
+              // Create pending approval record with timeout
               await SupabaseService.client
                   .from('pending_user_approvals')
                   .insert({
@@ -292,7 +335,13 @@ class AuthProvider with ChangeNotifier {
                     'email': email,
                     'full_name': fullName,
                     'status': 'pending',
-                  });
+                  })
+                  .timeout(
+                    const Duration(seconds: 15),
+                    onTimeout: () {
+                      throw TimeoutException('Failed to create pending approval. Please try again.');
+                    },
+                  );
               
               debugPrint('✅ Pending approval created for technician: $email');
               
@@ -301,10 +350,17 @@ class AuthProvider with ChangeNotifier {
                 await SupabaseService.client
                     .from('users')
                     .delete()
-                    .eq('id', _user!.id);
+                    .eq('id', _user!.id)
+                    .timeout(
+                      const Duration(seconds: 10),
+                      onTimeout: () {
+                        debugPrint('⚠️ Delete user record timed out');
+                      },
+                    );
                 debugPrint('✅ Removed user record for pending technician');
               } catch (deleteError) {
                 debugPrint('⚠️ Could not delete user record: $deleteError');
+                // Don't throw - this is not critical
               }
               
               // Set role to pending IMMEDIATELY (before notifyListeners)
@@ -314,15 +370,20 @@ class AuthProvider with ChangeNotifier {
               notifyListeners(); // Notify immediately so UI can check isPendingApproval
             } catch (e, stackTrace) {
               debugPrint('❌ Error creating pending approval: $e');
+              debugPrint('❌ Error type: ${e.runtimeType}');
               debugPrint('❌ Stack trace: $stackTrace');
-              // Continue anyway - user is created, pending approval can be created later
+              // Re-throw if it's a timeout or connection error
+              if (e is TimeoutException || e.toString().contains('connection') || e.toString().contains('network')) {
+                rethrow;
+              }
+              // Continue anyway for other errors - user is created, pending approval can be created later
             }
           } else {
-            // No session - email confirmation required
-            debugPrint('⚠️ No session after signup - email confirmation required');
-            debugPrint('⚠️ Pending approval will be created after email confirmation');
-            // Don't set role here - user needs to confirm email first
-            // The pending approval should be created via a database trigger or function
+            // No session - this shouldn't happen if email confirmation is disabled
+            debugPrint('⚠️ No session after signup - this is unexpected since email confirmation is disabled');
+            debugPrint('⚠️ User was created but no session available');
+            // User was created, but we can't proceed without a session
+            throw Exception('Registration completed but no session was created. Please try logging in.');
           }
         } else {
           // For admins, load role normally (only if we have a session)
@@ -330,7 +391,9 @@ class AuthProvider with ChangeNotifier {
             debugPrint('🔍 Loading role for admin...');
             await _loadUserRole();
           } else {
-            debugPrint('⚠️ No session for admin - email confirmation required');
+            // No session - this shouldn't happen if email confirmation is disabled
+            debugPrint('⚠️ No session for admin - this is unexpected since email confirmation is disabled');
+            throw Exception('Admin registration completed but no session was created. Please try logging in.');
           }
         }
       } else {
@@ -343,6 +406,20 @@ class AuthProvider with ChangeNotifier {
       debugPrint('❌ Error type: ${e.runtimeType}');
       debugPrint('❌ Error string: ${e.toString()}');
       debugPrint('❌ Stack trace: $stackTrace');
+      
+      // Provide more specific error messages
+      if (e is TimeoutException) {
+        debugPrint('⚠️ Timeout occurred - this might indicate:');
+        debugPrint('   1. Slow network connection');
+        debugPrint('   2. Supabase email service is slow');
+        debugPrint('   3. Email confirmation is enabled and causing delays');
+        debugPrint('   4. Supabase service might be experiencing issues');
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        debugPrint('⚠️ Network error detected');
+      } else if (e.toString().contains('email') && e.toString().contains('already')) {
+        debugPrint('⚠️ Email already registered');
+      }
+      
       rethrow;
     } finally {
       _isLoading = false;
@@ -362,12 +439,68 @@ class AuthProvider with ChangeNotifier {
       throw Exception('Invalid email domain for admin registration');
     }
 
-    await signUp(
+    debugPrint('🔍 Starting admin registration for: $email');
+    final response = await signUp(
       email: email,
       password: password,
       fullName: name,
       role: UserRole.admin,
     );
+
+    // Verify that user was actually created
+    if (response.user == null) {
+      debugPrint('❌ Admin registration failed - no user returned');
+      throw Exception('Registration failed: User was not created. Please try again.');
+    }
+
+    debugPrint('✅ Admin registration successful - user ID: ${response.user!.id}');
+    
+    // If we have a session, ensure the user record exists in the users table
+    // (it should be created by the database trigger, but let's verify)
+    if (response.session != null) {
+      try {
+        // Wait a moment for the trigger to create the user record
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Verify user record exists with timeout
+        final userRecord = await SupabaseService.client
+            .from('users')
+            .select('id, role')
+            .eq('id', response.user!.id)
+            .maybeSingle()
+            .timeout(
+              const Duration(seconds: 15),
+              onTimeout: () {
+                throw TimeoutException('Failed to verify user record. Please try again.');
+              },
+            );
+        
+        if (userRecord == null) {
+          debugPrint('⚠️ User record not found in users table, creating manually...');
+          // Create user record manually if trigger didn't fire
+          await SupabaseService.client
+              .from('users')
+              .insert({
+                'id': response.user!.id,
+                'email': email,
+                'full_name': name,
+                'role': 'admin',
+              })
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () {
+                  throw TimeoutException('Failed to create user record. Please try again.');
+                },
+              );
+          debugPrint('✅ User record created manually');
+        } else {
+          debugPrint('✅ User record exists in users table');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error verifying/creating user record: $e');
+        // Don't throw - user is created, record might be created later
+      }
+    }
   }
 
   // Technician registration method
@@ -387,13 +520,20 @@ class AuthProvider with ChangeNotifier {
       // First, create the auth user with 'technician' role
       // Note: signUp will create a basic pending approval, but we need to update it with additional details
       debugPrint('🔍 Starting technician registration for: $email');
-      await signUp(
+      final response = await signUp(
         email: email,
         password: password,
         fullName: name.toUpperCase(), // Force uppercase for technician names
         role: UserRole.technician, // Explicitly set as technician
       );
-      debugPrint('✅ signUp completed for: $email');
+      
+      // Verify that user was actually created
+      if (response.user == null) {
+        debugPrint('❌ Technician registration failed - no user returned');
+        throw Exception('Registration failed: User was not created. Please try again.');
+      }
+      
+      debugPrint('✅ signUp completed for: $email, user ID: ${response.user!.id}');
 
       if (profileImage != null) {
         debugPrint('🔍 Uploading profile image...');
@@ -410,13 +550,19 @@ class AuthProvider with ChangeNotifier {
       if (_user != null && hasSession) {
         try {
           debugPrint('🔍 Checking for existing pending approval...');
-          // Check if a pending approval already exists (created by signUp)
+          // Check if a pending approval already exists (created by signUp) with timeout
           final existingApproval = await SupabaseService.client
               .from('pending_user_approvals')
               .select('id')
               .eq('user_id', _user!.id)
               .eq('status', 'pending')
-              .maybeSingle();
+              .maybeSingle()
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () {
+                  throw TimeoutException('Failed to check pending approval. Please try again.');
+                },
+              );
           
           if (existingApproval != null) {
             debugPrint('✅ Found existing pending approval, updating...');
@@ -435,7 +581,13 @@ class AuthProvider with ChangeNotifier {
             await SupabaseService.client
                 .from('pending_user_approvals')
                 .update(updateData)
-                .eq('id', existingApproval['id']);
+                .eq('id', existingApproval['id'])
+                .timeout(
+                  const Duration(seconds: 15),
+                  onTimeout: () {
+                    throw TimeoutException('Failed to update pending approval. Please try again.');
+                  },
+                );
             
             debugPrint('✅ Updated existing pending approval with additional details: $email');
           } else {
@@ -458,7 +610,13 @@ class AuthProvider with ChangeNotifier {
 
             await SupabaseService.client
                 .from('pending_user_approvals')
-                .insert(insertData);
+                .insert(insertData)
+                .timeout(
+                  const Duration(seconds: 15),
+                  onTimeout: () {
+                    throw TimeoutException('Failed to create pending approval. Please try again.');
+                  },
+                );
           
             debugPrint('✅ Created pending approval for technician: $email');
           }
@@ -469,10 +627,17 @@ class AuthProvider with ChangeNotifier {
             await SupabaseService.client
                 .from('users')
                 .delete()
-                .eq('id', _user!.id);
+                .eq('id', _user!.id)
+                .timeout(
+                  const Duration(seconds: 10),
+                  onTimeout: () {
+                    debugPrint('⚠️ Delete user record timed out');
+                  },
+                );
             debugPrint('✅ Removed user record for pending technician (will be created on approval)');
           } catch (deleteError) {
             debugPrint('⚠️ Could not delete user record (might not exist): $deleteError');
+            // Don't throw - this is not critical
           }
           
           // Set role to pending
@@ -482,6 +647,7 @@ class AuthProvider with ChangeNotifier {
           debugPrint('✅ Technician registration completed successfully');
         } catch (e, stackTrace) {
           debugPrint('❌ Error updating pending approval: $e');
+          debugPrint('❌ Error type: ${e.runtimeType}');
           debugPrint('❌ Stack trace: $stackTrace');
           // If email confirmation is required, this is expected - don't throw
           // The pending approval will be created after email confirmation
@@ -490,6 +656,10 @@ class AuthProvider with ChangeNotifier {
               e.toString().contains('RLS')) {
             debugPrint('⚠️ RLS blocked pending approval creation - this is expected when email confirmation is required');
             debugPrint('⚠️ Pending approval will be created after email confirmation');
+          } else if (e is TimeoutException || e.toString().contains('connection') || e.toString().contains('network')) {
+            // Re-throw timeout and connection errors
+            debugPrint('❌ Connection/timeout error - rethrowing');
+            rethrow;
           } else {
             // Other errors should still be logged but not thrown
             debugPrint('⚠️ Non-RLS error occurred, but continuing anyway');

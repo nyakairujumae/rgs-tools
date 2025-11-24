@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 import '../theme/app_theme.dart';
 
 class ThemeProvider with ChangeNotifier {
@@ -53,7 +54,12 @@ class ThemeProvider with ChangeNotifier {
   // Load theme from SharedPreferences
   Future<void> _loadTheme() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          throw TimeoutException('SharedPreferences timeout');
+        },
+      );
       final themeIndex = prefs.getInt(_themeKey) ?? 2; // Default to system (index 2)
       _themeMode = ThemeMode.values[themeIndex];
       
@@ -67,7 +73,8 @@ class ThemeProvider with ChangeNotifier {
       _updateDarkMode();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading theme: $e');
+      debugPrint('⚠️ Error loading theme: $e');
+      debugPrint('⚠️ Error type: ${e.runtimeType}');
       // Fallback to system theme
       _themeMode = ThemeMode.system;
       _updateDarkMode();
@@ -78,10 +85,17 @@ class ThemeProvider with ChangeNotifier {
   // Save theme to SharedPreferences
   Future<void> _saveTheme() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          throw TimeoutException('SharedPreferences timeout');
+        },
+      );
       await prefs.setInt(_themeKey, _themeMode.index);
     } catch (e) {
-      debugPrint('Error saving theme: $e');
+      debugPrint('⚠️ Error saving theme: $e');
+      debugPrint('⚠️ Error type: ${e.runtimeType}');
+      // Don't throw - theme will still work, just won't persist
     }
   }
 

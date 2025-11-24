@@ -15,10 +15,12 @@ class AuthErrorHandler {
     if (errorString.contains('network') || 
         errorString.contains('connection') ||
         errorString.contains('timeout') ||
+        errorString.contains('timed out') ||
         errorString.contains('unreachable') ||
         errorString.contains('no internet') ||
-        errorString.contains('network error')) {
-      return '🌐 No internet connection. Please check your network and try again.';
+        errorString.contains('network error') ||
+        errorString.contains('cannot connect to database')) {
+      return '🌐 Connection error: Please check your internet connection and try again.';
     }
     
     // Authentication errors

@@ -126,6 +126,13 @@ post_install do |installer|
         config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
       end
 
+      # Ensure shared_preferences_foundation is properly configured
+      if target.name == 'shared_preferences_foundation'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+
       # Additional compiler flags for Firebase (only for Firebase targets)
       if target.name.include?('Firebase') || target.name.include?('firebase')
         config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']

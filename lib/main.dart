@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'providers/theme_provider.dart';
@@ -16,7 +18,6 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
-import 'screens/splash_screen.dart';
 import 'models/tool.dart';
 import 'models/user_role.dart';
 import 'providers/auth_provider.dart';
@@ -29,6 +30,8 @@ import 'providers/admin_notification_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
+import 'services/supabase_service.dart';
+import 'services/supabase_auth_storage.dart';
 import 'services/image_upload_service.dart';
 import 'services/firebase_messaging_service.dart'
     if (dart.library.html) 'services/firebase_messaging_service_stub.dart'
@@ -148,38 +151,118 @@ void main() async {
 
     // Initialize Supabase (works on web too)
     print('Initializing Supabase...');
+    bool supabaseInitialized = false;
+    
     try {
-      await Supabase.initialize(
-        url: SupabaseConfig.url,
-        anonKey: SupabaseConfig.anonKey,
-      );
-      print('Supabase initialized successfully');
+      // Check if Supabase is already initialized
+      try {
+        final existingClient = Supabase.instance.client;
+        print('✅ Supabase already initialized');
+        supabaseInitialized = true;
+      } catch (e) {
+        // Not initialized yet, try to initialize it
+        print('🔍 Supabase not initialized, initializing now...');
+        print('🔍 Using bundle ID: com.rgs.app');
+        
+        try {
+          // Add a small delay to allow native plugins to initialize
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          await Supabase.initialize(
+            url: SupabaseConfig.url,
+            anonKey: SupabaseConfig.anonKey,
+            authOptions: SupabaseAuthStorageFactory.createAuthOptions(),
+          ).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw TimeoutException('Supabase initialization timed out');
+            },
+          );
+          print('✅ Supabase initialized successfully');
+          supabaseInitialized = true;
+        } on PlatformException catch (e) {
+          // Handle shared_preferences channel errors
+          if (e.code == 'channel-error' && (e.message?.contains('shared_preferences') == true || e.message?.contains('LegacyUserDefaultsApi') == true)) {
+            print('⚠️ Supabase initialization failed due to shared_preferences channel error');
+            print('⚠️ Error details: ${e.message}');
+            print('⚠️ This is a native plugin issue. Using fallback client (limited session persistence)...');
+            // Wait a bit and try fallback
+            await Future.delayed(const Duration(milliseconds: 1000));
+            // Use the fallback client from SupabaseService
+            // This will create a direct client without full initialization
+            try {
+              final fallbackClient = SupabaseService.client;
+              print('✅ Using fallback Supabase client (basic functionality available)');
+              supabaseInitialized = true; // Mark as initialized even with fallback
+            } catch (fallbackError) {
+              print('❌ Fallback client creation also failed: $fallbackError');
+              print('❌ Error type: ${fallbackError.runtimeType}');
+              supabaseInitialized = false;
+            }
+          } else {
+            print('❌ Supabase initialization failed with PlatformException: ${e.code} - ${e.message}');
+            rethrow; // Re-throw if it's a different error
+          }
+        } catch (e, stackTrace) {
+          // Catch any other errors
+          print('❌ Supabase initialization failed: $e');
+          print('❌ Error type: ${e.runtimeType}');
+          print('❌ Stack trace: $stackTrace');
+          // Try fallback even for other errors
+          try {
+            await Future.delayed(const Duration(milliseconds: 1000));
+            final fallbackClient = SupabaseService.client;
+            print('✅ Using fallback Supabase client after error');
+            supabaseInitialized = true;
+          } catch (fallbackError) {
+            print('❌ Fallback client creation failed: $fallbackError');
+            supabaseInitialized = false;
+          }
+        }
+      }
       
       // Listen for auth state changes to handle password reset links
-      if (!kIsWeb) {
-        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-          final event = data.event;
-          final session = data.session;
-          
-          print('🔐 Auth state changed: $event');
-          
-          // Handle password recovery - the deep link will navigate to reset screen
-          if (event == AuthChangeEvent.passwordRecovery && session != null) {
-            print('🔐 Password recovery detected - session available');
-            // The reset password screen will handle the session via deep link
+      if (supabaseInitialized && !kIsWeb) {
+        try {
+          // Try to get client from Supabase.instance, fallback to SupabaseService
+          SupabaseClient? authClient;
+          try {
+            authClient = Supabase.instance.client;
+          } catch (e) {
+            // If Supabase.instance is not available, use fallback client
+            authClient = SupabaseService.client;
           }
           
-          // Handle email confirmation
-          if (event == AuthChangeEvent.signedIn && session != null) {
-            print('🔐 User signed in - email may have been confirmed');
-            // User is now signed in after email confirmation, app will handle navigation
+          if (authClient != null) {
+            authClient.auth.onAuthStateChange.listen((data) {
+              final event = data.event;
+              final session = data.session;
+              
+              print('🔐 Auth state changed: $event');
+              
+              // Handle password recovery - the deep link will navigate to reset screen
+              if (event == AuthChangeEvent.passwordRecovery && session != null) {
+                print('🔐 Password recovery detected - session available');
+                // The reset password screen will handle the session via deep link
+              }
+              
+              // Handle email confirmation
+              if (event == AuthChangeEvent.signedIn && session != null) {
+                print('🔐 User signed in - email may have been confirmed');
+                // User is now signed in after email confirmation, app will handle navigation
+              }
+            });
           }
-        });
+        } catch (e) {
+          print('⚠️ Could not set up auth state listener: $e');
+        }
       }
-    } catch (supabaseError) {
-      print('Supabase initialization failed: $supabaseError');
-      // Continue without Supabase - this is not critical for basic app functionality
-      print('Continuing without Supabase...');
+    } catch (supabaseError, stackTrace) {
+      print('❌ Supabase initialization failed: $supabaseError');
+      print('❌ Error type: ${supabaseError.runtimeType}');
+      print('❌ Stack trace: $stackTrace');
+      print('⚠️ App will continue but authentication features may not work properly');
+      print('⚠️ Please restart the app or check your internet connection');
     }
 
     // Initialize local database (for offline support) - skip on web
@@ -476,17 +559,12 @@ class HvacToolsManagerApp extends StatelessWidget {
         return const RoleSelectionScreen();
       }
       
-      // Show loading screen during initialization or any loading state
-      // But add a timeout to prevent infinite loading when offline
+      // Skip splash screen - go directly to role selection or authenticated screen
+      // The app will initialize in the background
       if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 Showing loading screen');
-        // Return a loading screen with timeout indicator
-        return SplashScreen(
-          onTimeout: () {
-            // After timeout, proceed anyway
-            print('⚠️ Initialization timeout - proceeding with app');
-          },
-        );
+        print('🔍 App initializing - showing role selection screen directly');
+        // Show role selection screen immediately instead of splash screen
+        return const RoleSelectionScreen();
       }
 
       if (authProvider.isAuthenticated) {

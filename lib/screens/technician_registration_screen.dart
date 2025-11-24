@@ -502,48 +502,33 @@ class _TechnicianRegistrationScreenState
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
 
                     // Register Button
-                    Container(
+                    SizedBox(
                       height: ResponsiveHelper.getResponsiveCardHeight(context, 56),
-        decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                  AppTheme.primaryColor,
-                            AppTheme.primaryColor.withValues(alpha: 0.9)
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 28),
-                        ),
-          boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                blurRadius: 16,
-                            offset: const Offset(0, 6),
-              ),
-          ],
-        ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _isLoading ? null : _handleRegister,
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.getResponsiveBorderRadius(context, 28),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[600] ?? Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveHelper.getResponsiveBorderRadius(context, 28),
+                            ),
                           ),
-                          child: Center(
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white)
-                                : Text(
-                                    'Register as Technician',
-                                    style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                          ),
+                          elevation: 3,
+                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : Text(
+                                'Register as Technician',
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                       ),
                     ),
 
@@ -803,6 +788,7 @@ class _TechnicianRegistrationScreenState
     try {
       final authProvider = context.read<AuthProvider>();
 
+      debugPrint('🔍 Starting technician registration...');
       // Phone and department are required - validators ensure they're not empty
       await authProvider.registerTechnician(
         _nameController.text.trim().toUpperCase(),
@@ -867,8 +853,23 @@ class _TechnicianRegistrationScreenState
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('❌ Registration error: $e');
-        final errorMessage = AuthErrorHandler.getErrorMessage(e);
+        debugPrint('❌ Technician registration error: $e');
+        debugPrint('❌ Error type: ${e.runtimeType}');
+        debugPrint('❌ Error string: ${e.toString()}');
+        
+        String errorMessage = AuthErrorHandler.getErrorMessage(e);
+        
+        // Provide more specific error messages
+        if (e.toString().contains('connection') || e.toString().contains('network') || e.toString().contains('timeout')) {
+          errorMessage = 'Connection error: Please check your internet connection and try again.';
+        } else if (e.toString().contains('email already registered') || e.toString().contains('already exists')) {
+          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        } else if (e.toString().contains('invalid email')) {
+          errorMessage = 'Invalid email address. Please check and try again.';
+        } else if (e.toString().contains('weak password') || e.toString().contains('password')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        }
+        
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     } finally {
