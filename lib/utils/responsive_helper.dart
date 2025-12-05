@@ -176,6 +176,11 @@ class ResponsiveHelper {
     return MediaQuery.of(context).size.width > 600;
   }
 
+  // Check if device is desktop (wide enough for sidebar layout)
+  static bool isDesktop(BuildContext context) {
+    return MediaQuery.of(context).size.width >= 1024;
+  }
+
   // Get responsive grid spacing
   static double getResponsiveGridSpacing(BuildContext context, double baseSpacing) {
     final screenWidth = MediaQuery.of(context).size.width;

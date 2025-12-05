@@ -18,18 +18,37 @@ class ToolIssuesScreen extends StatefulWidget {
   State<ToolIssuesScreen> createState() => _ToolIssuesScreenState();
 }
 
-class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerProviderStateMixin {
+class _ToolIssuesScreenState extends State<ToolIssuesScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final VoidCallback _tabListener;
   String _selectedFilter = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   String _selectedSort = 'Recent';
 
-  final List<String> _filters = ['All', 'Open', 'In Progress', 'Resolved', 'Critical'];
+  final List<String> _filters = [
+    'All',
+    'Open',
+    'Critical',
+    'Resolved',
+  ];
   final List<String> _sortOptions = ['Recent', 'Priority', 'Type', 'Age'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabListener = () {
+      if (!_tabController.indexIsChanging &&
+          _tabController.index >= 0 &&
+          _tabController.index < _filters.length) {
+        setState(() {
+          _selectedFilter = _filters[_tabController.index];
+        });
+      }
+    };
+    _tabController.addListener(_tabListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ToolIssueProvider>().loadIssues();
     });
@@ -37,139 +56,25 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
 
   @override
   void dispose() {
+    _tabController.removeListener(_tabListener);
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: _buildPremiumAppBar(context),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Header with back button
-            Padding(
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 16,
-                vertical: 20,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Theme.of(context).colorScheme.surface 
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
-                      onPressed: () => NavigationHelper.safePop(context),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Expanded(
-                    child: Text(
-                      'Tool Issues',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Theme.of(context).colorScheme.surface 
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.refresh,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
-                      onPressed: () => context.read<ToolIssueProvider>().loadIssues(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Tab Bar
-            Container(
-              margin: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-              ),
-              decoration: BoxDecoration(
-                color: AppTheme.cardSurfaceColor(context),
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                  width: 1.1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicator: BoxDecoration(
-                  color: AppTheme.secondaryColor,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                labelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-                dividerColor: Colors.transparent,
-                tabs: [
-                  Tab(text: 'All (${context.watch<ToolIssueProvider>().totalIssues})'),
-                  Tab(text: 'Open (${context.watch<ToolIssueProvider>().openIssuesCount})'),
-                  Tab(text: 'Critical (${context.watch<ToolIssueProvider>().criticalIssuesCount})'),
-                  const Tab(text: 'Resolved'),
-                ],
-              ),
-            ),
+            const SizedBox(height: 12),
+            _buildSearchBar(),
+            const SizedBox(height: 8),
+            _buildFilterPills(),
             Expanded(
               child: Consumer2<ToolIssueProvider, ConnectivityProvider>(
                 builder: (context, issueProvider, connectivityProvider, child) {
@@ -278,21 +183,34 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddToolIssueScreen(),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: SizedBox(
+          height: 50,
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddToolIssueScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text(
+              'Report New Issue',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Report New Issue'),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 6,
+            ),
+          ),
         ),
       ),
     );
@@ -332,198 +250,139 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
     }
 
     // Sort issues based on selected sort option
-    final sortedIssues = _sortIssues(issues);
-
+    final searchTerm = _searchQuery.trim().toLowerCase();
+    final filteredIssues = searchTerm.isEmpty
+        ? issues
+        : issues.where((issue) {
+            final haystack = [
+              issue.toolName,
+              issue.issueType,
+              issue.reportedBy,
+            ].join(' ').toLowerCase();
+            return haystack.contains(searchTerm);
+          }).toList();
+    final sortedIssues = _sortIssues(filteredIssues);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return RefreshIndicator(
       onRefresh: () => context.read<ToolIssueProvider>().loadIssues(),
       color: AppTheme.secondaryColor,
-      child: ListView.builder(
-        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+      child: ListView.separated(
+        padding: EdgeInsets.fromLTRB(
+          isDesktop ? 24 : 16,
+          isDesktop ? 20 : 16,
+          isDesktop ? 24 : 16,
+          120,
+        ),
         itemCount: sortedIssues.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final issue = sortedIssues[index];
-          return _buildIssueCard(issue);
+          return _buildPremiumIssueCard(issue);
         },
       ),
     );
   }
 
-  Widget _buildIssueCard(ToolIssue issue) {
-    return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
+  Widget _buildPremiumIssueCard(ToolIssue issue) {
+    final theme = Theme.of(context);
+    final letter =
+        issue.toolName.isNotEmpty ? issue.toolName[0].toUpperCase() : '?';
+    final details = [
+      '#${issue.toolId}',
+      if (issue.location != null && issue.location!.isNotEmpty)
+        issue.location!,
+    ].join(' • ');
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () => _showIssueDetails(issue),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 12,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _showIssueDetails(issue),
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        child: Padding(
-          padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
-                children: [
-                  // Issue type icon
-                  Container(
-                    padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-                    decoration: BoxDecoration(
-                      color: _getIssueTypeColor(issue.issueType).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                    ),
-                    child: Icon(
-                      _getIssueTypeIcon(issue.issueType),
-                      color: _getIssueTypeColor(issue.issueType),
-                      size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                  
-                  // Tool name and issue type
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          issue.toolName,
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
-                        Text(
-                          issue.issueType,
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                            color: _getIssueTypeColor(issue.issueType),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Status chip
-                  _buildStatusChip(issue.status),
-                ],
-              ),
-              
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              
-              // Description
-              Text(
-                issue.description,
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              
-              // Footer row
-              Row(
-                children: [
-                  // Priority
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveHelper.getResponsiveSpacing(context, 10),
-                      vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getPriorityColor(issue.priority).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                    ),
-                    child: Text(
-                      issue.priority,
-                      style: TextStyle(
-                        color: _getPriorityColor(issue.priority),
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                  
-                  // Reported by
-                  Expanded(
-                    child: Text(
-                      'Reported by ${issue.reportedBy}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                  
-                  // Age
-                  Text(
-                    issue.ageText,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
+                  child: Text(
+                    letter,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        issue.toolName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        details,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildIssueTypePill(issue.issueType),
+                _buildPriorityPill(issue.priority),
+                _buildStatusOutlineChip(issue.status),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              issue.description,
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    Color color;
-    switch (status) {
-      case 'Open':
-        color = Colors.red;
-        break;
-      case 'In Progress':
-        color = Colors.orange;
-        break;
-      case 'Resolved':
-        color = Colors.green;
-        break;
-      case 'Closed':
-        color = Colors.grey;
-        break;
-      default:
-        color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Reported by ${issue.reportedBy} • ${issue.ageText}',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -815,6 +674,203 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
     }
   }
 
+  PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      titleSpacing: 0,
+      title: const Text(
+        'Tool Issues',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
+        onPressed: () => NavigationHelper.safePop(context),
+      ),
+      actions: [],
+    );
+  }
+
+  Widget _buildFilterPills() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: _filters.map((filter) {
+          final isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () {
+                final targetIndex = _filters.indexOf(filter);
+                if (targetIndex >= 0 && targetIndex < _tabController.length) {
+                  _tabController.animateTo(targetIndex);
+                }
+                setState(() => _selectedFilter = filter);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.secondaryColor
+                      : const Color(0xFFF2F3F5),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppTheme.cardSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search issues, tools, reporters...',
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      size: 20,
+                      color:
+                          Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIssueTypePill(String type) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F6F7),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        type,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: _getIssueTypeColor(type),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityPill(String priority) {
+    final color = _getPriorityAccentColor(priority);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        priority,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusOutlineChip(String status) {
+    final color = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1.1),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Color _getPriorityAccentColor(String priority) {
+    switch (priority) {
+      case 'Critical':
+      case 'High':
+        return const Color(0xFFFF4D4F);
+      case 'Medium':
+        return const Color(0xFFFAAD14);
+      case 'Low':
+        return const Color(0xFF52C41A);
+      default:
+        return const Color(0xFF8C8C8C);
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Open':
+        return const Color(0xFFFF4D4F);
+      case 'In Progress':
+        return const Color(0xFFFAAD14);
+      case 'Resolved':
+        return const Color(0xFF52C41A);
+      case 'Closed':
+        return Colors.blueGrey;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
   Color _getIssueTypeColor(String type) {
     switch (type) {
       case 'Faulty': return Colors.red;
@@ -826,29 +882,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen> with SingleTickerPr
     }
   }
 
-  IconData _getIssueTypeIcon(String type) {
-    switch (type) {
-      case 'Faulty': return Icons.error;
-      case 'Lost': return Icons.search_off;
-      case 'Damaged': return Icons.build;
-      case 'Missing Parts': return Icons.inventory_2;
-      case 'Other': return Icons.help_outline;
-      default: return Icons.help_outline;
-    }
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'Critical': return Colors.red;
-      case 'High': return Colors.orange;
-      case 'Medium': return Colors.yellow[700]!;
-      case 'Low': return Colors.green;
-      default: return Colors.grey;
-    }
-  }
-
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
-

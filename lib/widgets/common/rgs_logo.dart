@@ -7,7 +7,7 @@ class RGSLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     // RGS text - smaller to fit in app bar
     final rgsStyle = TextStyle(
-      fontSize: 24, // Reduced from 36 to fit better in app bar
+      fontSize: 24, // Primary logo text
       fontWeight: FontWeight.w800,
       color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
       letterSpacing: 0.5,
@@ -16,7 +16,7 @@ class RGSLogo extends StatelessWidget {
 
     // HVAC SERVICES text - smaller to fit in app bar
     final hvacStyle = TextStyle(
-      fontSize: 10, // Reduced from 12 to fit better in app bar
+      fontSize: 13, // Slightly larger for better legibility
       fontWeight: FontWeight.w500,
       color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
       letterSpacing: 0.1,
@@ -25,10 +25,11 @@ class RGSLogo extends StatelessWidget {
 
     // Slogan text - italic and smaller
     final sloganStyle = TextStyle(
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: FontWeight.w400,
       fontStyle: FontStyle.italic,
-      color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
+      color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white)
+          .withOpacity(0.85),
       letterSpacing: 0.1,
     );
     const sloganText = '"Not your ordinary HVAC company"';
@@ -46,5 +47,3 @@ class RGSLogo extends StatelessWidget {
     );
   }
 }
-
-

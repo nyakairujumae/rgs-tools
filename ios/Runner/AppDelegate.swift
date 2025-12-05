@@ -1,5 +1,7 @@
 import Flutter
 import UIKit
+import FirebaseCore
+import FirebaseMessaging
 import UserNotifications
 import shared_preferences_foundation
 import sqflite_darwin
@@ -7,13 +9,18 @@ import image_picker_ios
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+
+    // REQUIRED for Firebase Messaging
+    FirebaseApp.configure()
+
     GeneratedPluginRegistrant.register(with: self)
-    
-    // Manually register critical plugins to recover from intermittent auto-registration issues
+
+    // Manual plugin registration (your custom fixes)
     if let sharedPrefsRegistrar = self.registrar(forPlugin: "SharedPreferencesPlugin") {
       SharedPreferencesPlugin.register(with: sharedPrefsRegistrar)
     }
@@ -23,106 +30,84 @@ import image_picker_ios
     if let imagePickerRegistrar = self.registrar(forPlugin: "FLTImagePickerPlugin") {
       FLTImagePickerPlugin.register(with: imagePickerRegistrar)
     }
-    
-    // Set up method channel for getting documents directory without path_provider
-    // This bypasses objective_c FFI dependency that causes DOBJC_initializeApi error
-    guard let controller = window?.rootViewController as? FlutterViewController else {
-      return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
-    
-    let documentsChannel = FlutterMethodChannel(
-      name: "com.rgs.app/documents_path",
-      binaryMessenger: controller.binaryMessenger
-    )
-    
-    documentsChannel.setMethodCallHandler { (call: FlutterMethodCall, result: @escaping FlutterResult) in
-      if call.method == "getDocumentsPath" {
-        // Get documents directory directly using FileManager - no FFI needed
-        let documentsPath = FileManager.default.urls(
-          for: .documentDirectory,
-          in: .userDomainMask
-        )[0].path
-        result(documentsPath)
-      } else {
-        result(FlutterMethodNotImplemented)
-      }
-    }
-    
-    // Set notification delegate BEFORE requesting permissions
+
+    // Notification delegate
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
-      
-      // Request notification permissions with all necessary options
-      let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound, .provisional]
+
       UNUserNotificationCenter.current().requestAuthorization(
-        options: authOptions,
-        completionHandler: { granted, error in
-          if granted {
-            print("✅ Notification permission granted")
-            DispatchQueue.main.async {
-              application.registerForRemoteNotifications()
-            }
-          } else {
-            print("❌ Notification permission denied: \(error?.localizedDescription ?? "unknown")")
-          }
+        options: [.alert, .badge, .sound]
+      ) { granted, error in
+        DispatchQueue.main.async {
+          application.registerForRemoteNotifications()
         }
-      )
+      }
     } else {
-      let settings: UIUserNotificationSettings =
-        UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
+      let settings = UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
       application.registerUserNotificationSettings(settings)
       application.registerForRemoteNotifications()
     }
-    
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-  
-  // MARK: - APNs Token Registration
+
+  override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+  ) -> Bool {
+    return super.application(app, open: url, options: options)
+  }
+
+
+  // MARK: - Registering APNs Token
   override func application(_ application: UIApplication,
                             didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+
+    // Print token for debugging
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
     print("✅ APNs token registered: \(tokenString)")
-    
-    // Pass token to Flutter Firebase Messaging plugin
-    // The Flutter plugin will handle passing it to Firebase
+
+    // VERY IMPORTANT: Pass APNs token to Firebase
+    Messaging.messaging().apnsToken = deviceToken
+
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
-  
+
+
   override func application(_ application: UIApplication,
                             didFailToRegisterForRemoteNotificationsWithError error: Error) {
     print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
     super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
   }
-  
-  // MARK: - UNUserNotificationCenterDelegate Methods
-  // Handle notification when app is in FOREGROUND
+
+
+  // MARK: - iOS Foreground Notification
   @available(iOS 10.0, *)
   override func userNotificationCenter(_ center: UNUserNotificationCenter,
-                              willPresent notification: UNNotification,
-                              withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+                willPresent notification: UNNotification,
+                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+
     let userInfo = notification.request.content.userInfo
     print("📱 Notification received in foreground: \(userInfo)")
-    
-    // Show notification even when app is in foreground
-    // This includes badge, sound, and banner/alert
-    if #available(iOS 14.0, *) {
-      completionHandler([[.banner, .badge, .sound]])
-    } else {
-      completionHandler([[.alert, .badge, .sound]])
-    }
+
+    completionHandler([.banner, .sound, .badge])
   }
-  
-  // Handle notification tap when app is in BACKGROUND or TERMINATED
+
+
+  // MARK: - Notification Tap
   @available(iOS 10.0, *)
   override func userNotificationCenter(_ center: UNUserNotificationCenter,
-                              didReceive response: UNNotificationResponse,
-                              withCompletionHandler completionHandler: @escaping () -> Void) {
+                didReceive response: UNNotificationResponse,
+                withCompletionHandler completionHandler: @escaping () -> Void) {
+
     let userInfo = response.notification.request.content.userInfo
     print("📱 Notification tapped: \(userInfo)")
-    
-    // Handle notification tap - navigate to relevant screen
-    // The Flutter side will handle this via onMessageOpenedApp
-    
+
     completionHandler()
   }
 }
+
+
+
+

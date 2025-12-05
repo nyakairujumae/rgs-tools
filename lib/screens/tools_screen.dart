@@ -9,6 +9,7 @@ import 'tool_detail_screen.dart';
 import 'tool_instances_screen.dart';
 import 'technicians_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
@@ -88,12 +89,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
             '🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}, Groups: ${toolGroups.length}');
         final theme = Theme.of(context);
 
+        const Color borderColor = Color(0xFFE3E3E3);
+
         return Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
+          backgroundColor: context.scaffoldBackground,
           body: SafeArea(
             bottom: false,
             child: Container(
-              color: theme.scaffoldBackgroundColor,
+              color: context.scaffoldBackground,
               child: Column(
                 children: [
                   // Back button and heading for selection mode
@@ -106,9 +109,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).brightness == Brightness.dark 
-                                  ? Theme.of(context).colorScheme.surface 
-                                  : Colors.white,
+                              color: context.cardBackground,
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
@@ -159,16 +160,36 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   if (!widget.isSelectionMode)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Tools',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tools',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Manage all tools, assignments, and Maintenance',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black.withOpacity(0.55),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   // Search and Filter Bar
@@ -181,19 +202,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            color: AppTheme.cardSurfaceColor(context),
-                            borderRadius: BorderRadius.circular(24),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                              width: 1.1,
+                              color: theme.colorScheme.onSurface
+                                  .withOpacity(0.15),
+                              width: 1.2,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: TextField(
                             controller: _searchController,
@@ -228,16 +243,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                       },
                                     )
                                   : null,
-                              border: InputBorder.none,
+                              focusedBorder: InputBorder.none,
                               enabledBorder: InputBorder.none,
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.8),
-                                  width: 2,
-                                ),
-                              ),
+                              border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
                             ),
@@ -256,42 +264,35 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             // Category Filter
                             Expanded(
                               child: Container(
-                                height: 48,
+                                height: 40,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.cardSurfaceColor(context),
-                                  borderRadius: BorderRadius.circular(24),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppTheme.subtleBorder,
-                                    width: 1.1,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.15),
+                                    width: 1.2,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _selectedCategory,
                                     isExpanded: true,
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                        horizontal: 12),
                                     icon: Icon(
                                       Icons.keyboard_arrow_down,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
-                                      size: 20,
+                                      size: 18,
                                     ),
                                     style: TextStyle(
                                       color: Theme.of(context)
                                           .textTheme
                                           .bodyLarge
                                           ?.color,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
                                     selectedItemBuilder:
@@ -303,7 +304,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 _getCategoryIcon(category),
-                                                size: 18,
+                                                size: 16,
                                                 color: category == 'Category'
                                                     ? Theme.of(context)
                                                         .colorScheme
@@ -312,11 +313,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                                     : _getCategoryIconColor(
                                                         category),
                                               ),
-                                              SizedBox(width: 8),
+                                              SizedBox(width: 4),
                                               Text(
                                                 category,
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -342,7 +343,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 _getCategoryIcon(category),
-                                                size: 18,
+                                                size: 16,
                                                 color: category == 'Category'
                                                     ? Theme.of(context)
                                                         .colorScheme
@@ -351,14 +352,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                                     : _getCategoryIconColor(
                                                         category),
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
                                                   category,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
-                                                    fontSize: 14,
+                                                    fontSize: 12,
                                                     fontWeight:
                                                         category == 'Category'
                                                             ? FontWeight.normal
@@ -393,42 +394,35 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             // Status Filter
                             Expanded(
                               child: Container(
-                                height: 48,
+                                height: 40,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.cardSurfaceColor(context),
-                                  borderRadius: BorderRadius.circular(24),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppTheme.subtleBorder,
-                                    width: 1.1,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.15),
+                                    width: 1.2,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _selectedStatus,
                                     isExpanded: true,
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                        horizontal: 12),
                                     icon: Icon(
                                       Icons.keyboard_arrow_down,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
-                                      size: 20,
+                                      size: 18,
                                     ),
                                     style: TextStyle(
                                       color: Theme.of(context)
                                           .textTheme
                                           .bodyLarge
                                           ?.color,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
                                     dropdownColor:
@@ -445,17 +439,17 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 Icons.filter_list_outlined,
-                                                size: 18,
+                                                size: 16,
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
                                                     .withOpacity(0.35),
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 8),
                                               Text(
                                                 'Status',
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: 12,
                                                   color: Theme.of(context)
                                                       .colorScheme
                                                       .onSurface
@@ -475,10 +469,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 Icons.check_circle_outline,
-                                                size: 18,
+                                                size: 16,
                                                 color: Colors.green,
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 8),
                                               Text('Available'),
                                             ],
                                           ),
@@ -493,10 +487,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 Icons.build_outlined,
-                                                size: 18,
+                                                size: 16,
                                                 color: Colors.blue,
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 8),
                                               Text('In Use'),
                                             ],
                                           ),
@@ -511,10 +505,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 Icons.warning_amber_outlined,
-                                                size: 18,
+                                                size: 16,
                                                 color: Colors.orange,
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 8),
                                               Text('Maintenance'),
                                             ],
                                           ),
@@ -529,13 +523,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                             children: [
                                               Icon(
                                                 Icons.block_outlined,
-                                                size: 18,
+                                                size: 16,
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .onSurface
                                                     .withOpacity(0.45),
                                               ),
-                                              SizedBox(width: 12),
+                                              SizedBox(width: 8),
                                               Text('Retired'),
                                             ],
                                           ),
@@ -778,30 +772,20 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurfaceColor(context),
+                      color: context.cardBackground,
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: widget.isSelectionMode && isSelected
-                            ? AppTheme.secondaryColor
-                            : widget.isSelectionMode
-                                ? AppTheme.secondaryColor.withValues(alpha: 0.3)
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                        width: widget.isSelectionMode && isSelected ? 3 : 1.5,
-                      ),
+                      border: widget.isSelectionMode && isSelected
+                          ? Border.all(
+                              color: AppTheme.secondaryColor,
+                              width: 3,
+                            )
+                          : null,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                          spreadRadius: 0,
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                        if (widget.isSelectionMode && !isSelected)
-                          BoxShadow(
-                            color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                            spreadRadius: 0,
-                          ),
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -953,10 +937,54 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
+                _buildStatusPill(representativeTool.status),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String status) {
+    final normalized = status.toLowerCase();
+    Color textColor;
+    Color backgroundColor;
+
+    switch (normalized) {
+      case 'available':
+        textColor = const Color(0xFF0FA958);
+        backgroundColor = const Color(0xFFE9F8F1);
+        break;
+      case 'in use':
+      case 'assigned':
+        textColor = const Color(0xFF6E6E6E);
+        backgroundColor = const Color(0xFFF1F1F1);
+        break;
+      case 'maintenance':
+        textColor = const Color(0xFFD9534F);
+        backgroundColor = const Color(0xFFFCEAEA);
+        break;
+      default:
+        textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+        backgroundColor =
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.08);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          fontSize: 8.5,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
       ),
     );
   }

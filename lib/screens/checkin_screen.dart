@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
 import '../utils/responsive_helper.dart';
@@ -53,9 +54,9 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        backgroundColor: context.appBarBackground,
         elevation: 4,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         scrolledUnderElevation: 6,
@@ -100,7 +101,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         centerTitle: false,
       ),
       body: Container(
-        color: theme.scaffoldBackgroundColor,
+        color: context.scaffoldBackground,
         child: SafeArea(
           child: Consumer3<SupabaseToolProvider, AuthProvider, SupabaseTechnicianProvider>(
             builder: (context, toolProvider, authProvider, technicianProvider, child) {

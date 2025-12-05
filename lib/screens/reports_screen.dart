@@ -121,13 +121,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                     Expanded(
-                      child: Text(
-                        'Reports & Analytics',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                          fontWeight: FontWeight.w700,
-                          color: theme.textTheme.bodyLarge?.color,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Reports & Analytics',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                              fontWeight: FontWeight.w700,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Preview RGS tools reports summaries',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (_isExporting)
@@ -156,10 +170,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
                 builder: (context, toolProvider, technicianProvider, child) {
                   if (toolProvider.isLoading || technicianProvider.isLoading) {
-                    return const Expanded(
-                      child: Center(
-                        child: LoadingWidget(message: 'Loading data...'),
-                      ),
+                    return Expanded(
+                      child: _buildReportSkeleton(context),
                     );
                   }
 
@@ -168,10 +180,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   
                   return Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Report Configuration Section
                         _buildConfigurationSection(context),
-                        
+                        const SizedBox(height: 12),
                         // Data Preview Section
                         Expanded(
                           child: _buildDataPreviewSection(
@@ -182,9 +195,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             technicianProvider,
                           ),
                         ),
-
-                        // Export Button Bar
-                        _buildExportButton(context),
                       ],
                     ),
                   );
@@ -306,6 +316,72 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportSkeleton(BuildContext context) {
+    final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
+    final spacing = ResponsiveHelper.getResponsiveSpacing(context, 12);
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          SkeletonLoader(
+            height: 24,
+            width: 200,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          const SizedBox(height: 12),
+          SkeletonLoader(
+            height: 52,
+            width: double.infinity,
+            borderRadius: BorderRadius.circular(26),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SkeletonLoader(
+                  height: 48,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              SizedBox(width: spacing),
+              Expanded(
+                child: SkeletonLoader(
+                  height: 48,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SkeletonLoader(
+            height: 16,
+            width: 150,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              childAspectRatio: 0.75,
+            ),
+            itemCount: crossAxisCount * 2,
+            itemBuilder: (context, index) => const ToolCardSkeleton(),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -778,78 +854,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     SupabaseToolProvider toolProvider,
     SupabaseTechnicianProvider technicianProvider,
   ) {
-    final theme = Theme.of(context);
-    final reportData = _reportTypes[_selectedReportType] as Map<String, dynamic>?;
-    return Column(
-      children: [
-        // Header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.surface
-                : Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.table_chart,
-                      color: AppTheme.secondaryColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Report Data Preview',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (reportData != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '${reportData['name']} - ${reportData['description']}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        
-        // Preview Content
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: _buildDetailedPreview(
-              tools,
-              technicians,
-              toolProvider,
-              technicianProvider,
-            ),
-          ),
-        ),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: _buildDetailedPreview(
+        tools,
+        technicians,
+        toolProvider,
+        technicianProvider,
+      ),
     );
   }
 
@@ -1126,19 +1138,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildAssignmentCard(dynamic tool, SupabaseTechnicianProvider technicianProvider) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
@@ -1154,28 +1170,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-                  tool.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tool.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${tool.category} • ${tool.brand ?? "No Brand"}',
-              style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${tool.category} • ${tool.brand ?? "No Brand"}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -1755,12 +1771,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(
-          'Comprehensive Report',
-          'Complete overview including all report sections',
-        ),
-        const SizedBox(height: 20),
-        
         // Overview Stats
         GridView.count(
           shrinkWrap: true,
@@ -1776,11 +1786,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             _buildInfoCard(Icons.account_balance, 'Financial Summary', 1, Colors.purple),
           ],
         ),
-        
-        const SizedBox(height: 24),
-        _buildSectionTitle('Report Contents', 'All sections included in this comprehensive report'),
-        const SizedBox(height: 12),
-        
+        const SizedBox(height: 16),
         _buildComprehensiveSection(
           'Tools Inventory',
           'Complete list of all ${tools.length} tools with specifications, status, and assignment details',
@@ -1831,21 +1837,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
               );
             }
           : null,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
+          color: AppTheme.cardSurfaceColor(context),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-                ),
-              ],
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
         child: Row(
           children: [
             Container(
@@ -1858,10 +1863,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             const SizedBox(width: 16),
             Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-                Text(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     title,
                     style: const TextStyle(
                       fontSize: 16,
@@ -1871,9 +1876,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                  style: TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       height: 1.4,
                     ),
                   ),
@@ -1894,18 +1899,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildInfoCard(IconData icon, String title, int count, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+      decoration: BoxDecoration(
+        color: AppTheme.cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2019,77 +2028,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildExportButton(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryColor,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _isExporting ? null : _exportReport,
-                borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isExporting)
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      else
-                        const Icon(Icons.file_download_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isExporting ? 'Exporting...' : 'Export Report',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

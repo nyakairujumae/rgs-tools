@@ -127,8 +127,8 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.baseColor ?? Colors.grey[200]!;
-    final highlightColor = widget.highlightColor ?? Colors.grey[100]!;
+    final baseColor = widget.baseColor ?? const Color(0xFFE6EAF1);
+    final highlightColor = widget.highlightColor ?? const Color(0xFFD8DBE0);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -376,4 +376,3 @@ class StatCardSkeleton extends StatelessWidget {
     );
   }
 }
-

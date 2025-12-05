@@ -11,6 +11,7 @@ import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/premium_field_styles.dart';
 import 'barcode_scanner_screen.dart';
 
 class TechnicianAddToolScreen extends StatefulWidget {

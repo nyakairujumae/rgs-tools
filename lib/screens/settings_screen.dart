@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../providers/auth_provider.dart';
+import 'package:intl/intl.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,13 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: child,
     );
@@ -92,13 +88,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(
                         ResponsiveHelper.getResponsiveBorderRadius(context, 14),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
                     child: IconButton(
                       icon: Icon(
@@ -123,38 +112,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-        children: [
-          // General Settings
-          _buildSectionHeader('General'),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          _buildLanguageCard(),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-          _buildCurrencyCard(),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-
-          // Notifications
-          _buildSectionHeader('Notifications'),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          _buildNotificationCard(),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-
-          // Data & Backup
-          _buildSectionHeader('Data & Backup'),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          _buildBackupCard(),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-
-          // About
-          _buildSectionHeader('About'),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          _buildAboutCard(),
-        ],
+              child: Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  return SingleChildScrollView(
+                    padding: ResponsiveHelper.getResponsivePadding(
+                      context,
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSectionLabel(context, 'Account'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildAccountCard(context, authProvider),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+                        _buildSectionLabel(context, 'Account Details'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildAccountDetails(context, authProvider),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        _buildSectionLabel(context, 'Preferences'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildLanguageCard(),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                        _buildCurrencyCard(),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        _buildSectionLabel(context, 'Notifications'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildNotificationCard(),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        _buildSectionLabel(context, 'Data & Backup'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildBackupCard(),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        _buildSectionLabel(context, 'About'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildAboutCard(),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -163,14 +161,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionLabel(BuildContext context, String label) {
+    final theme = Theme.of(context);
     return Text(
-        title,
-        style: TextStyle(
-        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-        fontWeight: FontWeight.w700,
-          color: Theme.of(context).textTheme.bodyLarge?.color,
+      label,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.3,
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
       ),
+    );
+  }
+
+  Widget _buildAccountCard(BuildContext context, AuthProvider authProvider) {
+    final theme = Theme.of(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    final fullName = authProvider.userFullName ?? 'Technician';
+    final roleLabel = authProvider.isAdmin ? 'Administrator' : 'Technician';
+    final initials = _getInitials(fullName);
+
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 16 : 18),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surface
+            : Colors.white,
+        borderRadius: BorderRadius.circular(isDesktop ? 18 : 20),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withOpacity(0.08),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: isDesktop ? 30 : 32,
+            backgroundColor: AppTheme.secondaryColor.withOpacity(0.2),
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontSize: isDesktop ? 18 : 20,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+          ),
+          SizedBox(width: isDesktop ? 18 : 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fullName,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 16 : 18,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: isDesktop ? 8 : 10),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 10 : 12,
+                    vertical: isDesktop ? 4 : 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: TextStyle(
+                      fontSize: isDesktop ? 11 : 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return 'T';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
+  }
+
+  Widget _buildAccountDetails(BuildContext context, AuthProvider authProvider) {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    final email = authProvider.user?.email ?? 'Not available';
+    final createdAt = authProvider.user?.createdAt;
+    final memberSince = _formatMemberSince(createdAt);
+    final roleLabel = authProvider.isAdmin ? 'Administrator' : 'Technician';
+
+    return Container(
+      padding: EdgeInsets.all(isDesktop ? 12 : 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
+        borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAccountDetailRow(context, 'Email', email),
+          SizedBox(height: isDesktop ? 8 : 10),
+          _buildAccountDetailRow(context, 'Member Since', memberSince),
+          SizedBox(height: isDesktop ? 8 : 10),
+          _buildAccountDetailRow(context, 'Role', roleLabel),
+        ],
+      ),
+    );
+  }
+
+  String _formatMemberSince(String? createdAt) {
+    if (createdAt == null) return 'Unknown';
+    try {
+      final parsed = DateTime.parse(createdAt);
+      return DateFormat('MMM dd, yyyy').format(parsed);
+    } catch (_) {
+      return 'Unknown';
+    }
+  }
+
+  Widget _buildAccountDetailRow(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
+    final theme = Theme.of(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: isDesktop ? 100 : 110,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: isDesktop ? 11 : 12,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isDesktop ? 11 : 12,
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -184,10 +344,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: _tilePadding(context),
         leading: _iconBadge(
           context: context,
-          color: AppTheme.primaryColor,
+          color: AppTheme.secondaryColor,
           child: Icon(
             Icons.language,
-            color: AppTheme.primaryColor,
+            color: AppTheme.secondaryColor,
             size: ResponsiveHelper.getResponsiveIconSize(context, 20),
           ),
         ),
@@ -223,11 +383,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: _tilePadding(context),
         leading: _iconBadge(
           context: context,
-          color: AppTheme.primaryColor,
+          color: AppTheme.secondaryColor,
           child: Text(
             'د.إ',
             style: TextStyle(
-              color: AppTheme.primaryColor,
+              color: AppTheme.secondaryColor,
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
               fontWeight: FontWeight.bold,
             ),
@@ -306,10 +466,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             contentPadding: _tilePadding(context),
             secondary: _iconBadge(
               context: context,
-              color: AppTheme.primaryColor,
-              child: Icon(
-                Icons.backup,
-                color: AppTheme.primaryColor,
+          color: AppTheme.secondaryColor,
+          child: Icon(
+            Icons.backup,
+            color: AppTheme.secondaryColor,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
               ),
             ),
@@ -439,10 +599,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             contentPadding: _tilePadding(context),
             leading: _iconBadge(
               context: context,
-              color: AppTheme.primaryColor,
-              child: Icon(
-                Icons.info,
-                color: AppTheme.primaryColor,
+          color: AppTheme.secondaryColor,
+          child: Icon(
+            Icons.info,
+            color: AppTheme.secondaryColor,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
               ),
             ),
@@ -628,7 +788,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+          color: isSelected ? AppTheme.secondaryColor.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -644,7 +804,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check, color: AppTheme.primaryColor, size: 20),
+              Icon(Icons.check, color: AppTheme.secondaryColor, size: 20),
           ],
         ),
       ),
@@ -692,7 +852,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+          color: isSelected ? AppTheme.secondaryColor.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -720,7 +880,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check, color: AppTheme.primaryColor, size: 20),
+              Icon(Icons.check, color: AppTheme.secondaryColor, size: 20),
           ],
         ),
       ),
@@ -789,7 +949,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppTheme.secondaryColor,
         duration: const Duration(seconds: 3),
       ),
     );

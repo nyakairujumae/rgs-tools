@@ -49,10 +49,10 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
-        scrolledUnderElevation: 6,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         foregroundColor: colorScheme.onSurface,
         toolbarHeight: 80,
         surfaceTintColor: Colors.transparent,
@@ -215,13 +215,13 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: isDarkMode
-                                    ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                                    : AppTheme.primaryColor.withValues(alpha: 0.08),
+                                    ? AppTheme.secondaryColor.withValues(alpha: 0.15)
+                                    : AppTheme.secondaryColor.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(
                                   ResponsiveHelper.getResponsiveBorderRadius(context, 16),
                                 ),
                                 border: Border.all(
-                                  color: AppTheme.primaryColor.withValues(alpha: isDarkMode ? 0.3 : 0.2),
+                                  color: AppTheme.secondaryColor.withValues(alpha: isDarkMode ? 0.3 : 0.2),
                                   width: 1,
                                 ),
                               ),
@@ -229,7 +229,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                 children: [
                                   Icon(
                                     Icons.attachment,
-                                    color: AppTheme.primaryColor,
+                                    color: AppTheme.secondaryColor,
                                     size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                                   ),
                                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -245,7 +245,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                   TextButton(
                                     onPressed: () {},
                                     style: TextButton.styleFrom(
-                                      foregroundColor: AppTheme.primaryColor,
+                                      foregroundColor: AppTheme.secondaryColor,
                                       padding: ResponsiveHelper.getResponsivePadding(
                                         context,
                                         horizontal: 16,
@@ -272,13 +272,13 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: AppTheme.secondaryColor,
                           borderRadius: BorderRadius.circular(
                             ResponsiveHelper.getResponsiveBorderRadius(context, 16),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                              color: AppTheme.secondaryColor.withValues(alpha: 0.3),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -291,6 +291,8 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                             borderRadius: BorderRadius.circular(
                               ResponsiveHelper.getResponsiveBorderRadius(context, 16),
                             ),
+                            splashColor: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                            highlightColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
                             child: Container(
                               padding: ResponsiveHelper.getResponsivePadding(
                                 context,
@@ -339,88 +341,79 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     String? hint,
     String? Function(String?)? validator,
     TextInputType? keyboardType,
+    IconData? prefixIcon,
   }) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    final borderRadius = BorderRadius.circular(14);
+    final baseBorderSide = BorderSide(
+      color: theme.colorScheme.onSurface.withOpacity(0.25),
+      width: 1.1,
+    );
+
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      style: TextStyle(
+        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        color: theme.colorScheme.onSurface,
+        fontWeight: FontWeight.w500,
       ),
-      child: TextFormField(
-        controller: ctrl,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: prefixIcon != null
+            ? Icon(
+                prefixIcon,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              )
+            : null,
+        labelStyle: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+          color: theme.colorScheme.onSurface.withOpacity(0.55),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        hintStyle: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          fontWeight: FontWeight.w500,
+          color: theme.colorScheme.onSurface.withOpacity(0.45),
         ),
-        keyboardType: keyboardType,
-        validator: validator,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: AppTheme.secondaryColor,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1.2,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1.5,
+          ),
+        ),
+        filled: true,
+        fillColor: isDarkMode
+            ? theme.colorScheme.surface.withOpacity(0.6)
+            : Colors.white,
       ),
+      validator: validator,
     );
   }
 
@@ -432,86 +425,69 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    final borderRadius = BorderRadius.circular(14);
+    final baseBorderSide = BorderSide(
+      color: theme.colorScheme.onSurface.withOpacity(0.25),
+      width: 1.1,
+    );
+
+    return TextFormField(
+      controller: ctrl,
+      style: TextStyle(
+        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        color: theme.colorScheme.onSurface,
+        fontWeight: FontWeight.w500,
       ),
-      child: TextFormField(
-        controller: ctrl,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+          color: theme.colorScheme.onSurface.withOpacity(0.55),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        hintStyle: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          fontWeight: FontWeight.w500,
+          color: theme.colorScheme.onSurface.withOpacity(0.45),
         ),
-        minLines: 3,
-        maxLines: 6,
-        validator: validator,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: AppTheme.secondaryColor,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1.2,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1.5,
+          ),
+        ),
+        filled: true,
+        fillColor: isDarkMode
+            ? theme.colorScheme.surface.withOpacity(0.6)
+            : Colors.white,
       ),
+      minLines: 3,
+      maxLines: 6,
+      validator: validator,
     );
   }
 
@@ -523,90 +499,69 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    final borderRadius = BorderRadius.circular(14);
+    final baseBorderSide = BorderSide(
+      color: theme.colorScheme.onSurface.withOpacity(0.25),
+      width: 1.1,
+    );
+
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      style: TextStyle(
+        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        color: theme.colorScheme.onSurface,
+        fontWeight: FontWeight.w500,
       ),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.grey[600],
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+          color: theme.colorScheme.onSurface.withOpacity(0.55),
         ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-              fontWeight: FontWeight.w500,
-            ),
-            dropdownColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            menuMaxHeight: 300,
-            onChanged: onChanged,
-            items: [
-              for (final i in items)
-                DropdownMenuItem(
-                  value: i,
-                  child: Text(
-                    i,
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                )
-            ],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: baseBorderSide,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(
+            color: AppTheme.secondaryColor,
+            width: 2,
           ),
         ),
+        filled: true,
+        fillColor: isDarkMode
+            ? theme.colorScheme.surface.withOpacity(0.6)
+            : Colors.white,
       ),
+      dropdownColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+      borderRadius: borderRadius,
+      icon: Icon(
+        Icons.arrow_drop_down,
+        color: theme.colorScheme.onSurface.withOpacity(0.5),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem(
+              value: item,
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
     );
   }
 
@@ -620,63 +575,50 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         ? 'Select date'
         : '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
     
+    final borderRadius = BorderRadius.circular(14);
+    final baseBorderSide = BorderSide(
+      color: theme.colorScheme.onSurface.withOpacity(0.25),
+      width: 1.1,
+    );
+
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
+        color: isDarkMode ? theme.colorScheme.surface.withOpacity(0.6) : Colors.white,
+        borderRadius: borderRadius,
         border: Border.all(
           color: isDarkMode 
               ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
+              : theme.colorScheme.onSurface.withOpacity(0.25),
+          width: 1.1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: InkWell(
         onTap: onPick,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
+        borderRadius: borderRadius,
+        splashColor: AppTheme.secondaryColor.withValues(alpha: 0.3),
+        highlightColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
             labelStyle: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+              color: theme.colorScheme.onSurface.withOpacity(0.55),
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-              ),
+              borderRadius: borderRadius,
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-              ),
+              borderRadius: borderRadius,
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-              ),
-              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: AppTheme.secondaryColor, width: 2),
             ),
-            contentPadding: ResponsiveHelper.getResponsivePadding(
-              context,
-              horizontal: 16,
-              vertical: 16,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             filled: true,
-            fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+            fillColor: Colors.transparent,
           ),
           child: Row(
             children: [
@@ -684,7 +626,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                 Icons.calendar_today,
                 color: value == null
                     ? theme.colorScheme.onSurface.withOpacity(0.4)
-                    : AppTheme.primaryColor,
+                    : AppTheme.secondaryColor,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 20),
               ),
               SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -820,13 +762,6 @@ class _SectionCard extends StatelessWidget {
               : Colors.grey.withValues(alpha: 0.15),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

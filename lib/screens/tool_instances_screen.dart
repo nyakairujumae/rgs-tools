@@ -121,74 +121,98 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
 
         return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              updatedToolGroup.name,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            Text(
-              '${instances.length} instance${instances.length > 1 ? 's' : ''}',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-        actions: widget.isSelectionMode && _selectedToolIds.isNotEmpty
-            ? [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedToolIds.clear();
-                      widget.onSelectionChanged?.call(_selectedToolIds);
-                    });
-                  },
-                  child: Text(
-                    'Clear',
-                    style: TextStyle(
-                      color: AppTheme.secondaryColor,
-                      fontWeight: FontWeight.w600,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(72),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 18,
+                      color: theme.colorScheme.onSurface,
                     ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
-              ]
-            : null,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        updatedToolGroup.name,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        '${instances.length} instance${instances.length > 1 ? 's' : ''}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.isSelectionMode && _selectedToolIds.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedToolIds.clear();
+                        widget.onSelectionChanged?.call(_selectedToolIds);
+                      });
+                    },
+                    child: Text(
+                      'Clear',
+                      style: TextStyle(
+                        color: AppTheme.secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
             // Summary Card
+            const SizedBox(height: 16),
             Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).colorScheme.surface
-                    : Colors.white,
+                color: AppTheme.cardSurfaceColor(context),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                  width: 1.1,
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -205,7 +229,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 1,
                     height: 40,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                    color: Colors.black.withOpacity(0.08),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -218,7 +242,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 1,
                     height: 40,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                    color: Colors.black.withOpacity(0.08),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -231,6 +255,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
             // Instances List
             Expanded(
               child: instances.isEmpty
@@ -341,13 +366,13 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
       String label, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 8),
+        Icon(icon, color: color, size: 18),
+        const SizedBox(height: 6),
         Text(
           value,
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
@@ -355,7 +380,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
@@ -368,21 +393,19 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected
-              ? AppTheme.primaryColor
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: isSelected ? 2 : 1.1,
-        ),
+        color: AppTheme.cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(22),
+        border: isSelected
+            ? Border.all(
+                color: AppTheme.primaryColor,
+                width: 2,
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -397,48 +420,38 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   ),
                 );
               },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Image or placeholder
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppTheme.cardSurfaceColor(context),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: tool.imagePath != null && tool.imagePath!.isNotEmpty
+                      ? (tool.imagePath!.startsWith('http')
+                          ? Image.network(
+                              tool.imagePath!,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildPlaceholderImage(width: 80, height: 80),
+                            )
+                          : Image.file(
+                              File(tool.imagePath!),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildPlaceholderImage(width: 80, height: 80),
+                            ))
+                      : _buildPlaceholderImage(width: 80, height: 80),
                 ),
-                child: tool.imagePath != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: tool.imagePath!.startsWith('http')
-                            ? Image.network(
-                                tool.imagePath!,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildPlaceholderImage(),
-                              )
-                            : Image.file(
-                                File(tool.imagePath!),
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildPlaceholderImage(),
-                              ),
-                      )
-                    : _buildPlaceholderImage(),
               ),
-              const SizedBox(width: 16),
-              // Details
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,17 +462,16 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                           child: Text(
                             tool.name,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ),
-                        // Selection Checkbox - Only visible when selected
                         if (widget.isSelectionMode && isSelected)
                           Container(
-                            width: 24,
-                            height: 24,
+                            width: 22,
+                            height: 22,
                             decoration: BoxDecoration(
                               color: AppTheme.secondaryColor,
                               shape: BoxShape.circle,
@@ -468,37 +480,44 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                                 width: 2,
                               ),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.check,
-                              size: 16,
+                              size: 14,
                               color: Colors.white,
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     if (tool.serialNumber != null &&
                         tool.serialNumber!.isNotEmpty)
-                      _buildInfoRow(
-                        Icons.qr_code,
+                      Text(
                         'Serial: ${tool.serialNumber}',
-                        theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    const SizedBox(height: 4),
-                    _buildInfoRow(
-                      _getStatusIcon(tool.status),
-                      tool.status,
-                      _getStatusColor(tool.status),
-                    ),
-                    if (tool.assignedTo != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: _buildInfoRow(
-                          Icons.person,
-                          'Assigned',
-                          AppTheme.secondaryColor,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        _buildInfoRow(
+                          _getStatusIcon(tool.status),
+                          tool.status,
+                          _getStatusColor(tool.status),
+                          isPill: true,
+                        ),
+                        if (tool.assignedTo != null)
+                          _buildInfoRow(
+                            Icons.person,
+                            'Assigned',
+                            AppTheme.secondaryColor,
+                            isPill: true,
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -509,33 +528,66 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
+  Widget _buildInfoRow(IconData icon, String text, Color color,
+      {bool isPill = false}) {
+    if (!isPill) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+        ],
+      );
+    }
+
+    final tintedBackground = color.withOpacity(
+      color.opacity < 1 ? color.opacity : 0.12,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: tintedBackground,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildPlaceholderImage({double width = 80, double height = 80}) {
     return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
-      ),
+      width: width,
+      height: height,
+      color: AppTheme.cardSurfaceColor(context),
+      alignment: Alignment.center,
       child: Icon(
         Icons.build,
         size: 32,

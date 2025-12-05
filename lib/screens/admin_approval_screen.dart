@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/navigation_helper.dart';
 import '../utils/responsive_helper.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
@@ -19,6 +20,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   late TabController _tabController;
   final TextEditingController _rejectionReasonController =
       TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -27,212 +30,89 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PendingApprovalsProvider>().loadPendingApprovals();
     });
+    _searchController.addListener(() {
+      if (_searchController.text != _searchQuery) {
+        setState(() {
+          _searchQuery = _searchController.text;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _rejectionReasonController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
+      appBar: _buildPremiumAppBar(context),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
-        child: Container(
-          color: theme.scaffoldBackgroundColor,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with back button and title
-              Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 20,
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            _buildSearchBar(),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.cardSurfaceColor(context),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark 
-                            ? Theme.of(context).colorScheme.surface 
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new,
-                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                    Expanded(
-                      child: Text(
-                        'Technician Approvals',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                          fontWeight: FontWeight.w700,
-                          color: theme.textTheme.bodyLarge?.color,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Tabs
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardSurfaceColor(context),
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                    ),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                      width: 1.1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorColor: AppTheme.secondaryColor,
-                    labelColor: AppTheme.secondaryColor,
-                    unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelStyle: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.pending,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Flexible(
-                              child: Consumer<PendingApprovalsProvider>(
-                                builder: (context, provider, child) {
-                                  final count = provider.pendingCount;
-                                  return Text(
-                                    'Pending${count > 0 ? ' ($count)' : ''}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Flexible(
-                              child: Consumer<PendingApprovalsProvider>(
-                                builder: (context, provider, child) {
-                                  final count = provider.approvedCount;
-                                  return Text(
-                                    'Authorized${count > 0 ? ' ($count)' : ''}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.cancel,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Flexible(
-                              child: Consumer<PendingApprovalsProvider>(
-                                builder: (context, provider, child) {
-                                  final count = provider.rejectedCount;
-                                  return Text(
-                                    'Rejected${count > 0 ? ' ($count)' : ''}',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              Expanded(
-                child: TabBarView(
+                child: TabBar(
                   controller: _tabController,
-                  children: [
-                    _buildPendingTab(),
-                    _buildApprovedTab(),
-                    _buildRejectedTab(),
+                  indicator: BoxDecoration(
+                    color: AppTheme.secondaryColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  labelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: [
+                    Tab(
+                      text:
+                          'Pending (${context.watch<PendingApprovalsProvider>().pendingCount})',
+                    ),
+                    Tab(
+                      text:
+                          'Authorized (${context.watch<PendingApprovalsProvider>().approvedCount})',
+                    ),
+                    Tab(
+                      text:
+                          'Rejected (${context.watch<PendingApprovalsProvider>().rejectedCount})',
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildPendingTab(),
+                  _buildApprovedTab(),
+                  _buildRejectedTab(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -389,298 +269,422 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     );
   }
 
-  Widget _buildApprovalCard(dynamic approval, bool showActions) {
-    return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppTheme.cardSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
         ),
-        boxShadow: [
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search registrations...',
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withOpacity(0.45),
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withOpacity(0.55),
+            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      size: 20,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.55),
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      titleSpacing: 0,
+      title: const Text(
+        'Authorize Users',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new,
+            color: Colors.black87, size: 18),
+        onPressed: () => NavigationHelper.safePop(context),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.search,
+            color: Colors.black.withOpacity(0.55),
+            size: 20,
+          ),
+          onPressed: () => FocusScope.of(context).unfocus(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApprovalCard(PendingApproval approval, bool showActions) {
+    final theme = Theme.of(context);
+    final displayName = approval.fullName?.trim().isNotEmpty == true
+        ? approval.fullName!.trim()
+        : approval.email;
+    final initial = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : (approval.email.isNotEmpty ? approval.email[0].toUpperCase() : '?');
+    final detailPieces = [
+      if (approval.department?.trim().isNotEmpty == true)
+        approval.department!.trim(),
+      if (approval.employeeId?.trim().isNotEmpty == true)
+        'ID ${approval.employeeId!.trim()}',
+    ];
+    final detailText = detailPieces.join(' • ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black12,
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 3),
           ),
         ],
       ),
-      child: Padding(
-        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(approval.status).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    _getStatusIcon(approval.status),
-                    color: _getStatusColor(approval.status),
-                    size: 28,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
                 ),
-                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        approval.fullName ?? 'Unknown User',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                        ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                      Text(
-                        approval.email,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          fontWeight: FontWeight.w500,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      approval.email,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withOpacity(0.55),
+                        fontSize: 13,
                       ),
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(approval.status)
-                                  .withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: _getStatusColor(approval.status)
-                                    .withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              approval.status.toUpperCase(),
-                              style: TextStyle(
-                                color: _getStatusColor(approval.status),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          if (approval.rejectionCount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.red.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                '${approval.rejectionCount} rejections',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
+                    ),
+                    if (detailText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        detailText,
+                        style: TextStyle(
+                          color:
+                              theme.colorScheme.onSurface.withOpacity(0.45),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            if (approval.employeeId != null ||
-                approval.phone != null ||
-                approval.department != null) ...[
-              SizedBox(height: 12),
-              Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), height: 1),
-              SizedBox(height: 8),
-              _buildInfoRow('Employee ID', approval.employeeId),
-              if (approval.phone != null)
-                _buildInfoRow('Phone', approval.phone),
-              if (approval.department != null)
-                _buildInfoRow('Department', approval.department),
-              if (approval.hireDate != null)
-                _buildInfoRow('Hire Date', _formatDate(approval.hireDate)),
+              ),
             ],
-            SizedBox(height: 12),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (approval.department?.trim().isNotEmpty == true)
+                _buildDepartmentPill(approval.department!.trim()),
+              _buildSeverityPill(approval.rejectionCount),
+              _buildStatusOutlineChip(approval.status),
+            ],
+          ),
+          if (approval.employeeId != null ||
+              approval.phone != null ||
+              approval.department != null ||
+              approval.hireDate != null) ...[
+            const SizedBox(height: 12),
+            Divider(
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
+              height: 1,
+            ),
+            const SizedBox(height: 8),
+            _buildInfoRow('Employee ID', approval.employeeId),
+            if (approval.phone != null) _buildInfoRow('Phone', approval.phone),
+            if (approval.department != null)
+              _buildInfoRow('Department', approval.department),
+            if (approval.hireDate != null)
+              _buildInfoRow('Hire Date', _formatDate(approval.hireDate!)),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 16,
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Submitted: ${_formatDateTime(approval.submittedAt)}',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.55),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          if (approval.reviewedAt != null) ...[
+            const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.access_time, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                SizedBox(width: 8),
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  'Submitted: ${_formatDateTime(approval.submittedAt)}',
+                  'Reviewed: ${_formatDateTime(approval.reviewedAt!)}',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    color: theme.colorScheme.onSurface.withOpacity(0.55),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
-            if (approval.reviewedAt != null) ...[
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.check_circle_outline,
-                      size: 16, color: Colors.grey[400]),
-                  SizedBox(width: 8),
-                  Text(
-                    'Reviewed: ${_formatDateTime(approval.reviewedAt!)}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (approval.rejectionReason != null) ...[
-              SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rejection Reason:',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      approval.rejectionReason!,
-                      style: TextStyle(
-                        color: Colors.red[700],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (showActions) ...[
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _approveUser(approval),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check,
-                                    size: 20, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Authorize',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.red, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _showRejectDialog(approval),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.close, size: 20, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Reject',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
+          if (approval.rejectionReason != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.25),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rejection Reason:',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    approval.rejectionReason!,
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (showActions) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _approveUser(approval),
+                    icon: const Icon(
+                      Icons.check,
+                      size: 18,
+                    ),
+                    label: const Text(
+                      'Authorize',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showRejectDialog(approval),
+                    icon: const Icon(
+                      Icons.close,
+                      size: 18,
+                      color: Colors.red,
+                    ),
+                    label: const Text(
+                      'Reject',
+                      style:
+                          TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red, width: 1.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      foregroundColor: Colors.red,
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDepartmentPill(String department) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F6F7),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        department,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
         ),
       ),
     );
+  }
+
+  Widget _buildSeverityPill(int rejectionCount) {
+    final color = _getSeverityColor(rejectionCount);
+    final label = _getSeverityLabel(rejectionCount);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusOutlineChip(String status) {
+    final color = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1.1),
+      ),
+      child: Text(
+        _formatStatusLabel(status),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _getSeverityLabel(int rejectionCount) {
+    if (rejectionCount >= 2) return 'High';
+    if (rejectionCount == 1) return 'Medium';
+    return 'Low';
+  }
+
+  Color _getSeverityColor(int rejectionCount) {
+    if (rejectionCount >= 2) return const Color(0xFFFF4D4F);
+    if (rejectionCount == 1) return const Color(0xFFFAAD14);
+    return const Color(0xFF52C41A);
+  }
+
+  String _formatStatusLabel(String value) {
+    if (value.isEmpty) return value;
+    final normalized = value.toLowerCase();
+    return '${normalized[0].toUpperCase()}${normalized.substring(1)}';
   }
 
   Widget _buildInfoRow(String label, String? value) {

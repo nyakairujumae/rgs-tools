@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
 import '../../utils/responsive_helper.dart';
+import '../../models/user_role.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,11 +28,199 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Widget _buildSocialButtons({
+    required BuildContext context,
+    required bool isDesktopLayout,
+  }) {
+    final theme = Theme.of(context);
+    final isIOS = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isLoading = authProvider.isLoading;
+
+        Widget buildButton({
+          required VoidCallback onPressed,
+          required Widget icon,
+          required String label,
+        }) {
+          return SizedBox(
+            height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
+            child: OutlinedButton(
+              onPressed: isLoading ? null : onPressed,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.onSurface,
+                side: BorderSide(
+                  color: isDesktopLayout
+                      ? Colors.white.withOpacity(0.4)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getResponsiveBorderRadius(
+                      context,
+                      isDesktopLayout ? 24 : 18,
+                    ),
+                  ),
+                ),
+                backgroundColor: isDesktopLayout
+                    ? Colors.white.withOpacity(0.04)
+                    : theme.colorScheme.surface,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  icon,
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(
+                        context,
+                        14,
+                      ),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final buttons = <Widget>[
+          buildButton(
+            onPressed: () async {
+              try {
+                await authProvider.signInWithGoogle();
+              } catch (e) {
+                if (context.mounted) {
+                  final errorMessage = AuthErrorHandler.getErrorMessage(e);
+                  AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+                }
+              }
+            },
+            icon: Image.asset(
+              'assets/images/google_logo.png',
+              width: 20,
+              height: 20,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.g_mobiledata_rounded,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            label: 'Sign in with Google',
+          ),
+        ];
+
+        if (isIOS) {
+          buttons.add(
+            SizedBox(
+              height: ResponsiveHelper.getResponsiveSpacing(context, 12),
+            ),
+          );
+          buttons.add(
+            buildButton(
+              onPressed: () async {
+                try {
+                  await authProvider.signInWithApple();
+                } catch (e) {
+                  if (context.mounted) {
+                    final errorMessage = AuthErrorHandler.getErrorMessage(e);
+                    AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+                  }
+                }
+              },
+              icon: Image.asset(
+                'assets/images/apple_logo.png',
+                width: 20,
+                height: 20,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.apple,
+                  size: ResponsiveHelper.getResponsiveIconSize(context, 22),
+                  color: isDesktopLayout ? Colors.white : Colors.black,
+                ),
+              ),
+              label: 'Sign in with Apple',
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: buttons,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
+    final Color textPrimary =
+        isDesktopLayout ? Colors.white : colorScheme.onSurface;
+    final Color textSecondary = isDesktopLayout
+        ? Colors.white.withOpacity(0.7)
+        : colorScheme.onSurface.withValues(alpha: 0.7);
+    final Color hintTextColor = isDesktopLayout
+        ? Colors.white.withOpacity(0.6)
+        : colorScheme.onSurface.withValues(alpha: 0.6);
+    final Color fieldIconColor = isDesktopLayout
+        ? Colors.white.withOpacity(0.7)
+        : colorScheme.onSurface.withValues(alpha: 0.6);
+    final Color inputFillColor = isDesktopLayout
+        ? Colors.white.withOpacity(0.04)
+        : (isDarkMode ? colorScheme.surface : Colors.white);
+    final Color inputBorderColor = isDesktopLayout
+        ? Colors.white.withOpacity(0.2)
+        : colorScheme.onSurface.withValues(alpha: 0.3);
+    final double borderRadiusValue = ResponsiveHelper.getResponsiveBorderRadius(
+      context,
+      isDesktopLayout ? 28 : 20,
+    );
+
+    OutlineInputBorder buildBorder(Color color, double width) {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(borderRadiusValue),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
+
+    InputDecoration buildInputDecoration({
+      required String label,
+      required IconData prefixIcon,
+      Widget? suffixIcon,
+    }) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: hintTextColor,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        ),
+        prefixIcon: Icon(
+          prefixIcon,
+          color: fieldIconColor,
+          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+        ),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: inputFillColor,
+        border: buildBorder(inputBorderColor, isDesktopLayout ? 1.4 : 1),
+        enabledBorder: buildBorder(inputBorderColor, isDesktopLayout ? 1.4 : 1),
+        focusedBorder: buildBorder(AppTheme.secondaryColor, 2),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: isDesktopLayout ? 22 : 16,
+        ),
+      );
+    }
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -39,109 +228,58 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           padding: ResponsiveHelper.getResponsivePadding(
             context,
-            horizontal: 24,
+            horizontal: isDesktopLayout ? 56 : 24,
             vertical: 40,
           ),
-          child: Column(
-            children: [
-              // Branding Section
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'RGS',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 48),
-                      fontWeight: FontWeight.w900,
-                      color: colorScheme.onSurface,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                  Text(
-                    'HVAC SERVICES',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Text(
-                    'Not your ordinary HVAC company.',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isDesktopLayout ? 520 : double.infinity,
               ),
-              
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
-              
-              // Login Form Section
-              Form(
-                key: _formKey,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktopLayout ? 32 : 0,
+                  vertical: isDesktopLayout ? 32 : 0,
+                ),
+                decoration: isDesktopLayout
+                    ? BoxDecoration(
+                        color: const Color(0xFF0B111C).withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(36),
+                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black54,
+                            blurRadius: 30,
+                            offset: Offset(0, 20),
+                          ),
+                        ],
+                      )
+                    : null,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                          
-                          // Email Field
+                    const SizedBox(height: 50),
+                    Image.asset(
+                      'assets/images/rgs.jpg',
+                      width: 150,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 34),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             style: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                              color: textPrimary,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                  context, 16),
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.email_outlined,
-                                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                              ),
-                              filled: true,
-                              fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.secondaryColor,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: ResponsiveHelper.getResponsivePadding(
-                                context,
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
+                            decoration: buildInputDecoration(
+                              label: 'Email',
+                              prefixIcon: Icons.email_outlined,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -156,73 +294,35 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                          
-                          // Password Field
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 16),
+                          ),
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             style: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                              color: textPrimary,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                  context, 16),
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              labelStyle: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.lock_outline,
-                                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                              ),
+                            decoration: buildInputDecoration(
+                              label: 'Password',
+                              prefixIcon: Icons.lock_outline,
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: fieldIconColor,
+                                  size: ResponsiveHelper.getResponsiveIconSize(
+                                      context, 20),
                                 ),
                                 onPressed: () {
                                   setState(() {
                                     _obscurePassword = !_obscurePassword;
                                   });
                                 },
-                              ),
-                              filled: true,
-                              fillColor: isDarkMode ? colorScheme.surface : Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.secondaryColor,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: ResponsiveHelper.getResponsivePadding(
-                                context,
-                                horizontal: 20,
-                                vertical: 16,
                               ),
                             ),
                             validator: (value) {
@@ -235,41 +335,48 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                          
-                          // Login Button
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 20),
+                          ),
                           Consumer<AuthProvider>(
                             builder: (context, authProvider, child) {
                               return SizedBox(
                                 width: double.infinity,
-                                height: ResponsiveHelper.getResponsiveListItemHeight(context, 56),
+                                height: ResponsiveHelper
+                                    .getResponsiveListItemHeight(context, 56),
                                 child: ElevatedButton(
-                                  onPressed: authProvider.isLoading ? null : _handleLogin,
+                                  onPressed:
+                                      authProvider.isLoading ? null : _handleLogin,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.secondaryColor,
+                                    backgroundColor: const Color(0xFF2E7D32),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(
-                                        ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                      ),
+                                          borderRadiusValue),
                                     ),
-                                    elevation: 0,
-                                    padding: ResponsiveHelper.getResponsiveButtonPadding(context),
+                                    elevation: isDesktopLayout ? 8 : 0,
+                                    padding: ResponsiveHelper
+                                        .getResponsiveButtonPadding(context),
                                   ),
                                   child: authProvider.isLoading
                                       ? SizedBox(
-                                          height: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                          width: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                          child: CircularProgressIndicator(
+                                          height: ResponsiveHelper
+                                              .getResponsiveIconSize(context, 20),
+                                          width: ResponsiveHelper
+                                              .getResponsiveIconSize(context, 20),
+                                          child: const CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                           ),
                                         )
                                       : Text(
                                           'Sign In',
                                           style: TextStyle(
-                                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                            fontSize: ResponsiveHelper
+                                                .getResponsiveFontSize(context, 16),
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
                                             letterSpacing: 0.5,
@@ -279,10 +386,55 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                           ),
-                          
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                          
-                          // Forgot Password
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 20),
+                          ),
+                          // Divider
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  color: isDesktopLayout
+                                      ? Colors.white.withOpacity(0.12)
+                                      : Colors.grey[300],
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'Or continue with',
+                                  style: TextStyle(
+                                    fontSize:
+                                        ResponsiveHelper.getResponsiveFontSize(
+                                            context, 13),
+                                    color: textSecondary,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: isDesktopLayout
+                                      ? Colors.white.withOpacity(0.12)
+                                      : Colors.grey[300],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 16),
+                          ),
+                          // Social Sign-in Buttons
+                          _buildSocialButtons(
+                            context: context,
+                            isDesktopLayout: isDesktopLayout,
+                          ),
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 20),
+                          ),
                           TextButton(
                             onPressed: _handleForgotPassword,
                             style: TextButton.styleFrom(
@@ -291,19 +443,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 vertical: 8,
                               ),
                             ),
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                color: AppTheme.secondaryColor,
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color:
+                                          const Color(0xFF2E7D32),
+                                      fontSize:
+                                          ResponsiveHelper.getResponsiveFontSize(
+                                              context, 14),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                           ),
-                          
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                          
-                          // Back to Role Selection
+                          SizedBox(
+                            height: ResponsiveHelper.getResponsiveSpacing(
+                                context, 12),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
@@ -314,19 +469,42 @@ class _LoginScreenState extends State<LoginScreen> {
                                 vertical: 8,
                               ),
                             ),
-                            child: Text(
-                              '← Back to Role Selection',
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chevron_left,
+                                  size: ResponsiveHelper.getResponsiveIconSize(
+                                      context, 18),
+                                  color: isDesktopLayout
+                                      ? Colors.white.withOpacity(0.7)
+                                      : colorScheme.onSurface
+                                          .withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Back to Role Selection',
+                                  style: TextStyle(
+                                    color: isDesktopLayout
+                                        ? Colors.white.withOpacity(0.7)
+                                        : colorScheme.onSurface
+                                            .withValues(alpha: 0.7),
+                                    fontSize: ResponsiveHelper
+                                        .getResponsiveFontSize(context, 14),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -337,8 +515,19 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      // For web, simulate login without backend
+      // Check platform type
+      final isDesktopPlatform = !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux);
+      
+      // For WEB ONLY: use simulated login (no backend)
+      // Desktop and Mobile: use real Supabase authentication (same database)
       if (kIsWeb) {
+        debugPrint('🌐 Web platform detected - using simulated login');
+        final authProvider = context.read<AuthProvider>();
+        final email = _emailController.text.trim();
+        
         // Show loading state
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -350,13 +539,21 @@ class _LoginScreenState extends State<LoginScreen> {
         // Simulate a brief loading delay
         await Future.delayed(const Duration(milliseconds: 500));
         
-        // Determine role based on email for demo
-        final email = _emailController.text.toLowerCase();
-        final isAdmin = email.contains('admin') || email.contains('manager');
+        // Try to determine role from email - check for admin patterns
+        UserRole role = UserRole.technician;
+        final emailLower = email.toLowerCase();
+        
+        if (emailLower.contains('admin') || emailLower.contains('manager') || 
+            emailLower.contains('@royalgulf.ae') || emailLower.contains('@mekar.ae')) {
+          role = UserRole.admin;
+        }
+        
+        // Set the simulated user in AuthProvider
+        authProvider.simulateLogin(email, role);
         
         if (mounted) {
           // Navigate based on role
-          if (isAdmin) {
+          if (role == UserRole.admin) {
             Navigator.pushReplacementNamed(context, '/admin');
           } else {
             Navigator.pushReplacementNamed(context, '/technician');
@@ -365,7 +562,14 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Original mobile login logic
+      // Desktop and Mobile login logic - use real Supabase authentication
+      // Both sync with the same database
+      if (isDesktopPlatform) {
+        debugPrint('🖥️ Desktop platform detected - using real Supabase authentication');
+      } else {
+        debugPrint('📱 Mobile platform detected - using real Supabase authentication');
+      }
+      
       final authProvider = context.read<AuthProvider>();
       
       await authProvider.signIn(

@@ -256,12 +256,12 @@ class PendingApprovalsProvider extends ChangeNotifier {
         try {
           // Get the technician's FCM token if available
           final fcmTokenResponse = await SupabaseService.client
-              .from('fcm_tokens')
-              .select('token')
+              .from('user_fcm_tokens')
+              .select('fcm_token')
               .eq('user_id', approval.userId)
               .maybeSingle();
           
-          if (fcmTokenResponse != null && fcmTokenResponse['token'] != null) {
+          if (fcmTokenResponse != null && fcmTokenResponse['fcm_token'] != null) {
             // Send push notification via Firebase Cloud Messaging
             // This would typically be done via a Supabase Edge Function or backend service
             debugPrint('📱 FCM token found for user, push notification can be sent');

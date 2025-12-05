@@ -6,6 +6,7 @@ import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
+import '../utils/responsive_helper.dart';
 import 'tool_detail_screen.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
@@ -57,88 +58,176 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: Column(
-          children: [
-            // Search Form
-            Expanded(
-              flex: 2,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Text Search
-                    _buildTextSearch(),
-                    SizedBox(height: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = ResponsiveHelper.isDesktop(context);
+            
+            if (isDesktop) {
+              return Row(
+                children: [
+                  // Search Form - Left Side
+                  Expanded(
+                    flex: 1,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Text Search
+                              _buildTextSearch(),
+                              SizedBox(height: 16),
 
-                    // Category Filter
-                    _buildCategoryFilter(),
-                    SizedBox(height: 24),
+                              // Category Filter
+                              _buildCategoryFilter(),
+                              SizedBox(height: 16),
 
-                    // Status and Condition Filters
-                    Row(
+                              // Status and Condition Filters
+                              Row(
+                                children: [
+                                  Expanded(child: _buildStatusFilter()),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildConditionFilter()),
+                                ],
+                              ),
+                              SizedBox(height: 16),
+
+                              // Location Filter
+                              _buildLocationFilter(),
+                              SizedBox(height: 16),
+
+                              // Value Range
+                              _buildValueRange(),
+                              SizedBox(height: 16),
+
+                              // Date Range
+                              _buildDateRange(),
+                              SizedBox(height: 16),
+
+                              // Additional Filters
+                              _buildAdditionalFilters(),
+                              SizedBox(height: 16),
+
+                              // Search Button
+                              _buildSearchButton(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Divider
+                  Container(
+                    width: 1,
+                    color: Theme.of(context).dividerColor,
+                  ),
+                  
+                  // Search Results - Right Side
+                  Expanded(
+                    flex: 1,
+                    child: _buildSearchResults(),
+                  ),
+                ],
+              );
+            }
+            
+            // Mobile Layout
+            return Column(
+              children: [
+                // Search Form
+                Expanded(
+                  flex: 2,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _buildStatusFilter()),
-                        SizedBox(width: 16),
-                        Expanded(child: _buildConditionFilter()),
+                        // Text Search
+                        _buildTextSearch(),
+                        SizedBox(height: 24),
+
+                        // Category Filter
+                        _buildCategoryFilter(),
+                        SizedBox(height: 24),
+
+                        // Status and Condition Filters
+                        Row(
+                          children: [
+                            Expanded(child: _buildStatusFilter()),
+                            SizedBox(width: 16),
+                            Expanded(child: _buildConditionFilter()),
+                          ],
+                        ),
+                        SizedBox(height: 24),
+
+                        // Location Filter
+                        _buildLocationFilter(),
+                        SizedBox(height: 24),
+
+                        // Value Range
+                        _buildValueRange(),
+                        SizedBox(height: 24),
+
+                        // Date Range
+                        _buildDateRange(),
+                        SizedBox(height: 24),
+
+                        // Additional Filters
+                        _buildAdditionalFilters(),
+                        SizedBox(height: 24),
+
+                        // Search Button
+                        _buildSearchButton(),
                       ],
                     ),
-                    SizedBox(height: 24),
-
-                    // Location Filter
-                    _buildLocationFilter(),
-                    SizedBox(height: 24),
-
-                    // Value Range
-                    _buildValueRange(),
-                    SizedBox(height: 24),
-
-                    // Date Range
-                    _buildDateRange(),
-                    SizedBox(height: 24),
-
-                    // Additional Filters
-                    _buildAdditionalFilters(),
-                    SizedBox(height: 24),
-
-                    // Search Button
-                    _buildSearchButton(),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            
-            // Search Results
-            Expanded(
-              flex: 3,
-              child: _buildSearchResults(),
-            ),
-          ],
+                
+                // Search Results
+                Expanded(
+                  flex: 3,
+                  child: _buildSearchResults(),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
   Widget _buildTextSearch() {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Search Text',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: isDesktop ? 14 : 18,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
           ),
         ),
-        SizedBox(height: 12),
+        SizedBox(height: isDesktop ? 8 : 12),
         TextField(
           controller: _searchController,
-          decoration: const InputDecoration(
+          style: TextStyle(fontSize: isDesktop ? 13 : 14),
+          decoration: InputDecoration(
             labelText: 'Search by name, brand, model, or serial number',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.search),
-            suffixIcon: Icon(Icons.clear),
+            labelStyle: TextStyle(fontSize: isDesktop ? 12 : 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 12 : 16,
+              vertical: isDesktop ? 12 : 16,
+            ),
+            prefixIcon: Icon(Icons.search, size: isDesktop ? 18 : 20),
+            suffixIcon: Icon(Icons.clear, size: isDesktop ? 18 : 20),
           ),
           onChanged: (value) {
             if (value.isEmpty && _hasSearched) {
@@ -151,23 +240,31 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   Widget _buildCategoryFilter() {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Category',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: isDesktop ? 14 : 18,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
           ),
         ),
-        SizedBox(height: 12),
+        SizedBox(height: isDesktop ? 8 : 12),
         DropdownButtonFormField<String>(
           value: _selectedCategory,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.category),
+          style: TextStyle(fontSize: isDesktop ? 13 : 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 12 : 16,
+              vertical: isDesktop ? 12 : 16,
+            ),
+            prefixIcon: Icon(Icons.category, size: isDesktop ? 18 : 20),
           ),
           items: _getCategoryOptions(),
           onChanged: (value) {
@@ -181,23 +278,31 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   Widget _buildStatusFilter() {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Status',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isDesktop ? 13 : 16,
             fontWeight: FontWeight.w500,
             color: AppTheme.textPrimary,
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: isDesktop ? 6 : 8),
         DropdownButtonFormField<String>(
           value: _selectedStatus,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.info),
+          style: TextStyle(fontSize: isDesktop ? 13 : 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 12 : 16,
+              vertical: isDesktop ? 12 : 16,
+            ),
+            prefixIcon: Icon(Icons.info, size: isDesktop ? 18 : 20),
           ),
           items: const [
             DropdownMenuItem(value: 'All', child: Text('All Status')),
@@ -217,23 +322,31 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   Widget _buildConditionFilter() {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Condition',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isDesktop ? 13 : 16,
             fontWeight: FontWeight.w500,
             color: AppTheme.textPrimary,
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: isDesktop ? 6 : 8),
         DropdownButtonFormField<String>(
           value: _selectedCondition,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.construction),
+          style: TextStyle(fontSize: isDesktop ? 13 : 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 12 : 16,
+              vertical: isDesktop ? 12 : 16,
+            ),
+            prefixIcon: Icon(Icons.construction, size: isDesktop ? 18 : 20),
           ),
           items: const [
             DropdownMenuItem(value: 'All', child: Text('All Conditions')),
@@ -438,16 +551,26 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   Widget _buildSearchButton() {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: _search,
-        icon: Icon(Icons.search),
-        label: Text('Search Tools'),
+        icon: Icon(Icons.search, size: isDesktop ? 18 : 20),
+        label: Text(
+          'Search Tools',
+          style: TextStyle(fontSize: isDesktop ? 13 : 14),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(
+            vertical: isDesktop ? 12 : 16,
+            horizontal: isDesktop ? 16 : 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
+          ),
         ),
       ),
     );

@@ -240,6 +240,10 @@ void main() async {
               
               print('🔐 Auth state changed: $event');
               
+              if (session != null) {
+                print('✅ User logged in: ${session.user.email}');
+              }
+
               // Handle password recovery - the deep link will navigate to reset screen
               if (event == AuthChangeEvent.passwordRecovery && session != null) {
                 print('🔐 Password recovery detected - session available');
@@ -576,9 +580,18 @@ class HvacToolsManagerApp extends StatelessWidget {
       }
       
       // For web, show role selection screen initially (no backend for now)
+      // Desktop (Windows, macOS, Linux) uses real authentication like mobile
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
         return const RoleSelectionScreen();
+      }
+      
+      // Desktop platforms use real Supabase authentication
+      final isDesktopPlatform = defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux;
+      if (isDesktopPlatform) {
+        print('🔍 Desktop platform detected, using real Supabase authentication');
       }
 
       // At this point, initialization is complete (checked in Consumer2 builder)

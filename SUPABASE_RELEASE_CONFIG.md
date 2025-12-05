@@ -67,7 +67,7 @@ AND table_name IN (
   'pending_user_approvals',
   'approval_workflows',
   'admin_notifications',
-  'fcm_tokens',
+  'user_fcm_tokens',
   'request_chat'
 );
 ```
@@ -387,4 +387,3 @@ After release, monitor:
 - User registration/login patterns
 
 Set up dashboards and alerts for these metrics.
-

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
@@ -7,6 +7,7 @@ import 'dart:async';
 import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
 import '../models/user_role.dart';
+import '../config/supabase_config.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
@@ -716,14 +717,106 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await SupabaseService.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      // Ensure Supabase client is ready
+      final client = SupabaseService.client;
+      debugPrint('🔍 Attempting sign in for: $email');
+      debugPrint('🔍 Supabase client initialized: ${SupabaseService.isInitialized}');
+      debugPrint('🔍 Supabase URL: ${SupabaseConfig.url}');
+      debugPrint('🔍 Supabase Anon Key (first 20 chars): ${SupabaseConfig.anonKey.substring(0, 20)}...');
+      
+      // Verify we're using the correct database by checking the URL
+      final expectedUrl = 'https://npgwikkvtxebzwtpzwgx.supabase.co';
+      if (SupabaseConfig.url != expectedUrl) {
+        debugPrint('⚠️ WARNING: Supabase URL mismatch!');
+        debugPrint('⚠️ Expected: $expectedUrl');
+        debugPrint('⚠️ Actual: ${SupabaseConfig.url}');
+      } else {
+        debugPrint('✅ Supabase URL matches expected: $expectedUrl');
+      }
+      
+      // Skip connection test - just try to login directly
+      // The login itself will test the connection
+      debugPrint('🔍 Proceeding with login attempt...');
+      
+      // Try to sign in - with retry logic for connection issues
+      AuthResponse? response;
+      int attempt = 0;
+      const maxAttempts = 3;
+      
+      while (attempt < maxAttempts) {
+        try {
+          attempt++;
+          debugPrint('🔍 Sign in attempt $attempt/$maxAttempts...');
+          
+          response = await client.auth.signInWithPassword(
+            email: email,
+            password: password,
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              debugPrint('❌ Sign in timed out after 30 seconds (attempt $attempt)');
+              throw TimeoutException('Login is taking longer than expected. Please check your internet connection and try again.');
+            },
+          );
+          
+          // Success - break out of retry loop
+          debugPrint('✅ Sign in successful on attempt $attempt');
+          break;
+        } catch (e) {
+          final errorString = e.toString().toLowerCase();
+          final isConnectionError = errorString.contains('connection') || 
+              errorString.contains('network') ||
+              errorString.contains('timeout') ||
+              errorString.contains('socket') ||
+              errorString.contains('failed host lookup');
+          
+          if (isConnectionError && attempt < maxAttempts) {
+            debugPrint('⚠️ Connection error on attempt $attempt, retrying in ${attempt * 2} seconds...');
+            await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
+            continue; // Retry
+          } else {
+            // Not a connection error, or max attempts reached
+            debugPrint('❌ Sign in failed: $e');
+            rethrow;
+          }
+        }
+      }
+      
+      // Check if we got a response after all retries
+      if (response == null) {
+        throw Exception('Sign in failed after $maxAttempts attempts. Please check your internet connection and try again.');
+      }
+      
+      // At this point, response is guaranteed to be non-null
+      final authResponse = response!;
+      debugPrint('✅ Sign in response received: user=${authResponse.user?.id ?? "null"}');
 
-      if (response.user != null) {
-        _user = response.user;
-        await _loadUserRole();
+      if (authResponse.user != null) {
+        _user = authResponse.user;
+        // Load user role - don't fail login if this fails
+        try {
+          await _loadUserRole();
+        } catch (e) {
+          debugPrint('⚠️ Error loading user role after sign in: $e');
+          // Try to use saved role or metadata as fallback
+          try {
+            final savedRole = await _getSavedUserRole();
+            if (savedRole != null) {
+              _userRole = savedRole;
+              debugPrint('✅ Using saved role after load error: ${_userRole.value}');
+            } else {
+              // Try user metadata
+              final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+              if (roleFromMetadata != null) {
+                _userRole = UserRoleExtension.fromString(roleFromMetadata);
+                debugPrint('✅ Using role from metadata: ${_userRole.value}');
+              }
+            }
+            notifyListeners();
+          } catch (fallbackError) {
+            debugPrint('❌ Fallback role loading also failed: $fallbackError');
+          }
+        }
         
         // Send FCM token to server after successful login
         try {
@@ -758,7 +851,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      return response;
+      return authResponse;
     } catch (e, stackTrace) {
       debugPrint('❌ Error signing in: $e');
       debugPrint('❌ Error type: ${e.runtimeType}');
@@ -824,6 +917,76 @@ _isLoading = false;
   String? get userId => _user?.id;
   String? get userFullName => _user?.userMetadata?['full_name'] as String?;
 
+  /// Sign in with Google using Supabase OAuth
+  Future<void> signInWithGoogle() async {
+    await _signInWithOAuthProvider(OAuthProvider.google);
+  }
+
+  /// Sign in with Apple using Supabase OAuth
+  Future<void> signInWithApple() async {
+    await _signInWithOAuthProvider(OAuthProvider.apple);
+  }
+
+  Future<void> _signInWithOAuthProvider(OAuthProvider provider) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final client = SupabaseService.client;
+
+      await client.auth.signInWithOAuth(
+        provider,
+        // The redirect URL should match the deep link configured in Supabase dashboard
+        // For mobile, we rely on the app scheme; for web, Supabase handles redirects.
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error during OAuth sign-in ($provider): $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  
+  /// Simulate login for web ONLY (bypasses Supabase)
+  /// Sets a mock user and role for testing/demo purposes
+  /// NOTE: Desktop uses real Supabase authentication, not this method
+  void simulateLogin(String email, UserRole role) {
+    // Safety check: only allow on web
+    if (!kIsWeb) {
+      debugPrint('❌ ERROR: simulateLogin called on non-web platform!');
+      debugPrint('❌ Desktop and Mobile must use real Supabase authentication');
+      throw Exception('Simulated login is only available on web platform. Desktop and Mobile must use real authentication.');
+    }
+    
+    debugPrint('🔍 Simulating login for WEB ONLY: $email with role: ${role.value}');
+    
+    // Clear any existing real session first to avoid conflicts
+    _user = null;
+    _userRole = UserRole.technician;
+    
+    // Create a mock user object with simulated ID
+    _user = User(
+      id: 'simulated-web-${email.hashCode}',
+      appMetadata: {},
+      userMetadata: {
+        'email': email,
+        'full_name': email.split('@').first,
+        'role': role.value,
+        'simulated': true, // Mark as simulated to distinguish from real users
+      },
+      aud: 'authenticated',
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    
+    _userRole = role;
+    _isLoading = false;
+    notifyListeners();
+    
+    debugPrint('✅ Simulated login complete (WEB ONLY): user=${_user!.email}, role=${_userRole.value}');
+  }
+
   Future<void> _loadUserRole() async {
     if (_user == null) {
       _userRole = UserRole.technician;
@@ -867,7 +1030,7 @@ _isLoading = false;
         }
       }
 
-      // Try to get role from database (online) - with timeout
+      // Try to get role from database (online) - with timeout and better error handling
       int retryCount = 0;
       const maxRetries = 2; // Reduced retries for faster timeout
       
@@ -877,15 +1040,15 @@ _isLoading = false;
               .from('users')
               .select('role')
               .eq('id', _user!.id)
-              .single()
+              .maybeSingle() // Use maybeSingle instead of single to avoid errors if user doesn't exist
               .timeout(
-                const Duration(seconds: 3),
+                const Duration(seconds: 5), // Increased timeout for desktop
                 onTimeout: () {
-                  throw TimeoutException('Database query timed out', const Duration(seconds: 3));
+                  throw TimeoutException('Database query timed out', const Duration(seconds: 5));
                 },
               );
 
-          if (response['role'] != null) {
+          if (response != null && response['role'] != null) {
             final newRole = UserRoleExtension.fromString(response['role']);
             _userRole = newRole;
             // Save role to local storage for future offline use
@@ -898,8 +1061,33 @@ _isLoading = false;
             return;
           }
         } catch (e) {
+          // Handle connection errors gracefully - don't fail login if we can't load role
+          final errorString = e.toString().toLowerCase();
+          if (errorString.contains('connection') || 
+              errorString.contains('network') || 
+              errorString.contains('timeout') ||
+              errorString.contains('cannot connect to database')) {
+            debugPrint('⚠️ Connection error loading user role: $e');
+            debugPrint('🔄 Using saved role or default role instead');
+            // Use saved role if available, otherwise keep current role
+            final savedRole = await _getSavedUserRole();
+            if (savedRole != null) {
+              _userRole = savedRole;
+              debugPrint('✅ Using saved role: ${_userRole.value}');
+            } else {
+              // Try to get role from user metadata as fallback
+              final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+              if (roleFromMetadata != null) {
+                _userRole = UserRoleExtension.fromString(roleFromMetadata);
+                debugPrint('✅ Using role from metadata: ${_userRole.value}');
+              }
+            }
+            notifyListeners();
+            return; // Don't retry on connection errors
+          }
+          
           // If user record doesn't exist, check if this is a new registration
-          if (e.toString().contains('0 rows')) {
+          if (e.toString().contains('0 rows') || e.toString().contains('not found')) {
             debugPrint('🔄 User record not found, checking if this is a new registration...');
             
             // Check if user has pending approval (new technician registration)
@@ -1155,6 +1343,47 @@ _isLoading = false;
       notifyListeners();
     } catch (e) {
       debugPrint('❌ Error updating user role: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateUserName(String newName) async {
+    if (_user == null) return;
+
+    try {
+      debugPrint('🔧 Updating user name to: $newName');
+      
+      // Update user metadata in Supabase Auth
+      await SupabaseService.client.auth.updateUser(
+        UserAttributes(
+          data: {
+            ..._user!.userMetadata ?? {},
+            'full_name': newName,
+          },
+        ),
+      );
+
+      // Update in Supabase users table
+      await SupabaseService.client
+          .from('users')
+          .upsert({
+            'id': _user!.id,
+            'email': _user!.email,
+            'full_name': newName,
+            'role': _userRole.value,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+
+      // Refresh user data
+      final updatedUser = SupabaseService.client.auth.currentUser;
+      if (updatedUser != null) {
+        _user = updatedUser;
+      }
+      
+      debugPrint('✅ User name updated successfully');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error updating user name: $e');
       rethrow;
     }
   }

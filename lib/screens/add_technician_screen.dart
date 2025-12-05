@@ -7,6 +7,9 @@ import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_helper.dart';
+import '../config/app_config.dart';
+import '../widgets/premium_field_styles.dart';
 
 class AddTechnicianScreen extends StatefulWidget {
   final Technician? technician;
@@ -59,341 +62,317 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final backgroundColor = theme.scaffoldBackgroundColor;
+    final fieldIconColor = colorScheme.onSurface.withValues(alpha: 0.7);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
-        elevation: 0,
         title: Text(
           widget.technician == null ? 'Add Technician' : 'Edit Technician',
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveTechnician,
-              child: Text(
-                widget.technician == null ? 'Save' : 'Update',
-                style: TextStyle(
-                  color: AppTheme.secondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
+        centerTitle: true,
+        backgroundColor: backgroundColor,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isDesktopLayout ? 760 : double.infinity,
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header Section
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                        ),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 16),
+                    ),
+                    Text(
+                      widget.technician == null
+                          ? 'Add technicians so they can receive assignments and tool access.'
+                          : 'Update technician details to keep assignments current.',
+                      style: TextStyle(
+                        fontSize:
+                            ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color:
+                            colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w400,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.person_add,
-                                  color: AppTheme.secondaryColor,
-                                  size: 24,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.technician == null 
-                                          ? 'Add New Technician' 
-                                          : 'Edit Technician',
-                                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      widget.technician == null
-                                          ? 'Enter technician details below'
-                                          : 'Update technician information',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 28),
+                    ),
+                    Center(
+                      child: _buildProfilePictureSection(
+                        colorScheme,
+                        isDarkMode,
+                        context,
+                        iconColorOverride: fieldIconColor,
+                      ),
+                    ),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 32),
+                    ),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Full Name',
+                      child: TextFormField(
+                        controller: _nameController,
+                        inputFormatters: [
+                          TextInputFormatter.withFunction((oldValue, newValue) {
+                            return TextEditingValue(
+                              text: newValue.text.toUpperCase(),
+                              selection: newValue.selection,
+                            );
+                          }),
+                        ],
+                        style: PremiumFieldStyles.fieldTextStyle(context),
+                        decoration: PremiumFieldStyles.inputDecoration(
+                          context,
+                          hintText: 'Enter full name',
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter technician\'s name';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Employee ID',
+                      child: TextFormField(
+                        controller: _employeeIdController,
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[A-Za-z0-9-]'),
                           ),
                         ],
-                      ),
-                    ),
-
-                    SizedBox(height: 24),
-
-                    // Form Fields
-                    Text(
-                      'Personal Information',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-
-                    // Profile Picture Section
-                    _buildProfilePictureSection(),
-                    SizedBox(height: 16),
-
-                    // Name (Required)
-                    TextFormField(
-                      controller: _nameController,
-                      inputFormatters: [
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          return TextEditingValue(
-                            text: newValue.text.toUpperCase(),
-                            selection: newValue.selection,
-                          );
-                        }),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Full Name *',
-                        hintText: 'Enter technician\'s full name',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        style: PremiumFieldStyles.fieldTextStyle(context),
+                        decoration: PremiumFieldStyles.inputDecoration(
+                          context,
+                          hintText: 'Enter employee ID (optional)',
+                          prefixIcon: const Icon(Icons.badge_outlined),
                         ),
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter technician\'s name';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    SizedBox(height: 16),
-
-                    // Employee ID
-                    TextFormField(
-                      controller: _employeeIdController,
-                      decoration: InputDecoration(
-                        labelText: 'Employee ID',
-                        hintText: 'Enter employee ID (optional)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: Icon(Icons.badge),
                       ),
                     ),
-
-                    SizedBox(height: 16),
-
-                    // Phone and Email Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _phoneController,
-                            decoration: InputDecoration(
-                              labelText: 'Phone',
-                              hintText: 'Phone number',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              prefixIcon: Icon(Icons.phone),
-                            ),
-                            keyboardType: TextInputType.phone,
-                          ),
+                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Phone Number',
+                      child: TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: PremiumFieldStyles.fieldTextStyle(context),
+                        decoration: PremiumFieldStyles.inputDecoration(
+                          context,
+                          hintText: 'Enter phone number',
+                          prefixIcon: const Icon(Icons.phone_android),
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              hintText: 'Email address',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              prefixIcon: Icon(Icons.email),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 24),
-
-                    Text(
-                      'Work Information',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 16),
-
-                    // Department
-                    TextFormField(
-                      controller: _departmentController,
-                      decoration: InputDecoration(
-                        labelText: 'Department',
-                        hintText: 'Enter department name',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Email Address',
+                      child: TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: PremiumFieldStyles.fieldTextStyle(context),
+                        decoration: PremiumFieldStyles.inputDecoration(
+                          context,
+                          hintText: 'Enter email address',
+                          prefixIcon: const Icon(Icons.email_outlined),
                         ),
-                        prefixIcon: Icon(Icons.business),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter email address';
+                          }
+                          if (!AppConfig.isValidEmailFormat(value)) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-
-                    SizedBox(height: 16),
-
-                    // Status and Hire Date Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _status,
-                            decoration: InputDecoration(
-                              labelText: 'Status',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              prefixIcon: Icon(Icons.work),
-                            ),
+                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Department',
+                      child: TextFormField(
+                        controller: _departmentController,
+                        style: PremiumFieldStyles.fieldTextStyle(context),
+                        decoration: PremiumFieldStyles.inputDecoration(
+                          context,
+                          hintText: 'Enter department',
+                          prefixIcon: const Icon(Icons.apartment_outlined),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 16),
+                    ),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Status',
+                      child: Container(
+                        decoration:
+                            PremiumFieldStyles.dropdownContainerDecoration(
+                                context),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _status,
+                            isExpanded: true,
+                            style: PremiumFieldStyles.fieldTextStyle(context),
+                            icon: PremiumFieldStyles.dropdownIcon(context),
+                            borderRadius: BorderRadius.circular(16),
+                            dropdownColor: Colors.white,
                             items: const [
-                              DropdownMenuItem(value: 'Active', child: Text('Active')),
-                              DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                              DropdownMenuItem(
+                                value: 'Active',
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Active'),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Inactive',
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 6),
+                                  child: Text('Inactive'),
+                                ),
+                              ),
                             ],
                             onChanged: (value) {
+                              if (value == null) return;
                               setState(() {
-                                _status = value!;
+                                _status = value;
                               });
                             },
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: InkWell(
-                            onTap: _selectHireDate,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Hire Date',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                prefixIcon: Icon(Icons.calendar_today),
-                              ),
-                              child: Text(
-                                _hireDate != null
-                                    ? '${_hireDate!.day}/${_hireDate!.month}/${_hireDate!.year}'
-                                    : 'Select date',
-                                style: TextStyle(
-                                  color: _hireDate != null 
-                                      ? Theme.of(context).textTheme.bodyLarge?.color 
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-
-                    SizedBox(height: 32),
-
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    PremiumFieldStyles.labeledField(
+                      context: context,
+                      label: 'Hire Date',
+                      child: InkWell(
+                        onTap: _selectHireDate,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration:
+                              PremiumFieldStyles.dropdownContainerDecoration(
+                                  context),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _saveTechnician,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                                color: colorScheme.onSurface
+                                    .withOpacity(0.55),
                               ),
-                            ),
-                            child: _isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : Text(
-                                    widget.technician == null ? 'Add Technician' : 'Update Technician',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _hireDate != null
+                                      ? '${_hireDate!.day.toString().padLeft(2, '0')}/${_hireDate!.month.toString().padLeft(2, '0')}/${_hireDate!.year}'
+                                      : 'Select date',
+                                  style: PremiumFieldStyles.fieldTextStyle(
+                                          context)
+                                      .copyWith(
+                                    color: _hireDate != null
+                                        ? colorScheme.onSurface
+                                        : colorScheme.onSurface
+                                            .withOpacity(0.45),
                                   ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-
-                    SizedBox(height: 32),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 32),
+                    ),
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveTechnician,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              ResponsiveHelper.getResponsiveBorderRadius(
+                                  context, isDesktopLayout ? 32 : 28),
+                            ),
+                          ),
+                          elevation: isDesktopLayout ? 6 : 2,
+                          shadowColor: Colors.black.withOpacity(0.2),
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Text(
+                                widget.technician == null
+                                    ? 'Add Technician'
+                                    : 'Update Technician',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(
+                      height:
+                          ResponsiveHelper.getResponsiveSpacing(context, 24),
+                    ),
                   ],
                 ),
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -498,121 +477,165 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
     }
   }
 
-  Widget _buildProfilePictureSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Profile Picture (Optional)',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              fontWeight: FontWeight.w600,
+  Widget _buildProfilePictureSection(
+    ColorScheme colorScheme,
+    bool isDarkMode,
+    BuildContext context, {
+    Color? iconColorOverride,
+  }) {
+    final iconColor =
+        iconColorOverride ?? colorScheme.onSurface.withValues(alpha: 0.55);
+    final avatarRadius = ResponsiveHelper.getResponsiveIconSize(context, 58);
+    final avatarBackground = isDarkMode
+        ? colorScheme.onSurface.withValues(alpha: 0.35)
+        : colorScheme.onSurface.withValues(alpha: 0.08);
+
+    ImageProvider? avatarImage;
+    if (_profileImage != null) {
+      avatarImage = FileImage(_profileImage!);
+    } else if (widget.technician?.profilePictureUrl != null &&
+        widget.technician!.profilePictureUrl!.isNotEmpty) {
+      avatarImage = NetworkImage(widget.technician!.profilePictureUrl!);
+    }
+
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: avatarRadius,
+              backgroundColor: avatarBackground,
+              backgroundImage: avatarImage,
+              child: avatarImage == null
+                  ? Icon(
+                      Icons.person_outline,
+                      size: avatarRadius,
+                      color: iconColor,
+                    )
+                  : null,
             ),
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              // Profile Picture Preview
-              GestureDetector(
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
                 onTap: _selectProfileImage,
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: ResponsiveHelper.getResponsiveIconSize(context, 32),
+                  height: ResponsiveHelper.getResponsiveIconSize(context, 32),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                      width: 2,
-                    ),
+                    color: AppTheme.secondaryColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: _profileImage != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(40),
-                          child: Image.file(
-                            _profileImage!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.grey[600],
-                        ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Add Profile Picture',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Tap to select from gallery or camera',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _selectProfileImage,
-                          icon: Icon(Icons.photo_library, size: 16),
-                          label: Text('Gallery'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: _takeProfileImage,
-                          icon: Icon(Icons.camera_alt, size: 16),
-                          label: Text('Camera'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: ResponsiveHelper.getResponsiveSpacing(context, 14),
+          runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
+          alignment: WrapAlignment.center,
+          children: [
+            _buildProfileActionChip(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose Photo',
+              onTap: _selectProfileImage,
+              colorScheme: colorScheme,
+              context: context,
+            ),
+            _buildProfileActionChip(
+              icon: Icons.camera_alt_outlined,
+              label: 'Take Photo',
+              onTap: _takeProfileImage,
+              colorScheme: colorScheme,
+              context: context,
+            ),
+            if (_profileImage != null)
+              _buildProfileActionChip(
+                icon: Icons.close,
+                label: 'Remove',
+                onTap: _removeProfileImage,
+                colorScheme: colorScheme,
+                context: context,
+                isDestructive: true,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileActionChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required BuildContext context,
+    bool isDestructive = false,
+  }) {
+    final Color bgColor = isDestructive
+        ? Colors.red.withValues(alpha: 0.12)
+        : AppTheme.primaryColor.withValues(alpha: 0.12);
+    final Color fgColor =
+        isDestructive ? Colors.red : AppTheme.primaryColor;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+        ),
+        child: Container(
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            horizontal: 14,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+            ),
+            border: Border.all(color: fgColor.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+                color: fgColor,
+              ),
+              SizedBox(
+                width: ResponsiveHelper.getResponsiveSpacing(context, 6),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: fgColor,
+                  fontSize:
+                      ResponsiveHelper.getResponsiveFontSize(context, 13),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              if (_profileImage != null)
-                IconButton(
-                  onPressed: _removeProfileImage,
-                  icon: Icon(Icons.close, color: Colors.red),
-                  tooltip: 'Remove image',
-                ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -726,4 +749,3 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
     }
   }
 }
-

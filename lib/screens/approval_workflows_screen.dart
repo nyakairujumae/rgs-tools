@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/approval_workflow.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
-import '../widgets/common/status_chip.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 
@@ -18,233 +17,68 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   String _selectedFilter = 'All';
   String _selectedType = 'All';
   bool _isLoading = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  final List<String> _filters = [
+    'All',
+    'Pending',
+    'Approved',
+    'Rejected',
+    'Overdue'
+  ];
+  final List<String> _types = [
+    'All',
+    RequestTypes.toolAssignment,
+    RequestTypes.toolPurchase,
+    RequestTypes.toolDisposal,
+    RequestTypes.maintenance,
+    RequestTypes.transfer,
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: _buildPremiumAppBar(context),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
-        child: Column(
+      child: Column(
           children: [
-            // Header with back button
-            Padding(
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 16,
-                vertical: 20,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Theme.of(context).colorScheme.surface 
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
-                      onPressed: () => NavigationHelper.safePop(context),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Expanded(
-                    child: Text(
-                      'Approval Workflows',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Theme.of(context).colorScheme.surface 
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.add,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
-                      onPressed: _showCreateRequestDialog,
-                      tooltip: 'Create Request',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Filter Tabs
-            _buildFilterTabs(),
-            
-            // Type Filter
-            _buildTypeFilter(),
-            
-            // Workflows List
+            const SizedBox(height: 12),
+            _buildSearchBar(),
+            const SizedBox(height: 12),
+            _buildFilterPills(),
+            const SizedBox(height: 8),
+            _buildTypePills(),
+            const SizedBox(height: 8),
             Expanded(
               child: _buildWorkflowsList(),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateRequestDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Create Request'),
-        backgroundColor: AppTheme.secondaryColor,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: SizedBox(
+          height: 50,
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _showCreateRequestDialog,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text(
+              'Create Request',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 6,
+            ),
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilterTabs() {
-    final filters = ['All', 'Pending', 'Approved', 'Rejected', 'Overdue'];
-    
-    return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
-      padding: EdgeInsets.fromLTRB(
-        ResponsiveHelper.getResponsiveSpacing(context, 16),
-        0,
-        ResponsiveHelper.getResponsiveSpacing(context, 16),
-        ResponsiveHelper.getResponsiveSpacing(context, 12),
-      ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: filters.length,
-        itemBuilder: (context, index) {
-          final filter = filters[index];
-          final isSelected = _selectedFilter == filter;
-          
-          return Padding(
-            padding: EdgeInsets.only(right: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-            child: FilterChip(
-              label: Text(
-                filter,
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
-              },
-              selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
-              backgroundColor: AppTheme.cardSurfaceColor(context),
-              checkmarkColor: AppTheme.secondaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-                vertical: 0,
-              ),
-              labelPadding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                side: BorderSide(
-                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                  width: 1.1,
-                ),
-              ),
-              elevation: 0,
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildTypeFilter() {
-    final types = ['All', ...RequestTypes.allTypes];
-    
-    return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
-      padding: EdgeInsets.fromLTRB(
-        ResponsiveHelper.getResponsiveSpacing(context, 16),
-        0,
-        ResponsiveHelper.getResponsiveSpacing(context, 16),
-        ResponsiveHelper.getResponsiveSpacing(context, 12),
-      ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: types.length,
-        itemBuilder: (context, index) {
-          final type = types[index];
-          final isSelected = _selectedType == type;
-          
-          return Padding(
-            padding: EdgeInsets.only(right: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-            child: FilterChip(
-              label: Text(
-                type,
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedType = type;
-                });
-              },
-              selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
-              backgroundColor: AppTheme.cardSurfaceColor(context),
-              checkmarkColor: AppTheme.secondaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-                vertical: 0,
-              ),
-              labelPadding: EdgeInsets.symmetric(
-                horizontal: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                side: BorderSide(
-                  color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                  width: 1.1,
-                ),
-              ),
-              elevation: 0,
-            ),
-          );
-        },
       ),
     );
   }
@@ -256,13 +90,152 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       return _buildEmptyState();
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: workflows.length,
-      itemBuilder: (context, index) {
-        final workflow = workflows[index];
-        return _buildWorkflowCard(workflow);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 200));
       },
+      color: AppTheme.secondaryColor,
+      child: ListView.separated(
+        padding: EdgeInsets.fromLTRB(
+          isDesktop ? 24 : 16,
+          isDesktop ? 16 : 12,
+          isDesktop ? 24 : 16,
+          120,
+        ),
+        itemCount: workflows.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final workflow = workflows[index];
+          return _buildWorkflowCard(workflow);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppTheme.cardSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search requests, tools, or reporters...',
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      size: 20,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.55),
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterPills() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: _filters.map((filter) {
+          final isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _selectedFilter = filter);
+              },
+              child: Container(
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.secondaryColor
+                      : const Color(0xFFF2F3F5),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : Colors.black54,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTypePills() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: _types.map((type) {
+          final isSelected = _selectedType == type;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedType = type),
+              child: Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color:
+                      isSelected ? const Color(0xFFEBF6F1) : const Color(0xFFF6F6F7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  type,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? AppTheme.secondaryColor : Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -308,46 +281,51 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   }
 
   Widget _buildWorkflowCard(ApprovalWorkflow workflow) {
-    return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(20);
+    final initial =
+        workflow.title.isNotEmpty ? workflow.title[0].toUpperCase() : '?';
+    final details = [
+      workflow.requestType,
+      workflow.requesterRole,
+    ].join(' • ');
+
+    return InkWell(
+      borderRadius: radius,
+      onTap: () => _showCreateRequestDialog(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: radius,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 12,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-                  decoration: BoxDecoration(
-                    color: _getTypeColor(workflow.requestType).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                  ),
-                  child: Icon(
-                    _getTypeIcon(workflow.requestType),
-                    color: _getTypeColor(workflow.requestType),
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: _getTypeColor(workflow.requestType)
+                      .withValues(alpha: 0.15),
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      color: _getTypeColor(workflow.requestType),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,266 +333,63 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       Text(
                         workflow.title,
                         style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
-                        overflow: TextOverflow.ellipsis,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
+                      const SizedBox(height: 4),
                       Text(
-                        workflow.requestType,
+                        details,
                         style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 13,
+                          color:
+                              theme.colorScheme.onSurface.withOpacity(0.55),
                         ),
-                        overflow: TextOverflow.ellipsis,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    StatusChip(status: workflow.status),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveHelper.getResponsiveSpacing(context, 10),
-                        vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getPriorityColor(workflow.priority).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                      ),
-                      child: Text(
-                        workflow.priority,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                          fontWeight: FontWeight.w600,
-                          color: _getPriorityColor(workflow.priority),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
-            
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-            
-            // Description
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildIssueTypePill(workflow.requestType),
+                _buildPriorityPill(workflow.priority),
+                _buildStatusOutlineChip(workflow.status),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(
               workflow.description,
               style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 13,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
-              overflow: TextOverflow.ellipsis,
               maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-            
-            // Details
-            _buildDetailRow('Requester', workflow.requesterName),
-            _buildDetailRow('Role', workflow.requesterRole),
-            _buildDetailRow('Request Date', _formatDate(workflow.requestDate)),
-            if (workflow.dueDate != null)
-              _buildDetailRow('Due Date', _formatDate(workflow.dueDate!)),
-            if (workflow.assignedTo != null)
-              _buildDetailRow('Assigned To', workflow.assignedTo!),
-            if (workflow.location != null)
-              _buildDetailRow('Location', workflow.location!),
-            
-            // Status specific information
-            if (workflow.isApproved && workflow.approvedBy != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 16,
-                      color: AppTheme.secondaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Approved by ${workflow.approvedBy} on ${_formatDate(workflow.approvedDate!)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.secondaryColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 8),
+            Text(
+              'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withOpacity(0.55),
               ),
-            ],
-            
-            if (workflow.isRejected && workflow.rejectedBy != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.cancel,
-                          size: 16,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Rejected by ${workflow.rejectedBy} on ${_formatDate(workflow.rejectedDate!)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (workflow.rejectionReason != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Reason: ${workflow.rejectionReason}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-            
-            if (workflow.isOverdue) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.warning,
-                      size: 16,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Overdue by ${workflow.daysUntilDue.abs()} days',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            
-            const SizedBox(height: 12),
-            
-            // Action Buttons
-            if (workflow.isPending) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _approveWorkflow(workflow),
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Approve'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _rejectWorkflow(workflow),
-                      icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _viewWorkflowDetails(workflow),
-                      icon: const Icon(Icons.visibility, size: 16),
-                      label: const Text('View Details'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.secondaryColor,
-                        side: BorderSide(color: AppTheme.secondaryColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (workflow.isRejected) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _resubmitWorkflow(workflow),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Resubmit'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.secondaryColor,
-                          side: BorderSide(color: AppTheme.secondaryColor),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -649,9 +424,94 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     );
   }
 
+  Widget _buildIssueTypePill(String type) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F6F7),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        type,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: _getTypeColor(type),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityPill(String priority) {
+    final color = _getPriorityAccentColor(priority);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        priority,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusOutlineChip(String status) {
+    final color = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1.1),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Color _getPriorityAccentColor(String priority) {
+    switch (priority) {
+      case 'Critical':
+      case 'High':
+        return const Color(0xFFFF4D4F);
+      case 'Medium':
+        return const Color(0xFFFAAD14);
+      case 'Low':
+        return const Color(0xFF52C41A);
+      default:
+        return const Color(0xFF8C8C8C);
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Pending':
+        return const Color(0xFFFF4D4F);
+      case 'Approved':
+        return const Color(0xFF52C41A);
+      case 'Rejected':
+        return const Color(0xFFFAAD14);
+      case 'Cancelled':
+        return Colors.blueGrey;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
   List<ApprovalWorkflow> _getFilteredWorkflows() {
     var workflows = ApprovalWorkflowService.getMockWorkflows();
-    
+
     // Filter by status
     switch (_selectedFilter) {
       case 'Pending':
@@ -667,13 +527,49 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
         workflows = workflows.where((w) => w.isOverdue).toList();
         break;
     }
-    
+
     // Filter by type
     if (_selectedType != 'All') {
       workflows = workflows.where((w) => w.requestType == _selectedType).toList();
     }
-    
+
+    final searchTerm = _searchQuery.trim().toLowerCase();
+    if (searchTerm.isNotEmpty) {
+      workflows = workflows.where((issue) {
+        final haystack = [
+          issue.title,
+          issue.description,
+          issue.requesterName,
+          issue.requestType,
+        ].join(' ').toLowerCase();
+        return haystack.contains(searchTerm);
+      }).toList();
+    }
+
     return workflows;
+  }
+
+  PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      centerTitle: true,
+      titleSpacing: 0,
+      title: const Text(
+        'Approval Workflows',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
+        onPressed: () => NavigationHelper.safePop(context),
+      ),
+      actions: [],
+    );
   }
 
   Color _getTypeColor(String type) {
@@ -730,16 +626,18 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   }
 
   void _showCreateRequestDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _CreateRequestDialog(
-        onRequestCreated: (workflow) {
-          // Add the new workflow to the list
-          setState(() {
-            // In a real app, this would be saved to the database
-            // For now, we'll just refresh the UI
-          });
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _CreateRequestDialog(
+          onRequestCreated: (workflow) {
+            // Add the new workflow to the list
+            setState(() {
+              // In a real app, this would be saved to the database
+              // For now, we'll just refresh the UI
+            });
+          },
+        ),
       ),
     );
   }
@@ -1007,120 +905,162 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.add_circle,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Create New Request',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 20),
-                  tooltip: 'Close',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+    final theme = Theme.of(context);
+    final isDesktop = ResponsiveHelper.isDesktop(context);
 
-            // Form
-            Expanded(
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.only(
+                bottom: (isDesktop ? 24 : 20) + bottomInset,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 900 : double.infinity,
+                    minHeight: constraints.maxHeight - ((isDesktop ? 20 : 16) * 2),
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Request Type Selection
-                      _buildRequestTypeSection(),
-                      const SizedBox(height: 24),
+                      // Header
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isDesktop ? 24 : 16,
+                          vertical: isDesktop ? 20 : 16,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                              height: ResponsiveHelper.getResponsiveIconSize(context, 44),
+                              decoration: BoxDecoration(
+                                color: theme.brightness == Brightness.dark
+                                    ? theme.colorScheme.surface
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.getResponsiveBorderRadius(context, 14),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Create New Request',
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.textTheme.bodyLarge?.color,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Request approvals for tools, purchases, maintenance, and more.',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
-                      // Basic Information
-                      _buildBasicInfoSection(),
-                      const SizedBox(height: 24),
+                      // Form
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isDesktop ? 24 : 16,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Request Type Selection
+                              _buildRequestTypeSection(),
+                              const SizedBox(height: 24),
 
-                      // Dynamic Fields Based on Request Type
-                      _buildDynamicFields(),
-                      const SizedBox(height: 24),
+                              // Basic Information
+                              _buildBasicInfoSection(),
+                              const SizedBox(height: 24),
 
-                      // Priority and Due Date
-                      _buildPriorityAndDueDateSection(),
-                      const SizedBox(height: 24),
+                              // Dynamic Fields Based on Request Type
+                              _buildDynamicFields(),
+                              const SizedBox(height: 24),
 
-                      // Assignment Information
-                      _buildAssignmentSection(),
-                      const SizedBox(height: 24),
+                              // Priority and Due Date
+                              _buildPriorityAndDueDateSection(),
+                              const SizedBox(height: 24),
 
-                      // Comments
-                      _buildCommentsSection(),
+                              // Assignment Information
+                              _buildAssignmentSection(),
+                              const SizedBox(height: 24),
+
+                              // Comments
+                              _buildCommentsSection(),
+
+                              const SizedBox(height: 24),
+
+                              // Action Buttons
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                    ),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ElevatedButton(
+                                    onPressed: _submitRequest,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.secondaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                    child: const Text('Create Request'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-            ),
-
-            // Action Buttons
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _submitRequest,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text('Create Request'),
-                ),
-              ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -1616,7 +1556,12 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
                     children: [
                       Icon(Icons.calendar_today, size: 20),
                       const SizedBox(width: 8),
-                      Text(_formatDate(_selectedDueDate)),
+                      Expanded(
+                        child: Text(
+                          _formatDate(_selectedDueDate),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),

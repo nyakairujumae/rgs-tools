@@ -42,76 +42,169 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
+    final Color desktopBackground = const Color(0xFF05070B);
+    final Color desktopCardColor = const Color(0xFF090D14);
+    final Color fieldIconColor = isDesktopLayout
+        ? Colors.white.withOpacity(0.75)
+        : colorScheme.onSurface.withValues(alpha: 0.7);
     final hintStyle = TextStyle(
-      color: colorScheme.onSurface.withValues(alpha: 0.5),
+      color: isDesktopLayout
+          ? Colors.white.withOpacity(0.55)
+          : colorScheme.onSurface.withValues(alpha: 0.5),
       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
       fontWeight: FontWeight.w400,
     );
     final borderColor = colorScheme.onSurface.withValues(alpha: 0.2);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Admin Registration',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
+    OutlineInputBorder buildBorder(Color color) {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: color, width: 1),
+      );
+    }
+
+    InputDecoration buildInputDecoration({
+      required String label,
+      required String hint,
+      required IconData icon,
+      Widget? suffixIcon,
+    }) {
+      return InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(
+          icon,
+          color: fieldIconColor,
+          size: 22,
         ),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
+        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+        suffixIcon: suffixIcon,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        hintText: hint,
+        hintStyle: hintStyle,
+        filled: true,
+        fillColor: isDarkMode
+            ? colorScheme.surface.withOpacity(isDesktopLayout ? 0.4 : 0.6)
+            : Colors.white,
+        border: buildBorder(borderColor),
+        enabledBorder: buildBorder(borderColor),
+        focusedBorder: buildBorder(AppTheme.primaryColor),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor:
+          isDesktopLayout ? desktopBackground : theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: isDesktopLayout
+            ? null
+            : const Text(
+                'Admin Registration',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+        backgroundColor:
+            isDesktopLayout ? Colors.transparent : colorScheme.surface,
+        foregroundColor: isDesktopLayout ? Colors.white : colorScheme.onSurface,
+        elevation: isDesktopLayout ? 0 : 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back,
+              color: isDesktopLayout ? Colors.white : colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        child: Container(
+          decoration: isDesktopLayout
+              ? const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF05070B),
+                      Color(0xFF0F1725),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                )
+              : null,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktopLayout ? 48 : 20,
+              vertical: isDesktopLayout ? 10 : 0,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktopLayout ? 640 : double.infinity,
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktopLayout ? 32 : 0,
+                    vertical: isDesktopLayout ? 24 : 0,
+                  ),
+                  decoration: isDesktopLayout
+                      ? BoxDecoration(
+                          color: desktopCardColor.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(36),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black54,
+                              blurRadius: 30,
+                              offset: Offset(0, 20),
+                            ),
+                          ],
+                        )
+                      : null,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (isDesktopLayout) ...[
+                          Text(
+                            'Admin Registration',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                  context, 28),
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(
+                              height: ResponsiveHelper.getResponsiveSpacing(
+                                  context, 24)),
+                        ],
                     // Onboarding hint
                     Text(
                       'Register as an administrator for RGS HVAC Services',
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color: isDesktopLayout
+                            ? Colors.white.withOpacity(0.78)
+                            : colorScheme.onSurface.withValues(alpha: 0.75),
                         fontWeight: FontWeight.w400,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
                     // Name Field
                     TextFormField(
                       controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: Icon(Icons.person,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.6)),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        hintText: 'Enter full name',
-                        hintStyle: hintStyle,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(
-                              color: AppTheme.primaryColor, width: 2),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      decoration: buildInputDecoration(
+                        label: 'Full Name',
+                        hint: 'Enter full name',
+                        icon: Icons.person,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -127,29 +220,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email Address',
-                        prefixIcon: Icon(Icons.email,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.6)),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        hintText: 'Enter company email',
-                        hintStyle: hintStyle,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(
-                              color: AppTheme.primaryColor, width: 2),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      decoration: buildInputDecoration(
+                        label: 'Email Address',
+                        hint: 'Enter company email',
+                        icon: Icons.email,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -168,29 +242,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     // Position Field
                     TextFormField(
                       controller: _positionController,
-                      decoration: InputDecoration(
-                        labelText: 'Position/Title',
-                        prefixIcon: Icon(Icons.work,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.6)),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        hintText: 'e.g., Operations Manager, Director',
-                        hintStyle: hintStyle,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(
-                              color: AppTheme.primaryColor, width: 2),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                      decoration: buildInputDecoration(
+                        label: 'Position/Title',
+                        hint: 'e.g., Operations Manager, Director',
+                        icon: Icons.work,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -206,17 +261,16 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                      decoration: buildInputDecoration(
+                        label: 'Password',
+                        hint: 'Minimum 6 characters',
+                        icon: Icons.lock,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility
                                 : Icons.visibility_off,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: fieldIconColor,
                           ),
                           onPressed: () {
                             setState(() {
@@ -224,24 +278,6 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             });
                           },
                         ),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        hintText: 'Minimum 6 characters',
-                        hintStyle: hintStyle,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(
-                              color: AppTheme.primaryColor, width: 2),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -260,17 +296,16 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirmPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Confirm Password',
-                        prefixIcon: Icon(Icons.lock_outline,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.6)),
+                      decoration: buildInputDecoration(
+                        label: 'Confirm Password',
+                        hint: 'Re-enter password',
+                        icon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
                                 ? Icons.visibility
                                 : Icons.visibility_off,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: fieldIconColor,
                           ),
                           onPressed: () {
                             setState(() {
@@ -279,24 +314,6 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             });
                           },
                         ),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        hintText: 'Re-enter password',
-                        hintStyle: hintStyle,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(color: borderColor, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide(
-                              color: AppTheme.primaryColor, width: 2),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(20, 24, 20, 16),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -309,21 +326,24 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                       },
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
 
                     // Register Button
                     SizedBox(
-                      height: 56,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[600] ?? Colors.green,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius:
+                                BorderRadius.circular(isDesktopLayout ? 32 : 28),
                           ),
-                          elevation: 3,
-                          shadowColor: Colors.black.withOpacity(0.2),
+                          elevation: isDesktopLayout ? 6 : 2,
+                          shadowColor: Colors.black.withOpacity(0.25),
+                          minimumSize: const Size.fromHeight(52),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
                         child: _isLoading
                             ? const CircularProgressIndicator(
@@ -331,8 +351,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             : const Text(
                                 'Register as Admin',
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                   letterSpacing: 0.5,
                                 ),
@@ -359,7 +379,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: isDesktopLayout
+                                  ? Colors.white.withOpacity(0.75)
+                                  : colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             children: [
                               const TextSpan(text: 'Already have an account? '),
@@ -375,7 +397,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         ),
                       ),
                     ),
-              ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

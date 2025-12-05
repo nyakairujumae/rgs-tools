@@ -12,11 +12,11 @@ import 'add_tool_issue_screen.dart';
 import 'request_new_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
-import '../widgets/common/rgs_logo.dart';
 import '../services/supabase_service.dart';
 import 'settings_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
@@ -77,14 +77,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         all: 12,
       ),
       decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 12),
         ),
         border: Border.all(
           color: isDarkMode
               ? Colors.white.withValues(alpha: 0.1)
-              : AppTheme.primaryColor.withValues(alpha: 0.1),
+              : AppTheme.secondaryColor.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -95,14 +95,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
               ResponsiveHelper.getResponsiveSpacing(context, 8),
             ),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(
                 ResponsiveHelper.getResponsiveBorderRadius(context, 12),
               ),
             ),
             child: Icon(
               Icons.person,
-              color: AppTheme.primaryColor,
+              color: AppTheme.secondaryColor,
               size: ResponsiveHelper.getResponsiveIconSize(context, 20),
             ),
           ),
@@ -176,7 +176,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       width: ResponsiveHelper.getResponsiveIconSize(context, 40),
       height: ResponsiveHelper.getResponsiveIconSize(context, 40),
       decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 14),
         ),
@@ -296,17 +296,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       appBar: (_selectedIndex == 1 || _selectedIndex == 2)
           ? null
           : AppBar(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
+        backgroundColor: context.appBarBackground,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
-        scrolledUnderElevation: 6,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         toolbarHeight: 80,
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
@@ -324,11 +322,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
             bottomRight: Radius.circular(24),
           ),
         ),
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: const RGSLogo(),
-        ),
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
@@ -471,45 +465,45 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         ),
         child: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index.clamp(0, 2)),
+        onTap: (index) {
+          if (index == 3) {
+            // Check In button - navigate to CheckinScreen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CheckinScreen(),
+              ),
+            );
+          } else {
+            setState(() => _selectedIndex = index.clamp(0, 2));
+          }
+        },
         type: BottomNavigationBarType.fixed,
           backgroundColor: Theme.of(context).colorScheme.surface,
           selectedItemColor: Theme.of(context).colorScheme.secondary,
           unselectedItemColor:
               Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.add),
             label: 'Request Tool',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.report_problem),
             label: 'Report Issue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.keyboard_return, color: Colors.green),
+            label: 'Check In',
+            activeIcon: Icon(Icons.keyboard_return, color: Colors.green),
           ),
         ],
       ),
       ),
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CheckinScreen(),
-                  ),
-                );
-              },
-              backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-              icon: const Icon(Icons.keyboard_return),
-              label: const Text('Check In'),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -1050,23 +1044,22 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         final isDarkMode = theme.brightness == Brightness.dark;
         
         return Container(
-          color: theme.scaffoldBackgroundColor,
+          color: context.scaffoldBackground,
           child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
                 // Welcome banner
               Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
+                padding: EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 12,
+                  vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
                 ),
                       child: Container(
                 width: double.infinity,
-                  padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
+                  padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 20)),
                 decoration: BoxDecoration(
-                    color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                    color: context.cardBackground,
                     borderRadius: BorderRadius.circular(
                       ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                     ),
@@ -1076,20 +1069,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             width: 1,
                           )
                         : null,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 18,
-                        offset: const Offset(0, 7),
-                        spreadRadius: 0,
-                      ),
-                    ],
                   ),
                   child: Row(
                       children: [
                         Container(
-                        width: ResponsiveHelper.getResponsiveIconSize(context, 56),
-                        height: ResponsiveHelper.getResponsiveIconSize(context, 56),
+                        width: ResponsiveHelper.getResponsiveIconSize(context, 72),
+                        height: ResponsiveHelper.getResponsiveIconSize(context, 72),
                           decoration: BoxDecoration(
                         color: isDarkMode
                             ? theme.colorScheme.surfaceVariant
@@ -1101,7 +1086,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           child: Icon(
                           Icons.inventory_2,
                           color: AppTheme.secondaryColor,
-                          size: ResponsiveHelper.getResponsiveIconSize(context, 28),
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 36),
                         ),
                       ),
                       SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -1112,7 +1097,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               Text(
                               _greeting(authProvider.userFullName),
                               style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
                                 fontWeight: FontWeight.w800,
                                 color: theme.colorScheme.onSurface,
                               ),
@@ -1122,7 +1107,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                 'Manage your tools and access shared resources',
                               style: TextStyle(
                                 color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
                                 fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1134,14 +1119,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 ),
               ),
 
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
 
               // Shared Tools Section
               Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1181,11 +1163,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
 
               // Shared Tools Carousel (auto sliding)
               SizedBox(
-                height: ResponsiveHelper.getResponsiveListItemHeight(context, 176),
+                height: ResponsiveHelper.getResponsiveListItemHeight(context, 188),
                 child: featuredTools.isEmpty
                     ? Center(
                         child: Padding(
@@ -1219,14 +1201,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ),
               ),
 
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
 
               // My Tools Section
               Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1266,14 +1245,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ],
                     ),
               ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
 
               // Latest Tools Vertical List
               Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: latestTools.isEmpty
                     ? Container(
                         height: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
@@ -1310,7 +1286,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           children: latestTools
                               .map((tool) => Padding(
                                     padding: EdgeInsets.only(
-                                      bottom: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                                      bottom: ResponsiveHelper.getResponsiveSpacing(context, 4),
                                     ),
                                     child: _buildLatestCard(tool, context,
                                         technicianProvider.technicians),
@@ -1319,7 +1295,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ),
               ),
 
-              SizedBox(height: 100),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                   ],
                 ),
               ),
@@ -1341,14 +1317,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         ResponsiveHelper.getResponsiveBorderRadius(context, 12),
       ),
       child: Container(
-        height: ResponsiveHelper.getResponsiveListItemHeight(context, 164),
-        padding: ResponsiveHelper.getResponsivePadding(
-          context,
-          horizontal: 12,
-          vertical: 8,
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 176),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
+          vertical: ResponsiveHelper.getResponsiveSpacing(context, 6),
         ),
         decoration: BoxDecoration(
-          color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(
             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
           ),
@@ -1358,14 +1333,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   width: 1,
                 )
               : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
-              spreadRadius: 0,
-            ),
-          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1420,10 +1387,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                     Wrap(
-                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 2),
                       children: [
                         _buildOutlinedChip(
                           context,
@@ -1437,11 +1404,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                     if (tool.location != null && tool.location!.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 2),
                         ),
                         child: Row(
                           children: [
@@ -1501,7 +1468,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    Spacer(),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
@@ -1682,14 +1649,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         ResponsiveHelper.getResponsiveBorderRadius(context, 12),
       ),
       child: Container(
-        height: ResponsiveHelper.getResponsiveListItemHeight(context, 148),
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 152),
         padding: ResponsiveHelper.getResponsivePadding(
           context,
           horizontal: 12,
-          vertical: 8,
+          vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(
             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
           ),
@@ -1761,10 +1728,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                     Wrap(
-                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 2),
                       children: [
                         _buildOutlinedChip(
                           context,
@@ -1778,11 +1745,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
                     if (tool.location != null && tool.location!.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 4),
+                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 2),
                         ),
                         child: Row(
                           children: [
@@ -1842,7 +1809,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    Spacer(),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                     _holderLine(context, tool, technicians),
                   ],
                 ),

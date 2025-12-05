@@ -6,6 +6,7 @@ import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
+import '../utils/responsive_helper.dart';
 import 'tool_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -65,33 +66,68 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildCategoryFilter(List<Tool> tools) {
     final categories = ['All', ..._getUniqueCategories(tools)];
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final isSelected = _selectedCategory == category;
-          
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(category),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedCategory = category;
-                });
+      height: isDesktop ? 32 : 50,
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 20 : 16),
+      child: isDesktop
+          ? Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final isSelected = _selectedCategory == category;
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Text(
+                          category,
+                          style: TextStyle(fontSize: 10),
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                        },
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                        checkmarkColor: AppTheme.primaryColor,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          : ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                final isSelected = _selectedCategory == category;
+                
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(category),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = category;
+                      });
+                    },
+                    selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                    checkmarkColor: AppTheme.primaryColor,
+                  ),
+                );
               },
-              selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-              checkmarkColor: AppTheme.primaryColor,
             ),
-          );
-        },
-      ),
     );
   }
 
@@ -107,22 +143,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       );
     }
 
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isDesktop ? 20 : 16),
       itemCount: sortedTools.length,
       itemBuilder: (context, index) {
         final tool = sortedTools[index];
-        return _buildToolCard(tool);
+        return Padding(
+          padding: EdgeInsets.only(bottom: isDesktop ? 8 : 16),
+          child: _buildToolCard(tool),
+        );
       },
     );
   }
 
   Widget _buildToolCard(Tool tool) {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
     return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 4,
+      margin: EdgeInsets.zero,
+      elevation: isDesktop ? 2 : 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isDesktop ? 12 : 16),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),

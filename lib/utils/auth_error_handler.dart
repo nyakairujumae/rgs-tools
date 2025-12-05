@@ -11,16 +11,31 @@ class AuthErrorHandler {
 
     String errorString = error.toString().toLowerCase();
     
-    // Network and connectivity errors
-    if (errorString.contains('network') || 
+    // Network and connectivity errors - be more specific
+    // Only show connection error for actual network failures, not auth errors
+    if ((errorString.contains('network') || 
         errorString.contains('connection') ||
-        errorString.contains('timeout') ||
-        errorString.contains('timed out') ||
         errorString.contains('unreachable') ||
         errorString.contains('no internet') ||
         errorString.contains('network error') ||
-        errorString.contains('cannot connect to database')) {
+        errorString.contains('cannot connect to database') ||
+        errorString.contains('failed host lookup') ||
+        errorString.contains('socket exception')) &&
+        !errorString.contains('invalid') &&
+        !errorString.contains('credentials') &&
+        !errorString.contains('password')) {
+      
+      // Check for macOS permission error
+      if (errorString.contains('operation not permitted') || errorString.contains('errno = 1')) {
+        return '🔒 Network Permission Required\n\nThis app needs network access to connect to the database.\n\nOn macOS:\n1. Go to System Settings > Privacy & Security > Network\n2. Find this app and enable network access\n3. Restart the app';
+      }
+      
       return '🌐 Connection error: Please check your internet connection and try again.';
+    }
+    
+    // Timeout errors - separate from connection errors
+    if (errorString.contains('timeout') || errorString.contains('timed out')) {
+      return '⏱️ Request timed out. Please check your internet connection and try again.';
     }
     
     // Authentication errors
@@ -108,8 +123,10 @@ class AuthErrorHandler {
     if (errorString.contains('database error') ||
         errorString.contains('database connection') ||
         errorString.contains('postgres') ||
-        errorString.contains('supabase')) {
-      return '🗄️ We\'re having trouble connecting to our database. Please try again in a moment.';
+        errorString.contains('supabase') ||
+        errorString.contains('trouble connecting to our database')) {
+      // Provide more helpful error message for desktop
+      return '🗄️ Cannot connect to database. Please check:\n• Your internet connection\n• Firewall settings (may be blocking Supabase)\n• Try again in a moment';
     }
     
     // JWT and session errors

@@ -14,10 +14,35 @@ class AppTheme {
   static const Color warningColor = Colors.amber;
   static const Color successColor = Colors.green;
 
-  // Neutral surfaces
-  static const Color appBackground = Colors.white;
+  // Neutral surfaces - ChatGPT-style theme
+  static const Color appBackground = Color(0xFFF5F5F5);
+  static const Color cardBackground = Color(0xFFF5F5F5); // Card color for light theme
+  static const Color scaffoldBackground = Colors.white; // Pure white background
   static const Color subtleSurface = Color(0xFFF9FAFB);
-  static const Color subtleBorder = Color(0xFFE5E7EB);
+  static const Color subtleBorder = Color(0xFFE5E5E5); // Very subtle borders
+  static const Color cardBorder = Color(0xFFE5E5E5); // Card border color
+  
+  // Spacing constants
+  static const double spacingMicro = 4.0;
+  static const double spacingSmall = 8.0;
+  static const double spacingMedium = 12.0;
+  static const double spacingLarge = 16.0;
+  
+  // Border radius constants
+  static const double borderRadiusSmall = 12.0;
+  static const double borderRadiusMedium = 14.0;
+  static const double borderRadiusLarge = 16.0;
+  static const double borderRadiusXLarge = 20.0;
+  
+  // Shadow constants
+  static BoxShadow get softShadow => BoxShadow(
+    color: Colors.black.withOpacity(0.04),
+    blurRadius: 10,
+    spreadRadius: 0,
+    offset: const Offset(0, 4),
+  );
+  
+  static List<BoxShadow> get cardShadows => [softShadow];
 
   // Gradient background colors - Light palette (retained for legacy widgets)
   static const Color gradientStart = Color(0xFFE8F0FE); // Light lavender-blue
@@ -116,7 +141,7 @@ class AppTheme {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
         ? darkCardGradientStart
-        : cardGradientStart;
+        : cardBackground; // Use f5f5f5 for cards in light mode
   }
 
   static Color elevatedSurfaceColor(BuildContext context) {
@@ -124,6 +149,38 @@ class AppTheme {
     return brightness == Brightness.dark
         ? const Color(0xFF0F172A)
         : Colors.white;
+  }
+
+  /// Get the scaffold background color (respects theme)
+  static Color getScaffoldBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? backgroundColor
+        : scaffoldBackground; // Pure white for light mode
+  }
+
+  /// Get the card background color (respects theme)
+  static Color getCardBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const Color(0xFF161B22) // Dark card color
+        : cardBackground; // f5f5f5 for light mode
+  }
+
+  /// Get the app bar background color (respects theme)
+  static Color getAppBarBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const Color(0xFF000000) // Pure black for dark mode
+        : scaffoldBackground; // Pure white for light mode
+  }
+
+  /// Get input field background color (respects theme)
+  static Color getInputBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const Color(0xFF0D1117)
+        : cardBackground; // f5f5f5 input fields in light mode
   }
 
   // Text colors (user preference: white text)
@@ -154,13 +211,14 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: appBackground,
+        background: appBackground,
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: Colors.black,
         onError: Colors.white,
       ),
-      scaffoldBackgroundColor: appBackground,
+      scaffoldBackgroundColor: scaffoldBackground, // Pure white background
       hoverColor: secondaryColor.withValues(alpha: 0.08),
       focusColor: secondaryColor.withValues(alpha: 0.12),
       splashColor: secondaryColor.withValues(alpha: 0.12),
@@ -168,10 +226,11 @@ class AppTheme {
 
       // AppBar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: appBackground,
+        backgroundColor: scaffoldBackground, // Pure white
         foregroundColor: Colors.black,
-        elevation: 1,
-        shadowColor: Colors.grey,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
           color: Colors.black,
@@ -180,14 +239,14 @@ class AppTheme {
         ),
       ),
 
-      // Card theme
+      // Card theme - ChatGPT style
       cardTheme: CardThemeData(
-        color: subtleSurface,
+        color: cardBackground, // f5f5f5 for cards
         elevation: 0,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: subtleBorder),
+          borderRadius: BorderRadius.circular(borderRadiusLarge),
+          side: const BorderSide(color: cardBorder, width: 1),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
@@ -223,29 +282,29 @@ class AppTheme {
             color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w500),
       ),
 
-      // Input decoration theme
+      // Input decoration theme - ChatGPT style
       inputDecorationTheme: InputDecorationTheme(
-        filled: false,
+        filled: true,
+        fillColor: cardBackground, // f5f5f5 input field background
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: subtleBorder, width: 1.2),
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: const BorderSide(color: cardBorder, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: subtleBorder, width: 1.2),
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: const BorderSide(color: cardBorder, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: primaryColor.withValues(alpha: 0.8), width: 2),
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: BorderSide(color: secondaryColor, width: 2), // Green focus
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: errorColor, width: 1.2),
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: const BorderSide(color: errorColor, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: errorColor, width: 1.4),
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: const BorderSide(color: errorColor, width: 2),
         ),
         labelStyle: const TextStyle(
             color: Color(0xFF6B7280),
@@ -260,19 +319,20 @@ class AppTheme {
           color: Color(0xFF4B5563),
           fontSize: 12.5,
           fontWeight: FontWeight.w500,
-          backgroundColor: Colors.white,
+          backgroundColor: cardBackground,
         ),
         floatingLabelBehavior: FloatingLabelBehavior.auto,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
 
-      // Button themes
+      // Button themes - ChatGPT style
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: secondaryColor, // Green accent
           foregroundColor: Colors.white,
-          elevation: 2,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
@@ -280,10 +340,10 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: primaryColor,
-          side: const BorderSide(color: primaryColor),
+          foregroundColor: secondaryColor,
+          side: const BorderSide(color: secondaryColor),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
@@ -291,9 +351,9 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: primaryColor,
+          foregroundColor: secondaryColor, // Green accent text
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
@@ -309,10 +369,10 @@ class AppTheme {
       // Bottom navigation bar theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: secondaryColor,
+        selectedItemColor: secondaryColor, // Green for selected
         unselectedItemColor: Colors.grey[500],
         type: BottomNavigationBarType.fixed,
-        elevation: 8,
+        elevation: 0,
       ),
 
       // Chip theme

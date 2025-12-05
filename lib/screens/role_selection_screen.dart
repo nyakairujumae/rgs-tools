@@ -11,7 +11,6 @@ class RoleSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final size = MediaQuery.of(context).size;
     final isDesktopWidth = size.width >= 900;
     final isDesktopPlatform = !kIsWeb &&
@@ -19,89 +18,50 @@ class RoleSelectionScreen extends StatelessWidget {
             defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.linux);
     final isDesktop = isDesktopWidth || isDesktopPlatform;
-    final backgroundColor =
-        isDesktop ? const Color(0xFF050A12) : colorScheme.surface;
-    final cardColor =
-        isDesktop ? const Color(0xFF0F1624) : colorScheme.surface;
-    final cardShadow = isDesktop
-        ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 40,
-              offset: const Offset(0, 28),
-            ),
-          ]
-        : null;
-
+    final backgroundColor = theme.colorScheme.background;
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 56 : 24,
-              vertical: isDesktop ? 48 : 24,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktop ? 640 : double.infinity,
-              ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(isDesktop ? 32 : 0),
-                  border: isDesktop
-                      ? Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        )
-                      : null,
-                  boxShadow: cardShadow,
-                  gradient: isDesktop
-                      ? const LinearGradient(
-                          colors: [
-                            Color(0xFF111B2E),
-                            Color(0xFF0B1220),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(isDesktop ? 40 : 0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildBranding(theme, isDesktop),
-                      SizedBox(height: isDesktop ? 56 : 48),
-                      _buildRoleButton(
-                        context: context,
-                        label: 'Register as Admin',
-                        color: Colors.green[600] ?? Colors.green,
-                        onTap: () => _navigate(
-                          context,
-                          const AdminRegistrationScreen(),
-                        ),
-                        isDesktop: isDesktop,
-                        isPrimary: true,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildRoleButton(
-                        context: context,
-                        label: 'Register as Technician',
-                        color: Colors.black,
-                        onTap: () => _navigate(
-                          context,
-                          const TechnicianRegistrationScreen(),
-                        ),
-                        isDesktop: isDesktop,
-                      ),
-                      const SizedBox(height: 32),
-                      _buildSignInLink(context),
-                    ],
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Transform.translate(
+              offset: const Offset(0, -40),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildBranding(context, isDesktop),
+                  const SizedBox(height: 36),
+                  _buildRoleButton(
+                    context: context,
+                    label: 'Register as Admin',
+                    color: const Color(0xFF2E7D32),
+                    onTap: () => _navigate(
+                      context,
+                      const AdminRegistrationScreen(),
+                    ),
+                    animationCurve:
+                        const Interval(0.0, 1.0, curve: Curves.easeOut),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  _buildRoleButton(
+                    context: context,
+                    label: 'Register as Technician',
+                    color: Colors.black,
+                    onTap: () => _navigate(
+                      context,
+                      const TechnicianRegistrationScreen(),
+                    ),
+                    animationCurve:
+                        const Interval(0.2, 1.0, curve: Curves.easeOut),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSignInLink(context),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
@@ -110,39 +70,54 @@ class RoleSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBranding(ThemeData theme, bool isDesktop) {
-    final color = theme.colorScheme.onSurface;
+  Widget _buildBranding(BuildContext context, bool isDesktop) {
+    final theme = Theme.of(context);
+    final subtitleColor =
+        theme.colorScheme.onBackground.withOpacity(0.65);
+    final logoWidth = isDesktop ? 150.0 : 120.0;
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'RGS',
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w900,
-            color: color,
-            letterSpacing: 1,
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          builder: (context, value, child) => Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, (1 - value) * 20),
+              child: child,
+            ),
+          ),
+          child: Image.asset(
+            'assets/images/rgs.jpg',
+            width: logoWidth,
+            fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'HVAC SERVICES',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: color,
-            letterSpacing: 0.5,
+        const SizedBox(height: 14),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 250),
+          curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+          builder: (context, value, child) => Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, (1 - value) * 10),
+              child: child,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Not your ordinary HVAC company.',
-          style: (isDesktop
-                  ? theme.textTheme.titleMedium
-                  : theme.textTheme.bodyLarge)
-              ?.copyWith(
-            fontWeight: FontWeight.w600,
-            color:
-                isDesktop ? Colors.white.withValues(alpha: 0.75) : color.withOpacity(0.8),
+          child: Text(
+            'Tool Tracking • Assignments • Inventory',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
+              color: subtitleColor,
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -153,84 +128,68 @@ class RoleSelectionScreen extends StatelessWidget {
     required String label,
     required Color color,
     required VoidCallback onTap,
-    required bool isDesktop,
-    bool isPrimary = false,
+    Curve animationCurve = Curves.easeOut,
   }) {
-    if (!isDesktop) {
-      return SizedBox(
-        height: 56,
-        child: ElevatedButton(
-          onPressed: onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            elevation: 3,
-            shadowColor: Colors.black.withOpacity(0.2),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
+    bool isPressed = false;
+    final borderRadius = BorderRadius.circular(30);
+    final textColor = Colors.white;
+    final shadowColor = Colors.black.withOpacity(0.1);
 
-    final gradient = isPrimary
-        ? const LinearGradient(
-            colors: [
-              Color(0xFF22C55E),
-              Color(0xFF15803D),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : const LinearGradient(
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF0B1220),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
-
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: gradient,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: isPrimary ? 0.0 : 0.08),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 300),
+      curve: animationCurve,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - value) * 20),
+          child: child,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 14),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Center(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: StatefulBuilder(
+          builder: (context, setStateSB) {
+            return AnimatedScale(
+              duration: const Duration(milliseconds: 120),
+              scale: isPressed ? 0.98 : 1.0,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: borderRadius,
+                  splashColor: Colors.white.withOpacity(0.08),
+                  highlightColor: Colors.white.withOpacity(0.06),
+                  onHighlightChanged: (value) =>
+                      setStateSB(() => isPressed = value),
+                  child: Ink(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: borderRadius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: shadowColor,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -249,12 +208,15 @@ class RoleSelectionScreen extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: theme.colorScheme.onSurface.withOpacity(0.8),
             ),
-            children: const [
-              TextSpan(text: 'Already have an account? '),
+            children: [
+              TextSpan(
+                text: 'Already have an account? ',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
               TextSpan(
                 text: 'Sign in',
-                style: TextStyle(
-                  color: Colors.blue,
+                style: const TextStyle(
+                  color: Color(0xFF0A84FF),
                   fontWeight: FontWeight.w600,
                 ),
               ),

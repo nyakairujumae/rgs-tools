@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/premium_field_styles.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
 import 'technician_home_screen.dart';
@@ -47,12 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final cardColor = applyDesktopStyling
         ? (isDarkMode ? const Color(0xFF0F172A) : Colors.white)
         : colorScheme.surface;
-    final fieldFillColor = applyDesktopStyling
-        ? (isDarkMode ? const Color(0xFF1F2937) : Colors.white)
-        : null;
-    final borderColor = applyDesktopStyling
-        ? colorScheme.onSurface.withValues(alpha: isDarkMode ? 0.2 : 0.15)
-        : colorScheme.primary;
     final cardShadow = applyDesktopStyling
         ? BoxShadow(
             color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.12),
@@ -60,33 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
             offset: const Offset(0, 20),
           )
         : const BoxShadow(color: Colors.transparent);
-
-    InputDecoration buildFieldDecoration({
-      required String label,
-      required IconData icon,
-      Widget? suffix,
-    }) {
-      final borderRadius = BorderRadius.circular(applyDesktopStyling ? 16 : 12);
-      return InputDecoration(
-        filled: applyDesktopStyling,
-        fillColor: fieldFillColor,
-        labelText: label,
-        prefixIcon: Icon(icon, color: colorScheme.primary),
-        border: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: borderColor),
-        ),
-        suffixIcon: suffix,
-      );
-    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -146,19 +114,27 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 32),
                         
                         // Email Field
+                        Text(
+                          'Email Address',
+                          style: PremiumFieldStyles.labelTextStyle(context),
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: buildFieldDecoration(
-                            label: 'Email Address',
-                            icon: Icons.email,
+                          style: PremiumFieldStyles.fieldTextStyle(context),
+                          decoration: PremiumFieldStyles.inputDecoration(
+                            context,
+                            hintText: 'e.g., user@royalgulf.ae',
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
                             final email = value?.trim() ?? '';
                             if (email.isEmpty) {
                               return 'Please enter your email address';
                             }
-                            const emailPattern = r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$';
+                            const emailPattern =
+                                r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$';
                             if (!RegExp(emailPattern).hasMatch(email)) {
                               return 'Please enter a valid email address';
                             }
@@ -169,16 +145,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
                         
                         // Password Field
+                        Text(
+                          'Password',
+                          style: PremiumFieldStyles.labelTextStyle(context),
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          decoration: buildFieldDecoration(
-                            label: 'Password',
-                            icon: Icons.lock,
-                            suffix: IconButton(
+                          style: PremiumFieldStyles.fieldTextStyle(context),
+                          decoration: PremiumFieldStyles.inputDecoration(
+                            context,
+                            hintText: 'Enter your password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                color: colorScheme.primary,
                               ),
                               onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword,

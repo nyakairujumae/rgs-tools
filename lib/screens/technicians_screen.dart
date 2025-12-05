@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/technician.dart';
@@ -19,6 +21,8 @@ class TechniciansScreen extends StatefulWidget {
 }
 
 class _TechniciansScreenState extends State<TechniciansScreen> {
+  static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
+  static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
   String _searchQuery = '';
   String _selectedFilter = 'All';
   Set<String> _selectedTechnicians = <String>{};
@@ -37,6 +41,90 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         });
       }
     });
+  }
+
+  Widget _buildTechnicianSkeletonList(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _skeletonBaseColor,
+      highlightColor: _skeletonHighlightColor,
+      period: const Duration(milliseconds: 1400),
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        itemCount: 6,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) => _buildTechnicianSkeletonCard(context),
+      ),
+    );
+  }
+
+  Widget _buildTechnicianSkeletonCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.surface
+        : Colors.white;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: _skeletonBaseColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSkeletonLine(context, height: 16),
+                const SizedBox(height: 6),
+                _buildSkeletonLine(context, widthFactor: 0.4, height: 12),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child:
+                          _buildSkeletonLine(context, widthFactor: 0.35, height: 10),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: _skeletonBaseColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLine(BuildContext context,
+      {double? widthFactor, double height = 12}) {
+    return FractionallySizedBox(
+      widthFactor: widthFactor ?? 1,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: _skeletonBaseColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 
   @override
@@ -108,18 +196,29 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             child: Container(
               color: Theme.of(context).scaffoldBackgroundColor,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Technicians',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
+                    child: Text(
+                      'Technicians',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Text(
+                      'Manage active, inactive, and assigned technicians',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.55),
                       ),
                     ),
                   ),
@@ -188,23 +287,19 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   // Search Bar
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0),
+                        horizontal: 16, vertical: 12),
                     child: Container(
                       height: 52,
                       decoration: BoxDecoration(
-                        color: AppTheme.cardSurfaceColor(context),
-                        borderRadius: BorderRadius.circular(24),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                          width: 1.1,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.15),
+                          width: 1.2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                       ),
                       child: TextField(
                         style: TextStyle(
@@ -220,28 +315,28 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           hintText: 'Search technicians...',
                           hintStyle: TextStyle(
                             fontSize: 14,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.45),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.45),
                           ),
                           prefixIcon: Icon(
                             Icons.search,
                             size: 18,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.45),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.45),
                           ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
                                   icon: Icon(
                                     Icons.clear,
                                     size: 18,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.45),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.45),
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -250,9 +345,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   },
                                 )
                               : null,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
                         ),
@@ -261,7 +356,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   ),
 
                   // Filter Chips
-                  _buildFilterChips(departments),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildFilterChips(),
+                  ),
+                  const SizedBox(height: 12),
 
                   // Technicians List
                   Expanded(
@@ -269,10 +368,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         ? OfflineListSkeleton(
                             itemCount: 5,
                             itemHeight: 100,
-                            message: 'You are offline. Showing cached technicians.',
+                            message:
+                                'You are offline. Showing cached technicians.',
                           )
                         : technicianProvider.isLoading
-                        ? Center(child: CircularProgressIndicator())
+                            ? _buildTechnicianSkeletonList(context)
                     : filteredTechnicians.isEmpty
                         ? Center(
                             child: Column(
@@ -319,10 +419,19 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 itemCount: filteredTechnicians.length,
                                 itemBuilder: (context, index) {
                                   final technician = filteredTechnicians[index];
-                                  return Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 12.0),
-                                    child: _buildTechnicianCard(technician),
+                                  final isLast =
+                                      index == filteredTechnicians.length - 1;
+                                  return Column(
+                                    children: [
+                                      _buildTechnicianCard(technician),
+                                      if (!isLast) ...[
+                                        const SizedBox(height: 12),
+                                        Divider(
+                                          color: const Color(0xFFEAEAEA)
+                                              .withOpacity(0.7),
+                                        ),
+                                      ],
+                                    ],
                                   );
                                 },
                               ),
@@ -346,13 +455,21 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       ? Colors.green
                       : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 )
-              : FloatingActionButton.extended(
-                  onPressed: () {
-                    _showAddTechnicianDialog();
-                  },
-                  icon: Icon(Icons.add),
-                  label: Text('Add'),
-                  backgroundColor: AppTheme.primaryColor,
+              : Padding(
+                  padding: const EdgeInsets.only(right: 16, bottom: 16),
+                  child: SizedBox(
+                    height: 52,
+                    width: 52,
+                    child: FloatingActionButton(
+                      onPressed: _showAddTechnicianDialog,
+                      backgroundColor: AppTheme.secondaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 6,
+                      child: const Icon(Icons.add, color: Colors.white, size: 24),
+                    ),
+                  ),
                 ),
         );
       },
@@ -369,6 +486,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         .tools
         .where((tool) => tool.assignedTo == technician.id)
         .length;
+
+    final baseCardColor = AppTheme.cardSurfaceColor(context);
+    final cardColor = isSelected
+        ? AppTheme.secondaryColor.withOpacity(0.08)
+        : baseCardColor;
 
     return InkWell(
       onTap: () {
@@ -399,35 +521,26 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Theme.of(context).colorScheme.surface 
-              : Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected 
-                ? AppTheme.primaryColor 
-                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1.1,
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _buildTechnicianAvatar(technician),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,18 +562,17 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 2),
                             Text(
                               technician.department?.isNotEmpty == true
                                   ? technician.department!
                                   : 'No department',
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w500,
                                 color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color,
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.55),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -476,51 +588,44 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ? Icons.check_circle
                                 : Icons.radio_button_unchecked,
                             color: isSelected
-                                ? AppTheme.primaryColor
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                            size: 24,
+                                ? AppTheme.secondaryColor
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.4),
+                            size: 22,
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       _buildStatusChip(technician.status),
                       const SizedBox(width: 8),
+                      Icon(
+                        Icons.build_outlined,
+                        size: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.55),
+                      ),
+                      const SizedBox(width: 4),
                       Expanded(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.build,
-                              size: 14,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                assignedToolsCount == 0
-                                    ? 'No tools'
-                                    : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.7),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          assignedToolsCount == 0
+                              ? 'No tools'
+                              : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''}',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -534,139 +639,122 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     );
   }
 
-  Widget _buildPlaceholderAvatar(Technician technician) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Text(
-          technician.name.isNotEmpty ? technician.name[0].toUpperCase() : '?',
-          style: TextStyle(
-            color:
-                Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTechnicianAvatar(Technician technician) {
-    final statusColor =
-        technician.status == 'Active' ? Colors.green : Colors.grey;
+    final hasImage = technician.profilePictureUrl != null &&
+        technician.profilePictureUrl!.isNotEmpty;
+    final initials = technician.name.isNotEmpty
+        ? technician.name.trim()[0].toUpperCase()
+        : '?';
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: 64,
-            height: 64,
-            color: statusColor.withValues(alpha: 0.12),
-            child: (technician.profilePictureUrl != null &&
-                    technician.profilePictureUrl!.isNotEmpty)
-                ? Image.network(
-                    technician.profilePictureUrl!,
-                    fit: BoxFit.cover,
-                    width: 64,
-                    height: 64,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      debugPrint('Error loading profile image: $error');
-                      debugPrint('URL: ${technician.profilePictureUrl}');
-                      return _buildPlaceholderAvatar(technician);
-                    },
-                  )
-                : _buildPlaceholderAvatar(technician),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(
-              color: statusColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).colorScheme.surface
-                    : Colors.white,
-                width: 2,
+    final placeholderColor = Theme.of(context)
+        .colorScheme
+        .onSurface
+        .withOpacity(0.05);
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: placeholderColor,
+      ),
+      child: hasImage
+          ? ClipOval(
+              child: Image.network(
+                technician.profilePictureUrl!,
+                fit: BoxFit.cover,
+                width: 40,
+                height: 40,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.65),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          : Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.65),
+                ),
               ),
             ),
-          ),
-        ),
-      ],
     );
   }
 
-  Widget _buildFilterChips(List<String> departments) {
-    final filterOptions = [
+  Widget _buildFilterChips() {
+    const filters = [
       'All',
       'Active',
       'Inactive',
       'With Tools',
       'Without Tools',
-      ...departments
     ];
 
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return SizedBox(
+      height: 32,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: filterOptions.length,
+        itemCount: filters.length,
         itemBuilder: (context, index) {
-          final filter = filterOptions[index];
+          final filter = filters[index];
           final isSelected = _selectedFilter == filter;
 
           return Padding(
-            padding: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
+              showCheckmark: false,
               label: Text(
                 filter,
                 style: TextStyle(
                   color: isSelected
-                      ? Theme.of(context).textTheme.bodyLarge?.color
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 11,
+                      ? AppTheme.secondaryColor
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
                 ),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              labelPadding: EdgeInsets.symmetric(horizontal: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
               selected: isSelected,
-              onSelected: (selected) {
+              onSelected: (_) {
                 setState(() {
                   _selectedFilter = filter;
                 });
               },
-              backgroundColor: Theme.of(context).cardTheme.color,
-              selectedColor:
-                  Theme.of(context).primaryColor.withValues(alpha: 0.2),
-              checkmarkColor: Theme.of(context).primaryColor,
+              backgroundColor: Colors.transparent,
+              selectedColor: Colors.transparent,
               side: BorderSide(
                 color: isSelected
-                    ? Theme.of(context).primaryColor
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                width: isSelected ? 1.5 : 1,
+                    ? AppTheme.secondaryColor
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.18),
+                width: 1,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           );
@@ -675,47 +763,36 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     );
   }
 
-  Widget _buildProfilePicture(Technician technician) {
-    return CircleAvatar(
-      radius: 25,
-      backgroundColor:
-          technician.status == 'Active' ? Colors.green : Colors.grey,
-      backgroundImage: technician.profilePictureUrl != null
-          ? NetworkImage(technician.profilePictureUrl!)
-          : null,
-      child: technician.profilePictureUrl == null
-          ? Text(
-              technician.name.isNotEmpty
-                  ? technician.name[0].toUpperCase()
-                  : '?',
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            )
-          : null,
-    );
-  }
-
   Widget _buildStatusChip(String status) {
-    Color color = status == 'Active' ? Colors.green : Colors.grey;
+    Color textColor;
+    Color backgroundColor;
+
+    switch (status.toLowerCase()) {
+      case 'active':
+        textColor = const Color(0xFF0FA958);
+        backgroundColor = const Color(0xFFE9F8F1);
+        break;
+      case 'inactive':
+        textColor = const Color(0xFF6E6E6E);
+        backgroundColor = const Color(0xFFF1F1F1);
+        break;
+      default:
+        textColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+        backgroundColor =
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.08);
+    }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         status,
         style: TextStyle(
-          color: color,
-          fontSize: 9,
+          color: textColor,
+          fontSize: 10.5,
           fontWeight: FontWeight.w600,
         ),
       ),

@@ -5,6 +5,7 @@ import '../models/admin_notification.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../services/firebase_messaging_service.dart';
+import '../widgets/common/loading_widget.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
   const AdminNotificationScreen({super.key});
@@ -139,11 +140,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               child: Consumer<AdminNotificationProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
-                      ),
-                    );
+                    return _buildNotificationsSkeleton(context);
                   }
 
                   if (provider.error != null) {
@@ -243,13 +240,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showCreateNotificationDialog();
-        },
-        backgroundColor: AppTheme.secondaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -295,6 +285,13 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     );
   }
 
+  Widget _buildNotificationsSkeleton(BuildContext context) {
+    return const ListSkeletonLoader(
+      itemCount: 6,
+      itemHeight: 110,
+    );
+  }
+
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -303,10 +300,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             ? Theme.of(context).colorScheme.surface 
             : Colors.white,
         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        border: Border.all(
-          color: notification.isRead ? AppTheme.subtleBorder : AppTheme.secondaryColor.withValues(alpha: 0.3),
-          width: notification.isRead ? 1.1 : 1.5,
-        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -580,91 +573,4 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     );
   }
 
-  void _showCreateNotificationDialog() {
-    String technicianName = '';
-    String technicianEmail = '';
-    NotificationType selectedType = NotificationType.accessRequest;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('Create Test Notification'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Technician Name',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (value) => technicianName = value,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Technician Email',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (value) => technicianEmail = value,
-              ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<NotificationType>(
-                initialValue: selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Notification Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: NotificationType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type.displayName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedType = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (technicianName.isNotEmpty && technicianEmail.isNotEmpty) {
-                  try {
-                    await context.read<AdminNotificationProvider>().createMockNotification(
-                      technicianName: technicianName,
-                      technicianEmail: technicianEmail,
-                      type: selectedType,
-                    );
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Test notification created'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error creating notification: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: Text('Create'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
