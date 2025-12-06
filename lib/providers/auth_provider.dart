@@ -267,7 +267,8 @@ class AuthProvider with ChangeNotifier {
       }
       debugPrint('✅ Database connection verified');
       
-      // Email confirmation is disabled in Supabase, so users will have a session immediately
+      // Email confirmation may be enabled in Supabase
+      // If enabled, users won't have a session until they confirm their email
       debugPrint('🔍 Calling Supabase auth.signUp...');
       debugPrint('🔍 SignUp parameters: email=$email, role=${role?.value ?? "technician"}');
       
@@ -286,7 +287,7 @@ class AuthProvider with ChangeNotifier {
               'full_name': fullName,
               'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
             },
-            // emailRedirectTo is optional when email confirmation is disabled
+            emailRedirectTo: 'com.rgs.app://auth/callback',
           ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -326,8 +327,8 @@ class AuthProvider with ChangeNotifier {
         
         // For technicians, create pending approval instead of user record
         if (role == UserRole.technician || role == null) {
-          // Email confirmation is disabled, so we should have a session immediately
-          // Create pending approval if we have a session
+          // Email confirmation may be enabled - if so, we won't have a session
+          // But we can still create the pending approval record (it will be created by trigger or we create it)
           if (hasSession) {
             try {
               debugPrint('🔍 Creating pending approval for technician (has session)...');
@@ -383,11 +384,14 @@ class AuthProvider with ChangeNotifier {
               // Continue anyway for other errors - user is created, pending approval can be created later
             }
           } else {
-            // No session - this shouldn't happen if email confirmation is disabled
-            debugPrint('⚠️ No session after signup - this is unexpected since email confirmation is disabled');
-            debugPrint('⚠️ User was created but no session available');
-            // User was created, but we can't proceed without a session
-            throw Exception('Registration completed but no session was created. Please try logging in.');
+            // No session - email confirmation is enabled
+            // User was created but needs to confirm email before getting a session
+            // Pending approval will be created by database trigger when user confirms email
+            debugPrint('ℹ️ No session after signup - email confirmation is enabled');
+            debugPrint('ℹ️ User must confirm email before getting a session');
+            debugPrint('ℹ️ Pending approval will be created automatically when email is confirmed');
+            // Don't throw - this is expected when email confirmation is enabled
+            // The UI will handle showing the email confirmation message
           }
         } else {
           // For admins, load role normally (only if we have a session)
@@ -395,9 +399,11 @@ class AuthProvider with ChangeNotifier {
             debugPrint('🔍 Loading role for admin...');
             await _loadUserRole();
           } else {
-            // No session - this shouldn't happen if email confirmation is disabled
-            debugPrint('⚠️ No session for admin - this is unexpected since email confirmation is disabled');
-            throw Exception('Admin registration completed but no session was created. Please try logging in.');
+            // No session - email confirmation is enabled
+            debugPrint('ℹ️ No session for admin - email confirmation is enabled');
+            debugPrint('ℹ️ Admin must confirm email before getting a session');
+            // Don't throw - this is expected when email confirmation is enabled
+            // The UI will handle showing the email confirmation message
           }
         }
       } else {
@@ -546,11 +552,13 @@ class AuthProvider with ChangeNotifier {
       }
       
       // Check if we have a session (email confirmation might be required)
-      final hasSession = SupabaseService.client.auth.currentSession != null;
+      final hasSession = response.session != null || SupabaseService.client.auth.currentSession != null;
       debugPrint('🔍 After signUp - hasSession: $hasSession, user: ${_user?.id ?? "null"}');
+      debugPrint('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
       
       // Only try to update/create pending approval if we have a session
       // If email confirmation is required, these operations will fail due to RLS
+      // The pending approval will be created by database trigger when email is confirmed
       if (_user != null && hasSession) {
         try {
           debugPrint('🔍 Checking for existing pending approval...');

@@ -100,10 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final hasSession =
         response.session != null || response.user?.emailConfirmedAt != null;
     if (!hasSession) {
-      AuthErrorHandler.showInfoSnackBar(
-        context,
-        '📧 Account created! Please verify your email. After confirmation, your account will await admin approval.',
-      );
+      // Email confirmation is enabled - show dialog and navigate to login
+      await _showEmailConfirmationDialog();
       Navigator.of(context).pop();
       return;
     }

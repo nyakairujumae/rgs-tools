@@ -582,7 +582,8 @@ class _TechnicianRegistrationScreenState
 
         // Check if user is authenticated (has a session)
         if (hasSession && userCreated) {
-          // Show email confirmation dialog for all new technicians
+          // Show email confirmation dialog for all new technicians (even if email confirmation is disabled)
+          // This ensures users know to check their email if it gets enabled later
           await _showEmailConfirmationDialog(context);
           
           // User has a session - navigate to pending approval screen
@@ -600,13 +601,10 @@ class _TechnicianRegistrationScreenState
           );
         } else if (userCreated) {
           // User created but no session (email confirmation required) - this is expected
-          AuthErrorHandler.showInfoSnackBar(
-            context,
-            '📧 Registration successful! Please check your email to verify '
-            'your account. After verification, your account will be pending '
-            'admin approval.',
-          );
-
+          // Show email confirmation dialog
+          await _showEmailConfirmationDialog(context);
+          
+          // Navigate to login screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(

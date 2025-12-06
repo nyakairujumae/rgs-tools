@@ -62,7 +62,10 @@ void main() async {
       print('🔥 Firebase apps before init: ${Firebase.apps.length}');
       
       try {
-        // Check if Firebase is already initialized
+        // Check if Firebase is already initialized (might be initialized in AppDelegate on iOS)
+        // Wait a bit for AppDelegate initialization to complete
+        await Future.delayed(Duration(milliseconds: 100));
+        
         if (Firebase.apps.isEmpty) {
           print('🔥 Firebase apps is empty, initializing...');
           
@@ -522,7 +525,93 @@ class HvacToolsManagerApp extends StatelessWidget {
               },
             },
             onGenerateRoute: (settings) {
-              // Handle password reset deep links
+              // Handle email confirmation deep links (auth/callback)
+              if (settings.name != null && (settings.name!.contains('auth/callback') || 
+                  settings.name!.contains('access_token'))) {
+                print('🔐 Email confirmation deep link detected: ${settings.name}');
+                final uri = Uri.parse(settings.name!);
+                
+                // Handle email confirmation callback
+                if (uri.queryParameters.containsKey('access_token') || 
+                    uri.queryParameters.containsKey('type')) {
+                  // Check if it's email confirmation (type=signup) or password reset (type=recovery)
+                  final type = uri.queryParameters['type'];
+                  
+                  if (type == 'recovery') {
+                    // Password reset
+                    print('🔐 Password reset route detected');
+                    final accessToken = uri.queryParameters['access_token'];
+                    final refreshToken = uri.queryParameters['refresh_token'];
+                    
+                    return MaterialPageRoute(
+                      builder: (context) => ResetPasswordScreen(
+                        accessToken: accessToken,
+                        refreshToken: refreshToken,
+                        type: type,
+                      ),
+                      settings: RouteSettings(name: '/reset-password'),
+                    );
+                  } else {
+                    // Email confirmation - get session from URL
+                    print('✅ Email confirmation detected, getting session from URL...');
+                    
+                    // Return a loading screen that processes the session
+                    return MaterialPageRoute(
+                      builder: (context) {
+                        // Process the session when the route is built
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          try {
+                            print('🔐 Getting session from URL...');
+                            final session = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            if (session != null) {
+                              print('✅ Session created from email confirmation');
+                              print('✅ User: ${session.user.email}');
+                              // Re-initialize auth provider to pick up new session
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              await authProvider.initialize();
+                              // Navigate to appropriate screen based on auth state
+                              final navigator = Navigator.of(context, rootNavigator: true);
+                              if (navigator.canPop()) {
+                                navigator.pop();
+                              }
+                              // The app will rebuild and _getInitialRoute will handle navigation
+                            } else {
+                              print('⚠️ No session returned from URL');
+                            }
+                          } catch (e) {
+                            print('❌ Error getting session from URL: $e');
+                          }
+                        });
+                        
+                        return Scaffold(
+                          backgroundColor: AppTheme.scaffoldBackground,
+                          body: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Confirming your email...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      settings: RouteSettings(name: '/auth-callback'),
+                    );
+                  }
+                }
+              }
+              
+              // Handle password reset deep links (legacy format)
               if (settings.name != null && settings.name!.contains('reset-password')) {
                 print('🔐 Password reset route detected: ${settings.name}');
                 final uri = Uri.parse(settings.name!);
