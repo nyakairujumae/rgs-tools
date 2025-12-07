@@ -421,7 +421,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       final authProvider = context.read<AuthProvider>();
 
       debugPrint('🔍 Starting admin registration...');
-      await authProvider.registerAdmin(
+      final response = await authProvider.registerAdmin(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
@@ -432,10 +432,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
       if (mounted) {
         // Check if user was actually created
-        final userCreated = authProvider.user != null;
-        final hasSession = authProvider.isAuthenticated;
+        final userCreated = response.user != null;
+        final hasSession = response.session != null;
         
         debugPrint('🔍 Registration check - User created: $userCreated, hasSession: $hasSession');
+        debugPrint('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
         
         if (!userCreated) {
           throw Exception('Registration failed: User was not created. Please try again.');
@@ -460,11 +461,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         } else {
           // Email confirmation required for admin
           debugPrint('⚠️ No session - email confirmation required');
-          AuthErrorHandler.showInfoSnackBar(
-            context,
-            '📧 Admin account created! Please check your email to verify your account. '
-            'You must confirm your email before you can log in.',
-          );
+          
+          // Show email confirmation dialog
+          await _showEmailConfirmationDialog();
 
           // Navigate back to login screen
           Navigator.pushReplacement(
@@ -503,5 +502,139 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         });
       }
     }
+  }
+
+  Future<void> _showEmailConfirmationDialog() async {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return WillPopScope(
+          onWillPop: () async => false, // Prevent dismissing by back button
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.email_outlined,
+                    color: AppTheme.secondaryColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Check Your Email',
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'We\'ve sent a confirmation email to:',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _emailController.text.trim(),
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Please check your email and click the confirmation link to verify your admin account. '
+                  'You must confirm your email before you can log in.',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: AppTheme.secondaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'After confirming your email, you can log in with your admin credentials.',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

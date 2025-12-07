@@ -20,7 +20,16 @@ class AuthProvider with ChangeNotifier {
   UserRole get userRole => _userRole;
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated {
+    // Check if we have both a user AND a valid session
+    if (_user == null) return false;
+    try {
+      final session = SupabaseService.client.auth.currentSession;
+      return session != null;
+    } catch (e) {
+      return false;
+    }
+  }
   bool get isAdmin => _userRole == UserRole.admin;
   bool get isTechnician => _userRole == UserRole.technician;
   bool get isPendingApproval => _userRole == UserRole.pending;
@@ -451,7 +460,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Admin registration method
-  Future<void> registerAdmin(
+  Future<AuthResponse> registerAdmin(
     String name,
     String email,
     String password,
@@ -479,6 +488,7 @@ class AuthProvider with ChangeNotifier {
     }
 
     debugPrint('✅ Admin registration successful - user ID: ${response.user!.id}');
+    debugPrint('🔍 Admin registration - hasSession: ${response.session != null}, emailConfirmed: ${response.user?.emailConfirmedAt != null}');
     
     // If we have a session, ensure the user record exists in the users table
     // (it should be created by the database trigger, but let's verify)
@@ -525,7 +535,12 @@ class AuthProvider with ChangeNotifier {
         debugPrint('⚠️ Error verifying/creating user record: $e');
         // Don't throw - user is created, record might be created later
       }
+    } else {
+      debugPrint('⚠️ No session after admin registration - email confirmation is required');
+      debugPrint('⚠️ Admin must confirm email before getting a session');
     }
+    
+    return response;
   }
 
   // Technician registration method

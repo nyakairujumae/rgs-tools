@@ -97,10 +97,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       throw Exception('Registration failed');
     }
 
-    final hasSession =
-        response.session != null || response.user?.emailConfirmedAt != null;
+    // Check if we have a session - if not, email confirmation is required
+    final hasSession = response.session != null;
+    debugPrint('🔍 Admin registration - hasSession: $hasSession, emailConfirmed: ${response.user?.emailConfirmedAt != null}');
+    
     if (!hasSession) {
       // Email confirmation is enabled - show dialog and navigate to login
+      debugPrint('⚠️ No session - email confirmation required for admin');
       await _showEmailConfirmationDialog();
       Navigator.of(context).pop();
       return;
@@ -257,20 +260,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                },
-                child: Text(
-                  'I\'ll check later',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
+                  // Navigate to login screen - user must confirm email before accessing app
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
@@ -280,7 +274,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 child: Text(
-                  'Got it, continue',
+                  'Go to Login',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                   ),
