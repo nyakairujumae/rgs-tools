@@ -544,7 +544,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final emailLower = email.toLowerCase();
         
         if (emailLower.contains('admin') || emailLower.contains('manager') || 
-            emailLower.contains('@royalgulf.ae') || emailLower.contains('@mekar.ae')) {
+            emailLower.contains('@royalgulf.ae') || 
+            emailLower.contains('@mekar.ae') || 
+            emailLower.contains('@gmail.com')) {
           role = UserRole.admin;
         }
         

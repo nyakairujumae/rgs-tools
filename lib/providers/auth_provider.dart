@@ -26,6 +26,11 @@ class AuthProvider with ChangeNotifier {
   bool get isPendingApproval => _userRole == UserRole.pending;
   bool get isLoggingOut => _isLoggingOut;
   
+  /// Check if user's email is confirmed
+  bool get isEmailConfirmed {
+    return _user?.emailConfirmedAt != null;
+  }
+
   /// Check if the current user has been approved
   /// Returns null if check is in progress, true if approved, false if pending/rejected
   Future<bool?> checkApprovalStatus() async {
@@ -146,6 +151,14 @@ class AuthProvider with ChangeNotifier {
           if (currentUser != null) {
             print('🔍 Found user from currentUser (session was null)');
             _user = currentUser;
+            
+            // CRITICAL: Check if email is confirmed before allowing access
+            if (_user!.emailConfirmedAt == null) {
+              print('❌ Email not confirmed - cannot restore session');
+              _user = null;
+              return; // Don't proceed if email is not confirmed
+            }
+            
             // Try to get a fresh session for this user (non-blocking)
             try {
               final refreshResponse = await SupabaseService.client.auth
@@ -445,8 +458,10 @@ class AuthProvider with ChangeNotifier {
     String position,
   ) async {
     // Validate email domain
-    if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
-      throw Exception('Invalid email domain for admin registration');
+    if (!email.endsWith('@royalgulf.ae') && 
+        !email.endsWith('@mekar.ae') && 
+        !email.endsWith('@gmail.com')) {
+      throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
     }
 
     debugPrint('🔍 Starting admin registration for: $email');
@@ -836,9 +851,18 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ Could not send FCM token after login: $e');
         }
         
+        // CRITICAL: Check if email is confirmed before allowing access
+        if (_user!.emailConfirmedAt == null) {
+          debugPrint('❌ Email not confirmed - blocking access');
+          await signOut();
+          throw Exception('Please confirm your email address before signing in. Check your inbox for the confirmation email.');
+        }
+        
         // Validate admin domain restrictions
         if (_userRole == UserRole.admin) {
-          if (!email.endsWith('@royalgulf.ae') && !email.endsWith('@mekar.ae')) {
+          if (!email.endsWith('@royalgulf.ae') && 
+              !email.endsWith('@mekar.ae') && 
+              !email.endsWith('@gmail.com')) {
             // User has admin role but doesn't have admin domain - revoke access
             await signOut();
             throw Exception('Access denied: Invalid admin credentials');
@@ -1166,7 +1190,9 @@ _isLoading = false;
             try {
               String role = 'technician'; // Default to technician
               if (_user!.email != null && 
-                  (_user!.email!.endsWith('@royalgulf.ae') || _user!.email!.endsWith('@mekar.ae'))) {
+                  (_user!.email!.endsWith('@royalgulf.ae') || 
+                   _user!.email!.endsWith('@mekar.ae') || 
+                   _user!.email!.endsWith('@gmail.com'))) {
                 role = 'admin';
                 debugPrint('🔍 Admin domain detected, creating admin user');
               

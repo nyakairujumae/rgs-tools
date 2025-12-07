@@ -438,18 +438,29 @@ class HvacToolsManagerApp extends StatelessWidget {
             },
             onGenerateRoute: (settings) {
               // Handle email confirmation deep links (auth/callback)
-              if (settings.name != null && (settings.name!.contains('auth/callback') || 
-                  settings.name!.contains('access_token'))) {
-                print('🔐 Email confirmation deep link detected: ${settings.name}');
-                final uri = Uri.parse(settings.name!);
+              // Check for various URL formats that Supabase might send
+              if (settings.name != null) {
+                final uriString = settings.name!;
+                print('🔐 Checking deep link: $uriString');
                 
-                // Handle email confirmation callback
-                if (uri.queryParameters.containsKey('access_token') || 
-                    uri.queryParameters.containsKey('type')) {
-                  // Check if it's email confirmation (type=signup) or password reset (type=recovery)
-                  final type = uri.queryParameters['type'];
+                // Check if this is an auth callback URL
+                final isAuthCallback = uriString.contains('auth/callback') || 
+                                      uriString.contains('access_token') ||
+                                      uriString.contains('type=signup') ||
+                                      uriString.contains('type=recovery') ||
+                                      uriString.contains('email-confirmation');
+                
+                if (isAuthCallback) {
+                  print('🔐 Auth deep link detected: $uriString');
+                  final uri = Uri.parse(uriString);
                   
-                  if (type == 'recovery') {
+                  // Handle email confirmation callback
+                  final type = uri.queryParameters['type'];
+                  final hasAccessToken = uri.queryParameters.containsKey('access_token');
+                  
+                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
+                  
+                  if (type == 'recovery' || uriString.contains('reset-password')) {
                     // Password reset
                     print('🔐 Password reset route detected');
                     final accessToken = uri.queryParameters['access_token'];
@@ -459,13 +470,15 @@ class HvacToolsManagerApp extends StatelessWidget {
                       builder: (context) => ResetPasswordScreen(
                         accessToken: accessToken,
                         refreshToken: refreshToken,
-                        type: type,
+                        type: type ?? 'recovery',
                       ),
                       settings: RouteSettings(name: '/reset-password'),
                     );
-                  } else {
+                  } else if (type == 'signup' || hasAccessToken || uriString.contains('email-confirmation')) {
                     // Email confirmation - get session from URL
                     print('✅ Email confirmation detected, getting session from URL...');
+                    print('🔐 Full URI: $uri');
+                    print('🔐 Query parameters: ${uri.queryParameters}');
                     
                     // Return a loading screen that processes the session
                     return MaterialPageRoute(
@@ -474,13 +487,20 @@ class HvacToolsManagerApp extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Getting session from URL...');
+                            print('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
+                            
+                            // Try to get session from URL
                             final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            
                             if (sessionResponse.session != null) {
                               print('✅ Session created from email confirmation');
                               print('✅ User: ${sessionResponse.session!.user.email}');
+                              print('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
+                              
                               // Re-initialize auth provider to pick up new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
                               await authProvider.initialize();
+                              
                               // Navigate to appropriate screen based on auth state
                               final navigator = Navigator.of(context, rootNavigator: true);
                               if (navigator.canPop()) {
@@ -489,9 +509,32 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // The app will rebuild and _getInitialRoute will handle navigation
                             } else {
                               print('⚠️ No session returned from URL');
+                              print('⚠️ This might mean the confirmation link is invalid or expired');
+                              
+                              // Show error message
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Email confirmation failed. The link may be invalid or expired.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
-                          } catch (e) {
+                          } catch (e, stackTrace) {
                             print('❌ Error getting session from URL: $e');
+                            print('❌ Stack trace: $stackTrace');
+                            
+                            // Show error message to user
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error confirming email: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                  duration: Duration(seconds: 5),
+                                ),
+                              );
+                            }
                           }
                         });
                         

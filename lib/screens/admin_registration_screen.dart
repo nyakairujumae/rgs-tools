@@ -230,8 +230,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           return 'Please enter your email address';
                         }
                         if (!value.contains('@royalgulf.ae') &&
-                            !value.contains('@mekar.ae')) {
-                          return 'Invalid email domain for admin registration';
+                            !value.contains('@mekar.ae') &&
+                            !value.contains('@gmail.com')) {
+                          return 'Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com';
                         }
                         return null;
                       },
