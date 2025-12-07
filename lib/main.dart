@@ -33,9 +33,8 @@ import 'config/supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'services/supabase_auth_storage.dart';
 import 'services/image_upload_service.dart';
-import 'services/firebase_messaging_service.dart'
-    if (dart.library.html) 'services/firebase_messaging_service_stub.dart'
-    as messaging_service;
+import 'services/firebase_messaging_service.dart' as fcm_service
+    if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
@@ -54,112 +53,16 @@ void main() async {
     print('Stack trace: ${details.stack}');
   };
 
-  try {
-    // Initialize Firebase (skip on web for now to avoid issues)
-    if (!kIsWeb) {
-      print('🔥 Initializing Firebase...');
-      print('🔥 Platform: ${defaultTargetPlatform}');
-      print('🔥 Firebase apps before init: ${Firebase.apps.length}');
-      
-      try {
-        // Check if Firebase is already initialized (might be initialized in AppDelegate on iOS)
-        // Wait a bit for AppDelegate initialization to complete
-        await Future.delayed(Duration(milliseconds: 100));
-        
-        if (Firebase.apps.isEmpty) {
-          print('🔥 Firebase apps is empty, initializing...');
-          
-          try {
-            // Get the platform-specific options
-            final options = DefaultFirebaseOptions.currentPlatform;
-            print('🔥 Using FirebaseOptions for: ${defaultTargetPlatform}');
-            print('🔥 Project ID: ${options.projectId}');
-            print('🔥 App ID: ${options.appId}');
-            
-            await Firebase.initializeApp(
-              options: options,
-            );
-            
-            print('🔥 Firebase.initializeApp() call completed');
-            
-            // Wait and check multiple times
-            for (int i = 0; i < 10; i++) {
-              await Future.delayed(Duration(milliseconds: 200));
-              if (Firebase.apps.isNotEmpty) {
-                print('✅ Firebase initialized successfully after ${(i + 1) * 200}ms');
-                print('✅ Apps count: ${Firebase.apps.length}');
-                print('✅ Firebase app name: ${Firebase.app().name}');
-                break;
-              }
-              if (i == 9) {
-                print('❌ Firebase.initializeApp() completed but apps list is still empty after 2 seconds');
-                print('❌ This might indicate a configuration issue');
-                print('❌ Please verify:');
-                print('   1. google-services.json is in android/app/');
-                print('   2. GoogleService-Info.plist is in ios/Runner/');
-                print('   3. Firebase dependencies are properly installed');
-              }
-            }
-          } catch (initError, stackTrace) {
-            print('❌ Firebase.initializeApp() threw error: $initError');
-            print('❌ Error type: ${initError.runtimeType}');
-            print('❌ Error details: ${initError.toString()}');
-            print('❌ Stack trace: $stackTrace');
-            
-            // Check if it's a configuration error
-            if (initError.toString().contains('google-services') || 
-                initError.toString().contains('GoogleService') ||
-                initError.toString().contains('configuration')) {
-              print('⚠️ This might be a Firebase configuration file issue');
-              print('⚠️ Please verify google-services.json (Android) and GoogleService-Info.plist (iOS) are correct');
-            }
-            
-            rethrow; // Re-throw to be caught by outer catch
-          }
-        } else {
-          print('✅ Firebase already initialized. Apps: ${Firebase.apps.map((a) => a.name).join(", ")}');
-        }
-        
-        // Final verification before proceeding
-        print('🔥 Final check: Firebase apps count = ${Firebase.apps.length}');
-        
-        if (Firebase.apps.isEmpty) {
-          print('❌ Firebase initialization failed - apps still empty after all attempts');
-          print('⚠️ Continuing without Firebase Messaging...');
-        } else {
-          print('✅ Firebase verified. Setting up messaging...');
-          
-          // Set up Firebase Messaging background handler (only on non-web)
-          // Register background message handler BEFORE initializing
-          if (!kIsWeb) {
-            FirebaseMessaging.onBackgroundMessage(
-              messaging_service.firebaseMessagingBackgroundHandler,
-            );
-          }
-          
-          // Initialize Firebase Messaging
-          await messaging_service.FirebaseMessagingService.initialize();
-          print('✅ Firebase Messaging initialized successfully');
-        }
-      } catch (firebaseError, stackTrace) {
-        print('❌ Firebase initialization failed: $firebaseError');
-        print('❌ Error type: ${firebaseError.runtimeType}');
-        print('❌ Stack trace: $stackTrace');
-        // Continue without Firebase - this is not critical for basic app functionality
-        print('⚠️ Continuing without Firebase...');
-      }
-    } else {
-      print('🌐 Web platform detected - skipping Firebase initialization');
-    }
+  // Firebase will be initialized asynchronously after app starts
 
-    // Initialize Supabase (works on web too)
-    print('Initializing Supabase...');
-    bool supabaseInitialized = false;
-    
-    try {
+  // Initialize Supabase (works on web too)
+  print('Initializing Supabase...');
+  bool supabaseInitialized = false;
+  
+  try {
       // Check if Supabase is already initialized
       try {
-        final existingClient = Supabase.instance.client;
+        Supabase.instance.client; // Check if initialized
         print('✅ Supabase already initialized');
         supabaseInitialized = true;
       } catch (e) {
@@ -194,7 +97,7 @@ void main() async {
             // Use the fallback client from SupabaseService
             // This will create a direct client without full initialization
             try {
-              final fallbackClient = SupabaseService.client;
+              SupabaseService.client; // Initialize fallback client
               print('✅ Using fallback Supabase client (basic functionality available)');
               supabaseInitialized = true; // Mark as initialized even with fallback
             } catch (fallbackError) {
@@ -214,7 +117,7 @@ void main() async {
           // Try fallback even for other errors
           try {
             await Future.delayed(const Duration(milliseconds: 1000));
-            final fallbackClient = SupabaseService.client;
+            SupabaseService.client; // Initialize fallback client
             print('✅ Using fallback Supabase client after error');
             supabaseInitialized = true;
           } catch (fallbackError) {
@@ -228,7 +131,7 @@ void main() async {
       if (supabaseInitialized && !kIsWeb) {
         try {
           // Try to get client from Supabase.instance, fallback to SupabaseService
-          SupabaseClient? authClient;
+          SupabaseClient authClient;
           try {
             authClient = Supabase.instance.client;
           } catch (e) {
@@ -236,8 +139,7 @@ void main() async {
             authClient = SupabaseService.client;
           }
           
-          if (authClient != null) {
-            authClient.auth.onAuthStateChange.listen((data) {
+          authClient.auth.onAuthStateChange.listen((data) {
               final event = data.event;
               final session = data.session;
               
@@ -259,12 +161,11 @@ void main() async {
                 // User is now signed in after email confirmation, app will handle navigation
               }
             });
-          }
         } catch (e) {
           print('⚠️ Could not set up auth state listener: $e');
         }
       }
-    } catch (supabaseError, stackTrace) {
+  } catch (supabaseError, stackTrace) {
       print('❌ Supabase initialization failed: $supabaseError');
       print('❌ Error type: ${supabaseError.runtimeType}');
       print('❌ Stack trace: $stackTrace');
@@ -303,59 +204,70 @@ void main() async {
       }
     }
 
-    print('Starting app...');
-    runApp(const HvacToolsManagerApp());
-  } catch (e, stackTrace) {
-    print('Error during app initialization: $e');
-    print('Stack trace: $stackTrace');
+  print('Starting app...');
+  
+  // Run the app first, then initialize Firebase asynchronously
+  runApp(const HvacToolsManagerApp());
+  
+  // Initialize Firebase asynchronously after the app starts (skip on web)
+  if (!kIsWeb) {
+    // Wait for the first frame to ensure native bridge is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeFirebaseAsync();
+    });
+  }
+}
+
+/// Initialize Firebase asynchronously with retry logic and error handling
+Future<void> _initializeFirebaseAsync() async {
+  try {
+    // Wait for Flutter engine and native bridge to be fully ready
+    // This helps avoid channel errors by ensuring everything is initialized
+    await Future.delayed(const Duration(milliseconds: 1500));
     
-    // Run app with error handling
-    runApp(MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.red,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error, size: 64, color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Initialization Error',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Failed to initialize the app. Please refresh the page.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  // Reload the page
-                  if (kIsWeb) {
-                    // For web, reload the page
-                    // This will be handled by the browser
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.red,
-                ),
-                child: Text('Refresh Page'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ));
+    print('🔥 [Firebase] Starting initialization...');
+    
+    // Check if Firebase is already initialized
+    if (Firebase.apps.isNotEmpty) {
+      print('✅ [Firebase] Already initialized');
+      try {
+        await fcm_service.FirebaseMessagingService.initialize();
+      } catch (e) {
+        print('⚠️ [Firebase] FCM service init failed (non-critical): $e');
+      }
+      return;
+    }
+    
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    print('✅ [Firebase] Initialized successfully');
+    
+    // Register background message handler
+    try {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      print('✅ [Firebase] Background message handler registered');
+    } catch (e) {
+      print('⚠️ [Firebase] Background handler registration failed (non-critical): $e');
+    }
+    
+    // Initialize FCM service
+    try {
+      await fcm_service.FirebaseMessagingService.initialize();
+      print('✅ [Firebase] FCM service initialized');
+    } catch (e) {
+      print('⚠️ [Firebase] FCM service initialization failed: $e');
+      print('⚠️ [Firebase] Push notifications may not work');
+    }
+    
+    print('✅ [Firebase] Setup complete');
+  } catch (e, stackTrace) {
+    print('❌ [Firebase] Setup failed: $e');
+    print('❌ [Firebase] Stack trace: $stackTrace');
+    print('⚠️ [Firebase] App will continue without push notifications');
+    // Don't throw - let app continue without Firebase
   }
 }
 
@@ -370,7 +282,7 @@ class ErrorBoundary extends StatelessWidget {
       builder: (context) {
         try {
           return child;
-        } catch (e, stackTrace) {
+        } catch (e) {
           // Handle error silently in production
           
           return MaterialApp(
@@ -562,10 +474,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Getting session from URL...');
-                            final session = await SupabaseService.client.auth.getSessionFromUrl(uri);
-                            if (session != null) {
+                            final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            if (sessionResponse.session != null) {
                               print('✅ Session created from email confirmation');
-                              print('✅ User: ${session.user.email}');
+                              print('✅ User: ${sessionResponse.session!.user.email}');
                               // Re-initialize auth provider to pick up new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
                               await authProvider.initialize();
@@ -699,6 +611,10 @@ class HvacToolsManagerApp extends StatelessWidget {
               key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
             ),
           );
+        } else if (!authProvider.isEmailConfirmed) {
+          // Email not confirmed - show message and redirect to login
+          print('❌ Email not confirmed - blocking access');
+          return const RoleSelectionScreen();
         } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
           // Check approval status for technicians
           print('🔍 Technician user detected, checking approval status...');
@@ -721,5 +637,10 @@ class HvacToolsManagerApp extends StatelessWidget {
   }
 }
 
+/// Initialize Firebase asynchronously after app starts (more resilient to channel errors)
 /// Background message handler (must be top-level function)
-/// Only used on non-web platforms - defined in firebase_messaging_service.dart
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  await fcm_service.firebaseMessagingBackgroundHandler(message);
+}
