@@ -1,7 +1,5 @@
 import Flutter
 import UIKit
-import FirebaseCore
-import FirebaseMessaging
 import UserNotifications
 import shared_preferences_foundation
 import sqflite_darwin
@@ -15,13 +13,13 @@ import image_picker_ios
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
 
-    // CRITICAL: Initialize Firebase natively BEFORE Flutter plugins load
-    // This ensures the native Firebase SDK is ready when Flutter tries to use it
-    // Without this, Flutter gets "channel-error" because the native side isn't initialized
-    FirebaseApp.configure()
-    print("✅ Firebase initialized natively in AppDelegate")
+    // Firebase initialization now happens in Flutter (main.dart)
+    print("ℹ️ Firebase initialization deferred to Flutter (main.dart)")
 
     GeneratedPluginRegistrant.register(with: self)
+
+    // Note: connectivity_plus is Swift-only and is automatically registered by GeneratedPluginRegistrant
+    // No manual registration needed
 
     // Manual plugin registration (your custom fixes)
     if let sharedPrefsRegistrar = self.registrar(forPlugin: "SharedPreferencesPlugin") {
@@ -71,9 +69,8 @@ import image_picker_ios
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
     print("✅ APNs token registered: \(tokenString)")
 
-    // Pass APNs token to Firebase (Firebase is initialized in didFinishLaunchingWithOptions)
-    Messaging.messaging().apnsToken = deviceToken
-    print("✅ APNs token passed to Firebase Messaging")
+    // FirebaseMessaging plugin automatically handles APNs tokens (via method swizzling)
+    print("ℹ️ FirebaseMessaging plugin will handle the APNs token")
 
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
@@ -111,7 +108,4 @@ import image_picker_ios
     completionHandler()
   }
 }
-
-
-
 
