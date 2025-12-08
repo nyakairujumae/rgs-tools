@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -156,17 +157,48 @@ class FirebaseMessagingService {
         return;
       }
       
+      // Detect platform
+      final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
+      
+      debugPrint('📤 [FCM] Saving token for user: ${user.id}, platform: $platform');
+      
+      // Upsert with user_id as conflict target
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
             'user_id': user.id,
             'fcm_token': token,
+            'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
-          });
+          }, onConflict: 'user_id');
       
-      debugPrint('✅ [FCM] Token saved to Supabase');
-    } catch (e) {
+      debugPrint('✅ [FCM] Token saved to Supabase successfully');
+    } catch (e, stackTrace) {
       debugPrint('❌ [FCM] Error saving token: $e');
+      debugPrint('❌ [FCM] Error type: ${e.runtimeType}');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      
+      // Check for specific error types
+      if (e.toString().contains('permission denied') || e.toString().contains('RLS')) {
+        debugPrint('⚠️ [FCM] RLS policy might be blocking the insert. Check Supabase RLS policies.');
+      }
+      if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
+        debugPrint('⚠️ [FCM] Duplicate key error - trying update instead...');
+        // Try update instead
+        try {
+          await SupabaseService.client
+              .from('user_fcm_tokens')
+              .update({
+                'fcm_token': token,
+                'platform': Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown'),
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('user_id', user.id);
+          debugPrint('✅ [FCM] Token updated successfully');
+        } catch (updateError) {
+          debugPrint('❌ [FCM] Update also failed: $updateError');
+        }
+      }
     }
   }
 
@@ -285,16 +317,25 @@ class FirebaseMessagingService {
   /// Send token to server (public method for manual refresh)
   static Future<void> sendTokenToServer(String token, String userId) async {
     try {
+      // Detect platform
+      final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
+      
+      debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
+      
+      // Upsert with user_id as conflict target
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
             'user_id': userId,
             'fcm_token': token,
+            'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
-          });
-      debugPrint('✅ [FCM] Token sent to server');
-    } catch (e) {
+          }, onConflict: 'user_id');
+      
+      debugPrint('✅ [FCM] Token sent to server successfully');
+    } catch (e, stackTrace) {
       debugPrint('❌ [FCM] Error sending token: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
