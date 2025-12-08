@@ -207,17 +207,15 @@ void main() async {
 
   // Initialize Firebase BEFORE running the app (skip on web)
   // This ensures Firebase is ready before any widgets try to use it
-  if (!kIsWeb) {
-    // Check if running on simulator
-    final isSimulator = defaultTargetPlatform == TargetPlatform.iOS && 
-                        (Platform.environment['SIMULATOR_DEVICE_NAME'] != null || 
-                         Platform.environment['SIMULATOR_ROOT'] != null);
-    
-    if (isSimulator) {
-      print('📱 Running on iOS Simulator - Firebase may have limitations');
-      print('⚠️ Push notifications won\'t work on simulator (APNs limitation)');
-      print('⚠️ But Firebase initialization should still work');
-    }
+  // Check if running on simulator (outside if block so it's accessible in callback)
+  final isSimulator = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS && 
+                      (Platform.environment['SIMULATOR_DEVICE_NAME'] != null || 
+                       Platform.environment['SIMULATOR_ROOT'] != null);
+  
+  if (!kIsWeb && isSimulator) {
+    print('📱 Running on iOS Simulator - Firebase may have limitations');
+    print('⚠️ Push notifications won\'t work on simulator (APNs limitation)');
+    print('⚠️ But Firebase initialization should still work');
   }
 
   print('Starting app...');
