@@ -218,9 +218,20 @@ void main() async {
       print('⚠️ Push notifications won\'t work on simulator (APNs limitation)');
       print('⚠️ But Firebase initialization should still work');
     }
+  }
+
+  print('Starting app...');
+  
+  // Run the app first - Firebase will initialize after app starts
+  runApp(const HvacToolsManagerApp());
+  
+  // Initialize Firebase AFTER app starts (platform channels need app to be running)
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // Wait a bit longer for iOS native bridge to be ready
+    await Future.delayed(const Duration(seconds: 1));
     
     try {
-      print('🔥 Initializing Firebase before app start...');
+      print('🔥 Initializing Firebase after app start...');
       final success = await _initializeFirebaseSync();
       if (success) {
         if (isSimulator) {
@@ -245,12 +256,7 @@ void main() async {
       }
       // App can still run without Firebase
     }
-  }
-
-  print('Starting app...');
-  
-  // Run the app
-  runApp(const HvacToolsManagerApp());
+  });
 }
 
 /// Initialize Firebase synchronously with retry logic and error handling
