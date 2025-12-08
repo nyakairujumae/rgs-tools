@@ -893,6 +893,33 @@ class AuthProvider with ChangeNotifier {
           throw Exception('Please confirm your email address before signing in. Check your inbox for the confirmation email.');
         }
         
+        // Ensure user record exists in public.users table
+        // This handles cases where users confirmed email before the trigger was set up
+        try {
+          final userRecord = await client
+              .from('users')
+              .select('id')
+              .eq('id', _user!.id)
+              .maybeSingle();
+          
+          if (userRecord == null) {
+            debugPrint('⚠️ User record not found in public.users, creating it...');
+            // Create user record from auth user data
+            await client.from('users').insert({
+              'id': _user!.id,
+              'email': _user!.email ?? email,
+              'full_name': _user!.userMetadata?['full_name'] ?? 
+                          _user!.userMetadata?['name'] ?? 
+                          _user!.email?.split('@')[0] ?? 'User',
+              'role': _user!.userMetadata?['role'] ?? 'technician',
+            });
+            debugPrint('✅ Created user record in public.users');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Could not check/create user record: $e');
+          // Don't block login - user record might be created by trigger later
+        }
+        
         // Validate admin domain restrictions
         if (_userRole == UserRole.admin) {
           if (!email.endsWith('@royalgulf.ae') && 

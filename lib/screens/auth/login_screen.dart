@@ -582,33 +582,8 @@ class _LoginScreenState extends State<LoginScreen> {
       
       final email = _emailController.text.trim();
       
-      // Check if user exists in users table before attempting login
-      // If user doesn't exist, they haven't confirmed email yet
-      try {
-        final userCheck = await SupabaseService.client
-            .from('users')
-            .select('id')
-            .eq('email', email)
-            .maybeSingle();
-        
-        if (userCheck == null) {
-          // User doesn't exist - they haven't confirmed email
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Email not confirmed. Please check your email and click the confirmation link before logging in.'),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 5),
-              ),
-            );
-          }
-          return;
-        }
-      } catch (e) {
-        debugPrint('⚠️ Could not check user existence: $e');
-        // Continue with login attempt - will fail if email not confirmed
-      }
-      
+      // Try to sign in - Supabase will handle email confirmation check
+      // If email is not confirmed, signIn will throw an error which we'll catch below
       await authProvider.signIn(
         email: email,
         password: _passwordController.text,
