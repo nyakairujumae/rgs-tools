@@ -82,6 +82,9 @@ class PushNotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      debugPrint('📤 [Push] Sending notification to token: ${token.substring(0, 20)}...');
+      debugPrint('📤 [Push] Title: $title, Body: $body');
+      
       // Call Supabase Edge Function to send notification
       final response = await SupabaseService.client.functions.invoke(
         'send-push-notification',
@@ -93,45 +96,56 @@ class PushNotificationService {
         },
       );
 
+      debugPrint('📥 [Push] Edge Function response status: ${response.status}');
+      debugPrint('📥 [Push] Edge Function response data: ${response.data}');
+
       if (response.status == 200) {
-        debugPrint('✅ [Push] Notification sent successfully');
-        return true;
+        final responseData = response.data;
+        if (responseData is Map && responseData['success'] == true) {
+          debugPrint('✅ [Push] Notification sent successfully');
+          return true;
+        } else if (responseData is Map && responseData['error'] != null) {
+          debugPrint('❌ [Push] Edge Function error: ${responseData['error']}');
+          debugPrint('❌ [Push] Error details: ${responseData['details']}');
+          return false;
+        } else {
+          debugPrint('⚠️ [Push] Unexpected response format: $responseData');
+          return false;
+        }
       } else {
         debugPrint('❌ [Push] Edge Function returned status: ${response.status}');
         debugPrint('❌ [Push] Response: ${response.data}');
+        
+        // Try to extract error message
+        if (response.data is Map) {
+          final errorMsg = response.data['error'] ?? 'Unknown error';
+          debugPrint('❌ [Push] Error message: $errorMsg');
+        }
+        
         return false;
       }
-    } catch (e) {
-      debugPrint('❌ [Push] Error sending notification: $e');
-      // If Edge Function doesn't exist, try direct FCM API call as fallback
-      debugPrint('⚠️ [Push] Edge Function may not exist, trying direct FCM call...');
-      return await _sendDirectFCM(
-        token: token,
-        title: title,
-        body: body,
-        data: data,
-      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Push] Exception sending notification: $e');
+      debugPrint('❌ [Push] Stack trace: $stackTrace');
+      
+      // Check if it's a function not found error
+      if (e.toString().contains('Function not found') || 
+          e.toString().contains('404') ||
+          e.toString().contains('not found')) {
+        debugPrint('⚠️ [Push] Edge Function may not be deployed');
+        debugPrint('⚠️ [Push] Please deploy the send-push-notification function to Supabase');
+      }
+      
+      // Check if it's an authentication error
+      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+        debugPrint('⚠️ [Push] Authentication error - check Supabase secrets');
+        debugPrint('⚠️ [Push] Ensure GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_PROJECT_ID are set');
+      }
+      
+      return false;
     }
   }
 
-  /// Fallback: Send directly to FCM API (requires FCM_SERVER_KEY in environment)
-  static Future<bool> _sendDirectFCM({
-    required String token,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      // This would require FCM_SERVER_KEY which should be in Supabase secrets
-      // For now, just log that we need the Edge Function
-      debugPrint('⚠️ [Push] Direct FCM requires FCM_SERVER_KEY in Supabase secrets');
-      debugPrint('⚠️ [Push] Please create the send-push-notification Edge Function');
-      return false;
-    } catch (e) {
-      debugPrint('❌ [Push] Direct FCM error: $e');
-      return false;
-    }
-  }
 }
 
 

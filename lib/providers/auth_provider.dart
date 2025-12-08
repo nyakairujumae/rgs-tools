@@ -916,6 +916,31 @@ class AuthProvider with ChangeNotifier {
             // Don't throw error, just set role to pending so UI can handle it
           }
         }
+        
+        // Send FCM token to server after successful login
+        try {
+          final fcmToken = await _getFCMTokenIfAvailable().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {
+              debugPrint('⚠️ FCM token fetch timed out after login');
+              return null;
+            },
+          );
+          if (fcmToken != null && _user != null) {
+            _sendFCMTokenToServer(fcmToken, _user!.id).timeout(
+              const Duration(seconds: 3),
+              onTimeout: () {
+                debugPrint('⚠️ FCM token send timed out after login');
+              },
+            ).catchError((e) {
+              debugPrint('⚠️ Error sending FCM token after login: $e');
+            });
+          } else {
+            debugPrint('⚠️ FCM token not available after login, will be sent when available');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error getting/sending FCM token after login: $e');
+        }
       }
 
       return authResponse;
