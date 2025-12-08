@@ -877,14 +877,8 @@ class AuthProvider with ChangeNotifier {
         }
         
         // Send FCM token to server after successful login
-        try {
-          final fcmToken = await _getFCMTokenIfAvailable();
-          if (fcmToken != null && _user != null) {
-            await _sendFCMTokenToServer(fcmToken, _user!.id);
-          }
-        } catch (e) {
-          debugPrint('⚠️ Could not send FCM token after login: $e');
-        }
+        // Try immediately, and also retry after a delay in case Firebase is still initializing
+        _sendFCMTokenAfterLogin();
         
         // CRITICAL: Check if email is confirmed before allowing access
         if (_user!.emailConfirmedAt == null) {
@@ -1565,5 +1559,57 @@ _isLoading = false;
     } catch (e) {
       debugPrint('⚠️ Could not send FCM token to server: $e');
     }
+  }
+
+  /// Send FCM token after login with retry logic
+  /// This handles cases where Firebase might not be initialized yet
+  Future<void> _sendFCMTokenAfterLogin() async {
+    if (_user == null) return;
+    
+    // Try immediately
+    try {
+      final fcmToken = await _getFCMTokenIfAvailable();
+      if (fcmToken != null) {
+        await _sendFCMTokenToServer(fcmToken, _user!.id);
+        debugPrint('✅ FCM token sent to server after login');
+        return; // Success, no need to retry
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not get FCM token immediately after login: $e');
+    }
+    
+    // If token not available, retry after delays (Firebase might still be initializing)
+    debugPrint('🔄 FCM token not available immediately, will retry...');
+    
+    // Retry after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () async {
+      if (_user == null) return;
+      try {
+        final fcmToken = await _getFCMTokenIfAvailable();
+        if (fcmToken != null) {
+          await _sendFCMTokenToServer(fcmToken, _user!.id);
+          debugPrint('✅ FCM token sent to server after retry (2s)');
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ FCM token retry (2s) failed: $e');
+      }
+      
+      // Retry after 5 seconds
+      Future.delayed(const Duration(seconds: 3), () async {
+        if (_user == null) return;
+        try {
+          final fcmToken = await _getFCMTokenIfAvailable();
+          if (fcmToken != null) {
+            await _sendFCMTokenToServer(fcmToken, _user!.id);
+            debugPrint('✅ FCM token sent to server after retry (5s)');
+          } else {
+            debugPrint('⚠️ FCM token still not available after 5 seconds - Firebase may not be initialized');
+          }
+        } catch (e) {
+          debugPrint('⚠️ FCM token retry (5s) failed: $e');
+        }
+      });
+    });
   }
 }
