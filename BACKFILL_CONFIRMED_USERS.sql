@@ -20,8 +20,8 @@ WHERE au.email_confirmed_at IS NOT NULL
   )
 ON CONFLICT (id) DO UPDATE SET
   email = EXCLUDED.email,
-  full_name = COALES(EXCLUDED.full_name, users.full_name),
-  role = COALES(EXCLUDED.role, users.role),
+  full_name = COALESCE(EXCLUDED.full_name, users.full_name),
+  role = COALESCE(EXCLUDED.role, users.role),
   updated_at = NOW();
 
 -- ===========================================
