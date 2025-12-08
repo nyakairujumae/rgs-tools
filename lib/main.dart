@@ -572,12 +572,38 @@ class HvacToolsManagerApp extends StatelessWidget {
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
                               await authProvider.initialize();
                               
-                              // Navigate to appropriate screen based on auth state
+                              // Auto-login: Navigate directly to appropriate screen based on user role
                               final navigator = Navigator.of(context, rootNavigator: true);
-                              if (navigator.canPop()) {
-                                navigator.pop();
+                              
+                              // Clear all previous routes and navigate to the appropriate home screen
+                              if (authProvider.isAuthenticated) {
+                                if (authProvider.isAdmin) {
+                                  print('✅ Auto-logging in as admin');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/admin',
+                                    (route) => false,
+                                  );
+                                } else if (authProvider.isPendingApproval) {
+                                  print('✅ Auto-logging in - pending approval');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/pending-approval',
+                                    (route) => false,
+                                  );
+                                } else {
+                                  print('✅ Auto-logging in as technician');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/technician',
+                                    (route) => false,
+                                  );
+                                }
+                              } else {
+                                // Fallback: if not authenticated, go to login
+                                print('⚠️ Session created but not authenticated, redirecting to login');
+                                navigator.pushNamedAndRemoveUntil(
+                                  '/login',
+                                  (route) => false,
+                                );
                               }
-                              // The app will rebuild and _getInitialRoute will handle navigation
                             } else {
                               print('⚠️ No session returned from URL');
                               print('⚠️ This might mean the confirmation link is invalid or expired');
