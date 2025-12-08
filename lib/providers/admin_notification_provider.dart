@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
+import '../services/push_notification_service.dart';
 
 class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> _notifications = [];
@@ -164,6 +165,19 @@ class AdminNotificationProvider extends ChangeNotifier {
 
       final notificationId = result.toString();
       debugPrint('✅ Notification created with ID: $notificationId');
+
+      // Send push notification to admins (non-blocking)
+      PushNotificationService.sendToAdmins(
+        title: title ?? _getNotificationTitle(type, technicianName),
+        body: message ?? _getNotificationMessage(type, technicianName),
+        data: {
+          'type': type.value,
+          'notification_id': notificationId,
+          if (data != null) ...data,
+        },
+      ).catchError((e) {
+        debugPrint('⚠️ Could not send push notification: $e');
+      });
 
       // Create notification object from the data we already have
       // (We can't fetch it because technicians don't have SELECT permission on admin_notifications)

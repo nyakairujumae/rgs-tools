@@ -7,6 +7,7 @@ import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
 import '../../utils/responsive_helper.dart';
 import '../../models/user_role.dart';
+import '../../services/supabase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -574,8 +575,37 @@ class _LoginScreenState extends State<LoginScreen> {
       
       final authProvider = context.read<AuthProvider>();
       
+      final email = _emailController.text.trim();
+      
+      // Check if user exists in users table before attempting login
+      // If user doesn't exist, they haven't confirmed email yet
+      try {
+        final userCheck = await SupabaseService.client
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
+        
+        if (userCheck == null) {
+          // User doesn't exist - they haven't confirmed email
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Email not confirmed. Please check your email and click the confirmation link before logging in.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Could not check user existence: $e');
+        // Continue with login attempt - will fail if email not confirmed
+      }
+      
       await authProvider.signIn(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
       );
       

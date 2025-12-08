@@ -5,94 +5,46 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../config/firebase_config.dart';
 import 'supabase_service.dart';
 
+/// Clean Firebase Messaging Service - Fresh Implementation
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
-  static final FlutterLocalNotificationsPlugin _local =
+  static final FlutterLocalNotificationsPlugin _localNotifications = 
       FlutterLocalNotificationsPlugin();
-  static const String _androidChannelId = 'default_channel';
-  static const String _androidChannelName = 'General';
-  static const String _androidChannelDesc = 'General notifications';
+  
+  // Android notification channel
+  static const String _androidChannelId = 'rgs_notifications';
+  static const String _androidChannelName = 'RGS Notifications';
+  static const String _androidChannelDesc = 'Notifications from RGS Tools app';
 
-  static String? get fcmToken {
-    try {
-      // Check if Firebase is initialized before accessing messaging
-      if (Firebase.apps.isEmpty) {
-        debugPrint('⚠️ Firebase not initialized, cannot get FCM token');
-        return null;
-      }
-      return _fcmToken;
-    } catch (e) {
-      debugPrint('❌ Error getting FCM token: $e');
-      return null;
-    }
-  }
+  /// Get current FCM token
+  static String? get fcmToken => _fcmToken;
 
   /// Initialize Firebase Messaging
+  /// Call this after Firebase.initializeApp() completes
   static Future<void> initialize() async {
     try {
-      debugPrint('🔥 Initializing Firebase Messaging...');
+      debugPrint('🔥 [FCM] Starting initialization...');
       
-      // Check if Firebase is initialized - wait a bit and retry if needed
-      int retries = 0;
-      while (Firebase.apps.isEmpty && retries < 5) {
-        debugPrint('⏳ Waiting for Firebase initialization... (attempt ${retries + 1}/5)');
-        await Future.delayed(Duration(milliseconds: 500));
-        retries++;
-      }
-      
+      // Verify Firebase is initialized
       if (Firebase.apps.isEmpty) {
-        debugPrint('❌ Firebase not initialized after waiting. Please check Firebase setup.');
+        debugPrint('❌ [FCM] Firebase not initialized. Call Firebase.initializeApp() first.');
         return;
       }
       
-      debugPrint('✅ Firebase is initialized. Proceeding with FCM setup...');
+      debugPrint('✅ [FCM] Firebase is initialized');
       
-      // Initialize local notifications (for foreground + badge number)
-      const initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const initializationSettingsDarwin = DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-        onDidReceiveLocalNotification: null,
-      );
-      const initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid,
-        iOS: initializationSettingsDarwin,
-      );
-      await _local.initialize(initializationSettings);
-      // Ensure channel exists with showBadge
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        _androidChannelId,
-        _androidChannelName,
-        description: _androidChannelDesc,
-        importance: Importance.defaultImportance,
-        showBadge: true,
-      );
-      final androidPlugin = _local
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.createNotificationChannel(channel);
+      // Initialize local notifications
+      await _initializeLocalNotifications();
       
-      // Request permission for notifications
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      debugPrint('🔥 Notification permission status: ${settings.authorizationStatus}');
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('🔥 Notification permission granted');
+      // Request notification permissions
+      final permission = await _requestPermission();
+      
+      if (permission.authorizationStatus == AuthorizationStatus.authorized ||
+          permission.authorizationStatus == AuthorizationStatus.provisional) {
+        debugPrint('✅ [FCM] Notification permission granted');
         
         // Get FCM token
         await _getFCMToken();
@@ -103,249 +55,256 @@ class FirebaseMessagingService {
         // Subscribe to topics
         await _subscribeToTopics();
         
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('🔥 Provisional notification permission granted');
-        await _getFCMToken();
-        _setupMessageHandlers();
+        debugPrint('✅ [FCM] Initialization complete');
       } else {
-        debugPrint('❌ Notification permission denied');
+        debugPrint('❌ [FCM] Notification permission denied');
       }
-    } catch (e) {
-      debugPrint('❌ Error initializing Firebase Messaging: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FCM] Initialization error: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
     }
+  }
+
+  /// Initialize local notifications plugin
+  static Future<void> _initializeLocalNotifications() async {
+    try {
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+      
+      await _localNotifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+      
+      // Create Android notification channel
+      const androidChannel = AndroidNotificationChannel(
+        _androidChannelId,
+        _androidChannelName,
+        description: _androidChannelDesc,
+        importance: Importance.high,
+        showBadge: true,
+      );
+      
+      final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(androidChannel);
+      
+      debugPrint('✅ [FCM] Local notifications initialized');
+    } catch (e) {
+      debugPrint('❌ [FCM] Local notifications init error: $e');
+    }
+  }
+
+  /// Request notification permissions
+  static Future<NotificationSettings> _requestPermission() async {
+    return await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+      announcement: false,
+      carPlay: false,
+      criticalAlert: false,
+    );
   }
 
   /// Get FCM token
   static Future<void> _getFCMToken() async {
     try {
       _fcmToken = await _messaging.getToken();
-      debugPrint('🔥 FCM Token: $_fcmToken');
       
-      // Save token to shared preferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fcm_token', _fcmToken ?? '');
-      
-      // Send token to Supabase if user is authenticated
       if (_fcmToken != null) {
-        try {
-          final currentUser = SupabaseService.client.auth.currentUser;
-          if (currentUser != null) {
-            await sendTokenToServer(_fcmToken!, currentUser.id);
-          }
-        } catch (e) {
-          debugPrint('⚠️ Could not send FCM token to server (user may not be logged in): $e');
-        }
+        debugPrint('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
+        
+        // Save token locally
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', _fcmToken!);
+        
+        // Send token to server if user is logged in
+        await _sendTokenToServer(_fcmToken!);
+        
+        // Listen for token refresh
+        _messaging.onTokenRefresh.listen((newToken) async {
+          debugPrint('🔄 [FCM] Token refreshed');
+          _fcmToken = newToken;
+          await prefs.setString('fcm_token', newToken);
+          await _sendTokenToServer(newToken);
+        });
+      } else {
+        debugPrint('⚠️ [FCM] FCM token is null');
+      }
+    } catch (e) {
+      debugPrint('❌ [FCM] Error getting token: $e');
+    }
+  }
+
+  /// Send FCM token to Supabase
+  static Future<void> _sendTokenToServer(String token) async {
+    try {
+      final user = SupabaseService.client.auth.currentUser;
+      if (user == null) {
+        debugPrint('⚠️ [FCM] No user logged in, skipping token save');
+        return;
       }
       
-      // Listen for token refresh
-      _messaging.onTokenRefresh.listen((newToken) async {
-        debugPrint('🔥 FCM Token refreshed: $newToken');
-        _fcmToken = newToken;
-        
-        // Save to shared preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('fcm_token', newToken);
-        
-        // Send new token to server if user is authenticated
-        try {
-          final currentUser = SupabaseService.client.auth.currentUser;
-          if (currentUser != null) {
-            await sendTokenToServer(newToken, currentUser.id);
-          }
-        } catch (e) {
-          debugPrint('⚠️ Could not send refreshed FCM token to server: $e');
-        }
-      });
+      await SupabaseService.client
+          .from('user_fcm_tokens')
+          .upsert({
+            'user_id': user.id,
+            'fcm_token': token,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+      
+      debugPrint('✅ [FCM] Token saved to Supabase');
     } catch (e) {
-      debugPrint('❌ Error getting FCM token: $e');
+      debugPrint('❌ [FCM] Error saving token: $e');
     }
   }
 
   /// Set up message handlers
   static void _setupMessageHandlers() {
-    // Handle messages when app is in foreground
-    // Note: On iOS, if AppDelegate implements willPresent, the system will show the notification
-    // We still show a local notification as backup and to ensure badge is updated
+    // Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint('🔥 Received foreground message: ${message.messageId}');
-      debugPrint('🔥 Message data: ${message.data}');
-      debugPrint('🔥 Message notification: ${message.notification?.title}');
+      debugPrint('📱 [FCM] Foreground message received: ${message.notification?.title}');
       
-      // Handle foreground message
-      _handleForegroundMessage(message);
+      // Show local notification
+      await _showLocalNotification(message);
       
-      // Update badge count
-      final newCount = await _incrementBadgeCount();
-      
-      // Show local notification (iOS will also show via AppDelegate if configured)
-      // This ensures badge is updated and notification appears
-      await _showLocalFromMessage(message, badgeCount: newCount);
+      // Update badge
+      await _updateBadge();
     });
-
-    // Handle messages when app is opened from background
+    
+    // Background messages (when app is in background)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('🔥 App opened from background message: ${message.messageId}');
-      _handleBackgroundMessage(message);
+      debugPrint('📱 [FCM] App opened from notification: ${message.notification?.title}');
+      // Handle navigation if needed
     });
-
-    // Handle messages when app is terminated
+    
+    // Check if app was opened from terminated state
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('🔥 App opened from terminated state: ${message.messageId}');
-        _handleBackgroundMessage(message);
+        debugPrint('📱 [FCM] App opened from terminated state: ${message.notification?.title}');
+        // Handle navigation if needed
       }
     });
   }
 
-  /// Subscribe to relevant topics
-  static Future<void> _subscribeToTopics() async {
+  /// Show local notification
+  static Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      await _messaging.subscribeToTopic(FirebaseConfig.adminTopic);
-      await _messaging.subscribeToTopic(FirebaseConfig.newRegistrationTopic);
-      await _messaging.subscribeToTopic(FirebaseConfig.toolIssuesTopic);
+      final notification = message.notification;
+      if (notification == null) return;
       
-      debugPrint('🔥 Subscribed to FCM topics');
+      const androidDetails = AndroidNotificationDetails(
+        _androidChannelId,
+        _androidChannelName,
+        channelDescription: _androidChannelDesc,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+      );
+      
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+      
+      await _localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        details,
+      );
+      
+      debugPrint('✅ [FCM] Local notification shown');
     } catch (e) {
-      debugPrint('❌ Error subscribing to topics: $e');
+      debugPrint('❌ [FCM] Error showing notification: $e');
     }
   }
 
-  /// Handle foreground messages
-  static void _handleForegroundMessage(RemoteMessage message) {
-    // Show in-app notification or snackbar
-    if (kDebugMode) {
-      debugPrint('🔥 Foreground message: ${message.notification?.title}');
-    }
-    
-    // You can show a custom in-app notification here
-    // For now, just log the message
+  /// Handle notification tap
+  static void _onNotificationTapped(NotificationResponse response) {
+    debugPrint('📱 [FCM] Notification tapped: ${response.id}');
+    // Handle navigation if needed
   }
 
-  /// Handle background messages
-  static void _handleBackgroundMessage(RemoteMessage message) {
-    debugPrint('🔥 Background message: ${message.notification?.title}');
-    
-    // Navigate to relevant screen based on message data
-    final data = message.data;
-    if (data.containsKey('type')) {
-      switch (data['type']) {
-        case 'new_registration':
-          // Navigate to admin approval screen
-          debugPrint('🔥 Navigate to admin approval screen');
-          break;
-        case 'tool_issue':
-          // Navigate to tool issues screen
-          debugPrint('🔥 Navigate to tool issues screen');
-          break;
-        default:
-          debugPrint('🔥 Unknown message type: ${data['type']}');
-      }
-    }
-  }
-
-  /// Badge helpers
-  static const String _badgeKey = 'app_badge_count';
-
-  static Future<int> _incrementBadgeCount() async {
+  /// Update app badge
+  static Future<void> _updateBadge() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final current = prefs.getInt(_badgeKey) ?? 0;
-      final updated = current + 1;
-      await prefs.setInt(_badgeKey, updated);
-      if (await FlutterAppBadger.isAppBadgeSupported()) {
-        FlutterAppBadger.updateBadgeCount(updated);
-      }
-      return updated;
+      int badgeCount = prefs.getInt('badge_count') ?? 0;
+      badgeCount++;
+      await prefs.setInt('badge_count', badgeCount);
+      
+      await FlutterAppBadger.updateBadgeCount(badgeCount);
+      debugPrint('✅ [FCM] Badge updated: $badgeCount');
     } catch (e) {
-      debugPrint('⚠️ Failed to increment badge: $e');
-      return 0;
+      debugPrint('❌ [FCM] Error updating badge: $e');
     }
   }
 
+  /// Clear badge
   static Future<void> clearBadge() async {
     try {
+      await FlutterAppBadger.removeBadge();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_badgeKey, 0);
-      if (await FlutterAppBadger.isAppBadgeSupported()) {
-        FlutterAppBadger.removeBadge();
-      }
+      await prefs.setInt('badge_count', 0);
+      debugPrint('✅ [FCM] Badge cleared');
     } catch (e) {
-      debugPrint('⚠️ Failed to clear badge: $e');
+      debugPrint('❌ [FCM] Error clearing badge: $e');
     }
   }
 
-  static Future<void> _showLocalFromMessage(RemoteMessage msg,
-      {required int badgeCount}) async {
-    final title = msg.notification?.title ?? 'RGS';
-    final body = msg.notification?.body ?? 'You have a new notification';
-    final androidDetails = AndroidNotificationDetails(
-      _androidChannelId,
-      _androidChannelName,
-      channelDescription: _androidChannelDesc,
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-      showWhen: true,
-      number: badgeCount,
-    );
-    final darwinDetails = DarwinNotificationDetails(
-      badgeNumber: badgeCount,
-      presentAlert: true, // Show alert even in foreground
-      presentBadge: true, // Show badge
-      presentSound: true, // Play sound
-      interruptionLevel: InterruptionLevel.active, // iOS 15+ - show as active notification
-    );
-    final details = NotificationDetails(android: androidDetails, iOS: darwinDetails);
-    await _local.show(
-      (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
-      title,
-      body,
-      details,
-      payload: msg.data.isNotEmpty ? msg.data.toString() : null,
-    );
+  /// Subscribe to FCM topics
+  static Future<void> _subscribeToTopics() async {
+    try {
+      await _messaging.subscribeToTopic('admin');
+      await _messaging.subscribeToTopic('new_registration');
+      await _messaging.subscribeToTopic('tool_issues');
+      debugPrint('✅ [FCM] Subscribed to topics');
+    } catch (e) {
+      debugPrint('❌ [FCM] Error subscribing to topics: $e');
+    }
   }
 
-  /// Send token to server (Supabase)
+  /// Send token to server (public method for manual refresh)
   static Future<void> sendTokenToServer(String token, String userId) async {
     try {
-      debugPrint('🔥 Sending FCM token to server for user: $userId');
-      
-      // Upsert FCM token to Supabase
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
             'user_id': userId,
             'fcm_token': token,
-            'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
             'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id');
-      
-      debugPrint('✅ FCM token saved to Supabase successfully');
+          });
+      debugPrint('✅ [FCM] Token sent to server');
     } catch (e) {
-      debugPrint('❌ Error sending FCM token to server: $e');
-      // Don't throw - this is not critical for app functionality
+      debugPrint('❌ [FCM] Error sending token: $e');
     }
   }
 
-  /// Unsubscribe from topics
-  static Future<void> unsubscribeFromTopics() async {
-    try {
-      await _messaging.unsubscribeFromTopic(FirebaseConfig.adminTopic);
-      await _messaging.unsubscribeFromTopic(FirebaseConfig.newRegistrationTopic);
-      await _messaging.unsubscribeFromTopic(FirebaseConfig.toolIssuesTopic);
-      
-      debugPrint('🔥 Unsubscribed from FCM topics');
-    } catch (e) {
-      debugPrint('❌ Error unsubscribing from topics: $e');
-    }
-  }
-
-  /// Refresh FCM token
+  /// Refresh FCM token manually
   static Future<void> refreshToken() async {
     try {
       await _getFCMToken();
-      debugPrint('🔥 FCM token refreshed');
+      debugPrint('✅ [FCM] Token refreshed');
     } catch (e) {
-      debugPrint('❌ Error refreshing FCM token: $e');
+      debugPrint('❌ [FCM] Error refreshing token: $e');
     }
   }
 }
@@ -353,63 +312,18 @@ class FirebaseMessagingService {
 /// Background message handler (must be top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('🔥 Background message handler: ${message.messageId}');
-  debugPrint('🔥 Message data: ${message.data}');
-  // Increment stored count and update badge immediately; also show a local notif
+  await Firebase.initializeApp();
+  debugPrint('📱 [FCM] Background message: ${message.notification?.title}');
+  
+  // Update badge
   try {
     final prefs = await SharedPreferences.getInstance();
-    const badgeKey = 'app_badge_count';
-    final current = prefs.getInt(badgeKey) ?? 0;
-    final updated = current + 1;
-    await prefs.setInt(badgeKey, updated);
-    if (await FlutterAppBadger.isAppBadgeSupported()) {
-      FlutterAppBadger.updateBadgeCount(updated);
-    }
-    // Show local notification from background isolate
-    const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initializationSettingsDarwin = DarwinInitializationSettings();
-    const initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsDarwin,
-    );
-    final plugin = FlutterLocalNotificationsPlugin();
-    await plugin.initialize(initializationSettings);
-    const androidChannelId = 'default_channel';
-    const androidChannelName = 'General';
-    const androidChannelDesc = 'General notifications';
-    final AndroidNotificationChannel channel = AndroidNotificationChannel(
-      androidChannelId,
-      androidChannelName,
-      description: androidChannelDesc,
-      importance: Importance.defaultImportance,
-      showBadge: true,
-    );
-    final androidPlugin = plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.createNotificationChannel(channel);
-    final androidDetails = AndroidNotificationDetails(
-      androidChannelId,
-      androidChannelName,
-      channelDescription: androidChannelDesc,
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-      showWhen: true,
-      number: updated,
-    );
-    final darwinDetails = DarwinNotificationDetails(
-      badgeNumber: updated,
-    );
-    final details =
-        NotificationDetails(android: androidDetails, iOS: darwinDetails);
-    await plugin.show(
-      (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
-      message.notification?.title ?? 'RGS',
-      message.notification?.body ?? 'You have a new notification',
-      details,
-      payload: message.data.isNotEmpty ? message.data.toString() : null,
-    );
+    int badgeCount = prefs.getInt('badge_count') ?? 0;
+    badgeCount++;
+    await prefs.setInt('badge_count', badgeCount);
+    await FlutterAppBadger.updateBadgeCount(badgeCount);
   } catch (e) {
-    debugPrint('⚠️ Background badge/local notification failed: $e');
+    debugPrint('❌ [FCM] Error updating badge in background: $e');
   }
 }
+

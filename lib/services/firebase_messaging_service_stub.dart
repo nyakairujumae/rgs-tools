@@ -17,6 +17,7 @@ class FirebaseMessagingService {
   }
   
   static Future<void> refreshToken() async {
+    // Stub - no-op on web
     // No-op on web
   }
   

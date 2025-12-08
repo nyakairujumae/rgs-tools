@@ -32,6 +32,8 @@ class TechnicianHomeScreen extends StatefulWidget {
 }
 
 class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
+  int _unreadNotificationCount = 0;
+  Timer? _notificationRefreshTimer;
   int _selectedIndex = 0;
   bool _isDisposed = false;
   late final List<Widget> _screens;
@@ -60,7 +62,31 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
+      _refreshUnreadCount();
+      // Refresh unread count every 30 seconds
+      _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted && !_isDisposed) {
+          _refreshUnreadCount();
+        }
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _notificationRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refreshUnreadCount() async {
+    if (_isDisposed || !mounted) return;
+    final count = await _getUnreadNotificationCount(context);
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _unreadNotificationCount = count;
+      });
+    }
   }
 
   Widget _buildAccountMenuHeader(
@@ -288,12 +314,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   }
 
   @override
-  void dispose() {
-    _isDisposed = true;
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
@@ -311,7 +331,36 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: Icon(Icons.notifications_outlined),
+            icon: Stack(
+              children: [
+                Icon(Icons.notifications_outlined),
+                if (_unreadNotificationCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF28B82),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 20,
+                        minHeight: 20,
+                      ),
+                      child: Text(
+                        _unreadNotificationCount > 99 ? '99+' : _unreadNotificationCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             onPressed: () => _showNotifications(context),
             tooltip: 'Notifications',
           ),
@@ -510,6 +559,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   void _showNotifications(BuildContext context) {
     // Clear badge when opening notifications sheet
     FirebaseMessagingService.clearBadge();
+    // Refresh unread count
+    _refreshUnreadCount();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -652,6 +703,52 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
         );
       },
     );
+  }
+
+  /// Get unread notification count for technician
+  Future<int> _getUnreadNotificationCount(BuildContext context) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final technicianEmail = authProvider.user?.email;
+      if (technicianEmail == null) return 0;
+
+      int unreadCount = 0;
+
+      // Count unread from admin_notifications
+      try {
+        final adminNotifications = await SupabaseService.client
+            .from('admin_notifications')
+            .select('is_read')
+            .eq('technician_email', technicianEmail);
+        
+        unreadCount += (adminNotifications as List)
+            .where((n) => (n['is_read'] as bool?) != true)
+            .length;
+      } catch (e) {
+        debugPrint('⚠️ Error counting admin notifications: $e');
+      }
+
+      // Count unread from technician_notifications
+      try {
+        if (authProvider.user != null) {
+          final technicianNotifications = await SupabaseService.client
+              .from('technician_notifications')
+              .select('is_read')
+              .eq('user_id', authProvider.user!.id);
+          
+          unreadCount += (technicianNotifications as List)
+              .where((n) => (n['is_read'] as bool?) != true)
+              .length;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error counting technician notifications: $e');
+      }
+
+      return unreadCount;
+    } catch (e) {
+      debugPrint('Error getting unread count: $e');
+      return 0;
+    }
   }
 
   Future<List<Map<String, dynamic>>> _loadTechnicianNotifications(

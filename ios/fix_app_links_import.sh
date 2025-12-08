@@ -5,7 +5,15 @@
 # This script comments out problematic @import statements
 # The plugins will still work because Flutter's plugin system handles Swift plugins automatically
 
+set -euo pipefail
+
 GENERATED_FILE="${SRCROOT}/Runner/GeneratedPluginRegistrant.m"
+
+# Exit gracefully if file doesn't exist yet (it will be generated during build)
+if [ ! -f "$GENERATED_FILE" ]; then
+    echo "⚠️ GeneratedPluginRegistrant.m not found yet, skipping fix (will be generated during build)"
+    exit 0
+fi
 
 if [ -f "$GENERATED_FILE" ]; then
     # List of Swift-only plugins that cause @import issues with static frameworks
@@ -49,5 +57,7 @@ if [ -f "$GENERATED_FILE" ]; then
     perl -i -0pe 's/^\s*\[FVPVideoPlayerPlugin registerWithRegistrar:\[registry registrarForPlugin:@"FVPVideoPlayerPlugin"\]\];\s*$/\n  \/\/ [FVPVideoPlayerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FVPVideoPlayerPlugin"]]; \/\/ Swift-only\n/gm' "$GENERATED_FILE"
     
     echo "✅ Fixed Swift-only module imports in GeneratedPluginRegistrant.m"
+else
+    echo "⚠️ GeneratedPluginRegistrant.m not found, skipping fix"
 fi
 

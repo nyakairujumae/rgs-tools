@@ -18,6 +18,7 @@ import '../providers/connectivity_provider.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import 'tool_detail_screen.dart';
+import '../services/push_notification_service.dart';
 
 class SharedToolsScreen extends StatefulWidget {
   const SharedToolsScreen({super.key});
@@ -1038,6 +1039,39 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         });
         debugPrint('✅ Created technician notification for tool request');
         debugPrint('✅ Notification sent to technician: $ownerId');
+        
+        // Send push notification to the tool owner
+        try {
+          await PushNotificationService.sendToUser(
+            userId: ownerId,
+            title: 'Tool Request: ${tool.name}',
+            body: '$requesterName needs the tool "${tool.name}" that you currently have',
+            data: {
+              'type': 'tool_request',
+              'tool_id': tool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to tool owner');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to tool owner: $pushError');
+        }
+        
+        // Send push notification to admins
+        try {
+          await PushNotificationService.sendToAdmins(
+            title: 'Tool Request: ${tool.name}',
+            body: '$requesterName requested the tool "${tool.name}"',
+            data: {
+              'type': 'tool_request',
+              'tool_id': tool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to admins for tool request');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to admins: $pushError');
+        }
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');
         debugPrint('❌ Error details: ${e.toString()}');

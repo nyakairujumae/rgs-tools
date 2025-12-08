@@ -3,6 +3,7 @@ import '../models/tool_issue.dart';
 import '../services/supabase_service.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
+import '../services/push_notification_service.dart';
 
 class ToolIssueProvider with ChangeNotifier {
   List<ToolIssue> _issues = [];
@@ -130,6 +131,22 @@ class ToolIssueProvider with ChangeNotifier {
         );
         
         debugPrint('✅ Created notification for tool issue: ${newIssue.id}');
+        
+        // Send push notification to admins
+        try {
+          await PushNotificationService.sendToAdmins(
+            title: 'Issue Report',
+            body: '${technicianName} reported a ${issue.issueType.toLowerCase()} issue for ${issue.toolName}',
+            data: {
+              'type': 'issue_report',
+              'issue_id': newIssue.id,
+              'tool_id': issue.toolId,
+            },
+          );
+          debugPrint('✅ Push notification sent to admins for tool issue');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification for tool issue: $pushError');
+        }
       } catch (notificationError) {
         // Don't fail the issue creation if notification fails
         debugPrint('⚠️ Failed to create notification for tool issue: $notificationError');

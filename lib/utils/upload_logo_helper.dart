@@ -21,16 +21,9 @@ class UploadLogoHelper {
         return null;
       }
       
-      // Read the asset file
-      // Note: In Flutter, assets need to be loaded differently
-      // For now, we'll assume the file is accessible
-      // You might need to copy it to a temporary location first
-      
-      // Alternative: Use rootBundle to load asset
-      final byteData = await DefaultAssetBundle.of(
-        // This requires a BuildContext, so we'll use a different approach
-        // Let's create a file path approach instead
-      );
+      // Note: Asset upload requires BuildContext or rootBundle
+      // For now, manual upload via Supabase Dashboard is recommended
+      // See instructions below
       
       // For now, let's provide instructions
       debugPrint('📋 To upload rgs.jpg:');

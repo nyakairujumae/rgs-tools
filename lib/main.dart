@@ -769,10 +769,10 @@ class HvacToolsManagerApp extends StatelessWidget {
         return const LoginScreen();
       }
     } catch (e, stackTrace) {
-      // Always fallback to role selection screen on any error
+      // Always fallback to login screen on any error (for unauthenticated users)
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
-      return const RoleSelectionScreen();
+      return const LoginScreen();
     }
   }
 }

@@ -5,6 +5,7 @@ import '../models/admin_notification.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'admin_notification_provider.dart';
+import '../services/push_notification_service.dart';
 
 class PendingApproval {
   final String id;
@@ -252,22 +253,20 @@ class PendingApprovalsProvider extends ChangeNotifier {
             });
         debugPrint('✅ Created technician notification for approval in notification center');
         
-        // Also send a push notification if FCM is available
+        // Send push notification to the approved user
         try {
-          // Get the technician's FCM token if available
-          final fcmTokenResponse = await SupabaseService.client
-              .from('user_fcm_tokens')
-              .select('fcm_token')
-              .eq('user_id', approval.userId)
-              .maybeSingle();
-          
-          if (fcmTokenResponse != null && fcmTokenResponse['fcm_token'] != null) {
-            // Send push notification via Firebase Cloud Messaging
-            // This would typically be done via a Supabase Edge Function or backend service
-            debugPrint('📱 FCM token found for user, push notification can be sent');
-          }
-        } catch (fcmError) {
-          debugPrint('⚠️ Could not check FCM token: $fcmError');
+          await PushNotificationService.sendToUser(
+            userId: approval.userId,
+            title: 'Account Approved',
+            body: 'Your account has been approved! You can now access all features of the RGS app.',
+            data: {
+              'type': 'account_approved',
+              'approval_id': approval.id,
+            },
+          );
+          debugPrint('✅ Push notification sent to approved user');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to approved user: $pushError');
         }
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');

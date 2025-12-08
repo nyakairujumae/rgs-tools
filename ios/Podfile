@@ -74,8 +74,10 @@ post_install do |installer|
       # Fix for Xcode 14+ dependency scanning issues
       config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
 
-      # Fix for Xcode 14+
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
+      # CRITICAL: Ensure all pods use at least iOS 13.0 (Firebase requirement)
+      # Firebase requires iOS 13.0+, so we must enforce this for all pods
+      current_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      if current_target.nil? || current_target.to_f < 13.0
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
 

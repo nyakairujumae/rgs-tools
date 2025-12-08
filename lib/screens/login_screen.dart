@@ -65,8 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+          onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+            '/role-selection',
+            (route) => false,
           ),
         ),
       ),
@@ -263,8 +264,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Column(
                           children: [
                             TextButton(
-                              onPressed: () => Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+                              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/role-selection',
+                                (route) => false,
                               ),
                               child: Text(
                                 'Don\'t have an account? Register Here',

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:async';
 import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
+import '../services/push_notification_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
 
@@ -661,6 +662,22 @@ class AuthProvider with ChangeNotifier {
                 );
           
             debugPrint('✅ Created pending approval for technician: $email');
+            
+            // Send push notification to admins about new registration
+            try {
+              await PushNotificationService.sendToAdmins(
+                title: 'New User Registration',
+                body: '$name has registered and is waiting for approval',
+                data: {
+                  'type': 'new_registration',
+                  'user_id': _user!.id,
+                  'email': email,
+                },
+              );
+              debugPrint('✅ Push notification sent to admins for new registration');
+            } catch (pushError) {
+              debugPrint('⚠️ Could not send push notification for new registration: $pushError');
+            }
           }
           
           // IMPORTANT: Delete any user record that might have been created by the trigger
@@ -786,6 +803,8 @@ class AuthProvider with ChangeNotifier {
           attempt++;
           debugPrint('🔍 Sign in attempt $attempt/$maxAttempts...');
           
+          // First, check if user exists and is confirmed
+          // If email confirmation is enabled, unconfirmed users can't login
           response = await client.auth.signInWithPassword(
             email: email,
             password: password,
@@ -831,6 +850,7 @@ class AuthProvider with ChangeNotifier {
 
       if (authResponse.user != null) {
         _user = authResponse.user;
+        
         // Load user role - don't fail login if this fails
         try {
           await _loadUserRole();

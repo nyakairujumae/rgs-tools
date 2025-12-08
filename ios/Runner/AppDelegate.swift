@@ -15,9 +15,9 @@ import image_picker_ios
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
 
-    // NOTE: Firebase is initialized in Flutter (main.dart), not here
-    // Calling FirebaseApp.configure() here causes channel errors
-    // The Flutter Firebase plugin handles initialization automatically
+    // NOTE: Firebase initialization is handled by Flutter (main.dart)
+    // The Flutter Firebase plugin manages initialization itself
+    // Initializing here causes platform channel conflicts
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -69,22 +69,19 @@ import image_picker_ios
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
     print("✅ APNs token registered: \(tokenString)")
 
-    // VERY IMPORTANT: Pass APNs token to Firebase
-    // Wait for Firebase to be initialized by Flutter
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-      if FirebaseApp.app() != nil {
-        Messaging.messaging().apnsToken = deviceToken
-        print("✅ APNs token passed to Firebase Messaging")
-      } else {
-        print("⚠️ Firebase not yet initialized, will retry...")
-        // Retry after a bit more time
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-          if FirebaseApp.app() != nil {
-            Messaging.messaging().apnsToken = deviceToken
-            print("✅ APNs token passed to Firebase Messaging (retry)")
-          } else {
-            print("❌ Firebase still not initialized after retry")
-          }
+    // Pass APNs token to Firebase (Firebase is already initialized in didFinishLaunchingWithOptions)
+    if FirebaseApp.app() != nil {
+      Messaging.messaging().apnsToken = deviceToken
+      print("✅ APNs token passed to Firebase Messaging")
+    } else {
+      print("⚠️ Firebase not initialized, will retry...")
+      // Retry after a short delay (shouldn't be needed, but just in case)
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        if FirebaseApp.app() != nil {
+          Messaging.messaging().apnsToken = deviceToken
+          print("✅ APNs token passed to Firebase Messaging (retry)")
+        } else {
+          print("❌ Firebase still not initialized")
         }
       }
     }

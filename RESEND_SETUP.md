@@ -50,6 +50,26 @@ Once a domain is verified in Resend, you can use **any email address** with that
 
 **Note**: You don't need to verify individual email addresses - just verify the domain once, and all email addresses on that domain work automatically.
 
+### Step 3.1: Test the Sender Email Address (IMPORTANT!)
+
+**Before using an email address as the sender in Supabase, test it first:**
+
+1. **Go to Resend Dashboard** → **Emails** → **Send Email**
+2. **Send a test email**:
+   - **From**: `noreply@rgstools.app` (the address you want to use)
+   - **To**: Your personal email address
+   - **Subject**: Test Email
+   - **Body**: This is a test to verify the sender email works
+3. **Click "Send"**
+4. **Check your inbox** (and spam folder)
+5. **If you receive the email**: ✅ The sender address works, you can use it in Supabase
+6. **If you don't receive the email**: 
+   - Check Resend dashboard for delivery status
+   - Verify domain is fully verified (not just pending)
+   - Try a different email address like `support@rgstools.app`
+
+**Why this matters**: Even though the domain is verified, it's good practice to test the specific email address you'll use as the sender to ensure it works correctly.
+
 ### Option B: Use Resend's Test Domain (For Testing)
 
 For testing, you can use Resend's test domain:
@@ -95,15 +115,30 @@ Sender Name: RGS Tools
 
 ### Step 4.4: Test Email Configuration
 
+**IMPORTANT**: Before testing in Supabase, make sure you've tested the sender email in Resend (Step 3.1 above).
+
 1. Click **"Send Test Email"** button
 2. Enter your email address
 3. Click **"Send"**
 4. Check your inbox (and spam folder) for the test email
-5. If you receive the email, click **"Save"** to save the configuration
+5. **If test email is received**: ✅ SMTP configuration is correct, click **"Save"**
+6. **If test email fails**: 
+   - Double-check all SMTP settings
+   - Verify sender email was tested in Resend first
+   - Check Resend dashboard for any errors
 
 ---
 
-## ✅ Step 5: Verify Email Confirmation Settings
+## ✅ Step 5: Verify Sender Email Works
+
+Before proceeding, ensure you've:
+1. ✅ Verified your domain in Resend (`rgstools.app`)
+2. ✅ Tested sending an email FROM `noreply@rgstools.app` in Resend dashboard
+3. ✅ Received the test email successfully
+
+If the test email in Resend works, then the sender email is ready to use in Supabase.
+
+## ✅ Step 6: Verify Email Confirmation Settings
 
 1. Go to **Authentication** → **Settings**
 2. Ensure **"Enable email confirmations"** is **ON**
@@ -111,7 +146,7 @@ Sender Name: RGS Tools
 
 ---
 
-## 🔗 Step 6: Configure Redirect URLs (If Not Already Done)
+## 🔗 Step 7: Configure Redirect URLs (If Not Already Done)
 
 1. Go to **Authentication** → **URL Configuration**
 2. Set **Site URL**: `com.rgs.app://`
@@ -121,7 +156,7 @@ Sender Name: RGS Tools
 
 ---
 
-## 📊 Step 7: Update Email Rate Limits
+## 📊 Step 8: Update Email Rate Limits
 
 After setting up Resend SMTP:
 
@@ -222,8 +257,10 @@ Sender Name: RGS Tools
 - [ ] Resend account created
 - [ ] API key generated and saved
 - [ ] Domain verified (for production) or using test domain (for testing)
+- [ ] **Sender email tested in Resend dashboard** (send test email FROM the address you'll use)
+- [ ] **Test email received successfully** (verify the sender email works)
 - [ ] SMTP configured in Supabase with correct settings
-- [ ] Test email sent and received successfully
+- [ ] Test email sent from Supabase and received successfully
 - [ ] Email confirmations enabled in Supabase
 - [ ] Redirect URLs configured
 - [ ] Rate limits updated

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
+import '../services/push_notification_service.dart';
 
 class SupabaseToolProvider with ChangeNotifier {
   List<Tool> _tools = [];
@@ -45,6 +46,23 @@ class SupabaseToolProvider with ChangeNotifier {
       _tools.add(createdTool);
       notifyListeners();
       debugPrint('✅ Tool added successfully: ${createdTool.id}');
+      
+      // Send push notification to admins about new tool (non-blocking)
+      try {
+        await PushNotificationService.sendToAdmins(
+          title: 'New Tool Added',
+          body: '${tool.name} has been added to the inventory',
+          data: {
+            'type': 'tool_added',
+            'tool_id': createdTool.id,
+            'tool_name': tool.name,
+          },
+        );
+        debugPrint('✅ Push notification sent to admins for new tool');
+      } catch (pushError) {
+        debugPrint('⚠️ Could not send push notification for new tool: $pushError');
+      }
+      
       return createdTool;
     } catch (e, stackTrace) {
       debugPrint('❌ Error adding tool: $e');

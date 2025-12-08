@@ -758,20 +758,11 @@ class _TechnicianRegistrationScreenState
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                },
-                child: Text(
-                  'I\'ll check later',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
+                  // Navigate to login screen - user must confirm email before accessing app
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
@@ -781,7 +772,7 @@ class _TechnicianRegistrationScreenState
                   ),
                 ),
                 child: Text(
-                  'Got it, continue',
+                  'Go to Login',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                   ),

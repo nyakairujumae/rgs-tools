@@ -14,7 +14,7 @@ extension ImageHelperMobile on stub.ImageHelper {
   ) {
     final file = File(path);
     if (!file.existsSync()) {
-      return errorWidget ?? stub.ImageHelper._defaultPlaceholder(width, height);
+      return errorWidget ?? stub.ImageHelper.defaultPlaceholder(width, height);
     }
     
     return Image.file(
@@ -23,7 +23,7 @@ extension ImageHelperMobile on stub.ImageHelper {
       height: height,
       fit: fit,
       errorBuilder: (context, error, stackTrace) {
-        return errorWidget ?? stub.ImageHelper._defaultPlaceholder(width, height);
+        return errorWidget ?? stub.ImageHelper.defaultPlaceholder(width, height);
       },
     );
   }

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 class ImageHelper {
-  static Widget _defaultPlaceholder(double? width, double? height) {
+  static Widget defaultPlaceholder(double? width, double? height) {
     return Container(
       width: width,
       height: height,
