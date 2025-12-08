@@ -279,10 +279,11 @@ void main() async {
 
 /// Initialize Firebase synchronously with retry logic and error handling
 /// Returns true if successful, false if failed
+/// NOTE: Firebase is initialized natively in AppDelegate.swift, so we just need to verify it's ready
 Future<bool> _initializeFirebaseSync() async {
-  // Check if Firebase is already initialized
+  // Check if Firebase is already initialized (should be, since AppDelegate initializes it)
   if (Firebase.apps.isNotEmpty) {
-    print('✅ [Firebase] Already initialized');
+    print('✅ [Firebase] Already initialized (by AppDelegate)');
     try {
       await fcm_service.FirebaseMessagingService.initialize();
       print('✅ [Firebase] FCM service initialized');
@@ -292,6 +293,9 @@ Future<bool> _initializeFirebaseSync() async {
       return false;
     }
   }
+  
+  // If not initialized, try to initialize (shouldn't be needed since AppDelegate does it)
+  print('⚠️ [Firebase] Not initialized by AppDelegate, initializing from Flutter...');
   
   // Retry logic for channel errors
   int maxRetries = 3;

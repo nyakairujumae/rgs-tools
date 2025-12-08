@@ -15,9 +15,11 @@ import image_picker_ios
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
 
-    // NOTE: Firebase initialization is handled by Flutter (main.dart)
-    // The Flutter Firebase plugin manages initialization itself
-    // Initializing here causes platform channel conflicts
+    // CRITICAL: Initialize Firebase natively BEFORE Flutter plugins load
+    // This ensures the native Firebase SDK is ready when Flutter tries to use it
+    // Without this, Flutter gets "channel-error" because the native side isn't initialized
+    FirebaseApp.configure()
+    print("✅ Firebase initialized natively in AppDelegate")
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -69,22 +71,9 @@ import image_picker_ios
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
     print("✅ APNs token registered: \(tokenString)")
 
-    // Pass APNs token to Firebase (Firebase is already initialized in didFinishLaunchingWithOptions)
-    if FirebaseApp.app() != nil {
-      Messaging.messaging().apnsToken = deviceToken
-      print("✅ APNs token passed to Firebase Messaging")
-    } else {
-      print("⚠️ Firebase not initialized, will retry...")
-      // Retry after a short delay (shouldn't be needed, but just in case)
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-        if FirebaseApp.app() != nil {
-          Messaging.messaging().apnsToken = deviceToken
-          print("✅ APNs token passed to Firebase Messaging (retry)")
-        } else {
-          print("❌ Firebase still not initialized")
-        }
-      }
-    }
+    // Pass APNs token to Firebase (Firebase is initialized in didFinishLaunchingWithOptions)
+    Messaging.messaging().apnsToken = deviceToken
+    print("✅ APNs token passed to Firebase Messaging")
 
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
