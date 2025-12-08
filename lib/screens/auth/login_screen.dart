@@ -462,7 +462,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              // Use pushNamedAndRemoveUntil to clear the navigation stack
+                              // and navigate to role selection screen
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                '/role-selection',
+                                (route) => false,
+                              );
                             },
                             style: TextButton.styleFrom(
                               padding: ResponsiveHelper.getResponsivePadding(
