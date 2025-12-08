@@ -170,16 +170,21 @@ apply plugin: 'com.google.gms.google-services'
 ### Step 1: Deploy Edge Function
 The Edge Function is located at: `supabase/functions/send-push-notification/index.ts`
 
-**Deploy it:**
+**Deploy it from the project root:**
 ```bash
-cd supabase/functions/send-push-notification
+# Make sure you're in the project root directory (not inside the function folder)
+cd "/Users/jumae/Desktop/rgs app"
+supabase functions deploy send-push-notification --project-ref npgwikkvtxebzwtpzwgx
+```
+
+**OR** if you've linked your project:
+```bash
 supabase functions deploy send-push-notification
 ```
 
-**OR** use Supabase CLI:
-```bash
-supabase functions deploy send-push-notification --project-ref YOUR_PROJECT_REF
-```
+**Important**: Run this command from the **project root**, not from inside the `send-push-notification` directory.
+
+**Note**: The Docker warning is non-critical - deployment will still work.
 
 ### Step 2: Set Up Secrets in Supabase
 1. Go to **Supabase Dashboard** → **Settings** → **Edge Functions** → **Secrets**
