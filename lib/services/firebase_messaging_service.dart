@@ -150,13 +150,14 @@ class FirebaseMessagingService {
 
   /// Send FCM token to Supabase
   static Future<void> _sendTokenToServer(String token) async {
+    // Get user outside try block so it's accessible in catch block
+    final user = SupabaseService.client.auth.currentUser;
+    if (user == null) {
+      debugPrint('⚠️ [FCM] No user logged in, skipping token save');
+      return;
+    }
+    
     try {
-      final user = SupabaseService.client.auth.currentUser;
-      if (user == null) {
-        debugPrint('⚠️ [FCM] No user logged in, skipping token save');
-        return;
-      }
-      
       // Detect platform
       final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
       
@@ -186,11 +187,12 @@ class FirebaseMessagingService {
         debugPrint('⚠️ [FCM] Duplicate key error - trying update instead...');
         // Try update instead
         try {
+          final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
           await SupabaseService.client
               .from('user_fcm_tokens')
               .update({
                 'fcm_token': token,
-                'platform': Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown'),
+                'platform': platform,
                 'updated_at': DateTime.now().toIso8601String(),
               })
               .eq('user_id', user.id);
