@@ -224,35 +224,55 @@ void main() async {
   runApp(const HvacToolsManagerApp());
   
   // Initialize Firebase AFTER app starts (platform channels need app to be running)
+  // Use a periodic retry mechanism since iOS platform channels can take time to be ready
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // Wait a bit longer for iOS native bridge to be ready
-    await Future.delayed(const Duration(seconds: 1));
+    // Wait longer for iOS native bridge to be ready
+    await Future.delayed(const Duration(seconds: 3));
     
-    try {
-      print('🔥 Initializing Firebase after app start...');
-      final success = await _initializeFirebaseSync();
-      if (success) {
-        if (isSimulator) {
-          print('✅ Firebase initialized on simulator - push notifications won\'t work but app functions normally');
+    // Try to initialize Firebase with periodic retries
+    bool initialized = false;
+    int maxAttempts = 10; // Try for up to 30 seconds (10 attempts * 3 seconds)
+    int attempt = 0;
+    
+    while (!initialized && attempt < maxAttempts) {
+      attempt++;
+      try {
+        print('🔥 [Firebase] Initialization attempt $attempt/$maxAttempts (after ${attempt * 3}s)...');
+        final success = await _initializeFirebaseSync();
+        if (success) {
+          initialized = true;
+          if (isSimulator) {
+            print('✅ Firebase initialized on simulator - push notifications won\'t work but app functions normally');
+          } else {
+            print('✅ Firebase initialization complete - push notifications ready');
+          }
         } else {
-          print('✅ Firebase initialization complete - push notifications ready');
+          if (attempt < maxAttempts) {
+            print('⚠️ [Firebase] Initialization failed, will retry in 3 seconds...');
+            await Future.delayed(const Duration(seconds: 3));
+          } else {
+            if (isSimulator) {
+              print('⚠️ Firebase initialization failed on simulator after $maxAttempts attempts - this may be simulator-specific');
+              print('⚠️ Try testing on a real device to verify if it\'s a simulator issue');
+            } else {
+              print('⚠️ Firebase initialization failed after $maxAttempts attempts - app will continue without push notifications');
+            }
+          }
         }
-      } else {
-        if (isSimulator) {
-          print('⚠️ Firebase initialization failed on simulator - this may be simulator-specific');
-          print('⚠️ Try testing on a real device to verify if it\'s a simulator issue');
+      } catch (e, stackTrace) {
+        if (attempt < maxAttempts) {
+          print('❌ [Firebase] Attempt $attempt failed: $e');
+          print('⚠️ Will retry in 3 seconds...');
+          await Future.delayed(const Duration(seconds: 3));
         } else {
-          print('⚠️ Firebase initialization failed - app will continue without push notifications');
+          print('❌ Firebase initialization failed after $maxAttempts attempts: $e');
+          if (isSimulator) {
+            print('⚠️ This might be simulator-specific - test on real device');
+          } else {
+            print('⚠️ App will continue without push notifications');
+          }
         }
       }
-    } catch (e, stackTrace) {
-      print('❌ Firebase initialization failed: $e');
-      if (isSimulator) {
-        print('⚠️ This might be simulator-specific - test on real device');
-      } else {
-        print('⚠️ App will continue without push notifications');
-      }
-      // App can still run without Firebase
     }
   });
 }
