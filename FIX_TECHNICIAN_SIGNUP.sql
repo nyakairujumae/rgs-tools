@@ -8,6 +8,7 @@
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_email_confirmed ON auth.users;
 DROP TRIGGER IF EXISTS check_email_domain_trigger ON auth.users;
+DROP TRIGGER IF EXISTS on_technician_email_auto_confirm ON auth.users;
 
 -- ===========================================
 -- STEP 2: Drop and recreate functions cleanly
@@ -17,6 +18,7 @@ DROP FUNCTION IF EXISTS public.handle_new_auth_user() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_email_confirmed_user() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.check_email_domain() CASCADE;
+DROP FUNCTION IF EXISTS public.auto_confirm_technician_email() CASCADE;
 
 -- ===========================================
 -- STEP 3: Create a minimal trigger that allows signup
