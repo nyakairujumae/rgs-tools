@@ -597,10 +597,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   );
                                 }
                               } else {
-                                // Fallback: if not authenticated, go to login
-                                print('⚠️ Session created but not authenticated, redirecting to login');
+                                // Fallback: if not authenticated, go to role selection
+                                print('⚠️ Session created but not authenticated, redirecting to role selection');
                                 navigator.pushNamedAndRemoveUntil(
-                                  '/login',
+                                  '/role-selection',
                                   (route) => false,
                                 );
                               }
@@ -608,21 +608,31 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('⚠️ No session returned from URL');
                               print('⚠️ This might mean the confirmation link is invalid or expired');
                               
-                              // Show error message
+                              // Show error message and redirect to role selection
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('Email confirmation failed. The link may be invalid or expired.'),
                                     backgroundColor: Colors.red,
+                                    duration: Duration(seconds: 5),
                                   ),
                                 );
+                                // Redirect to role selection after showing error
+                                Future.delayed(Duration(seconds: 2), () {
+                                  if (context.mounted) {
+                                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                      '/role-selection',
+                                      (route) => false,
+                                    );
+                                  }
+                                });
                               }
                             }
                           } catch (e, stackTrace) {
                             print('❌ Error getting session from URL: $e');
                             print('❌ Stack trace: $stackTrace');
                             
-                            // Show error message to user
+                            // Show error message to user and redirect to role selection
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -631,6 +641,15 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   duration: Duration(seconds: 5),
                                 ),
                               );
+                              // Redirect to role selection after showing error
+                              Future.delayed(Duration(seconds: 2), () {
+                                if (context.mounted) {
+                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                    '/role-selection',
+                                    (route) => false,
+                                  );
+                                }
+                              });
                             }
                           }
                         });
@@ -752,9 +771,10 @@ class HvacToolsManagerApp extends StatelessWidget {
             ),
           );
         } else if (!authProvider.isEmailConfirmed) {
-          // Email not confirmed - redirect to login
-          print('❌ Email not confirmed - redirecting to login');
-          return const LoginScreen();
+          // Email not confirmed - show role selection (user needs to confirm email first)
+          // After confirmation, they'll be auto-logged in via deep link
+          print('❌ Email not confirmed - showing role selection');
+          return const RoleSelectionScreen();
         } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
           // Check approval status for technicians
           print('🔍 Technician user detected, checking approval status...');
@@ -765,14 +785,14 @@ class HvacToolsManagerApp extends StatelessWidget {
           return const TechnicianHomeScreen();
         }
       } else {
-        print('🔍 User not authenticated, showing login screen');
-        return const LoginScreen();
+        print('🔍 User not authenticated, showing role selection screen');
+        return const RoleSelectionScreen();
       }
     } catch (e, stackTrace) {
-      // Always fallback to login screen on any error (for unauthenticated users)
+      // Always fallback to role selection screen on any error (for new installs)
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
-      return const LoginScreen();
+      return const RoleSelectionScreen();
     }
   }
 }
