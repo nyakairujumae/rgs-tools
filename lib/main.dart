@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, kDebugMode;
+import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -204,71 +205,141 @@ void main() async {
       }
     }
 
+  // Initialize Firebase BEFORE running the app (skip on web)
+  // This ensures Firebase is ready before any widgets try to use it
+  if (!kIsWeb) {
+    // Check if running on simulator
+    final isSimulator = defaultTargetPlatform == TargetPlatform.iOS && 
+                        (Platform.environment['SIMULATOR_DEVICE_NAME'] != null || 
+                         Platform.environment['SIMULATOR_ROOT'] != null);
+    
+    if (isSimulator) {
+      print('📱 Running on iOS Simulator - Firebase may have limitations');
+      print('⚠️ Push notifications won\'t work on simulator (APNs limitation)');
+      print('⚠️ But Firebase initialization should still work');
+    }
+    
+    try {
+      print('🔥 Initializing Firebase before app start...');
+      final success = await _initializeFirebaseSync();
+      if (success) {
+        if (isSimulator) {
+          print('✅ Firebase initialized on simulator - push notifications won\'t work but app functions normally');
+        } else {
+          print('✅ Firebase initialization complete - push notifications ready');
+        }
+      } else {
+        if (isSimulator) {
+          print('⚠️ Firebase initialization failed on simulator - this may be simulator-specific');
+          print('⚠️ Try testing on a real device to verify if it\'s a simulator issue');
+        } else {
+          print('⚠️ Firebase initialization failed - app will continue without push notifications');
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ Firebase initialization failed: $e');
+      if (isSimulator) {
+        print('⚠️ This might be simulator-specific - test on real device');
+      } else {
+        print('⚠️ App will continue without push notifications');
+      }
+      // App can still run without Firebase
+    }
+  }
+
   print('Starting app...');
   
-  // Run the app first, then initialize Firebase asynchronously
+  // Run the app
   runApp(const HvacToolsManagerApp());
-  
-  // Initialize Firebase asynchronously after the app starts (skip on web)
-  if (!kIsWeb) {
-    // Wait for the first frame to ensure native bridge is ready
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _initializeFirebaseAsync();
-    });
-  }
 }
 
-/// Initialize Firebase asynchronously with retry logic and error handling
-Future<void> _initializeFirebaseAsync() async {
-  try {
-    // Wait for Flutter engine and native bridge to be fully ready
-    // This helps avoid channel errors by ensuring everything is initialized
-    await Future.delayed(const Duration(milliseconds: 1500));
-    
-    print('🔥 [Firebase] Starting initialization...');
-    
-    // Check if Firebase is already initialized
-    if (Firebase.apps.isNotEmpty) {
-      print('✅ [Firebase] Already initialized');
-      try {
-        await fcm_service.FirebaseMessagingService.initialize();
-      } catch (e) {
-        print('⚠️ [Firebase] FCM service init failed (non-critical): $e');
-      }
-      return;
-    }
-    
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    print('✅ [Firebase] Initialized successfully');
-    
-    // Register background message handler
-    try {
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      print('✅ [Firebase] Background message handler registered');
-    } catch (e) {
-      print('⚠️ [Firebase] Background handler registration failed (non-critical): $e');
-    }
-    
-    // Initialize FCM service
+/// Initialize Firebase synchronously with retry logic and error handling
+/// Returns true if successful, false if failed
+Future<bool> _initializeFirebaseSync() async {
+  // Check if Firebase is already initialized
+  if (Firebase.apps.isNotEmpty) {
+    print('✅ [Firebase] Already initialized');
     try {
       await fcm_service.FirebaseMessagingService.initialize();
       print('✅ [Firebase] FCM service initialized');
+      return true;
     } catch (e) {
-      print('⚠️ [Firebase] FCM service initialization failed: $e');
-      print('⚠️ [Firebase] Push notifications may not work');
+      print('⚠️ [Firebase] FCM service init failed (non-critical): $e');
+      return false;
     }
-    
-    print('✅ [Firebase] Setup complete');
-  } catch (e, stackTrace) {
-    print('❌ [Firebase] Setup failed: $e');
-    print('❌ [Firebase] Stack trace: $stackTrace');
-    print('⚠️ [Firebase] App will continue without push notifications');
-    // Don't throw - let app continue without Firebase
   }
+  
+  // Retry logic for channel errors
+  int maxRetries = 3;
+  for (int attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      print('🔥 [Firebase] Initialization attempt $attempt/$maxRetries...');
+      
+      // Small delay to ensure platform channel is ready
+      if (attempt == 1) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      } else {
+        // Exponential backoff for retries
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+      }
+      
+      // Initialize Firebase
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException('Firebase initialization timed out');
+        },
+      );
+      
+      print('✅ [Firebase] Initialized successfully');
+      
+      // Register background message handler
+      try {
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        print('✅ [Firebase] Background message handler registered');
+      } catch (e) {
+        print('⚠️ [Firebase] Background handler registration failed (non-critical): $e');
+      }
+      
+      // Initialize FCM service
+      try {
+        await fcm_service.FirebaseMessagingService.initialize();
+        print('✅ [Firebase] FCM service initialized');
+      } catch (e) {
+        print('⚠️ [Firebase] FCM service initialization failed: $e');
+        print('⚠️ [Firebase] Push notifications may not work');
+      }
+      
+      print('✅ [Firebase] Setup complete');
+      return true; // Success, exit retry loop
+      
+    } catch (e, stackTrace) {
+      print('❌ [Firebase] Attempt $attempt failed: $e');
+      
+      // If it's a channel error and we have retries left, wait and retry
+      if (e is PlatformException && 
+          e.code == 'channel-error' && 
+          attempt < maxRetries) {
+        print('⏳ [Firebase] Channel error detected, waiting before retry...');
+        await Future.delayed(Duration(milliseconds: 500 * attempt)); // Exponential backoff
+        continue; // Retry
+      }
+      
+      // If last attempt or non-channel error, give up
+      if (attempt == maxRetries) {
+        print('❌ [Firebase] All $maxRetries attempts failed');
+        print('❌ [Firebase] Stack trace: $stackTrace');
+        print('⚠️ [Firebase] App will continue without push notifications');
+        // Don't throw - let app continue without Firebase
+        return false;
+      }
+    }
+  }
+  
+  // If we get here, all attempts failed
+  return false;
 }
 
 class ErrorBoundary extends StatelessWidget {
@@ -453,8 +524,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                 if (isAuthCallback) {
                   print('🔐 Auth deep link detected: $uriString');
                   final uri = Uri.parse(uriString);
-                  
-                  // Handle email confirmation callback
+                
+                // Handle email confirmation callback
                   final type = uri.queryParameters['type'];
                   final hasAccessToken = uri.queryParameters.containsKey('access_token');
                   
@@ -655,9 +726,9 @@ class HvacToolsManagerApp extends StatelessWidget {
             ),
           );
         } else if (!authProvider.isEmailConfirmed) {
-          // Email not confirmed - show message and redirect to login
-          print('❌ Email not confirmed - blocking access');
-          return const RoleSelectionScreen();
+          // Email not confirmed - redirect to login
+          print('❌ Email not confirmed - redirecting to login');
+          return const LoginScreen();
         } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
           // Check approval status for technicians
           print('🔍 Technician user detected, checking approval status...');
@@ -668,8 +739,8 @@ class HvacToolsManagerApp extends StatelessWidget {
           return const TechnicianHomeScreen();
         }
       } else {
-        print('🔍 User not authenticated, showing role selection screen');
-        return const RoleSelectionScreen();
+        print('🔍 User not authenticated, showing login screen');
+        return const LoginScreen();
       }
     } catch (e, stackTrace) {
       // Always fallback to role selection screen on any error
