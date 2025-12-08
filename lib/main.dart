@@ -54,7 +54,11 @@ void main() async {
     print('Stack trace: ${details.stack}');
   };
 
-  // Firebase will be initialized asynchronously after app starts
+  // Firebase is initialized natively in AppDelegate.swift (iOS) or before runApp (Android)
+  // Register background message handler
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   // Initialize Supabase (works on web too)
   print('Initializing Supabase...');
@@ -205,170 +209,12 @@ void main() async {
       }
     }
 
-  // Initialize Firebase BEFORE running the app (skip on web)
-  // This ensures Firebase is ready before any widgets try to use it
-  // Check if running on simulator (outside if block so it's accessible in callback)
-  final isSimulator = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS && 
-                      (Platform.environment['SIMULATOR_DEVICE_NAME'] != null || 
-                       Platform.environment['SIMULATOR_ROOT'] != null);
-  
-  if (!kIsWeb && isSimulator) {
-    print('📱 Running on iOS Simulator - Firebase may have limitations');
-    print('⚠️ Push notifications won\'t work on simulator (APNs limitation)');
-    print('⚠️ But Firebase initialization should still work');
-  }
-
   print('Starting app...');
   
-  // Run the app first - Firebase will initialize after app starts
+  // Run the app
   runApp(const HvacToolsManagerApp());
-  
-  // Initialize Firebase AFTER app starts (platform channels need app to be running)
-  // Use a periodic retry mechanism since iOS platform channels can take time to be ready
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // Wait longer for iOS native bridge to be ready
-    await Future.delayed(const Duration(seconds: 3));
-    
-    // Try to initialize Firebase with periodic retries
-    bool initialized = false;
-    int maxAttempts = 10; // Try for up to 30 seconds (10 attempts * 3 seconds)
-    int attempt = 0;
-    
-    while (!initialized && attempt < maxAttempts) {
-      attempt++;
-      try {
-        print('🔥 [Firebase] Initialization attempt $attempt/$maxAttempts (after ${attempt * 3}s)...');
-        final success = await _initializeFirebaseSync();
-        if (success) {
-          initialized = true;
-          if (isSimulator) {
-            print('✅ Firebase initialized on simulator - push notifications won\'t work but app functions normally');
-          } else {
-            print('✅ Firebase initialization complete - push notifications ready');
-          }
-        } else {
-          if (attempt < maxAttempts) {
-            print('⚠️ [Firebase] Initialization failed, will retry in 3 seconds...');
-            await Future.delayed(const Duration(seconds: 3));
-          } else {
-            if (isSimulator) {
-              print('⚠️ Firebase initialization failed on simulator after $maxAttempts attempts - this may be simulator-specific');
-              print('⚠️ Try testing on a real device to verify if it\'s a simulator issue');
-            } else {
-              print('⚠️ Firebase initialization failed after $maxAttempts attempts - app will continue without push notifications');
-            }
-          }
-        }
-      } catch (e, stackTrace) {
-        if (attempt < maxAttempts) {
-          print('❌ [Firebase] Attempt $attempt failed: $e');
-          print('⚠️ Will retry in 3 seconds...');
-          await Future.delayed(const Duration(seconds: 3));
-        } else {
-          print('❌ Firebase initialization failed after $maxAttempts attempts: $e');
-          if (isSimulator) {
-            print('⚠️ This might be simulator-specific - test on real device');
-          } else {
-            print('⚠️ App will continue without push notifications');
-          }
-        }
-      }
-    }
-  });
 }
 
-/// Initialize Firebase synchronously with retry logic and error handling
-/// Returns true if successful, false if failed
-/// NOTE: Firebase is initialized natively in AppDelegate.swift, so we just need to verify it's ready
-Future<bool> _initializeFirebaseSync() async {
-  // Check if Firebase is already initialized (should be, since AppDelegate initializes it)
-  if (Firebase.apps.isNotEmpty) {
-    print('✅ [Firebase] Already initialized (by AppDelegate)');
-    try {
-      await fcm_service.FirebaseMessagingService.initialize();
-      print('✅ [Firebase] FCM service initialized');
-      return true;
-    } catch (e) {
-      print('⚠️ [Firebase] FCM service init failed (non-critical): $e');
-      return false;
-    }
-  }
-  
-  // If not initialized, try to initialize (shouldn't be needed since AppDelegate does it)
-  print('⚠️ [Firebase] Not initialized by AppDelegate, initializing from Flutter...');
-  
-  // Retry logic for channel errors
-  int maxRetries = 3;
-  for (int attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      print('🔥 [Firebase] Initialization attempt $attempt/$maxRetries...');
-      
-      // Small delay to ensure platform channel is ready
-      if (attempt == 1) {
-        await Future.delayed(const Duration(milliseconds: 500));
-      } else {
-        // Exponential backoff for retries
-        await Future.delayed(Duration(milliseconds: 500 * attempt));
-      }
-      
-      // Initialize Firebase
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw TimeoutException('Firebase initialization timed out');
-        },
-      );
-      
-      print('✅ [Firebase] Initialized successfully');
-      
-      // Register background message handler
-      try {
-        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-        print('✅ [Firebase] Background message handler registered');
-      } catch (e) {
-        print('⚠️ [Firebase] Background handler registration failed (non-critical): $e');
-      }
-      
-      // Initialize FCM service
-      try {
-        await fcm_service.FirebaseMessagingService.initialize();
-        print('✅ [Firebase] FCM service initialized');
-      } catch (e) {
-        print('⚠️ [Firebase] FCM service initialization failed: $e');
-        print('⚠️ [Firebase] Push notifications may not work');
-      }
-      
-      print('✅ [Firebase] Setup complete');
-      return true; // Success, exit retry loop
-      
-    } catch (e, stackTrace) {
-      print('❌ [Firebase] Attempt $attempt failed: $e');
-      
-      // If it's a channel error and we have retries left, wait and retry
-      if (e is PlatformException && 
-          e.code == 'channel-error' && 
-          attempt < maxRetries) {
-        print('⏳ [Firebase] Channel error detected, waiting before retry...');
-        await Future.delayed(Duration(milliseconds: 500 * attempt)); // Exponential backoff
-        continue; // Retry
-      }
-      
-      // If last attempt or non-channel error, give up
-      if (attempt == maxRetries) {
-        print('❌ [Firebase] All $maxRetries attempts failed');
-        print('❌ [Firebase] Stack trace: $stackTrace');
-        print('⚠️ [Firebase] App will continue without push notifications');
-        // Don't throw - let app continue without Firebase
-        return false;
-      }
-    }
-  }
-  
-  // If we get here, all attempts failed
-  return false;
-}
 
 class ErrorBoundary extends StatelessWidget {
   final Widget child;
