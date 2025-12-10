@@ -1,0 +1,76 @@
+name: Build iOS IPA for AltStore Sideloading
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ios-altstore:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run Flutter analyze
+      run: flutter analyze
+      
+    - name: Build iOS app for AltStore
+      run: |
+        # Build iOS app without code signing (AltStore will handle signing)
+        flutter build ios --release --no-codesign
+        
+    - name: Create IPA for AltStore
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -r Runner.app Payload/
+        zip -r ../../../RGS-HVAC-Tools-AltStore.ipa Payload
+        rm -rf Payload
+        
+    - name: Upload AltStore IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-altstore-ipa
+        path: RGS-HVAC-Tools-AltStore.ipa
+        retention-days: 30
+        
+    - name: Create AltStore Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: RGS-HVAC-Tools-AltStore.ipa
+        tag_name: altstore-${{ github.run_number }}
+        name: AltStore Build ${{ github.run_number }}
+        body: |
+          **RGS HVAC Tools Manager - AltStore Build**
+          
+          **Installation Instructions:**
+          1. Download the IPA file below
+          2. Open AltStore on your iOS device
+          3. Tap the "+" button and select this IPA file
+          4. Wait for installation to complete
+          5. Trust the developer certificate in Settings > General > VPN & Device Management
+          
+          **Build Info:**
+          - iOS Target: 18.0+
+          - Commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
+          - Build: ${{ github.run_number }}
+          
+          **Notes:**
+          - This build is optimized for AltStore sideloading
+          - No Apple Developer account required
+          - Valid for 7 days (AltStore limitation)
+        draft: false
+        prerelease: true

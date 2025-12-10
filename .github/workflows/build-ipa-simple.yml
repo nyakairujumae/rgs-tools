@@ -1,0 +1,77 @@
+name: Build IPA for AltStore (Simple)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        cache: true
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Install CocoaPods
+      run: |
+        sudo gem install cocoapods
+        cd ios && pod install
+      
+    - name: Build IPA
+      run: |
+        flutter build ipa --release --no-codesign
+        
+    - name: Find IPA
+      id: find-ipa
+      run: |
+        IPA=$(find build -name "*.ipa" -type f | head -1)
+        if [ -z "$IPA" ]; then
+          echo "IPA not found, trying alternative method..."
+          # Alternative: build app and create IPA manually
+          flutter build ios --release --no-codesign
+          
+          # Find the app bundle
+          APP_BUNDLE=$(find build/ios -name "Runner.app" -type d | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "❌ Runner.app not found"
+            find build -name "*.app" -type d
+            exit 1
+          fi
+          
+          # Create IPA
+          cd "$(dirname "$APP_BUNDLE")"
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r "$GITHUB_WORKSPACE/rgs-tools.ipa" Payload
+          rm -rf Payload
+          IPA="$GITHUB_WORKSPACE/rgs-tools.ipa"
+        fi
+        
+        echo "ipa_path=$IPA" >> $GITHUB_OUTPUT
+        echo "✅ IPA found: $IPA"
+        ls -lh "$IPA"
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: rgs-tools-ipa
+        path: ${{ steps.find-ipa.outputs.ipa_path }}
+        retention-days: 90
+

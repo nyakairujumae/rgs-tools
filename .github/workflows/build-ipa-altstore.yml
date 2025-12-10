@@ -1,0 +1,258 @@
+name: Build IPA for AltStore Sideloading
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        cache: true
+        
+    - name: Flutter doctor
+      run: flutter doctor -v
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
+        
+    - name: Xcode version
+      run: xcodebuild -version
+      
+    - name: Clean project
+      run: |
+        flutter clean
+        rm -rf ios/build/
+        rm -rf build/
+        rm -rf ios/Pods/
+        rm -rf ios/.symlinks/
+        rm -rf ios/Flutter/Flutter.framework
+        rm -rf ios/Flutter/Flutter.podspec
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Install CocoaPods
+      run: |
+        sudo gem install cocoapods
+        pod --version
+        
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod deintegrate || true
+        pod cache clean --all || true
+        pod install --repo-update --verbose
+        
+    - name: Disable code signing for build
+      run: |
+        cd ios
+        # Remove development team and disable automatic signing for CI build
+        # Use perl for better compatibility
+        perl -pi -e 's/DEVELOPMENT_TEAM = 53YWA43ZPW;/DEVELOPMENT_TEAM = "";/g' Runner.xcodeproj/project.pbxproj
+        perl -pi -e 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
+        perl -pi -e 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";/g' Runner.xcodeproj/project.pbxproj
+        cd ..
+        
+    - name: Build iOS app (Release, no codesign)
+      run: |
+        flutter build ios --release --no-codesign --verbose 2>&1 | tee build.log || {
+          echo "❌ Build failed. Last 100 lines of log:"
+          tail -100 build.log
+          echo ""
+          echo "=== Checking for other error logs ==="
+          find . -name "*.log" -type f | head -5 | xargs tail -50 || true
+          exit 1
+        }
+      
+    - name: List build artifacts
+      run: |
+        echo "=== Searching for build artifacts ==="
+        find build -type d -name "*.app" 2>/dev/null | head -5
+        find build -type d -name "iphoneos" 2>/dev/null
+        find build -type d -name "Release-iphoneos" 2>/dev/null
+        echo "=== Build directory structure ==="
+        ls -la build/ios/ 2>/dev/null || echo "build/ios/ not found"
+        ls -la build/ios/iphoneos/ 2>/dev/null || echo "build/ios/iphoneos/ not found"
+        ls -la build/ios/Release-iphoneos/ 2>/dev/null || echo "build/ios/Release-iphoneos/ not found"
+      
+    - name: Find build directory
+      id: find-build
+      run: |
+        # Try to find the app bundle
+        APP_BUNDLE=$(find build -type d -name "Runner.app" 2>/dev/null | head -1)
+        
+        if [ -n "$APP_BUNDLE" ]; then
+          BUILD_DIR=$(dirname "$APP_BUNDLE")
+          echo "✅ Found Runner.app at: $APP_BUNDLE"
+          echo "✅ Build directory: $BUILD_DIR"
+        elif [ -d "build/ios/iphoneos" ]; then
+          BUILD_DIR="build/ios/iphoneos"
+          echo "✅ Using build/ios/iphoneos"
+        elif [ -d "build/ios/Release-iphoneos" ]; then
+          BUILD_DIR="build/ios/Release-iphoneos"
+          echo "✅ Using build/ios/Release-iphoneos"
+        else
+          echo "❌ Build directory not found!"
+          echo "Searching for any .app bundles..."
+          find build -type d -name "*.app" 2>/dev/null || echo "No .app bundles found"
+          exit 1
+        fi
+        
+        echo "build_dir=$BUILD_DIR" >> $GITHUB_OUTPUT
+        echo "=== Contents of build directory ==="
+        ls -la "$BUILD_DIR"
+        
+    - name: Create IPA package
+      run: |
+        BUILD_DIR="${{ steps.find-build.outputs.build_dir }}"
+        echo "Using build directory: $BUILD_DIR"
+        
+        # Convert to absolute path
+        if [[ ! "$BUILD_DIR" = /* ]]; then
+          BUILD_DIR="$GITHUB_WORKSPACE/$BUILD_DIR"
+        fi
+        
+        echo "Absolute build directory: $BUILD_DIR"
+        
+        # Find the app bundle with absolute path
+        if [ -d "$BUILD_DIR/Runner.app" ]; then
+          APP_BUNDLE="$BUILD_DIR/Runner.app"
+        else
+          APP_BUNDLE=$(find "$BUILD_DIR" -type d -name "Runner.app" 2>/dev/null | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "❌ Runner.app not found in $BUILD_DIR"
+            echo "Directory contents:"
+            ls -la "$BUILD_DIR"
+            exit 1
+          fi
+        fi
+        
+        # Convert to absolute path if needed
+        if [[ ! "$APP_BUNDLE" = /* ]]; then
+          APP_BUNDLE="$GITHUB_WORKSPACE/$APP_BUNDLE"
+        fi
+        
+        echo "✅ Found app bundle: $APP_BUNDLE"
+        echo "Verifying app bundle exists..."
+        ls -la "$APP_BUNDLE" || {
+          echo "❌ App bundle path is invalid"
+          exit 1
+        }
+        
+        # Create temporary directory for IPA creation
+        IPA_DIR=$(mktemp -d)
+        echo "Working in: $IPA_DIR"
+        cd "$IPA_DIR"
+        
+        # Create Payload directory
+        mkdir -p Payload
+        
+        # Copy the app bundle using absolute path
+        echo "Copying app bundle..."
+        cp -r "$APP_BUNDLE" Payload/
+        
+        # Verify the copy
+        if [ ! -d "Payload/Runner.app" ]; then
+          echo "❌ Failed to copy app bundle"
+          echo "Contents of Payload:"
+          ls -la Payload/
+          exit 1
+        fi
+        
+        echo "✅ App bundle copied successfully"
+        
+        # Create IPA file in workspace root
+        echo "Creating IPA file..."
+        zip -r "$GITHUB_WORKSPACE/rgs-tools.ipa" Payload -x "*.DS_Store" -q
+        
+        # Clean up temp directory
+        cd "$GITHUB_WORKSPACE"
+        rm -rf "$IPA_DIR"
+        
+        # Verify IPA
+        if [ -f "rgs-tools.ipa" ]; then
+          echo "✅ IPA created successfully"
+          ls -lh rgs-tools.ipa
+          file rgs-tools.ipa
+          unzip -l rgs-tools.ipa | head -20
+        else
+          echo "❌ IPA creation failed"
+          exit 1
+        fi
+        
+    - name: Get version info
+      id: version
+      run: |
+        VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "App version: $VERSION"
+        
+    - name: Upload IPA as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rgs-tools-ipa
+        path: rgs-tools.ipa
+        retention-days: 90
+        
+    - name: Create GitHub Release (on tags)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: rgs-tools.ipa
+        tag_name: ${{ github.ref_name }}
+        name: RGS Tools IPA v${{ steps.version.outputs.version }}
+        body: |
+          ## RGS Tools IPA for AltStore Sideloading
+          
+          ### Installation Instructions:
+          1. Download the `rgs-tools.ipa` file from the assets below
+          2. Install [AltStore](https://altstore.io) on your iOS device
+          3. Open AltStore and tap the "+" button
+          4. Select the downloaded IPA file
+          5. Wait for installation to complete
+          6. Trust the developer certificate in Settings > General > VPN & Device Management
+          
+          ### Requirements:
+          - iOS 13.0 or later
+          - AltStore installed on your device
+          - Active AltServer connection (for refresh)
+          
+          ### Build Information:
+          - **Version:** ${{ steps.version.outputs.version }}
+          - **Commit:** ${{ github.sha }}
+          - **Build Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Notes:
+          - This is an unsigned IPA for sideloading with AltStore
+          - The app will need to be refreshed every 7 days through AltStore
+          - Make sure AltServer is running on your computer when refreshing
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload build logs (on failure)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-logs
+        path: |
+          build/
+          ios/
+        retention-days: 7
+

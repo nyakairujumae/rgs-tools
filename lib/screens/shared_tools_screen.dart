@@ -1,0 +1,1179 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/tool.dart';
+import '../models/user_role.dart';
+import '../providers/auth_provider.dart';
+import '../services/supabase_service.dart';
+import '../providers/supabase_technician_provider.dart';
+import '../providers/supabase_tool_provider.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
+import '../widgets/common/empty_state.dart';
+import '../widgets/common/loading_widget.dart';
+import '../widgets/common/offline_skeleton.dart';
+import '../providers/connectivity_provider.dart';
+import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
+import 'tool_detail_screen.dart';
+import '../services/push_notification_service.dart';
+
+class SharedToolsScreen extends StatefulWidget {
+  const SharedToolsScreen({super.key});
+
+  @override
+  State<SharedToolsScreen> createState() => _SharedToolsScreenState();
+}
+
+class _SharedToolsScreenState extends State<SharedToolsScreen> {
+  String _selectedCategory = 'Category';
+  String _selectedStatus = 'All';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupabaseToolProvider>().loadTools();
+      context.read<SupabaseTechnicianProvider>().loadTechnicians();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final toolProviderWatch = context.watch<SupabaseToolProvider>();
+    final categories = ['Category', ...toolProviderWatch.getCategories()];
+
+    return Scaffold(
+      backgroundColor: context.scaffoldBackground,
+      body: Container(
+        color: context.scaffoldBackground,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Shared Tools',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Access and monitor tools that are shared by teams',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSearchAndFilters(categories),
+              Expanded(
+                child: Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider, ConnectivityProvider>(
+                  builder: (context, toolProvider, technicianProvider, connectivityProvider, child) {
+                    final tools = _getFilteredTools(toolProvider.tools);
+                    final isOffline = !connectivityProvider.isOnline;
+                    final hasActiveFilters = !(_selectedStatus == 'All' &&
+                        _selectedCategory == 'Category' &&
+                        _searchQuery.isEmpty);
+
+                    if (isOffline && !toolProvider.isLoading) {
+                      // Show offline skeleton when offline
+                      return OfflineToolGridSkeleton(
+                        itemCount: 6,
+                        crossAxisCount: 2,
+                        message: 'You are offline. Showing cached shared tools.',
+                      );
+                    }
+
+                    if (toolProvider.isLoading) {
+                      return const ToolCardGridSkeleton(
+                        itemCount: 6,
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10.0,
+                        mainAxisSpacing: 12.0,
+                        childAspectRatio: 0.75,
+                      );
+                    }
+
+                    if (tools.isEmpty) {
+                      return Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) {
+                          final isAdmin =
+                              authProvider.userRole == UserRole.admin;
+                          return EmptyState(
+                            icon: Icons.share,
+                            title: !hasActiveFilters
+                                ? 'No Shared Tools'
+                                : 'No Tools Found',
+                            subtitle: !hasActiveFilters
+                                ? (isAdmin
+                                    ? 'Go to All Tools to mark tools as "Shared" so they appear here'
+                                    : 'No shared tools available. Contact your admin to share tools.')
+                                : 'Try adjusting your filters or search terms',
+                            actionText: isAdmin ? 'Go to Tools' : null,
+                            onAction: isAdmin
+                                ? () {
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      '/admin',
+                                      (route) => false,
+                                      arguments: {'initialTab': 1},
+                                    );
+                                  }
+                                : null,
+                          );
+                        },
+                      );
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isDesktop = ResponsiveHelper.isDesktop(context);
+                        final screenWidth = constraints.maxWidth;
+                        
+                        int crossAxisCount = 2;
+                        double crossAxisSpacing = 10.0;
+                        double mainAxisSpacing = 12.0;
+                        double childAspectRatio = 0.75;
+                        double padding = 16.0;
+                        
+                        if (isDesktop) {
+                          if (screenWidth > 1600) {
+                            crossAxisCount = 6;
+                          } else if (screenWidth > 1200) {
+                            crossAxisCount = 5;
+                          } else if (screenWidth > 900) {
+                            crossAxisCount = 4;
+                          } else {
+                            crossAxisCount = 3;
+                          }
+                          crossAxisSpacing = 8.0;
+                          mainAxisSpacing = 8.0;
+                          childAspectRatio = 0.85;
+                          padding = 20.0;
+                        }
+                        
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            await toolProvider.loadTools();
+                          },
+                          color: AppTheme.primaryColor,
+                          backgroundColor: Theme.of(context).cardTheme.color,
+                          child: GridView.builder(
+                            padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: crossAxisSpacing,
+                              mainAxisSpacing: mainAxisSpacing,
+                              childAspectRatio: childAspectRatio,
+                            ),
+                            itemCount: tools.length,
+                            itemBuilder: (context, index) {
+                              final tool = tools[index];
+                              return _buildToolCard(tool, technicianProvider);
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilters(List<String> categories) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        children: [
+          Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
+                width: 1.2,
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search shared tools...',
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.45),
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface
+                          .withOpacity(0.15),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCategory,
+                      isExpanded: true,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: theme.colorScheme.onSurface,
+                        size: 18,
+                      ),
+                      style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      selectedItemBuilder: (context) {
+                        return categories.map((category) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _getCategoryIcon(category),
+                                  size: 16,
+                                  color: category == 'Category'
+                                      ? theme.colorScheme.onSurface
+                                          .withOpacity(0.35)
+                                      : _getCategoryIconColor(category),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  category,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList();
+                      },
+                      dropdownColor: context.cardBackground,
+                      menuMaxHeight: 300,
+                      borderRadius: BorderRadius.circular(20),
+                      items: categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _getCategoryIcon(category),
+                                  size: 16,
+                                  color: category == 'Category'
+                                      ? theme.colorScheme.onSurface
+                                          .withOpacity(0.35)
+                                      : _getCategoryIconColor(category),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    category,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: category == 'Category'
+                                          ? FontWeight.normal
+                                          : FontWeight.w500,
+                                      color: category == 'Category'
+                                          ? theme.colorScheme.onSurface
+                                              .withOpacity(0.6)
+                                          : theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface
+                          .withOpacity(0.15),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedStatus,
+                      isExpanded: true,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: theme.colorScheme.onSurface,
+                        size: 18,
+                      ),
+                      style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      dropdownColor: context.cardBackground,
+                      menuMaxHeight: 300,
+                      borderRadius: BorderRadius.circular(20),
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: 'All',
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.filter_list_outlined,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.35),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Status',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'Available',
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: const [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  size: 16,
+                                  color: Colors.green,
+                                ),
+                                SizedBox(width: 8),
+                                Text('Available'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'In Use',
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: const [
+                                Icon(
+                                  Icons.build_outlined,
+                                  size: 16,
+                                  color: Colors.blue,
+                                ),
+                                SizedBox(width: 8),
+                                Text('In Use'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'Maintenance',
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: const [
+                                Icon(
+                                  Icons.warning_amber_outlined,
+                                  size: 16,
+                                  color: Colors.orange,
+                                ),
+                                SizedBox(width: 8),
+                                Text('Maintenance'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'Retired',
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.block_outlined,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.45),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('Retired'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedStatus = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolCard(
+      Tool tool, SupabaseTechnicianProvider technicianProvider) {
+    final isDesktop = ResponsiveHelper.isDesktop(context);
+    const double cardRadius = 28.0;
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ToolDetailScreen(tool: tool),
+          ),
+        );
+      },
+      onLongPress: () => _showToolActions(tool, technicianProvider),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Image Section
+          Expanded(
+            child: AspectRatio(
+              aspectRatio: 1.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.cardBackground,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _buildToolImage(tool),
+              ),
+            ),
+          ),
+          // Details Section - Clean and organized
+          Padding(
+            padding: EdgeInsets.only(top: isDesktop ? 4.0 : 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tool Name
+                Text(
+                  tool.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: isDesktop ? 12 : 13,
+                    height: 1.2,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: isDesktop ? 2 : 2),
+                // Category
+                Text(
+                  tool.category,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isDesktop ? 9 : 10,
+                    height: 1.2,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                _buildStatusPill(tool.status),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String status) {
+    final Color statusColor = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: statusColor,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildToolImage(Tool tool) {
+    final imageUrls = _getToolImageUrls(tool);
+    
+    if (imageUrls.isEmpty) {
+      return _buildPlaceholderImage();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        children: [
+          _buildImageWidget(imageUrls[0]),
+          if (imageUrls.length > 1)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '+${imageUrls.length - 1}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
+  }
+
+  Widget _buildImageWidget(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildPlaceholderImage(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.cardGradientFor(context),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    final file = File(imageUrl);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildPlaceholderImage(),
+      );
+    }
+
+    return _buildPlaceholderImage();
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: AppTheme.cardGradientFor(context),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 40,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'No Image',
+            style: TextStyle(
+              fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'category':
+        return Icons.category_outlined;
+      case 'carpentry tools':
+        return Icons.hardware_outlined;
+      case 'electrical tools':
+        return Icons.electrical_services_outlined;
+      case 'fastening tools':
+        return Icons.construction_outlined;
+      case 'safety equipment':
+        return Icons.shield_outlined;
+      case 'testing equipment':
+        return Icons.science_outlined;
+      case 'hand tools':
+        return Icons.build_outlined;
+      case 'power tools':
+        return Icons.power_outlined;
+      case 'measuring tools':
+        return Icons.straighten_outlined;
+      case 'cutting tools':
+        return Icons.content_cut_outlined;
+      case 'plumbing tools':
+        return Icons.plumbing_outlined;
+      case 'automotive tools':
+        return Icons.directions_car_outlined;
+      case 'garden tools':
+        return Icons.yard_outlined;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
+  Color _getCategoryIconColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'carpentry tools':
+        return Colors.brown;
+      case 'electrical tools':
+        return Colors.amber;
+      case 'fastening tools':
+        return Colors.orange;
+      case 'safety equipment':
+        return Colors.red;
+      case 'testing equipment':
+        return Colors.purple;
+      case 'hand tools':
+        return AppTheme.secondaryColor;
+      case 'power tools':
+        return Colors.blueGrey;
+      case 'measuring tools':
+        return Colors.teal;
+      case 'cutting tools':
+        return Colors.deepOrange;
+      case 'plumbing tools':
+        return Colors.cyan;
+      case 'automotive tools':
+        return AppTheme.textSecondary;
+      case 'garden tools':
+        return Colors.green;
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
+
+  List<Tool> _getFilteredTools(List<Tool> tools) {
+    final filtered = tools.where((tool) {
+      if (tool.toolType != 'shared') {
+        return false;
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        if (!tool.name.toLowerCase().contains(query) &&
+            !tool.category.toLowerCase().contains(query) &&
+            !(tool.brand?.toLowerCase().contains(query) ?? false)) {
+          return false;
+        }
+      }
+
+      final matchesCategory = _selectedCategory == 'Category' ||
+          tool.category == _selectedCategory;
+      final matchesStatus =
+          _selectedStatus == 'All' || tool.status == _selectedStatus;
+
+      return matchesCategory && matchesStatus;
+    }).toList();
+
+    filtered.sort((a, b) => a.name.compareTo(b.name));
+    return filtered;
+  }
+
+  void _showToolActions(
+      Tool tool, SupabaseTechnicianProvider technicianProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              tool.name,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            if (tool.status == 'Available')
+              ListTile(
+                leading: Icon(Icons.person_add, color: AppTheme.primaryColor),
+                title: Text(
+                  'Assign to Technician',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/assign-tool', arguments: tool);
+                },
+              ),
+            if (tool.status == 'In Use') ...[
+              ListTile(
+                leading: Icon(Icons.swap_horiz, color: AppTheme.accentColor),
+                title: Text(
+                  'Reassign Tool',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/reassign-tool',
+                      arguments: tool);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.keyboard_return, color: Colors.green),
+                title: Text(
+                  'Check In Tool',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/checkin');
+                },
+              ),
+            ],
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.orange),
+              title: Text(
+                'Edit Tool',
+                style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/edit-tool', arguments: tool);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: Colors.blue),
+              title: Text(
+                'View Details',
+                style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/tool-detail', arguments: tool);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendToolRequest(Tool tool, String ownerId) async {
+    final auth = context.read<AuthProvider>();
+    final requesterId = auth.user?.id;
+    final requesterName = auth.userFullName ?? 'Unknown Technician';
+    final requesterEmail = auth.user?.email ?? 'unknown@technician';
+    
+    if (requesterId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You need to be signed in to request a tool.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    if (tool.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This tool is missing an identifier.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    try {
+      // Get owner email from users table
+      String ownerEmail = 'unknown@owner';
+      try {
+        final userResponse = await SupabaseService.client
+            .from('users')
+            .select('email')
+            .eq('id', ownerId)
+            .maybeSingle();
+        
+        if (userResponse != null && userResponse['email'] != null) {
+          ownerEmail = userResponse['email'] as String;
+        }
+      } catch (e) {
+        debugPrint('Could not fetch owner email: $e');
+      }
+      
+      // Create notification in admin_notifications table (for admin visibility)
+      try {
+        await SupabaseService.client.rpc(
+          'create_admin_notification',
+          params: {
+            'p_title': 'Tool Request: ${tool.name}',
+            'p_message': '$requesterName requested the tool "${tool.name}"',
+            'p_technician_name': requesterName,
+            'p_technician_email': requesterEmail,
+            'p_type': 'tool_request',
+            'p_data': {
+              'tool_id': tool.id,
+              'tool_name': tool.name,
+              'requester_id': requesterId,
+              'requester_name': requesterName,
+              'requester_email': requesterEmail,
+              'owner_id': ownerId,
+            },
+          },
+        );
+        debugPrint('✅ Created admin notification for tool request');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create admin notification: $e');
+      }
+      
+      // Create notification in technician_notifications table for the tool owner
+      // This will appear in the technician's notification center
+      try {
+        await SupabaseService.client.from('technician_notifications').insert({
+          'user_id': ownerId, // The technician who has the tool
+          'title': 'Tool Request: ${tool.name}',
+          'message': '$requesterName needs the tool "${tool.name}" that you currently have',
+          'type': 'tool_request',
+          'is_read': false,
+          'timestamp': DateTime.now().toIso8601String(),
+          'data': {
+            'tool_id': tool.id,
+            'tool_name': tool.name,
+            'requester_id': requesterId,
+            'requester_name': requesterName,
+            'requester_email': requesterEmail,
+            'owner_id': ownerId,
+          },
+        });
+        debugPrint('✅ Created technician notification for tool request');
+        debugPrint('✅ Notification sent to technician: $ownerId');
+        
+        // Send push notification to the tool owner
+        try {
+          await PushNotificationService.sendToUser(
+            userId: ownerId,
+            title: 'Tool Request: ${tool.name}',
+            body: '$requesterName needs the tool "${tool.name}" that you currently have',
+            data: {
+              'type': 'tool_request',
+              'tool_id': tool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to tool owner');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to tool owner: $pushError');
+        }
+        
+        // Send push notification to admins
+        try {
+          await PushNotificationService.sendToAdmins(
+            title: 'Tool Request: ${tool.name}',
+            body: '$requesterName requested the tool "${tool.name}"',
+            data: {
+              'type': 'tool_request',
+              'tool_id': tool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to admins for tool request');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to admins: $pushError');
+        }
+      } catch (e) {
+        debugPrint('❌ Failed to create technician notification: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
+        // Still show success message even if notification fails
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tool request sent to the tool holder'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error sending tool request: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send request: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _sharedChip(BuildContext context, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _sharedMeBubble(BuildContext context, String text) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          color: Colors.green,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16),
+          ),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _sharedOtherBubble(BuildContext context, String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Available':
+        return Colors.green;
+      case 'In Use':
+        return Colors.blue;
+      case 'Maintenance':
+        return Colors.orange;
+      case 'Retired':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+}
