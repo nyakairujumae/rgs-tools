@@ -6,6 +6,7 @@ import '../models/tool.dart';
 import '../providers/auth_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
@@ -69,9 +70,9 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        backgroundColor: isDarkMode ? colorScheme.surface : context.appBarBackground, // ChatGPT-style: pure white
+        elevation: 0, // ChatGPT-style: no elevation
+        shadowColor: Colors.transparent,
         scrolledUnderElevation: 6,
         foregroundColor: colorScheme.onSurface,
         toolbarHeight: 80,
@@ -85,7 +86,11 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: Icon(
+              Icons.chevron_left,
+              size: 28,
+              color: Colors.black87,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -144,13 +149,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                               color: AppTheme.subtleBorder,
                               width: 1.1,
                             ),
-                              boxShadow: [
-                                BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                              boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                           ),
                           child: TextField(
                             controller: _searchController,
@@ -221,14 +220,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                     color: AppTheme.subtleBorder,
                                     width: 1.1,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
@@ -358,14 +350,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                     color: AppTheme.subtleBorder,
                                     width: 1.1,
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
@@ -641,14 +626,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                         color: AppTheme.subtleBorder,
                         width: 1.5,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                          spreadRadius: 0,
-                        ),
-                      ],
+                      boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: Stack(

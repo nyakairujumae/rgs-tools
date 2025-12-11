@@ -91,8 +91,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     child: IconButton(
                       icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                        Icons.chevron_left,
+                        size: 28,
+                        color: Colors.black87,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),

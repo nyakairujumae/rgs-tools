@@ -7,9 +7,11 @@ import '../providers/supabase_technician_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../config/app_config.dart';
-import '../widgets/premium_field_styles.dart';
+import '../widgets/common/themed_text_field.dart';
+import '../widgets/common/themed_button.dart';
 
 class AddTechnicianScreen extends StatefulWidget {
   final Technician? technician;
@@ -76,50 +78,60 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
           widget.technician == null ? 'Add Technician' : 'Edit Technician',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        centerTitle: true,
-        backgroundColor: backgroundColor,
-        foregroundColor: colorScheme.onSurface,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: const Icon(
+            Icons.chevron_left,
+            size: 28,
+            color: Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
+          splashRadius: 24,
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktopLayout ? 760 : double.infinity,
-              ),
-              child: Form(
-                key: _formKey,
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktopLayout ? 48 : 20,
+              vertical: isDesktopLayout ? 10 : 0,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktopLayout ? 640 : double.infinity,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 16),
-                    ),
+                    // Subtitle above card
                     Text(
                       widget.technician == null
                           ? 'Add technicians so they can receive assignments and tool access.'
                           : 'Update technician details to keep assignments current.',
                       style: TextStyle(
-                        fontSize:
-                            ResponsiveHelper.getResponsiveFontSize(context, 16),
-                        color:
-                            colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color: colorScheme.onSurface.withValues(alpha: 0.75),
                         fontWeight: FontWeight.w400,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 28),
-                    ),
+                    SizedBox(height: context.spacingLarge * 1.5), // 24px
+                    
+                    // Card with form
+                    Container(
+                      padding: EdgeInsets.all(isDesktopLayout ? 32 : context.spacingLarge),
+                      decoration: context.cardDecoration, // ChatGPT-style card
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                    // Profile Photo Section
                     Center(
                       child: _buildProfilePictureSection(
                         colorScheme,
@@ -128,243 +140,281 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         iconColorOverride: fieldIconColor,
                       ),
                     ),
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 32),
-                    ),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+
+                    SizedBox(height: context.spacingLarge * 1.5), // 24px
+                    // Name Field
+                    ThemedTextField(
+                      controller: _nameController,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
                       label: 'Full Name',
-                      child: TextFormField(
-                        controller: _nameController,
-                        inputFormatters: [
-                          TextInputFormatter.withFunction((oldValue, newValue) {
-                            return TextEditingValue(
-                              text: newValue.text.toUpperCase(),
-                              selection: newValue.selection,
-                            );
-                          }),
-                        ],
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter full name',
-                          prefixIcon: const Icon(Icons.person_outline),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter technician\'s name';
-                          }
-                          return null;
-                        },
-                      ),
+                      hint: 'Enter full name',
+                      prefixIcon: Icons.person_outline,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter technician\'s name';
+                        }
+                        return null;
+                      },
                     ),
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Employee ID Field
+                    ThemedTextField(
+                      controller: _employeeIdController,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[A-Za-z0-9-]'),
+                        ),
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
                       label: 'Employee ID',
-                      child: TextFormField(
-                        controller: _employeeIdController,
-                        textCapitalization: TextCapitalization.characters,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[A-Za-z0-9-]'),
-                          ),
-                        ],
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter employee ID (optional)',
-                          prefixIcon: const Icon(Icons.badge_outlined),
-                        ),
-                      ),
+                      hint: 'Enter employee ID (optional)',
+                      prefixIcon: Icons.badge_outlined,
                     ),
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Phone Number Field
+                    ThemedTextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
                       label: 'Phone Number',
-                      child: TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter phone number',
-                          prefixIcon: const Icon(Icons.phone_android),
-                        ),
-                      ),
+                      hint: 'Enter phone number',
+                      prefixIcon: Icons.phone_outlined,
                     ),
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Email Field
+                    ThemedTextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       label: 'Email Address',
-                      child: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter email address',
-                          prefixIcon: const Icon(Icons.email_outlined),
+                      hint: 'Enter email address',
+                      prefixIcon: Icons.email_outlined,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter email address';
+                        }
+                        if (!AppConfig.isValidEmailFormat(value)) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Department Field
+                    DropdownButtonFormField<String>(
+                      value: _departmentController.text.isEmpty ? null : _departmentController.text,
+                      decoration: context.chatGPTInputDecoration.copyWith(
+                        labelText: 'Department',
+                        hintText: 'Select department',
+                        prefixIcon: Icon(
+                          Icons.business_outlined,
+                          size: 22,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter email address';
-                          }
-                          if (!AppConfig.isValidEmailFormat(value)) {
-                            return 'Enter a valid email address';
-                          }
-                          return null;
-                        },
+                        prefixIconConstraints: const BoxConstraints(minWidth: 52),
                       ),
-                    ),
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
-                      label: 'Department',
-                      child: TextFormField(
-                        controller: _departmentController,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter department',
-                          prefixIcon: const Icon(Icons.apartment_outlined),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 16),
-                    ),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
-                      label: 'Status',
-                      child: Container(
-                        decoration:
-                            PremiumFieldStyles.dropdownContainerDecoration(
-                                context),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _status,
-                            isExpanded: true,
-                            style: PremiumFieldStyles.fieldTextStyle(context),
-                            icon: PremiumFieldStyles.dropdownIcon(context),
-                            borderRadius: BorderRadius.circular(16),
-                            dropdownColor: Colors.white,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Active',
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6),
-                                  child: Text('Active'),
-                                ),
+                      items: [
+                        'Repairing',
+                        'Maintenance',
+                        'Retrofit',
+                        'Installation',
+                        'Factory',
+                      ].map((String department) {
+                        return DropdownMenuItem<String>(
+                          value: department,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              department,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface,
                               ),
-                              DropdownMenuItem(
-                                value: 'Inactive',
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 6),
-                                  child: Text('Inactive'),
-                                ),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              if (value == null) return;
-                              setState(() {
-                                _status = value;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-                    PremiumFieldStyles.labeledField(
-                      context: context,
-                      label: 'Hire Date',
-                      child: InkWell(
-                        onTap: _selectHireDate,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          decoration:
-                              PremiumFieldStyles.dropdownContainerDecoration(
-                                  context),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                                color: colorScheme.onSurface
-                                    .withOpacity(0.55),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _hireDate != null
-                                      ? '${_hireDate!.day.toString().padLeft(2, '0')}/${_hireDate!.month.toString().padLeft(2, '0')}/${_hireDate!.year}'
-                                      : 'Select date',
-                                  style: PremiumFieldStyles.fieldTextStyle(
-                                          context)
-                                      .copyWith(
-                                    color: _hireDate != null
-                                        ? colorScheme.onSurface
-                                        : colorScheme.onSurface
-                                            .withOpacity(0.45),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 32),
-                    ),
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveTechnician,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(
-                                  context, isDesktopLayout ? 32 : 28),
                             ),
                           ),
-                          elevation: isDesktopLayout ? 6 : 2,
-                          shadowColor: Colors.black.withOpacity(0.2),
-                          minimumSize: const Size.fromHeight(52),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : Text(
-                                widget.technician == null
-                                    ? 'Add Technician'
-                                    : 'Update Technician',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        setState(() {
+                          _departmentController.text = value ?? '';
+                        });
+                      },
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 300,
+                      borderRadius: BorderRadius.circular(20),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        size: 18,
                       ),
                     ),
-                    SizedBox(
-                      height:
-                          ResponsiveHelper.getResponsiveSpacing(context, 24),
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Status Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: context.cardBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.black.withOpacity(0.04),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _status,
+                        decoration: context.chatGPTInputDecoration.copyWith(
+                          labelText: 'Status',
+                          hintText: 'Select status',
+                          prefixIcon: Icon(
+                            Icons.info_outline,
+                            size: 22,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 52),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                        ),
+                        items: [
+                          DropdownMenuItem<String>(
+                            value: 'Active',
+                            child: Text(
+                              'Active',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'Inactive',
+                            child: Text(
+                              'Inactive',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onChanged: (String? value) {
+                          if (value == null) return;
+                          setState(() {
+                            _status = value;
+                          });
+                        },
+                        dropdownColor: Colors.white,
+                        menuMaxHeight: 300,
+                        borderRadius: BorderRadius.circular(20),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        icon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Hire Date Field
+                    InkWell(
+                      onTap: _selectHireDate,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: context.cardBackground,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.black.withOpacity(0.04),
+                            width: 0.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 22,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _hireDate != null
+                                    ? '${_hireDate!.day.toString().padLeft(2, '0')}/${_hireDate!.month.toString().padLeft(2, '0')}/${_hireDate!.year}'
+                                    : 'Select hire date',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: _hireDate != null
+                                      ? theme.colorScheme.onSurface
+                                      : theme.colorScheme.onSurface.withOpacity(0.45),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: context.spacingLarge + context.spacingSmall), // 20px
+
+                    // Save Button
+                    ThemedButton(
+                      onPressed: _isLoading ? null : _saveTechnician,
+                      isLoading: _isLoading,
+                      child: Text(
+                        widget.technician == null
+                            ? 'Add Technician'
+                            : 'Update Technician',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -407,7 +457,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
       }
 
       // Preserve existing profile picture when editing and no new picture selected
-      if (profilePictureUrl == null && widget.technician?.profilePictureUrl != null) {
+      if (profilePictureUrl == null && widget.technician?.profilePictureUrl != null && _profileImage == null) {
         profilePictureUrl = widget.technician!.profilePictureUrl;
       }
 
@@ -515,126 +565,81 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     )
                   : null,
             ),
+            // Plus button overlay
             Positioned(
               bottom: 0,
               right: 0,
               child: GestureDetector(
-                onTap: _selectProfileImage,
+                onTap: _showImagePickerOptions,
                 child: Container(
-                  width: ResponsiveHelper.getResponsiveIconSize(context, 32),
-                  height: ResponsiveHelper.getResponsiveIconSize(context, 32),
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: AppTheme.secondaryColor,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.camera_alt,
+                    Icons.add,
                     color: Colors.white,
-                    size: 16,
+                    size: 20,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: ResponsiveHelper.getResponsiveSpacing(context, 14),
-          runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-          alignment: WrapAlignment.center,
-          children: [
-            _buildProfileActionChip(
-              icon: Icons.photo_library_outlined,
-              label: 'Choose Photo',
-              onTap: _selectProfileImage,
-              colorScheme: colorScheme,
-              context: context,
-            ),
-            _buildProfileActionChip(
-              icon: Icons.camera_alt_outlined,
-              label: 'Take Photo',
-              onTap: _takeProfileImage,
-              colorScheme: colorScheme,
-              context: context,
-            ),
-            if (_profileImage != null)
-              _buildProfileActionChip(
-                icon: Icons.close,
-                label: 'Remove',
-                onTap: _removeProfileImage,
-                colorScheme: colorScheme,
-                context: context,
-                isDestructive: true,
-              ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildProfileActionChip({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-    required BuildContext context,
-    bool isDestructive = false,
-  }) {
-    final Color bgColor = isDestructive
-        ? Colors.red.withValues(alpha: 0.12)
-        : AppTheme.primaryColor.withValues(alpha: 0.12);
-    final Color fgColor =
-        isDestructive ? Colors.red : AppTheme.primaryColor;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-        ),
-        child: Container(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 14,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 20),
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _selectProfileImage();
+              },
             ),
-            border: Border.all(color: fgColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                color: fgColor,
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _takeProfileImage();
+              },
+            ),
+            if (_profileImage != null || (widget.technician?.profilePictureUrl != null && widget.technician!.profilePictureUrl!.isNotEmpty))
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeProfileImage();
+                },
               ),
-              SizedBox(
-                width: ResponsiveHelper.getResponsiveSpacing(context, 6),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: fgColor,
-                  fontSize:
-                      ResponsiveHelper.getResponsiveFontSize(context, 13),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -705,6 +710,8 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
   void _removeProfileImage() {
     setState(() {
       _profileImage = null;
+      // If editing, we'll need to clear the profilePictureUrl when saving
+      // This is handled in _saveTechnician by not preserving the existing URL
     });
   }
 

@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../models/tool_issue.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import 'add_tool_issue_screen.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/auth_error_handler.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
@@ -134,10 +136,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(color: AppTheme.secondaryColor),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(18),
                                   ),
                                 ),
-                                child: Text('Retry'),
+                                child: const Text('Retry'),
                               ),
                               if (issueProvider.error!.contains('Session expired') || 
                                   issueProvider.error!.contains('Please log in'))
@@ -156,10 +158,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                                     backgroundColor: AppTheme.secondaryColor,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
+                                    elevation: 0,
                                   ),
-                                  child: Text('Sign In'),
+                                  child: const Text('Sign In'),
                                 ),
                             ],
                           ),
@@ -206,9 +209,9 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
               backgroundColor: AppTheme.secondaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
               ),
-              elevation: 6,
+              elevation: 0,
             ),
           ),
         ),
@@ -266,6 +269,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     return RefreshIndicator(
       onRefresh: () => context.read<ToolIssueProvider>().loadIssues(),
       color: AppTheme.secondaryColor,
+      backgroundColor: Colors.white,
       child: ListView.separated(
         padding: EdgeInsets.fromLTRB(
           isDesktop ? 24 : 16,
@@ -294,20 +298,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     ].join(' • ');
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       onTap: () => _showIssueDetails(issue),
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 12,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
+        decoration: context.cardDecoration,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,15 +309,21 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
-                  child: Text(
-                    letter,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      letter,
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ),
@@ -392,16 +392,36 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
         ),
-        title: Text(
-          'Issue Details',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.info_outline,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Issue Details',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+          ],
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -449,8 +469,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
-            child: Text('Close'),
+            child: const Text('Close'),
           ),
           if (issue.status == 'Open')
             ElevatedButton(
@@ -462,10 +485,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                 backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                 ),
+                elevation: 0,
               ),
-              child: Text('Assign'),
+              child: const Text('Assign'),
             ),
           if (issue.status == 'In Progress')
             ElevatedButton(
@@ -477,10 +501,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                 backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                 ),
+                elevation: 0,
               ),
-              child: Text('Resolve'),
+              child: const Text('Resolve'),
             ),
         ],
       ),
@@ -519,18 +544,47 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Assign Issue'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.person_add_outlined,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Assign Issue'),
+            ),
+          ],
+        ),
         content: TextField(
           controller: assignController,
-          decoration: InputDecoration(
+          decoration: context.chatGPTInputDecoration.copyWith(
             labelText: 'Assign to (Admin/Technician)',
-            border: OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.person_outline, size: 20),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -540,16 +594,21 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                   assignController.text.trim(),
                 );
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Issue assigned successfully'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                  ),
+                AuthErrorHandler.showSuccessSnackBar(
+                  context,
+                  'Issue assigned successfully',
                 );
               }
             },
-            child: Text('Assign'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Assign'),
           ),
         ],
       ),
@@ -562,19 +621,48 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Resolve Issue'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.check_circle_outline,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Resolve Issue'),
+            ),
+          ],
+        ),
         content: TextField(
           controller: resolutionController,
-          decoration: InputDecoration(
+          decoration: context.chatGPTInputDecoration.copyWith(
             labelText: 'Resolution details',
-            border: OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.description_outlined, size: 20),
           ),
           maxLines: 3,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -585,16 +673,21 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                   issue.assignedTo ?? 'Admin',
                 );
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Issue resolved successfully'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                  ),
+                AuthErrorHandler.showSuccessSnackBar(
+                  context,
+                  'Issue resolved successfully',
                 );
               }
             },
-            child: Text('Resolve'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Resolve'),
           ),
         ],
       ),
@@ -688,51 +781,74 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
           color: Colors.black,
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
-        onPressed: () => NavigationHelper.safePop(context),
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+          onTap: () => NavigationHelper.safePop(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            decoration: context.cardDecoration,
+            child: const Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Colors.black87,
+            ),
+          ),
+        ),
       ),
       actions: [],
     );
   }
 
   Widget _buildFilterPills() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        children: _filters.map((filter) {
+    return SizedBox(
+      height: 32,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _filters.length,
+        itemBuilder: (context, index) {
+          final filter = _filters[index];
           final isSelected = _selectedFilter == filter;
+          
           return Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: GestureDetector(
-              onTap: () {
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              showCheckmark: false,
+              label: Text(
+                filter,
+                style: TextStyle(
+                  color: isSelected
+                      ? AppTheme.secondaryColor
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+              selected: isSelected,
+              onSelected: (_) {
                 final targetIndex = _filters.indexOf(filter);
                 if (targetIndex >= 0 && targetIndex < _tabController.length) {
                   _tabController.animateTo(targetIndex);
                 }
                 setState(() => _selectedFilter = filter);
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.secondaryColor
-                      : const Color(0xFFF2F3F5),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : Colors.black87,
-                  ),
-                ),
+              backgroundColor: context.cardBackground,
+              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.secondaryColor
+                    : Colors.black.withOpacity(0.04),
+                width: isSelected ? 1.2 : 0.5,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -741,11 +857,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurfaceColor(context),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: context.cardDecoration,
         child: TextField(
           controller: _searchController,
           onChanged: (value) => setState(() => _searchQuery = value),
@@ -753,33 +865,18 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             fontSize: 14,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
-          decoration: InputDecoration(
+          decoration: context.chatGPTInputDecoration.copyWith(
             hintText: 'Search issues, tools, reporters...',
-            hintStyle: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-            ),
+            prefixIcon: const Icon(Icons.search, size: 20),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      size: 20,
-                      color:
-                          Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-                    ),
+                    icon: const Icon(Icons.clear, size: 20),
                     onPressed: () {
                       _searchController.clear();
                       setState(() => _searchQuery = '');
                     },
                   )
                 : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           ),
         ),
       ),
@@ -790,14 +887,18 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(24),
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.04),
+          width: 0.5,
+        ),
       ),
       child: Text(
         type,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: _getIssueTypeColor(type),
         ),
       ),
@@ -810,14 +911,14 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
         priority,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -828,15 +929,15 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color, width: 1.2),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: color,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

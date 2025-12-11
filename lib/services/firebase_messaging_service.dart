@@ -8,6 +8,12 @@ import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../firebase_options.dart';
 import 'supabase_service.dart';
+import 'badge_service.dart';
+
+// Background notification channel constants (must be accessible from background handler)
+const String _backgroundChannelId = 'rgs_notifications';
+const String _backgroundChannelName = 'RGS Notifications';
+const String _backgroundChannelDesc = 'Notifications from RGS Tools app';
 
 /// Clean Firebase Messaging Service - Fresh Implementation
 class FirebaseMessagingService {
@@ -248,13 +254,17 @@ class FirebaseMessagingService {
         showWhen: true,
       );
       
-      const iosDetails = DarwinNotificationDetails(
+      // Get current badge count for notification
+      final badgeCount = await BadgeService.getBadgeCount();
+      
+      final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        badgeNumber: badgeCount > 0 ? badgeCount : null,
       );
       
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );
@@ -278,16 +288,11 @@ class FirebaseMessagingService {
     // Handle navigation if needed
   }
 
-  /// Update app badge
+  /// Update app badge (increment by 1)
   static Future<void> _updateBadge() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      int badgeCount = prefs.getInt('badge_count') ?? 0;
-      badgeCount++;
-      await prefs.setInt('badge_count', badgeCount);
-      
-      await FlutterAppBadger.updateBadgeCount(badgeCount);
-      debugPrint('✅ [FCM] Badge updated: $badgeCount');
+      await BadgeService.incrementBadge();
+      debugPrint('✅ [FCM] Badge incremented');
     } catch (e) {
       debugPrint('❌ [FCM] Error updating badge: $e');
     }
@@ -296,9 +301,7 @@ class FirebaseMessagingService {
   /// Clear badge
   static Future<void> clearBadge() async {
     try {
-      await FlutterAppBadger.removeBadge();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('badge_count', 0);
+      await BadgeService.clearBadge();
       debugPrint('✅ [FCM] Badge cleared');
     } catch (e) {
       debugPrint('❌ [FCM] Error clearing badge: $e');
@@ -354,6 +357,7 @@ class FirebaseMessagingService {
 }
 
 /// Background message handler (must be top-level function)
+/// This runs when app is in background or terminated state
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialize Firebase if not already initialized (background handlers run in separate isolate)
@@ -362,17 +366,77 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-  debugPrint('📱 [FCM] Background message: ${message.notification?.title}');
+  debugPrint('📱 [FCM] Background/Terminated message: ${message.notification?.title}');
   
-  // Update badge
   try {
-    final prefs = await SharedPreferences.getInstance();
-    int badgeCount = prefs.getInt('badge_count') ?? 0;
-    badgeCount++;
-    await prefs.setInt('badge_count', badgeCount);
-    await FlutterAppBadger.updateBadgeCount(badgeCount);
+    // Initialize local notifications plugin (needed in background isolate)
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+    
+    final localNotifications = FlutterLocalNotificationsPlugin();
+    await localNotifications.initialize(initSettings);
+    
+    // Create Android notification channel if needed
+    const androidChannel = AndroidNotificationChannel(
+      'rgs_notifications',
+      'RGS Notifications',
+      description: 'Notifications from RGS Tools app',
+      importance: Importance.high,
+      showBadge: true,
+    );
+    
+    final androidPlugin = localNotifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.createNotificationChannel(androidChannel);
+    
+    // Update badge (increment by 1)
+    await BadgeService.incrementBadge();
+    final badgeCount = await BadgeService.getBadgeCount();
+    
+    // Show local notification with badge number
+    final notification = message.notification;
+    if (notification != null) {
+      final androidDetails = AndroidNotificationDetails(
+        'rgs_notifications',
+        'RGS Notifications',
+        channelDescription: 'Notifications from RGS Tools app',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        number: badgeCount, // Show badge number in notification
+      );
+      
+      final iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        badgeNumber: badgeCount, // Set badge number for iOS
+      );
+      
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+      
+      await localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        details,
+      );
+      
+      debugPrint('✅ [FCM] Background notification shown with badge: $badgeCount');
+    }
   } catch (e) {
-    debugPrint('❌ [FCM] Error updating badge in background: $e');
+    debugPrint('❌ [FCM] Error handling background message: $e');
   }
 }
 

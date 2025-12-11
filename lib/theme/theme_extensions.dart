@@ -34,8 +34,8 @@ extension ThemeColorExtension on BuildContext {
   /// Get the input field background color (f5f5f5 in light mode, dark in dark mode)
   Color get inputBackground => AppTheme.getInputBackground(this);
   
-  /// Get card border color
-  Color get cardBorder => AppTheme.cardBorder;
+  /// Get card border color (respects theme)
+  Color get cardBorder => AppTheme.getCardBorder(this);
   
   /// Get soft shadow for cards
   BoxShadow get softShadow => AppTheme.softShadow;
@@ -56,30 +56,76 @@ extension ThemeColorExtension on BuildContext {
   double get borderRadiusXLarge => AppTheme.borderRadiusXLarge;
   
   /// Get ChatGPT-style card decoration
-  BoxDecoration get cardDecoration => BoxDecoration(
-    color: cardBackground,
-    borderRadius: BorderRadius.circular(borderRadiusLarge),
-    border: Border.all(color: cardBorder, width: 1),
-    boxShadow: cardShadows,
-  );
+  /// Use this for all cards, containers, list tiles, tool widgets, and form surfaces
+  /// Premium soft-filled style - lifted cards with no shadows, just subtle border
+  /// Automatically adapts to light/dark theme
+  BoxDecoration get cardDecoration {
+    final theme = Theme.of(this);
+    final isDark = theme.brightness == Brightness.dark;
+    return BoxDecoration(
+      color: cardBackground, // Theme-aware background
+      borderRadius: BorderRadius.circular(18), // Premium rounded corners
+      // Very subtle border for "lifted" effect - no shadows
+      border: Border.all(
+        color: AppTheme.getCardBorderSubtle(this), // Theme-aware border
+        width: 0.5,
+      ),
+    );
+  }
   
   /// Get ChatGPT-style input decoration
-  InputDecoration get chatGPTInputDecoration => InputDecoration(
-    filled: true,
-    fillColor: cardBackground,
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadiusMedium),
-      borderSide: BorderSide(color: cardBorder, width: 1),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadiusMedium),
-      borderSide: BorderSide(color: AppTheme.secondaryColor, width: 2),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadiusMedium),
-      borderSide: BorderSide(color: cardBorder, width: 1),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  );
+  /// OUTLINED, MODERN, INTERACTIVE - distinct from cards
+  /// Automatically adapts to light/dark theme
+  InputDecoration get chatGPTInputDecoration {
+    final theme = Theme.of(this);
+    final isDark = theme.brightness == Brightness.dark;
+    return InputDecoration(
+      filled: true,
+      fillColor: cardBackground, // Theme-aware background
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Premium padding
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16), // Modern rounded corners
+        borderSide: BorderSide(
+          color: cardBorder, // Theme-aware border
+          width: 1,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: AppTheme.secondaryColor, // Brand green - strong focus state
+          width: 1.4,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.red, width: 1.4),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cardBorder, width: 1),
+      ),
+      hintStyle: TextStyle(
+        color: isDark 
+            ? Colors.grey[400] 
+            : Colors.black54,
+      ),
+      labelStyle: TextStyle(
+        color: isDark 
+            ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+            : const Color(0xFF1A1A1A),
+      ),
+    );
+  }
+  
+  /// Get icon button background color (for social login buttons)
+  Color get iconButtonBackground => AppTheme.getIconButtonBackground(this);
+  
+  /// Get secondary text color (for subtle text like "Forgot Password")
+  Color get secondaryTextColor => AppTheme.getSecondaryTextColor(this);
 }
 

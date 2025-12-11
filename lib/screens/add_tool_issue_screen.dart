@@ -6,7 +6,12 @@ import '../providers/auth_provider.dart';
 import '../models/tool_issue.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/common/themed_text_field.dart';
+import '../widgets/common/themed_button.dart';
+import '../utils/navigation_helper.dart';
+import '../utils/auth_error_handler.dart';
 
 class AddToolIssueScreen extends StatefulWidget {
   final Function()? onNavigateToDashboard;
@@ -61,31 +66,26 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
-        scrolledUnderElevation: 6,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         foregroundColor: colorScheme.onSurface,
         toolbarHeight: 80,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(
+              Icons.chevron_left,
+              size: 28,
+              color: Colors.black87,
+            ),
             onPressed: () {
               // If embedded as tab, navigate to dashboard instead of popping
               if (widget.onNavigateToDashboard != null) {
                 widget.onNavigateToDashboard!();
               } else {
-                // Fallback: try to pop if it's a pushed screen
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
+                NavigationHelper.safePop(context);
               }
             },
           ),
@@ -230,10 +230,11 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 icon: Icons.priority_high,
                               ),
                               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                              _multiline(
-                                _descriptionController,
+                              ThemedTextField(
+                                controller: _descriptionController,
                                 label: 'Description *',
                                 hint: 'Describe the issue in detail',
+                                maxLines: 6,
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return 'Please provide a description of the issue';
@@ -252,19 +253,19 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                           title: 'Additional Information',
                           child: Column(
                             children: [
-                              _textField(
-                                _locationController,
+                              ThemedTextField(
+                                controller: _locationController,
                                 label: 'Location',
                                 hint: 'Where did this occur? (optional)',
-                                icon: Icons.location_on,
+                                prefixIcon: Icons.location_on,
                               ),
                               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                              _textField(
-                                _estimatedCostController,
+                              ThemedTextField(
+                                controller: _estimatedCostController,
                                 label: 'Estimated Cost',
                                 hint: 'Cost to fix/replace (optional)',
                                 keyboardType: TextInputType.number,
-                                icon: Icons.attach_money,
+                                prefixIcon: Icons.attach_money,
                               ),
                             ],
                           ),
@@ -279,25 +280,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 context,
                                 all: 20,
                               ),
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? colorScheme.surface : Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                                ),
-                                border: Border.all(
-                                  color: isDarkMode 
-                                      ? Colors.white.withValues(alpha: 0.1)
-                                      : Colors.grey.withValues(alpha: 0.15),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.08),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
+                              decoration: context.cardDecoration,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -333,54 +316,11 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
                             // Submit Button
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade600,
-                                borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.red.withValues(alpha: 0.3),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _isLoading ? null : _submitReport,
-                                  borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-                                  ),
-                                  child: Container(
-                                    padding: ResponsiveHelper.getResponsivePadding(
-                                      context,
-                                      vertical: 16,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: _isLoading
-                                        ? SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                            ),
-                                          )
-                                        : Text(
-                                            'Submit Report',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ),
+                            ThemedButton(
+                              onPressed: _isLoading ? null : _submitReport,
+                              isLoading: _isLoading,
+                              backgroundColor: Colors.red.shade600,
+                              child: const Text('Submit Report'),
                             ),
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                           ],
@@ -394,201 +334,6 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     );
   }
 
-  Widget _textField(
-    TextEditingController ctrl, {
-    required String label,
-    String? hint,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    IconData? icon,
-  }) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: ctrl,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-        ),
-        keyboardType: keyboardType,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          prefixIcon: icon != null
-              ? Icon(
-                  icon,
-                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _multiline(
-    TextEditingController ctrl, {
-    required String label,
-    String? hint,
-    String? Function(String?)? validator,
-  }) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: ctrl,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          prefixIcon: Icon(
-            Icons.description,
-            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        ),
-        minLines: 3,
-        maxLines: 6,
-        validator: validator,
-      ),
-    );
-  }
-
   Widget _dropdown({
     required String label,
     required String? value,
@@ -597,104 +342,25 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     String? Function(String?)? validator,
     IconData? icon,
   }) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      style: TextStyle(
+        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        fontWeight: FontWeight.w500,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-          ),
-          hintText: value == null ? 'Select...' : null,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-            overflow: TextOverflow.ellipsis,
-          ),
-          prefixIcon: icon != null
-              ? Icon(
-                  icon,
-                  size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-            ),
-            borderSide: BorderSide(color: Colors.red, width: 2),
-          ),
-          contentPadding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 16,
-            vertical: 16,
-          ),
-          filled: true,
-          fillColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        ),
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-          fontWeight: FontWeight.w500,
-          overflow: TextOverflow.ellipsis,
-        ),
-        dropdownColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-        ),
-        menuMaxHeight: 300,
-        items: items,
-        onChanged: onChanged,
-        validator: validator,
+      decoration: context.chatGPTInputDecoration.copyWith(
+        labelText: label,
+        prefixIcon: icon != null ? Icon(icon) : null,
       ),
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      icon: const Icon(Icons.keyboard_arrow_down),
+      menuMaxHeight: 300,
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
     );
   }
 
@@ -762,14 +428,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
       
       // Validate tool selection
       if (_selectedToolId.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please select a tool'),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        AuthErrorHandler.showErrorSnackBar(context, 'Please select a tool');
         setState(() {
           _isLoading = false;
         });
@@ -784,14 +443,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         );
       } catch (e) {
         debugPrint('❌ Tool not found: $_selectedToolId');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Selected tool not found. Please refresh and try again.'),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        AuthErrorHandler.showErrorSnackBar(context, 'Selected tool not found. Please refresh and try again.');
         setState(() {
           _isLoading = false;
         });
@@ -845,26 +497,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         });
 
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text('Issue reported successfully!'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        AuthErrorHandler.showSuccessSnackBar(context, 'Issue reported successfully!');
 
         // Note: We don't call Navigator.pop() because this screen is embedded
         // as a tab in TechnicianHomeScreen. The form is cleared and the user
@@ -892,18 +525,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
           errorMessage = 'Network error. Please check your connection and try again.';
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     } finally {
       if (mounted) {
@@ -922,34 +544,13 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
     return Container(
       width: double.infinity,
       padding: ResponsiveHelper.getResponsivePadding(
         context,
         all: 20,
       ),
-      decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-        ),
-        border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -958,7 +559,7 @@ class _SectionCard extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-              color: theme.colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
               letterSpacing: -0.3,
             ),
           ),

@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
+import '../widgets/common/themed_text_field.dart';
+import '../widgets/common/themed_button.dart';
 import '../utils/responsive_helper.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
@@ -22,7 +25,25 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _positionController = TextEditingController();
+  String? _selectedPosition;
+
+  final List<String> _positions = [
+    'Operations Manager',
+    'General Manager',
+    'Service Manager',
+    'Project Manager',
+    'Director',
+    'CEO',
+    'COO',
+    'CFO',
+    'HR Manager',
+    'Sales Manager',
+    'Technical Director',
+    'Quality Control Manager',
+    'Maintenance Supervisor',
+    'Fleet Manager',
+    'Warehouse Manager',
+  ];
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -34,244 +55,199 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _positionController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
     final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
-    final Color desktopBackground = const Color(0xFF05070B);
-    final Color desktopCardColor = const Color(0xFF090D14);
-    final Color fieldIconColor = isDesktopLayout
-        ? Colors.white.withOpacity(0.75)
-        : colorScheme.onSurface.withValues(alpha: 0.7);
-    final hintStyle = TextStyle(
-      color: isDesktopLayout
-          ? Colors.white.withOpacity(0.55)
-          : colorScheme.onSurface.withValues(alpha: 0.5),
-      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-      fontWeight: FontWeight.w400,
-    );
-    final borderColor = colorScheme.onSurface.withValues(alpha: 0.2);
-
-    OutlineInputBorder buildBorder(Color color) {
-      return OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: color, width: 1),
-      );
-    }
-
-    InputDecoration buildInputDecoration({
-      required String label,
-      required String hint,
-      required IconData icon,
-      Widget? suffixIcon,
-    }) {
-      return InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(
-          icon,
-          color: fieldIconColor,
-          size: 22,
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 52),
-        suffixIcon: suffixIcon,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        hintText: hint,
-        hintStyle: hintStyle,
-        filled: true,
-        fillColor: isDarkMode
-            ? colorScheme.surface.withOpacity(isDesktopLayout ? 0.4 : 0.6)
-            : Colors.white,
-        border: buildBorder(borderColor),
-        enabledBorder: buildBorder(borderColor),
-        focusedBorder: buildBorder(AppTheme.primaryColor),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      );
-    }
 
     return Scaffold(
-      backgroundColor:
-          isDesktopLayout ? desktopBackground : theme.scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor, // Pure white
       appBar: AppBar(
-        title: isDesktopLayout
-            ? null
-            : const Text(
-                'Admin Registration',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-        backgroundColor:
-            isDesktopLayout ? Colors.transparent : colorScheme.surface,
-        foregroundColor: isDesktopLayout ? Colors.white : colorScheme.onSurface,
-        elevation: isDesktopLayout ? 0 : 0,
+        title: const Text(
+          'Admin Registration',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDesktopLayout ? Colors.white : colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: context.cardDecoration,
+            child: IconButton(
+              icon: const Icon(
+                Icons.chevron_left,
+                size: 24,
+                color: Colors.black87,
+              ),
+              onPressed: () => Navigator.pop(context),
+              splashRadius: 24,
+            ),
+          ),
         ),
       ),
       body: SafeArea(
-        child: Container(
-          decoration: isDesktopLayout
-              ? const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF05070B),
-                      Color(0xFF0F1725),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                )
-              : null,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktopLayout ? 48 : 20,
-              vertical: isDesktopLayout ? 10 : 0,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktopLayout ? 640 : double.infinity,
-                ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktopLayout ? 32 : 0,
-                    vertical: isDesktopLayout ? 24 : 0,
-                  ),
-                  decoration: isDesktopLayout
-                      ? BoxDecoration(
-                          color: desktopCardColor.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(36),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black54,
-                              blurRadius: 30,
-                              offset: Offset(0, 20),
-                            ),
-                          ],
-                        )
-                      : null,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (isDesktopLayout) ...[
-                          Text(
-                            'Admin Registration',
-                            style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                  context, 28),
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(
-                              height: ResponsiveHelper.getResponsiveSpacing(
-                                  context, 24)),
-                        ],
-                    // Onboarding hint
-                    Text(
-                      'Register as an administrator for RGS HVAC Services',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                        color: isDesktopLayout
-                            ? Colors.white.withOpacity(0.78)
-                            : colorScheme.onSurface.withValues(alpha: 0.75),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      textAlign: TextAlign.center,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktopLayout ? 48 : context.spacingLarge,
+            vertical: context.spacingLarge,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isDesktopLayout ? 640 : double.infinity,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Subtitle above card
+                  Text(
+                    'Register as an administrator for RGS HVAC Services',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: context.secondaryTextColor,
+                      fontWeight: FontWeight.w400,
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
-                    // Name Field
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: buildInputDecoration(
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: context.spacingLarge * 1.5), // 24px
+                  
+                  // Card with form
+                  Container(
+                    padding: EdgeInsets.all(isDesktopLayout ? 32 : context.spacingLarge),
+                    decoration: context.cardDecoration, // ChatGPT-style card
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Name Field
+                      ThemedTextField(
+                        controller: _nameController,
                         label: 'Full Name',
                         hint: 'Enter full name',
-                        icon: Icons.person,
+                        prefixIcon: Icons.person_outline,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your full name';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your full name';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium), // 12px
 
-                    // Email Field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: buildInputDecoration(
+                      // Email Field
+                      ThemedTextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         label: 'Email Address',
                         hint: 'Enter company email',
-                        icon: Icons.email,
+                        prefixIcon: Icons.email_outlined,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your email address';
+                          }
+                          if (!value.contains('@royalgulf.ae') &&
+                              !value.contains('@mekar.ae') &&
+                              !value.contains('@gmail.com')) {
+                            return 'Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email address';
-                        }
-                        if (!value.contains('@royalgulf.ae') &&
-                            !value.contains('@mekar.ae') &&
-                            !value.contains('@gmail.com')) {
-                          return 'Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium), // 12px
 
-                    // Position Field
-                    TextFormField(
-                      controller: _positionController,
-                      decoration: buildInputDecoration(
-                        label: 'Position/Title',
-                        hint: 'e.g., Operations Manager, Director',
-                        icon: Icons.work,
+                      // Position Field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: context.cardBackground,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.black.withOpacity(0.04),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedPosition,
+                          decoration: context.chatGPTInputDecoration.copyWith(
+                            labelText: 'Position/Title',
+                            hintText: 'Select your position',
+                            prefixIcon: Icon(
+                              Icons.work_outline,
+                              size: 22,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            prefixIconConstraints: const BoxConstraints(minWidth: 52),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                          items: _positions.map((String position) {
+                            return DropdownMenuItem<String>(
+                              value: position,
+                              child: Text(
+                                position,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? value) {
+                            setState(() {
+                              _selectedPosition = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select your position';
+                            }
+                            return null;
+                          },
+                          dropdownColor: Colors.white,
+                          menuMaxHeight: 300,
+                          borderRadius: BorderRadius.circular(20),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            size: 18,
+                          ),
+                        ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your position';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium), // 12px
 
-                    // Password Field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: buildInputDecoration(
+                      // Password Field
+                      ThemedTextField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
                         label: 'Password',
                         hint: 'Minimum 6 characters',
-                        icon: Icons.lock,
+                        prefixIcon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: fieldIconColor,
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            size: 20,
                           ),
                           onPressed: () {
                             setState(() {
@@ -279,129 +255,111 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             });
                           },
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium), // 12px
 
-                    // Confirm Password Field
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: buildInputDecoration(
+                      // Confirm Password Field
+                      ThemedTextField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
                         label: 'Confirm Password',
                         hint: 'Re-enter password',
-                        icon: Icons.lock_outline,
+                        prefixIcon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: fieldIconColor,
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            size: 20,
                           ),
                           onPressed: () {
                             setState(() {
-                              _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
                             });
                           },
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                    ),
 
-                    const SizedBox(height: 20),
+                      SizedBox(height: context.spacingLarge + context.spacingSmall), // 20px
 
-                    // Register Button
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
+                      // Register Button
+                      ThemedButton(
                         onPressed: _isLoading ? null : _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600] ?? Colors.green,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(isDesktopLayout ? 32 : 28),
+                        isLoading: _isLoading,
+                        child: const Text(
+                          'Register as Admin',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
-                          elevation: isDesktopLayout ? 6 : 2,
-                          shadowColor: Colors.black.withOpacity(0.25),
-                          minimumSize: const Size.fromHeight(52),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text(
-                                'Register as Admin',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      SizedBox(height: context.spacingLarge + context.spacingSmall), // 24px
 
-                    // Login Link
-                    InkWell(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: RichText(
-                          text: TextSpan(
+                      // Login Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account? ',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: isDesktopLayout
-                                  ? Colors.white.withOpacity(0.75)
-                                  : colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: context.secondaryTextColor,
                             ),
-                            children: [
-                              const TextSpan(text: 'Already have an account? '),
-                              TextSpan(
-                                text: 'Sign in',
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Sign in',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -425,7 +383,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
-        _positionController.text.trim(),
+        _selectedPosition ?? '',
       );
 
       debugPrint('✅ Admin registration method completed successfully');
@@ -506,7 +464,6 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
   Future<void> _showEmailConfirmationDialog() async {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     
     return showDialog(
       context: context,
@@ -516,16 +473,16 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           onWillPop: () async => false, // Prevent dismissing by back button
           child: AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
             ),
-            backgroundColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+            backgroundColor: Colors.white,
             title: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Icon(
                     Icons.email_outlined,
@@ -538,7 +495,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                   child: Text(
                     'Check Your Email',
                     style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: theme.colorScheme.onSurface,
                     ),
@@ -553,21 +510,25 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 Text(
                   'We\'ve sent a confirmation email to:',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 14,
+                    color: context.secondaryTextColor,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
+                    color: context.cardBackground,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.04),
+                      width: 0.5,
+                    ),
                   ),
                   child: Text(
                     _emailController.text.trim(),
                     style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.secondaryColor,
                     ),
@@ -578,7 +539,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                   'Please check your email and click the confirmation link to verify your admin account. '
                   'You must confirm your email before you can log in.',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: 14,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     height: 1.5,
                   ),
@@ -587,11 +548,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppTheme.secondaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                      width: 1,
+                      color: AppTheme.secondaryColor.withOpacity(0.2),
+                      width: 0.5,
                     ),
                   ),
                   child: Row(
@@ -606,7 +567,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                         child: Text(
                           'After confirming your email, you can log in with your admin credentials.',
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                            fontSize: 12,
                             color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
@@ -617,18 +578,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
               ],
             ),
             actions: [
-              ElevatedButton(
+              ThemedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
                 child: const Text('OK'),
               ),
             ],

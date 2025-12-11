@@ -30,6 +30,13 @@ class SupabaseTechnicianProvider with ChangeNotifier {
       ).length;
       final withoutPictures = techniciansList.length - withPictures;
       
+      // Debug: Log profile picture URLs
+      for (final tech in techniciansList) {
+        if (tech.profilePictureUrl != null && tech.profilePictureUrl!.isNotEmpty) {
+          debugPrint('📸 ${tech.name}: ${tech.profilePictureUrl}');
+        }
+      }
+      
       _technicians = techniciansList;
       debugPrint('✅ Loaded ${_technicians.length} technicians (${withPictures} with profile pictures, ${withoutPictures} without)');
     } catch (e) {

@@ -5,8 +5,10 @@ import '../providers/auth_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/auth_error_handler.dart';
 
 class AdminApprovalScreen extends StatefulWidget {
   const AdminApprovalScreen({super.key});
@@ -64,15 +66,12 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.cardSurfaceColor(context),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                decoration: context.cardDecoration,
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
                     color: AppTheme.secondaryColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   labelColor: Colors.white,
                   unselectedLabelColor:
@@ -273,11 +272,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurfaceColor(context),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: context.cardDecoration,
         child: TextField(
           controller: _searchController,
           onChanged: (value) {
@@ -289,15 +284,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             fontSize: 14,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
-          decoration: InputDecoration(
+          decoration: context.chatGPTInputDecoration.copyWith(
             hintText: 'Search registrations...',
-            hintStyle: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withOpacity(0.45),
-            ),
             prefixIcon: Icon(
               Icons.search,
               size: 20,
@@ -324,9 +312,6 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     },
                   )
                 : null,
-            border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
           ),
         ),
       ),
@@ -347,21 +332,22 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           color: Colors.black,
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new,
-            color: Colors.black87, size: 18),
-        onPressed: () => NavigationHelper.safePop(context),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            Icons.search,
-            color: Colors.black.withOpacity(0.55),
-            size: 20,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: context.cardDecoration,
+          child: IconButton(
+            icon: const Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Colors.black87,
+            ),
+            onPressed: () => NavigationHelper.safePop(context),
+            splashRadius: 24,
           ),
-          onPressed: () => FocusScope.of(context).unfocus(),
         ),
-      ],
+      ),
+      actions: [],
     );
   }
 
@@ -383,32 +369,29 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      color: AppTheme.secondaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -466,8 +449,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               approval.hireDate != null) ...[
             const SizedBox(height: 12),
             Divider(
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
+              color: theme.colorScheme.onSurface.withOpacity(0.04),
               height: 1,
+              thickness: 0.5,
             ),
             const SizedBox(height: 8),
             _buildInfoRow('Employee ID', approval.employeeId),
@@ -522,10 +506,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: Colors.red.withOpacity(0.25),
-                  width: 1,
+                  color: Colors.red.withOpacity(0.2),
+                  width: 0.5,
                 ),
               ),
               child: Column(
@@ -570,7 +554,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                       backgroundColor: AppTheme.secondaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       padding:
                           const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
@@ -593,9 +577,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                           TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red, width: 1.4),
+                      side: const BorderSide(color: Colors.red, width: 1),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       foregroundColor: Colors.red,
                       padding:
@@ -614,17 +598,21 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   Widget _buildDepartmentPill(String department) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(24),
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withOpacity(0.04),
+          width: 0.5,
+        ),
       ),
       child: Text(
         department,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );
@@ -653,17 +641,17 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   Widget _buildStatusOutlineChip(String status) {
     final color = _getStatusColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color, width: 1),
       ),
       child: Text(
         _formatStatusLabel(status),
         style: TextStyle(
           color: color,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -760,7 +748,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: Text(
           'Authorize User',
           style: Theme.of(context)
@@ -773,7 +764,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           style: Theme.of(context)
               .textTheme
               .bodyMedium
-              ?.copyWith(color: Colors.grey[300]),
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
         actions: [
           TextButton(
@@ -798,18 +789,14 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         await context.read<AuthProvider>().initialize();
         // Reload notifications to show the new approval notification
         await context.read<AdminNotificationProvider>().loadNotifications();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User authorized successfully'),
-            backgroundColor: Colors.green,
-          ),
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'User authorized successfully',
         );
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to authorize user: ${provider.error}'),
-            backgroundColor: Colors.red,
-          ),
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to authorize user: ${provider.error}',
         );
       }
     }
@@ -821,7 +808,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: Text(
           'Reject User',
           style: Theme.of(context)
@@ -854,26 +844,32 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               maxLines: 3,
               style: TextStyle(
                   color: Theme.of(context).textTheme.bodyLarge?.color),
-              decoration: InputDecoration(
+              decoration: context.chatGPTInputDecoration.copyWith(
                 hintText: 'Enter reason for rejection...',
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.red),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.4),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: Colors.red.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
               ),
             ),
             if (approval.rejectionCount >= 2) ...[
               SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  color: Colors.red.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.2),
+                    width: 0.5,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -903,11 +899,9 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           ElevatedButton(
             onPressed: () async {
               if (_rejectionReasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Please enter a reason for rejection'),
-                    backgroundColor: Colors.red,
-                  ),
+                AuthErrorHandler.showErrorSnackBar(
+                  context,
+                  'Please enter a reason for rejection',
                 );
                 return;
               }

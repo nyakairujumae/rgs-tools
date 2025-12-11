@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
@@ -28,6 +29,7 @@ import 'providers/tool_issue_provider.dart';
 import 'providers/request_thread_provider.dart';
 import 'providers/pending_approvals_provider.dart';
 import 'providers/admin_notification_provider.dart';
+import 'providers/approval_workflows_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
 import 'config/supabase_config.dart';
@@ -44,6 +46,9 @@ import 'package:firebase_messaging/firebase_messaging.dart'
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Preserve the native splash screen - we'll remove it manually after initialization
+  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
 
   print('🚀 App starting...');
 
@@ -54,25 +59,23 @@ void main() async {
     print('Stack trace: ${details.stack}');
   };
 
-  // Initialize Firebase FIRST - before anything else
-  // Note: On simulator, channel errors may occur - app will continue without Firebase
+  // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
-      print('🔥 Initializing Firebase...');
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
       print('✅ Firebase initialized successfully');
       
-      // Register background message handler
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      print('✅ Background message handler registered');
+      // Initialize Firebase Messaging Service
+      await fcm_service.FirebaseMessagingService.initialize();
+      print('✅ Firebase Messaging initialized');
     } catch (e) {
-      // Channel errors on simulator are common - app continues without Firebase
-      print('⚠️ Firebase initialization failed (app continues): $e');
-      print('⚠️ Note: Push notifications require a real device with proper entitlements');
-      // App continues without Firebase - this is OK for simulator/testing
+      print('❌ Firebase initialization failed: $e');
     }
+    
+    // Register background message handler (must be called before runApp)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   // Initialize Supabase (works on web too)
@@ -91,8 +94,8 @@ void main() async {
         print('🔍 Using bundle ID: com.rgs.app');
         
         try {
-          // Add a small delay to allow native plugins to initialize
-          await Future.delayed(const Duration(milliseconds: 500));
+          // Minimal delay to allow native plugins to initialize
+          await Future.delayed(const Duration(milliseconds: 50));
           
           await Supabase.initialize(
             url: SupabaseConfig.url,
@@ -227,7 +230,7 @@ void main() async {
   print('Starting app...');
   
   // Run the app
-  runApp(const RgsApp());
+  runApp(const HvacToolsManagerApp());
 }
 
 
@@ -302,38 +305,59 @@ class ErrorBoundary extends StatelessWidget {
   }
 }
 
-class RgsApp extends StatefulWidget {
-  const RgsApp({super.key});
-
+/// Smooth fade-in transition wrapper for splash screen to app transition
+class SplashTransition extends StatefulWidget {
+  final Widget child;
+  
+  const SplashTransition({super.key, required this.child});
+  
   @override
-  State<RgsApp> createState() => _RgsAppState();
+  State<SplashTransition> createState() => _SplashTransitionState();
 }
 
-class _RgsAppState extends State<RgsApp> {
+class _SplashTransitionState extends State<SplashTransition>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  
   @override
   void initState() {
     super.initState();
-    // Initialize FCM service after app starts
-    if (!kIsWeb) {
-      _initializeFCM();
-    }
-  }
-
-  Future<void> _initializeFCM() async {
-    // Only initialize FCM if Firebase was successfully initialized
-    if (Firebase.apps.isEmpty) {
-      print('⚠️ Firebase not initialized - skipping FCM setup');
-      print('⚠️ This is normal on simulator or if Firebase initialization failed');
-      return;
-    }
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
     
-    try {
-      await fcm_service.FirebaseMessagingService.initialize();
-      print('✅ Firebase Messaging service initialized');
-    } catch (e) {
-      print('⚠️ FCM service initialization failed (non-critical): $e');
-    }
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    
+    // Start animation after a brief delay to ensure splash is removed
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
   }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: widget.child,
+    );
+  }
+}
+
+class HvacToolsManagerApp extends StatelessWidget {
+  const HvacToolsManagerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -348,6 +372,7 @@ class _RgsAppState extends State<RgsApp> {
         ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
         ChangeNotifierProvider(create: (_) => RequestThreadProvider()),
         ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
+        ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, child) {
@@ -363,26 +388,14 @@ class _RgsAppState extends State<RgsApp> {
             return const SizedBox.shrink();
           };
           
-          // Wait for initialization to complete before showing any screen
-          // This prevents the brief flash of role selection screen
-          if (!authProvider.isInitialized || authProvider.isLoading) {
-            return MaterialApp(
-              title: 'RGS HVAC Tools',
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeProvider.themeMode,
-              home: Scaffold(
-                backgroundColor: AppTheme.appBackground,
-                body: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
-                  ),
-                ),
-              ),
-              debugShowCheckedModeBanner: false,
-            );
+          // Remove native splash immediately when initialization completes
+          // Do this synchronously to minimize delay
+          if (authProvider.isInitialized && !authProvider.isLoading) {
+            FlutterNativeSplash.remove();
           }
           
+          // Always render MaterialApp (like mom.dart)
+          // The native splash (preserved in main()) stays visible until we remove it above
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
@@ -470,7 +483,7 @@ class _RgsAppState extends State<RgsApp> {
                     print('🔐 Full URI: $uri');
                     print('🔐 Query parameters: ${uri.queryParameters}');
                     
-                    // Return a loading screen that processes the session
+                    // Process the session and navigate directly - no loading screen
                     return MaterialPageRoute(
                       builder: (context) {
                         // Process the session when the route is built
@@ -573,27 +586,8 @@ class _RgsAppState extends State<RgsApp> {
                           }
                         });
                         
-                        return Scaffold(
-                          backgroundColor: AppTheme.scaffoldBackground,
-                          body: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Confirming your email...',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
+                        // Return invisible widget - no loading screen
+                        return const SizedBox.shrink();
                       },
                       settings: RouteSettings(name: '/auth-callback'),
                     );
@@ -655,14 +649,24 @@ class _RgsAppState extends State<RgsApp> {
       // This prevents a temporary blank screen caused by returning an empty widget while isLoading is true.
       if (authProvider.isLoggingOut) {
         print('🔍 isLoggingOut=true → Showing RoleSelectionScreen immediately');
-        return const RoleSelectionScreen();
+        return const SplashTransition(child: RoleSelectionScreen());
+      }
+      
+      // Don't show any Flutter screen during initialization
+      // The native splash (preserved in main()) stays visible until we remove it
+      // The removal happens in the Consumer builder above
+      if (!authProvider.isInitialized || authProvider.isLoading) {
+        print('🔍 Waiting for initialization - native splash should be visible');
+        // Return fully invisible widget so native splash remains visible
+        // No Flutter paint, no Scaffold, no backgroundColor
+        return const SizedBox.shrink();
       }
       
       // For web, show role selection screen initially (no backend for now)
       // Desktop (Windows, macOS, Linux) uses real authentication like mobile
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
-        return const RoleSelectionScreen();
+        return const SplashTransition(child: RoleSelectionScreen());
       }
       
       // Desktop platforms use real Supabase authentication
@@ -673,7 +677,6 @@ class _RgsAppState extends State<RgsApp> {
         print('🔍 Desktop platform detected, using real Supabase authentication');
       }
 
-      // At this point, initialization is complete (checked in Consumer2 builder)
       // Check authentication status and route accordingly
       if (authProvider.isAuthenticated) {
         print('🔍 User is authenticated, routing to appropriate screen');
@@ -693,7 +696,7 @@ class _RgsAppState extends State<RgsApp> {
           // Email not confirmed - show role selection (user needs to confirm email first)
           // After confirmation, they'll be auto-logged in via deep link
           print('❌ Email not confirmed - showing role selection');
-          return const RoleSelectionScreen();
+          return const SplashTransition(child: RoleSelectionScreen());
         } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
           // Check approval status for technicians
           print('🔍 Technician user detected, checking approval status...');
@@ -705,31 +708,21 @@ class _RgsAppState extends State<RgsApp> {
         }
       } else {
         print('🔍 User not authenticated, showing role selection screen');
-        return const RoleSelectionScreen();
+        return const SplashTransition(child: RoleSelectionScreen());
       }
     } catch (e, stackTrace) {
       // Always fallback to role selection screen on any error (for new installs)
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
-      return const RoleSelectionScreen();
+      return const SplashTransition(child: RoleSelectionScreen());
     }
   }
 }
 
+/// Initialize Firebase asynchronously after app starts (more resilient to channel errors)
 /// Background message handler (must be top-level function)
-/// This is called when a message is received while the app is in the background
-/// Firebase is initialized natively in AppDelegate, but background handlers run in a separate isolate
-/// so we need to check/initialize here as well
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Background handlers run in a separate isolate, so Firebase might not be initialized
-  // Initialize if needed (it should already be initialized natively, but this is a safety check)
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
-  
-  // Use the handler from the service
+  await Firebase.initializeApp();
   await fcm_service.firebaseMessagingBackgroundHandler(message);
 }

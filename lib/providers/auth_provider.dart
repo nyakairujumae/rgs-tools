@@ -117,9 +117,9 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('🔍 Getting current session...');
-      // Small delay to ensure Supabase has restored any persisted session
-      // Reduced delay since we're now waiting in the UI layer
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Minimal delay to ensure Supabase has restored any persisted session
+      // Reduced to milliseconds for faster startup
+      await Future.delayed(const Duration(milliseconds: 50));
       
       // Get current session (this is local, no network call)
       var session = SupabaseService.client.auth.currentSession;

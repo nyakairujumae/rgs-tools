@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/badge_service.dart';
 
 class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> _notifications = [];
@@ -50,6 +52,9 @@ class AdminNotificationProvider extends ChangeNotifier {
       
       _isLoading = false;
       notifyListeners();
+      
+      // Sync badge with database after loading notifications
+      // Note: We need a BuildContext, so we'll sync badge in the UI layer
     } catch (e) {
       debugPrint('Error loading notifications: $e');
       if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
@@ -82,6 +87,9 @@ class AdminNotificationProvider extends ChangeNotifier {
       if (index != -1) {
         _notifications[index] = _notifications[index].copyWith(isRead: true);
         notifyListeners();
+        
+        // Sync badge with database after marking as read
+        // Note: We need a BuildContext, so we'll sync badge in the UI layer
       }
     } catch (e) {
       debugPrint('Error marking notification as read: $e');
@@ -104,6 +112,9 @@ class AdminNotificationProvider extends ChangeNotifier {
 
       _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
       notifyListeners();
+      
+      // Sync badge with database after marking all as read
+      // Note: We need a BuildContext, so we'll sync badge in the UI layer
     } catch (e) {
       debugPrint('Error marking all notifications as read: $e');
       // Still update locally even if API call fails

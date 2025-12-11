@@ -5,6 +5,7 @@ import '../models/tool.dart';
 import '../models/tool_group.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import 'tool_detail_screen.dart';
 import 'technicians_screen.dart';
 
@@ -74,7 +75,11 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
               backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
               leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+                icon: Icon(
+                  Icons.chevron_left,
+                  size: 28,
+                  color: Colors.black87,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               title: Text(
@@ -132,22 +137,14 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: theme.scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                   ),
                   child: IconButton(
                     icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18,
-                      color: theme.colorScheme.onSurface,
+                      Icons.chevron_left,
+                      size: 28,
+                      color: Colors.black87,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -205,17 +202,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: AppTheme.cardSurfaceColor(context),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
+              decoration: context.cardDecoration,
               child: Row(
                 children: [
                   Expanded(
@@ -227,9 +214,9 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                     ),
                   ),
                   Container(
-                    width: 1,
+                    width: 0.5,
                     height: 40,
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withOpacity(0.04),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -240,9 +227,9 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                     ),
                   ),
                   Container(
-                    width: 1,
+                    width: 0.5,
                     height: 40,
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withOpacity(0.04),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -392,22 +379,13 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(22),
+      decoration: context.cardDecoration.copyWith(
         border: isSelected
             ? Border.all(
-                color: AppTheme.primaryColor,
+                color: AppTheme.secondaryColor,
                 width: 2,
               )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+            : context.cardDecoration.border,
       ),
       child: InkWell(
         onTap: widget.isSelectionMode
@@ -420,13 +398,13 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   ),
                 );
               },
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18), // Match card decoration
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(18), // Match card decoration
                 child: SizedBox(
                   width: 80,
                   height: 80,
@@ -476,9 +454,10 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                               color: AppTheme.secondaryColor,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppTheme.secondaryColor,
+                                color: Colors.white,
                                 width: 2,
                               ),
+                              // No shadows - clean design
                             ),
                             child: const Icon(
                               Icons.check,
@@ -503,19 +482,28 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _buildInfoRow(
-                          _getStatusIcon(tool.status),
-                          tool.status,
-                          _getStatusColor(tool.status),
-                          isPill: true,
-                        ),
+                        // Status pill: Show "Assigned" if assigned, otherwise show status
                         if (tool.assignedTo != null)
                           _buildInfoRow(
                             Icons.person,
                             'Assigned',
                             AppTheme.secondaryColor,
                             isPill: true,
+                          )
+                        else
+                          _buildInfoRow(
+                            _getStatusIcon(tool.status),
+                            tool.status,
+                            _getStatusColor(tool.status),
+                            isPill: true,
                           ),
+                        // Condition pill: Good, Maintenance, Retired
+                        _buildInfoRow(
+                          _getConditionIcon(tool.condition),
+                          tool.condition,
+                          _getConditionColor(tool.condition),
+                          isPill: true,
+                        ),
                       ],
                     ),
                   ],
@@ -586,7 +574,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     return Container(
       width: width,
       height: height,
-      color: AppTheme.cardSurfaceColor(context),
+      color: context.cardBackground,
       alignment: Alignment.center,
       child: Icon(
         Icons.build,
@@ -621,6 +609,40 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
         return Colors.orange;
       case 'Retired':
         return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getConditionIcon(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'good':
+      case 'excellent':
+        return Icons.check_circle;
+      case 'fair':
+      case 'maintenance':
+        return Icons.warning;
+      case 'poor':
+      case 'needs repair':
+      case 'retired':
+        return Icons.block;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  Color _getConditionColor(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'good':
+      case 'excellent':
+        return Colors.green;
+      case 'fair':
+      case 'maintenance':
+        return Colors.orange;
+      case 'poor':
+      case 'needs repair':
+      case 'retired':
+        return Colors.red;
       default:
         return Colors.grey;
     }

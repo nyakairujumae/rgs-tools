@@ -60,12 +60,59 @@ class ToolGroup {
     return parts.isEmpty ? 'No status' : parts.join(', ');
   }
 
-  /// Get the first available tool for representative display
+  /// Get the best representative tool for display
+  /// Priority: 1) Available + Good condition, 2) Available, 3) Good condition, 4) First with image, 5) First
   Tool? get representativeTool {
-    return instances.firstWhere(
-      (t) => t.imagePath != null && t.imagePath!.isNotEmpty,
-      orElse: () => instances.first,
-    );
+    // First, try to find an available tool with good condition
+    try {
+      final availableGood = instances.firstWhere(
+        (t) => t.status == 'Available' && 
+               (t.condition.toLowerCase() == 'good' || t.condition.toLowerCase() == 'excellent'),
+      );
+      return availableGood;
+    } catch (e) {
+      // No available + good found
+    }
+    
+    // Second, try to find any available tool
+    try {
+      final available = instances.firstWhere(
+        (t) => t.status == 'Available',
+      );
+      return available;
+    } catch (e) {
+      // No available found
+    }
+    
+    // Third, try to find a tool with good condition
+    try {
+      final goodCondition = instances.firstWhere(
+        (t) => t.condition.toLowerCase() == 'good' || t.condition.toLowerCase() == 'excellent',
+      );
+      return goodCondition;
+    } catch (e) {
+      // No good condition found
+    }
+    
+    // Fourth, get first tool with image
+    try {
+      return instances.firstWhere(
+        (t) => t.imagePath != null && t.imagePath!.isNotEmpty,
+      );
+    } catch (e) {
+      // No image found, return first
+      return instances.first;
+    }
+  }
+
+  /// Get the best status to display for the tool group
+  /// Priority: Available > In Use > Maintenance > Retired
+  String get bestStatus {
+    if (availableCount > 0) return 'Available';
+    if (inUseCount > 0) return 'In Use';
+    if (maintenanceCount > 0) return 'Maintenance';
+    if (retiredCount > 0) return 'Retired';
+    return representativeTool?.status ?? 'Unknown';
   }
 
   /// Group a list of tools by their composite key

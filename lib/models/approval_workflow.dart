@@ -70,7 +70,7 @@ class ApprovalWorkflow {
       'rejected_date': rejectedDate?.toIso8601String(),
       'approved_by': approvedBy,
       'rejected_by': rejectedBy,
-      'request_data': requestData != null ? _mapToString(requestData!) : null,
+      'request_data': requestData,
       'location': location,
       'created_at': createdAt,
       'updated_at': updatedAt,
@@ -98,7 +98,11 @@ class ApprovalWorkflow {
       rejectedDate: map['rejected_date'] != null ? DateTime.parse(map['rejected_date']) : null,
       approvedBy: map['approved_by'],
       rejectedBy: map['rejected_by'],
-      requestData: map['request_data'] != null ? _stringToMap(map['request_data']) : null,
+      requestData: map['request_data'] != null 
+          ? (map['request_data'] is Map 
+              ? Map<String, dynamic>.from(map['request_data']) 
+              : _stringToMap(map['request_data'].toString())) 
+          : null,
       location: map['location'],
       createdAt: map['created_at'],
       updatedAt: map['updated_at'],

@@ -53,6 +53,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     final theme = Theme.of(context);
     final toolProviderWatch = context.watch<SupabaseToolProvider>();
     final categories = ['Category', ...toolProviderWatch.getCategories()];
+    final authProvider = context.watch<AuthProvider>();
+    final isTechnician = authProvider.userRole == UserRole.technician;
 
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
@@ -68,21 +70,44 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Shared Tools',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Access and monitor tools that are shared by teams',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                    Row(
+                      children: [
+                        if (isTechnician)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.chevron_left,
+                              size: 28,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            onPressed: () => NavigationHelper.safePop(context),
+                          ),
+                          ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shared Tools',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Access and monitor tools that are shared by teams',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -174,27 +199,20 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                           padding = 20.0;
                         }
                         
-                        return RefreshIndicator(
-                          onRefresh: () async {
-                            await toolProvider.loadTools();
-                          },
-                          color: AppTheme.primaryColor,
-                          backgroundColor: Theme.of(context).cardTheme.color,
-                          child: GridView.builder(
-                            padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              crossAxisSpacing: crossAxisSpacing,
-                              mainAxisSpacing: mainAxisSpacing,
-                              childAspectRatio: childAspectRatio,
-                            ),
-                            itemCount: tools.length,
-                            itemBuilder: (context, index) {
-                              final tool = tools[index];
-                              return _buildToolCard(tool, technicianProvider);
-                            },
+                        return GridView.builder(
+                          padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: crossAxisSpacing,
+                            mainAxisSpacing: mainAxisSpacing,
+                            childAspectRatio: childAspectRatio,
                           ),
+                          itemCount: tools.length,
+                          itemBuilder: (context, index) {
+                            final tool = tools[index];
+                            return _buildToolCard(tool, technicianProvider);
+                          },
                         );
                       },
                     );
@@ -216,13 +234,9 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         children: [
           Container(
             height: 52,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.18),
-                width: 1.2,
-              ),
+            decoration: context.cardDecoration.copyWith(
+              borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+              color: context.cardBackground,
             ),
             child: TextField(
               controller: _searchController,
@@ -277,14 +291,9 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               Expanded(
                 child: Container(
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.colorScheme.onSurface
-                          .withOpacity(0.15),
-                      width: 1.2,
-                    ),
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                    color: context.cardBackground,
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -384,14 +393,9 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               Expanded(
                 child: Container(
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.colorScheme.onSurface
-                          .withOpacity(0.15),
-                      width: 1.2,
-                    ),
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                    color: context.cardBackground,
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -532,7 +536,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget _buildToolCard(
       Tool tool, SupabaseTechnicianProvider technicianProvider) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
-    const double cardRadius = 28.0;
+    const double cardRadius = 18.0; // Match card decoration borderRadius
 
     return InkWell(
       onTap: () {
@@ -553,16 +557,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             child: AspectRatio(
               aspectRatio: 1.0,
               child: Container(
-                decoration: BoxDecoration(
-                  color: context.cardBackground,
-                  borderRadius: BorderRadius.circular(cardRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                decoration: context.cardDecoration.copyWith(
+                  borderRadius: BorderRadius.circular(18), // Match card decoration
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _buildToolImage(tool),
@@ -640,7 +636,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(18), // Match card decoration
       child: Stack(
         children: [
           _buildImageWidget(imageUrls[0]),
@@ -698,7 +694,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           if (loadingProgress == null) return child;
           return Container(
             decoration: BoxDecoration(
-              gradient: AppTheme.cardGradientFor(context),
+              color: context.cardBackground,
             ),
             child: Center(
               child: CircularProgressIndicator(
@@ -734,7 +730,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppTheme.cardGradientFor(context),
+        color: context.cardBackground,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -852,24 +848,30 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       Tool tool, SupabaseTechnicianProvider technicianProvider) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar
             Container(
-              width: 40,
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
             Text(
               tool.name,
               style: TextStyle(

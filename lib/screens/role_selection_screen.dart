@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+import '../utils/logo_assets.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import 'admin_registration_screen.dart';
 import 'auth/login_screen.dart';
 import 'technician_registration_screen.dart';
@@ -18,9 +21,8 @@ class RoleSelectionScreen extends StatelessWidget {
             defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.linux);
     final isDesktop = isDesktopWidth || isDesktopPlatform;
-    final backgroundColor = theme.colorScheme.background;
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -38,7 +40,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   _buildRoleButton(
                     context: context,
                     label: 'Register as Admin',
-                    color: const Color(0xFF2E7D32),
+                    color: AppTheme.secondaryColor,
                     onTap: () => _navigate(
                       context,
                       const AdminRegistrationScreen(),
@@ -91,9 +93,15 @@ class RoleSelectionScreen extends StatelessWidget {
             ),
           ),
           child: Image.asset(
-            'assets/images/rgs.jpg',
+            getThemeLogoAsset(theme.brightness),
             width: logoWidth,
+            height: null,
             fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('❌ Error loading logo: $error');
+              debugPrint('❌ Logo asset path: ${getThemeLogoAsset(theme.brightness)}');
+              return const SizedBox.shrink();
+            },
           ),
         ),
         const SizedBox(height: 14),
@@ -111,11 +119,11 @@ class RoleSelectionScreen extends StatelessWidget {
           child: Text(
             'Tool Tracking • Assignments • Inventory',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
-              color: subtitleColor,
+              color: context.secondaryTextColor,
             ),
           ),
         ),
@@ -131,9 +139,8 @@ class RoleSelectionScreen extends StatelessWidget {
     Curve animationCurve = Curves.easeOut,
   }) {
     bool isPressed = false;
-    final borderRadius = BorderRadius.circular(30);
+    final borderRadius = BorderRadius.circular(context.borderRadiusLarge);
     final textColor = Colors.white;
-    final shadowColor = Colors.black.withOpacity(0.1);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -167,20 +174,15 @@ class RoleSelectionScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: borderRadius,
-                      boxShadow: [
-                        BoxShadow(
-                          color: shadowColor,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      boxShadow: context.cardShadows,
                     ),
                     child: Center(
                       child: Text(
                         label,
                         style: TextStyle(
-                          fontSize: 16.5,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                           color: textColor,
                         ),
                       ),
@@ -196,34 +198,34 @@ class RoleSelectionScreen extends StatelessWidget {
   }
 
   Widget _buildSignInLink(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: () => _navigate(context, const LoginScreen()),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: theme.textTheme.bodyMedium?.copyWith(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Already have an account? ',
+          style: TextStyle(
+            fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
+            color: context.secondaryTextColor,
+          ),
             ),
-            children: [
-              TextSpan(
-                text: 'Already have an account? ',
-                style: TextStyle(color: Colors.grey.shade600),
+        TextButton(
+          onPressed: () => _navigate(context, const LoginScreen()),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              TextSpan(
-                text: 'Sign in',
-                style: const TextStyle(
-                  color: Color(0xFF0A84FF),
+          child: Text(
+            'Sign in',
+            style: TextStyle(
+              fontSize: 14,
                   fontWeight: FontWeight.w600,
-                ),
+              color: AppTheme.secondaryColor,
               ),
-            ],
           ),
         ),
-      ),
+      ],
     );
   }
 

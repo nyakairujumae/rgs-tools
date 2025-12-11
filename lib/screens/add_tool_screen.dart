@@ -7,7 +7,10 @@ import '../models/tool.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/common/themed_text_field.dart';
+import '../widgets/common/themed_button.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddToolScreen extends StatefulWidget {
@@ -69,107 +72,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     'Other': Icons.category_outlined,
   };
 
-  Color _fieldBackgroundColor(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? theme.colorScheme.surfaceVariant.withOpacity(0.35)
-        : const Color(0xFFF5F5F7);
-  }
-
-  BoxDecoration _outlineDecoration(
-    BuildContext context, {
-    double radius = 14,
-    bool showBorder = false,
-    bool subtleFill = false,
-  }) {
-    final backgroundColor = _fieldBackgroundColor(context);
-    return BoxDecoration(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(radius),
-    );
-  }
-
-  BoxDecoration _categoryDropdownDecoration(BuildContext context) {
-    return BoxDecoration(
-      color: _fieldBackgroundColor(context),
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.04),
-          blurRadius: 14,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    );
-  }
-
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    String? labelText,
-    String? hintText,
-    String? prefixText,
-    Widget? suffixIcon,
-    Widget? prefixIcon,
-    EdgeInsetsGeometry? contentPadding,
-    TextStyle? labelStyle,
-  }) {
-    final theme = Theme.of(context);
-    final borderRadius = BorderRadius.circular(14);
-    final baseBorderSide = BorderSide(
-      color: theme.colorScheme.onSurface.withOpacity(0.25),
-      width: 1.1,
-    );
-
-    return InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      prefixText: prefixText,
-      suffixIcon: suffixIcon,
-      prefixIcon: prefixIcon,
-      labelStyle: labelStyle ??
-          TextStyle(
-            fontSize: 13,
-            color: theme.colorScheme.onSurface.withOpacity(0.55),
-          ),
-      hintStyle: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: theme.colorScheme.onSurface.withOpacity(0.45),
-      ),
-      contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: baseBorderSide,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: baseBorderSide,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(
-          color: AppTheme.secondaryColor,
-          width: 1.5,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(
-          color: theme.colorScheme.error,
-          width: 1.2,
-        ),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(
-          color: theme.colorScheme.error,
-          width: 1.5,
-        ),
-      ),
-      filled: true,
-      fillColor: Colors.transparent,
-    );
-  }
+  // Using theme extensions for all decorations
 
   Widget _buildCategoryDropdownRow(ThemeData theme, String category) {
     final icon = _categoryIcons[category] ?? Icons.category_outlined;
@@ -313,24 +216,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                   ),
                   child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18,
-                      color: theme.colorScheme.onSurface,
+                    icon: const Icon(
+                      Icons.chevron_left,
+                      size: 28,
+                      color: Colors.black87,
                     ),
                     onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -388,48 +284,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
       body: SafeArea(
         child: Container(
           color: theme.scaffoldBackgroundColor,
-          child: Theme(
-            data: theme.copyWith(
-              inputDecorationTheme: theme.inputDecorationTheme.copyWith(
-                filled: true,
-                fillColor: const Color(0xFFF5F5F7),
-                labelStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.55),
-                  fontSize: 12,
-                ),
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
-                  fontSize: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-              textTheme: theme.textTheme.apply(
-                bodyColor: theme.textTheme.bodyLarge?.color,
-                displayColor: theme.textTheme.bodyLarge?.color,
-              ),
-            ),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                child: ResponsiveHelper.isDesktop(context)
-                    ? _buildDesktopLayout(context, theme)
-                    : _buildMobileLayout(context, theme),
-              ),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              child: ResponsiveHelper.isDesktop(context)
+                  ? _buildDesktopLayout(context, theme)
+                  : _buildMobileLayout(context, theme),
             ),
           ),
         ),
@@ -459,105 +320,77 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     _buildImageSelectionSection(),
                     const SizedBox(height: 24),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: TextFormField(
-                        controller: _nameController,
-                        style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Tool Name *',
-                          hintText: 'e.g., Digital Multimeter',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter tool name';
-                          }
-                          return null;
-                        },
-                      ),
+                    ThemedTextField(
+                      controller: _nameController,
+                      label: 'Tool Name *',
+                      hint: 'e.g., Digital Multimeter',
+                      prefixIcon: Icons.build_outlined,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter tool name';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _categoryDropdownDecoration(context),
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          highlightColor: const Color(0xFFF3F4F6),
-                          hoverColor: const Color(0xFFF3F4F6),
-                          splashColor: const Color(0xFFF3F4F6),
+                    DropdownButtonFormField<String>(
+                      value: _selectedCategory.isEmpty
+                          ? null
+                          : _selectedCategory,
+                      decoration: context.chatGPTInputDecoration.copyWith(
+                        labelText: 'Category *',
+                        hintText: 'Select a category',
+                        prefixIcon: Icon(
+                          _categoryIcons[_selectedCategory.isEmpty ? 'Other' : _selectedCategory] ?? Icons.category_outlined,
+                          size: 22,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedCategory.isEmpty
-                              ? null
-                              : _selectedCategory,
-                          isExpanded: true,
-                          itemHeight: 48,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: theme.colorScheme.onSurface
-                                .withOpacity(0.65),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+                      ),
+                      items: _categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _buildCategoryDropdownRow(theme, category),
                           ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Category *',
-                            hintText: 'Select a category',
-                            labelStyle: TextStyle(
-                              fontSize: 13,
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.55),
-                            ),
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.45),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 10,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                          items: _categories.map((category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              alignment: Alignment.centerLeft,
-                              child: _buildCategoryDropdownRow(
-                                  theme, category),
-                            );
-                          }).toList(),
-                          selectedItemBuilder: (context) {
-                            return _categories
-                                .map(
-                                  (category) => Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: _buildCategoryDropdownRow(
-                                        theme, category),
-                                  ),
-                                )
-                                .toList();
-                          },
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value ?? '';
-                              _categoryController.text = value ?? '';
-                            });
-                          },
-                          validator: (value) {
-                            if (_selectedCategory.isEmpty) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
-                          dropdownColor: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        );
+                      }).toList(),
+                      selectedItemBuilder: (context) {
+                        return _categories
+                            .map(
+                              (category) => Align(
+                                alignment: Alignment.centerLeft,
+                                child: _buildCategoryDropdownRow(theme, category),
+                              ),
+                            )
+                            .toList();
+                      },
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value ?? '';
+                          _categoryController.text = value ?? '';
+                        });
+                      },
+                      validator: (value) {
+                        if (_selectedCategory.isEmpty) {
+                          return 'Please select a category';
+                        }
+                        return null;
+                      },
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 300,
+                      borderRadius: BorderRadius.circular(20),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        size: 18,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -565,49 +398,41 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 14),
-                            child: TextFormField(
-                              controller: _brandController,
-                              style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Brand',
-                          hintText: 'e.g., Fluke',
-                        ),
-                            ),
+                          child: ThemedTextField(
+                            controller: _brandController,
+                            label: 'Brand',
+                            hint: 'e.g., Fluke',
+                            prefixIcon: Icons.branding_watermark_outlined,
                           ),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 14),
-                            child: TextFormField(
-                              controller: _modelController,
-                              style: fieldTextStyle,
-                            decoration: _inputDecoration(
-                              context,
-                              labelText: 'Model Number',
-                              hintText: 'e.g., 87V',
-                              suffixIcon: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.auto_awesome,
-                                        color: AppTheme.secondaryColor),
-                                    tooltip: 'Generate Model Number',
-                                    onPressed: _generateModelNumber,
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.qr_code_scanner,
-                                        color: Colors.green),
-                                    tooltip: 'Scan Model Number',
-                                    onPressed: () => _scanBarcode(
-                                        _modelController, 'Model number'),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: ThemedTextField(
+                            controller: _modelController,
+                            label: 'Model Number',
+                            hint: 'e.g., 87V',
+                            prefixIcon: Icons.tag_outlined,
+                            suffixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.auto_awesome,
+                                      color: AppTheme.secondaryColor, size: 20),
+                                  tooltip: 'Generate Model Number',
+                                  onPressed: _generateModelNumber,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.qr_code_scanner,
+                                      color: Colors.green, size: 20),
+                                  tooltip: 'Scan Model Number',
+                                  onPressed: () => _scanBarcode(
+                                      _modelController, 'Model number'),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -625,9 +450,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             backgroundColor: AppTheme.secondaryColor,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                             ),
-                            elevation: 4,
+                            elevation: 0, // No elevation - clean design
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                           ),
@@ -644,34 +469,32 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: TextFormField(
-                        controller: _serialNumberController,
-                        style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Serial Number',
-                          hintText: 'Scan or enter manually',
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.auto_awesome,
-                                    color: Colors.blue),
-                                tooltip: 'Generate Unique ID',
-                                onPressed: _generateToolId,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.qr_code_scanner,
-                                    color: Colors.green),
-                                tooltip: 'Scan Serial Number',
-                                onPressed: () => _scanBarcode(
-                                    _serialNumberController, 'Serial number'),
-                              ),
-                            ],
+                    ThemedTextField(
+                      controller: _serialNumberController,
+                      label: 'Serial Number',
+                      hint: 'Scan or enter manually',
+                      prefixIcon: Icons.qr_code_outlined,
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.auto_awesome,
+                                color: Colors.blue, size: 20),
+                            tooltip: 'Generate Unique ID',
+                            onPressed: _generateToolId,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.qr_code_scanner,
+                                color: Colors.green, size: 20),
+                            tooltip: 'Scan Serial Number',
+                            onPressed: () => _scanBarcode(
+                                _serialNumberController, 'Serial number'),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -709,222 +532,127 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: TextFormField(
-                        controller: _purchasePriceController,
-                        style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Purchase Price',
-                          hintText: '0.00',
-                          prefixText: 'AED ',
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
+                    ThemedTextField(
+                      controller: _purchasePriceController,
+                      label: 'Purchase Price',
+                      hint: '0.00',
+                      prefixIcon: Icons.attach_money_outlined,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        // Add currency formatter if needed
+                      ],
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: InkWell(
-                        onTap: _selectPurchaseDate,
-                        borderRadius: BorderRadius.circular(14),
-                        child: InputDecorator(
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Purchase Date',
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        ),
-                          child: Text(
-                            _purchaseDate != null
-                                ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
-                                : 'Select date',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: _purchaseDate != null
-                                  ? theme.colorScheme.onSurface
-                                  : theme.colorScheme.onSurface
-                                      .withOpacity(0.55),
-                            ),
+                    InkWell(
+                      onTap: _selectPurchaseDate,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: context.cardBackground,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.black.withOpacity(0.04),
+                            width: 0.5,
                           ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 22,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _purchaseDate != null
+                                    ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
+                                    : 'Select date',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: _purchaseDate != null
+                                      ? theme.colorScheme.onSurface
+                                      : theme.colorScheme.onSurface
+                                          .withOpacity(0.45),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // Status and Condition
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Text(
-                        'Status & Condition',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
+                    Text(
+                      'Status & Condition',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 12),
-
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 14),
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_condition),
-                              value: _condition,
-                              style: fieldTextStyle,
-                              iconSize: 20,
-                              decoration: const InputDecoration(
-                                labelText: 'Condition',
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                              ),
-                              items: [
-                                DropdownMenuItem(
-                                  value: 'Excellent',
-                                  child: Text('Excellent',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Good',
-                                  child: Text('Good',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Fair',
-                                  child: Text('Fair',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Poor',
-                                  child: Text('Poor',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Needs Repair',
-                                  child: Text('Needs Repair',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _condition = value ?? _condition;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              dropdownColor: AppTheme.cardSurfaceColor(context),
-                            ),
+                          child: _buildCompactStatusDropdown(
+                            label: 'Condition',
+                            value: _condition,
+                            items: ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'],
+                            onChanged: (value) => setState(() => _condition = value ?? _condition),
                           ),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 14),
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_status),
-                              value: _status,
-                              style: fieldTextStyle,
-                              iconSize: 20,
-                              decoration: const InputDecoration(
-                                labelText: 'Status',
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                              ),
-                              items: [
-                                DropdownMenuItem(
-                                  value: 'Available',
-                                  child: Text('Available',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'In Use',
-                                  child: Text('In Use',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Maintenance',
-                                  child: Text('Maintenance',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Retired',
-                                  child: Text('Retired',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _status = value ?? _status;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              dropdownColor: AppTheme.cardSurfaceColor(context),
-                            ),
+                          child: _buildCompactStatusDropdown(
+                            label: 'Status',
+                            value: _status,
+                            items: ['Available', 'In Use', 'Maintenance', 'Retired'],
+                            onChanged: (value) => setState(() => _status = value ?? _status),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: TextFormField(
-                        controller: _locationController,
-                        style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Location',
-                          hintText: 'e.g., Tool Room A, Van 1',
-                        ),
-                      ),
+                    ThemedTextField(
+                      controller: _locationController,
+                      label: 'Location',
+                      hint: 'e.g., Tool Room A, Van 1',
+                      prefixIcon: Icons.location_on_outlined,
                     ),
                     const SizedBox(height: 12),
 
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 14),
-                      child: TextFormField(
-                        controller: _notesController,
-                        style: fieldTextStyle,
-                        decoration: _inputDecoration(
-                          context,
-                          labelText: 'Notes',
-                          hintText: 'Additional information...',
-                        ),
-                        maxLines: 3,
-                      ),
+                    ThemedTextField(
+                      controller: _notesController,
+                      label: 'Notes',
+                      hint: 'Additional information...',
+                      prefixIcon: Icons.note_outlined,
+                      maxLines: 3,
                     ),
                     const SizedBox(height: 32),
 
                     // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
+                      child: ThemedButton(
                         onPressed: _isLoading ? null : _saveTool,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          elevation: 6,
-                          shadowColor:
-                              AppTheme.secondaryColor.withOpacity(0.25),
-                          textStyle: const TextStyle(
-                            fontSize: 17,
+                        isLoading: _isLoading,
+                        child: const Text(
+                          'Add Tool',
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Text('Add Tool'),
                       ),
                     ),
       ],
@@ -965,6 +693,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         controller: _nameController,
                         label: 'Tool Name *',
                         hint: 'e.g., Digital Multimeter',
+                        prefixIcon: Icons.build_outlined,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter tool name';
@@ -995,6 +724,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         controller: _brandController,
                         label: 'Brand',
                         hint: 'e.g., Fluke',
+                        prefixIcon: Icons.branding_watermark_outlined,
                       ),
                     ],
                   ),
@@ -1008,16 +738,21 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         controller: _modelController,
                         label: 'Model Number',
                         hint: 'e.g., 87V',
+                        prefixIcon: Icons.tag_outlined,
                         suffixIcons: [
                           IconButton(
                             icon: const Icon(Icons.auto_awesome, size: 18, color: AppTheme.secondaryColor),
                             tooltip: 'Generate Model Number',
                             onPressed: _generateModelNumber,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                           IconButton(
                             icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.green),
                             tooltip: 'Scan Model Number',
                             onPressed: () => _scanBarcode(_modelController, 'Model number'),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
@@ -1026,16 +761,21 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         controller: _serialNumberController,
                         label: 'Serial Number',
                         hint: 'Scan or enter manually',
+                        prefixIcon: Icons.qr_code_outlined,
                         suffixIcons: [
                           IconButton(
                             icon: const Icon(Icons.auto_awesome, size: 18, color: Colors.blue),
                             tooltip: 'Generate Unique ID',
                             onPressed: _generateToolId,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                           IconButton(
                             icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.green),
                             tooltip: 'Scan Serial Number',
                             onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
@@ -1049,9 +789,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
                               backgroundColor: AppTheme.secondaryColor,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                               ),
-                              elevation: 4,
+                              elevation: 0, // No elevation - clean design
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 18, vertical: 10),
                             ),
@@ -1093,7 +833,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     controller: _purchasePriceController,
                     label: 'Purchase Price',
                     hint: '0.00',
-                    prefixText: 'AED ',
+                    prefixIcon: Icons.attach_money_outlined,
                     keyboardType: TextInputType.number,
                   ),
                 ),
@@ -1146,6 +886,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                     controller: _locationController,
                     label: 'Location',
                     hint: 'e.g., Tool Room A, Van 1',
+                    prefixIcon: Icons.location_on_outlined,
                   ),
                 ),
               ],
@@ -1155,6 +896,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               controller: _notesController,
               label: 'Notes',
               hint: 'Additional information...',
+              prefixIcon: Icons.note_outlined,
               maxLines: 2,
             ),
             const SizedBox(height: 24),
@@ -1162,29 +904,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
             // Save Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ThemedButton(
                 onPressed: _isLoading ? null : _saveTool,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                isLoading: _isLoading,
+                child: const Text(
+                  'Add Tool',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text(
-                        'Add Tool',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
               ),
             ),
           ],
@@ -1202,36 +932,23 @@ class _AddToolScreenState extends State<AddToolScreen> {
     int maxLines = 1,
     List<Widget>? suffixIcons,
     String? Function(String?)? validator,
+    IconData? prefixIcon,
   }) {
-    final theme = Theme.of(context);
     final suffixIconWidget = suffixIcons != null
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: suffixIcons,
           )
         : null;
-    return Container(
-      decoration: _outlineDecoration(context, radius: 14),
-      child: TextFormField(
-        controller: controller,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: theme.colorScheme.onSurface,
-        ),
-        decoration: _inputDecoration(
-          context,
-          labelText: label,
-          hintText: hint,
-          prefixText: prefixText,
-          suffixIcon: suffixIconWidget,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        validator: validator,
-      ),
+    return ThemedTextField(
+      controller: controller,
+      label: label,
+      hint: hint,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIconWidget,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      validator: validator,
     );
   }
 
@@ -1243,61 +960,48 @@ class _AddToolScreenState extends State<AddToolScreen> {
     String? Function(String?)? validator,
   }) {
     final theme = Theme.of(context);
-    final dropdownItems = items
-        .map(
-          (item) => DropdownMenuItem<String>(
-            value: item,
-            alignment: Alignment.centerLeft,
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: context.chatGPTInputDecoration.copyWith(
+        labelText: label,
+        prefixIcon: Icon(
+          _categoryIcons[value ?? 'Other'] ?? Icons.category_outlined,
+          size: 22,
+          color: theme.colorScheme.onSurface.withOpacity(0.7),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+      ),
+      items: items.map((item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: _buildCategoryDropdownRow(theme, item),
           ),
-        )
-        .toList();
-    return Container(
-      decoration: _categoryDropdownDecoration(context),
-      child: Theme(
-        data: theme.copyWith(
-          highlightColor: const Color(0xFFF3F4F6),
-          hoverColor: const Color(0xFFF3F4F6),
-          splashColor: const Color(0xFFF3F4F6),
-        ),
-        child: DropdownButtonFormField<String>(
-          value: value,
-          isExpanded: true,
-          itemHeight: 48,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 20,
-            color: theme.colorScheme.onSurface.withOpacity(0.65),
-          ),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            labelText: label,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            labelStyle: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface.withOpacity(0.55),
+        );
+      }).toList(),
+      selectedItemBuilder: (context) => items
+          .map(
+            (item) => Align(
+              alignment: Alignment.centerLeft,
+              child: _buildCategoryDropdownRow(theme, item),
             ),
-            border: InputBorder.none,
-          ),
-          items: dropdownItems,
-          selectedItemBuilder: (context) => items
-              .map(
-                (item) => Align(
-                  alignment: Alignment.centerLeft,
-                  child: _buildCategoryDropdownRow(theme, item),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
-          validator: validator,
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+          )
+          .toList(),
+      onChanged: onChanged,
+      validator: validator,
+      dropdownColor: Colors.white,
+      menuMaxHeight: 300,
+      borderRadius: BorderRadius.circular(20),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: theme.colorScheme.onSurface,
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down,
+        color: theme.colorScheme.onSurface.withOpacity(0.7),
+        size: 18,
       ),
     );
   }
@@ -1307,68 +1011,117 @@ class _AddToolScreenState extends State<AddToolScreen> {
     required String value,
     required List<String> items,
     required Function(String?) onChanged,
+    IconData? icon,
   }) {
     final theme = Theme.of(context);
-    return Container(
-      decoration: _outlineDecoration(context, radius: 14),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        iconSize: 20,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: theme.colorScheme.onSurface,
+    final displayIcon = icon ?? (label == 'Condition' ? Icons.star_outline : Icons.info_outline);
+    
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+      decoration: context.chatGPTInputDecoration.copyWith(
+        labelText: label,
+        hintText: 'Select $label',
+        prefixIcon: Icon(
+          displayIcon,
+          size: 22,
+          color: theme.colorScheme.onSurface.withOpacity(0.7),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          labelStyle: TextStyle(
-            fontSize: 13,
-            color: theme.colorScheme.onSurface.withOpacity(0.55),
+        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+      ),
+      items: items.map((item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              item,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
           ),
-        ),
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: Text(item, style: const TextStyle(fontSize: 14)),
+        );
+      }).toList(),
+      selectedItemBuilder: (context) {
+        return items.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           );
-        }).toList(),
-        onChanged: onChanged,
-        dropdownColor: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
+        }).toList();
+      },
+      onChanged: onChanged,
+      dropdownColor: Colors.white,
+      menuMaxHeight: 300,
+      borderRadius: BorderRadius.circular(20),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: theme.colorScheme.onSurface,
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down,
+        color: theme.colorScheme.onSurface.withOpacity(0.7),
+        size: 18,
       ),
     );
   }
 
   Widget _buildDatePickerField(BuildContext context, ThemeData theme) {
-    return Container(
-      decoration: _outlineDecoration(context, radius: 14),
-      child: InkWell(
-        onTap: _selectPurchaseDate,
-        borderRadius: BorderRadius.circular(14),
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Purchase Date',
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            labelStyle: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface.withOpacity(0.55),
-            ),
+    return InkWell(
+      onTap: _selectPurchaseDate,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.black.withOpacity(0.04),
+            width: 0.5,
           ),
-          child: Text(
-            _purchaseDate != null
-                ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
-                : 'Select date',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: _purchaseDate != null
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurface.withOpacity(0.55),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 22,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _purchaseDate != null
+                    ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
+                    : 'Select date',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _purchaseDate != null
+                      ? theme.colorScheme.onSurface
+                      : theme.colorScheme.onSurface.withOpacity(0.45),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1589,35 +1342,18 @@ class _AddToolScreenState extends State<AddToolScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: Text(
-            'Tool Image',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-        SizedBox(height: 12),
         Container(
-          height: ResponsiveHelper.isDesktop(context) ? 150 : 168,
+          constraints: BoxConstraints(
+            minHeight: ResponsiveHelper.isDesktop(context) ? 150 : 180,
+            maxHeight: ResponsiveHelper.isDesktop(context) ? 200 : 220,
+          ),
           width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppTheme.cardSurfaceColor(context),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
+          decoration: context.cardDecoration.copyWith(
+            borderRadius: BorderRadius.circular(18), // Match card decoration
           ),
           child: _selectedImages.isNotEmpty
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(18), // Match card decoration
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -1716,12 +1452,12 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: _showImagePickerOptions,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(18), // Match card decoration
                       splashColor: Theme.of(context)
                           .colorScheme
                           .primary
@@ -1729,55 +1465,54 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       highlightColor: Colors.transparent,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor.withOpacity(0.15),
-                            shape: BoxShape.circle,
+                              color: AppTheme.secondaryColor.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.add_a_photo,
+                              size: 28,
+                              color: AppTheme.secondaryColor.withOpacity(0.9),
+                            ),
                           ),
-                          child: Icon(
-                            Icons.add_a_photo,
-                            size: 28,
-                            color: AppTheme.secondaryColor.withOpacity(0.9),
+                          const SizedBox(height: 12),
+                          Text(
+                            _selectedImages.isEmpty
+                                ? 'Add Tool Images'
+                                : 'Add More Images',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                            height:
-                                ResponsiveHelper.isDesktop(context) ? 8 : 12),
-                        Text(
-                          _selectedImages.isEmpty
-                              ? 'Add Tool Images'
-                              : 'Add More Images',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
+                          const SizedBox(height: 4),
+                          Text(
+                            _selectedImages.isEmpty
+                                ? ResponsiveHelper.isDesktop(context)
+                                    ? 'Click to select (Up to 10)'
+                                    : 'Tap to select (Up to 10)'
+                                : '${_selectedImages.length} image(s) selected',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.55),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        SizedBox(
-                            height:
-                                ResponsiveHelper.isDesktop(context) ? 2 : 4),
-                        Text(
-                          _selectedImages.isEmpty
-                              ? ResponsiveHelper.isDesktop(context)
-                                  ? 'Click to select images (Up to 10)'
-                                  : 'Tap to select from gallery or camera\n(Up to 10 images)'
-                              : '${_selectedImages.length} image(s) selected',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.55),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-          ),
         ),
       ],
     );
@@ -1786,29 +1521,35 @@ class _AddToolScreenState extends State<AddToolScreen> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar
             Container(
-              width: 40,
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-                    const SizedBox(height: 20),
             Text(
               'Select Image Source',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
@@ -1834,7 +1575,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -1848,23 +1589,22 @@ class _AddToolScreenState extends State<AddToolScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.secondaryColor.withValues(alpha:0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.secondaryColor.withValues(alpha:0.3)),
+        decoration: context.cardDecoration.copyWith(
+          color: AppTheme.secondaryColor.withOpacity(0.08),
         ),
         child: Column(
           children: [
             Icon(icon, size: 32, color: AppTheme.secondaryColor),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 color: AppTheme.secondaryColor,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ],

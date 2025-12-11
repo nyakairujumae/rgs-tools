@@ -106,21 +106,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: Row(
                         children: [
                           Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: context.cardBackground,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
+                            decoration: context.cardDecoration,
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                              icon: const Icon(
+                                Icons.chevron_left,
+                                size: 24,
+                                color: Colors.black87,
+                              ),
                               onPressed: () => NavigationHelper.safePop(context),
                             ),
                           ),
@@ -201,14 +193,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         // Compact Search Bar
                         Container(
                           height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.15),
-                              width: 1.2,
-                            ),
+                          decoration: context.cardDecoration.copyWith(
+                            borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                            color: context.cardBackground,
                           ),
                           child: TextField(
                             controller: _searchController,
@@ -265,14 +252,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             Expanded(
                               child: Container(
                                 height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.15),
-                                    width: 1.2,
-                                  ),
+                                decoration: context.cardDecoration.copyWith(
+                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                  color: context.cardBackground,
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
@@ -330,9 +312,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                       }).toList();
                                     },
                                     dropdownColor:
-                                        AppTheme.cardSurfaceColor(context),
+                                        context.cardBackground,
                                     menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                     items: categories.map((category) {
                                       return DropdownMenuItem<String>(
                                         value: category,
@@ -395,14 +377,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             Expanded(
                               child: Container(
                                 height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.15),
-                                    width: 1.2,
-                                  ),
+                                decoration: context.cardDecoration.copyWith(
+                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                  color: context.cardBackground,
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
@@ -426,9 +403,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                     dropdownColor:
-                                        AppTheme.cardSurfaceColor(context),
+                                        context.cardBackground,
                                     menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                     items: [
                                       DropdownMenuItem<String>(
                                         value: 'All',
@@ -641,7 +618,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           floatingActionButton:
               widget.isSelectionMode && _selectedTools.isNotEmpty
                   ? Container(
-                      margin: const EdgeInsets.all(16.0),
+                      margin: EdgeInsets.all(context.spacingLarge),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -649,14 +626,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             AppTheme.secondaryColor.withOpacity(0.85),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.secondaryColor.withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+                        // No shadows - clean design
                       ),
                       child: Material(
                         color: Colors.transparent,
@@ -674,11 +645,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ),
                             );
                           },
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 24,
-                              vertical: 16,
+                              vertical: context.spacingLarge,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -758,7 +729,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       onLongPress: widget.isSelectionMode
           ? () {}
           : () => _showToolActions(context, representativeTool),
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -771,22 +742,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
               child: Stack(
                 children: [
                   Container(
-                    decoration: BoxDecoration(
-                      color: context.cardBackground,
-                      borderRadius: BorderRadius.circular(28),
+                    decoration: context.cardDecoration.copyWith(
+                      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                       border: widget.isSelectionMode && isSelected
                           ? Border.all(
                               color: AppTheme.secondaryColor,
                               width: 3,
                             )
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                          : context.cardDecoration.border,
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: Stack(
@@ -796,7 +759,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             representativeTool.imagePath!.isNotEmpty)
                           (representativeTool.imagePath!.startsWith('http') || kIsWeb
                               ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                   child: Image.network(
                                     representativeTool.imagePath!,
                                     width: double.infinity,
@@ -808,7 +771,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   ),
                                 )
                               : ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                   child: (() {
                                     final localImage = buildLocalFileImage(
                                       representativeTool.imagePath!,
@@ -822,7 +785,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 ))
                         else
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                             child: _buildPlaceholderImage(),
                           ),
                         // Count badge overlay
@@ -839,13 +802,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 color: AppTheme.secondaryColor
                                     .withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                                // No shadows - clean design
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -883,16 +840,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           color: AppTheme.secondaryColor,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.secondaryColor,
+                            color: Colors.white,
                             width: 2,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          // No shadows - clean design
                         ),
                         child: Icon(
                           Icons.check,
@@ -938,7 +889,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                _buildStatusPill(representativeTool.status),
+                _buildStatusPill(toolGroup.bestStatus),
               ],
             ),
           ),
@@ -1099,7 +1050,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
+        color: context.cardBackground,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1125,20 +1076,35 @@ class _ToolsScreenState extends State<ToolsScreen> {
   void _showToolActions(BuildContext context, Tool tool) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             Text(
               'Tool Actions',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),

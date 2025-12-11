@@ -10,6 +10,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../widgets/premium_field_styles.dart';
 import 'barcode_scanner_screen.dart';
@@ -68,16 +69,15 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     bool subtleFill = false,
   }) {
     final theme = Theme.of(context);
-    final borderColor = theme.brightness == Brightness.dark
-        ? Colors.white.withValues(alpha: 0.24)
-        : AppTheme.subtleBorder;
+    final borderColor = context.cardBorder; // ChatGPT-style: #E5E5E5
     final backgroundColor =
-        subtleFill ? AppTheme.subtleSurface : theme.scaffoldBackgroundColor;
+        subtleFill ? context.cardBackground : theme.scaffoldBackgroundColor; // ChatGPT-style: #F5F5F5 or white
 
     return BoxDecoration(
       color: backgroundColor,
       borderRadius: BorderRadius.circular(radius),
-      border: showBorder ? Border.all(color: borderColor, width: 1.1) : null,
+      border: showBorder ? Border.all(color: borderColor, width: 1) : null, // ChatGPT-style: 1px border
+      boxShadow: showBorder ? context.cardShadows : null, // ChatGPT-style: ultra-soft shadow when bordered
     );
   }
 
@@ -111,8 +111,8 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         ),
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        elevation: 0, // ChatGPT-style: no elevation
+        shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
@@ -511,13 +511,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                           color: AppTheme.subtleBorder,
                           width: 1.1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                       ),
                       child: InkWell(
                         onTap: _selectPurchaseDate,
@@ -737,13 +731,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
               color: AppTheme.subtleBorder,
               width: 1.2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
           ),
           child: _selectedImage != null
               ? Stack(
@@ -764,15 +752,9 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                       right: 12,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: context.cardBackground, // ChatGPT-style: #F5F5F5
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
                         ),
                         child: IconButton(
                           icon: Icon(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/certification.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
 
@@ -58,11 +59,11 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
   Widget _buildFilterTabs() {
     final filters = ['All', 'Valid', 'Expiring Soon', 'Expired', 'By Type'];
     
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return SizedBox(
+      height: 32,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: filters.length,
         itemBuilder: (context, index) {
           final filter = filters[index];
@@ -71,15 +72,36 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(filter),
+              showCheckmark: false,
+              label: Text(
+                filter,
+                style: TextStyle(
+                  color: isSelected
+                      ? AppTheme.secondaryColor
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
               selected: isSelected,
-              onSelected: (selected) {
+              onSelected: (_) {
                 setState(() {
                   _selectedFilter = filter;
                 });
               },
-              selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-              checkmarkColor: AppTheme.primaryColor,
+              backgroundColor: context.cardBackground,
+              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.secondaryColor
+                    : Colors.black.withOpacity(0.04),
+                width: isSelected ? 1.2 : 0.5,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
           );
         },

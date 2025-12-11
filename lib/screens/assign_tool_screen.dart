@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/responsive_helper.dart';
 import 'technicians_screen.dart';
@@ -30,14 +31,22 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: context.cardDecoration,
+            child: IconButton(
+              icon: const Icon(
+                Icons.chevron_left,
+                size: 24,
+                color: Colors.black87,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
         ),
       ),

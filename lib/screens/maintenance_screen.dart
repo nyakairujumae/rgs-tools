@@ -6,7 +6,9 @@ import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/error_handler.dart';
+import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
 
 class MaintenanceScreen extends StatefulWidget {
   const MaintenanceScreen({super.key});
@@ -60,7 +62,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: context.appBarBackground,
+      backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: true,
       titleSpacing: 0,
@@ -72,9 +74,20 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
           color: Colors.black,
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
-        onPressed: () => Navigator.pop(context),
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+          onTap: () => NavigationHelper.safePop(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            decoration: context.cardDecoration,
+            child: const Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Colors.black87,
+            ),
+          ),
+        ),
       ),
       actions: [],
     );
@@ -129,6 +142,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
 
         return RefreshIndicator(
           onRefresh: _loadTools,
+          color: AppTheme.secondaryColor,
+          backgroundColor: Colors.white,
           child: ListView.separated(
               padding: EdgeInsets.fromLTRB(
                 ResponsiveHelper.isDesktop(context) ? 24 : 16,
@@ -157,32 +172,28 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     ].join(' • ');
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ),
@@ -248,8 +259,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
+                elevation: 0,
               ),
             ),
           ),
@@ -272,154 +284,27 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: context.cardDecoration,
         child: TextField(
           controller: _searchController,
-          decoration: InputDecoration(
+          decoration: context.chatGPTInputDecoration.copyWith(
             hintText: 'Search tools, models, or locations...',
-            hintStyle: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-            ),
+            prefixIcon: const Icon(Icons.search, size: 20),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-                    ),
+                    icon: const Icon(Icons.clear, size: 20),
                     onPressed: () {
                       _searchController.clear();
                       setState(() => _searchQuery = '');
                     },
                   )
                 : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildToolCard(Tool tool) {
-    final theme = Theme.of(context);
-    final initial = tool.name.isNotEmpty ? tool.name[0].toUpperCase() : '?';
-    final details = [
-      tool.category,
-      tool.location ?? 'Unknown location',
-    ].join(' • ');
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tool.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      details,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurface.withOpacity(0.55),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildConditionPill(tool.condition),
-              _buildStatusOutlineChip(tool.status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Serial: ${tool.serialNumber ?? 'N/A'}',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Brand: ${tool.brand ?? 'Unknown'}',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _markMaintenanceComplete(tool),
-              icon: const Icon(Icons.check_circle, size: 18),
-              label: const Text('Mark Maintenance Complete'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   Widget _buildInfoBadge(IconData icon, String text, Color color) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -463,38 +348,64 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   Widget _buildConditionPill(String condition) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
+    return FilterChip(
+      label: Text(
         condition,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.primaryColor,
+          fontWeight: FontWeight.w500,
         ),
       ),
+      selected: false,
+      onSelected: (_) {},
+      showCheckmark: false,
+      backgroundColor: context.cardBackground,
+      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+      side: BorderSide(
+        color: AppTheme.primaryColor.withValues(alpha: 0.2),
+        width: 1.2,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      labelStyle: TextStyle(
+        color: AppTheme.primaryColor,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
   Widget _buildStatusOutlineChip(String status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.secondaryColor, width: 1.1),
-      ),
-      child: Text(
+    return FilterChip(
+      label: Text(
         status,
-        style: TextStyle(
-          color: AppTheme.secondaryColor,
+        style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
+      selected: false,
+      onSelected: (_) {},
+      showCheckmark: false,
+      backgroundColor: Colors.transparent,
+      selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
+      side: BorderSide(
+        color: AppTheme.secondaryColor,
+        width: 1.2,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      labelStyle: TextStyle(
+        color: AppTheme.secondaryColor,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
@@ -502,93 +413,68 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-          ),
+          borderRadius: BorderRadius.circular(18),
         ),
-        child: Container(
-          constraints: ResponsiveHelper.getResponsiveDialogConstraints(context),
-          padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: ResponsiveHelper.getResponsiveIconSize(context, 64),
-                height: ResponsiveHelper.getResponsiveIconSize(context, 64),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-                  ),
-                ),
-                child: Icon(
-                  Icons.check_circle_outline,
-                  color: AppTheme.secondaryColor,
-                  size: ResponsiveHelper.getResponsiveIconSize(context, 32),
-                ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-              Text(
+              child: Icon(
+                Icons.check_circle_outline,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
                 'Mark Maintenance Complete?',
                 style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
-                textAlign: TextAlign.center,
               ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-              Text(
-                'This will mark ${tool.name} as available and remove it from maintenance.',
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        padding: ResponsiveHelper.getResponsiveButtonPadding(context),
-                        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                          ),
-                        ),
-                      ),
-                      child: Text('Cancel'),
-                    ),
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondaryColor,
-                        foregroundColor: Colors.white,
-                        padding: ResponsiveHelper.getResponsiveButtonPadding(context),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-                          ),
-                        ),
-                      ),
-                      child: Text('Complete'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
+          ],
+        ),
+        content: Text(
+          'This will mark ${tool.name} as available and remove it from maintenance.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Complete'),
+          ),
+        ],
       ),
     );
 
@@ -606,20 +492,16 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       await toolProvider.updateTool(updatedTool);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${tool.name} marked as available'),
-            backgroundColor: AppTheme.secondaryColor,
-          ),
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          '${tool.name} marked as available',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Error: ${e.toString()}',
         );
       }
     } finally {

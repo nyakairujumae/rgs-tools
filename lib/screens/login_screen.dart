@@ -64,7 +64,13 @@ class _LoginScreenState extends State<LoginScreen> {
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Text(
+            '<',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
             '/role-selection',
             (route) => false,

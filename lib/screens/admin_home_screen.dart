@@ -241,24 +241,34 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                             ),
                             if (notificationProvider.unreadCount > 0)
                               Positioned(
-                                right: -2,
-                                top: -2,
+                                right: 6,
+                                top: 6,
                                 child: Container(
-                                  padding: const EdgeInsets.all(3),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: notificationProvider.unreadCount > 9 ? 4 : 5,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF28B82),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
                                   ),
                                   constraints: const BoxConstraints(
-                                    minWidth: 20,
-                                    minHeight: 20,
+                                    minWidth: 18,
+                                    minHeight: 18,
                                   ),
                                   child: Text(
-                                    '${notificationProvider.unreadCount}',
+                                    notificationProvider.unreadCount > 99 
+                                        ? '99+' 
+                                        : '${notificationProvider.unreadCount}',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.0,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -304,7 +314,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               onTap: (index) =>
                   setState(() => _selectedIndex = index.clamp(0, 3)),
               type: BottomNavigationBarType.fixed,
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: Colors.white, // White to match app design
               selectedItemColor: Theme.of(context).colorScheme.secondary,
               unselectedItemColor:
                   Theme.of(context).colorScheme.onSurface.withValues(alpha:0.5),
@@ -349,30 +359,29 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.4),
       isScrollControlled: true,
+      isDismissible: true, // Enable dismiss by tapping outside
+      enableDrag: true, // Enable drag to dismiss
       builder: (sheetContext) {
+        // Use white background to match app design
         final surfaceColor = theme.brightness == Brightness.dark
             ? theme.colorScheme.surface
-            : AppTheme.appBackground;
+            : Colors.white;
         return DraggableScrollableSheet(
+          expand: false, // Match technician implementation
           initialChildSize: 0.6,
           minChildSize: 0.4,
           maxChildSize: 0.95,
           builder: (context, scrollController) {
-            return SafeArea(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(32),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+            return Container(
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24), // Cleaner, more modern radius
                 ),
+                // Remove shadow for cleaner look
+              ),
+              child: SafeArea(
+                top: false, // Don't add top padding, handle it manually
                 child: Column(
                   children: [
                     // Handle bar
@@ -483,90 +492,87 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final initials = _getInitials(fullName);
 
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 16 : 18),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? theme.colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 18 : 20),
-        border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(0.08),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: isDesktop ? 6 : 8,
-            offset: Offset(0, isDesktop ? 2 : 3),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: context.cardDecoration,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: isDesktop ? 30 : 32,
-            backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontSize: isDesktop ? 18 : 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primaryColor,
+          // Clean, minimal avatar
+          Container(
+            width: isDesktop ? 48 : 56,
+            height: isDesktop ? 48 : 56,
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: isDesktop ? 18 : 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.secondaryColor,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),
-          SizedBox(width: isDesktop ? 18 : 20),
+          SizedBox(width: isDesktop ? 16 : 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // Name with subtle edit button
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         fullName,
                         style: TextStyle(
-                          fontSize: isDesktop ? 16 : 18,
+                          fontSize: isDesktop ? 17 : 19,
                           fontWeight: FontWeight.w600,
                           color: theme.textTheme.bodyLarge?.color,
+                          letterSpacing: -0.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () =>
-                          _showEditNameDialog(sheetContext, parentContext, authProvider),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.edit_outlined,
-                          size: isDesktop ? 18 : 20,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () =>
+                            _showEditNameDialog(sheetContext, parentContext, authProvider),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: isDesktop ? 16 : 18,
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: isDesktop ? 8 : 10),
+                SizedBox(height: isDesktop ? 6 : 8),
+                // Clean role badge
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 10 : 12,
-                    vertical: isDesktop ? 4 : 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppTheme.secondaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     roleLabel,
                     style: TextStyle(
                       fontSize: isDesktop ? 11 : 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: AppTheme.secondaryColor,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
@@ -683,23 +689,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
           horizontal: isDesktop ? 10 : 12,
           vertical: isDesktop ? 10 : 12,
         ),
-        decoration: BoxDecoration(
-          color: theme.brightness == Brightness.dark
-              ? theme.colorScheme.surface
-              : Colors.white,
-          borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
-          border: Border.all(
-            color: theme.colorScheme.onSurface.withOpacity(0.12),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: isDesktop ? 4 : 6,
-              offset: Offset(0, isDesktop ? 1 : 2),
-            ),
-          ],
-        ),
+        decoration: context.cardDecoration,
         child: Row(
           children: [
             Container(
@@ -748,24 +738,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final roleLabel = authProvider.userRole.displayName;
 
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 12 : 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: isDesktop ? 4 : 6,
-            offset: Offset(0, isDesktop ? 1 : 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(context.spacingLarge),
+      decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -909,8 +883,11 @@ class DashboardScreen extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
         );
-        final isLoadingDashboard =
-            toolProvider.isLoading || technicianProvider.isLoading;
+        // When offline, always show skeleton loading (no cached dashboard)
+        // Otherwise show skeleton only when actually loading
+        final isLoadingDashboard = isOffline || 
+            toolProvider.isLoading || 
+            technicianProvider.isLoading;
         final horizontalPadding =
             ResponsiveHelper.getResponsiveSpacing(context, 16);
         final topPadding = 0.0;
@@ -918,14 +895,6 @@ class DashboardScreen extends StatelessWidget {
             ResponsiveHelper.getResponsiveSpacing(context, 20);
 
         final cardRadius = BorderRadius.circular(_cardRadiusValue);
-
-        // Show offline skeleton when offline and not loading
-        if (isOffline && !toolProvider.isLoading && !technicianProvider.isLoading) {
-          return OfflineDashboardSkeleton(
-            cardCount: 4,
-            message: 'You are offline. Showing cached dashboard data.',
-          );
-        }
 
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
@@ -985,13 +954,8 @@ class DashboardScreen extends StatelessWidget {
                       ? _buildGreetingSkeleton(context, cardRadius)
                       : Container(
                           width: double.infinity,
-                          padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark 
-                                ? Theme.of(context).colorScheme.surface 
-                                : context.cardBackground,
-                            borderRadius: cardRadius,
-                          ),
+                          padding: EdgeInsets.all(context.spacingLarge * 1.5),
+                          decoration: context.cardDecoration,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1004,15 +968,7 @@ class DashboardScreen extends StatelessWidget {
                                       color: _dashboardGreen
                                           .withValues(alpha: 0.12),
                                       borderRadius:
-                                          BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: _dashboardGreen
-                                              .withValues(alpha: 0.18),
-                                          blurRadius: 16,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ],
+                                          BorderRadius.circular(context.borderRadiusLarge),
                                     ),
                                     child: Center(
                                       child: Icon(
@@ -1154,13 +1110,8 @@ class DashboardScreen extends StatelessWidget {
                       ? _buildStatusOverviewSkeleton(context, cardRadius)
                       : Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Theme.of(context).colorScheme.surface
-                                : context.cardBackground,
-                            borderRadius: cardRadius,
-                          ),
+                          padding: EdgeInsets.all(context.spacingLarge * 1.5),
+                          decoration: context.cardDecoration,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1231,7 +1182,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    SizedBox(height: context.spacingMedium),
                     Row(
                       children: [
                         Expanded(
@@ -1255,7 +1206,7 @@ class DashboardScreen extends StatelessWidget {
                             },
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.spacingMedium),
                         Expanded(
                           child: _buildQuickActionCard(
                             'Reports',
@@ -1272,7 +1223,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    SizedBox(height: context.spacingMedium),
                     Row(
                       children: [
                         Expanded(
@@ -1289,7 +1240,7 @@ class DashboardScreen extends StatelessWidget {
                             context,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: context.spacingMedium),
                         Expanded(
                           child: _buildQuickActionCard(
                             'Approvals',
@@ -1307,7 +1258,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    SizedBox(height: context.spacingMedium),
                     Row(
                       children: [
                         Expanded(
@@ -1404,12 +1355,7 @@ class DashboardScreen extends StatelessWidget {
               horizontal: ResponsiveHelper.getResponsiveSpacing(context, 18),
               vertical: ResponsiveHelper.getResponsiveSpacing(context, 16),
             ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue),
-              ),
-            ),
+            decoration: context.cardDecoration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -1459,13 +1405,13 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         children: [
           _buildQuickActionSkeletonRow(context, 2),
-          SizedBox(height: 12),
+          SizedBox(height: context.spacingMedium),
           _buildQuickActionSkeletonRow(context, 2),
-          SizedBox(height: 12),
+          SizedBox(height: context.spacingMedium),
           _buildQuickActionSkeletonRow(context, 1),
-          SizedBox(height: 12),
+          SizedBox(height: context.spacingMedium),
           _buildQuickActionSkeletonRow(context, 2),
-          SizedBox(height: 12),
+          SizedBox(height: context.spacingMedium),
           _buildQuickActionSkeletonRow(context, 1),
         ],
       ),
@@ -1542,7 +1488,7 @@ class DashboardScreen extends StatelessWidget {
     for (var i = 0; i < count; i++) {
       children.add(Expanded(child: _buildQuickActionSkeletonTile(context)));
       if (i < count - 1) {
-        children.add(const SizedBox(width: 12));
+        children.add(SizedBox(width: context.spacingMedium));
       }
     }
     return Row(children: children);
@@ -1550,10 +1496,12 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildQuickActionSkeletonTile(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(_cardRadiusValue),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.spacingLarge,
+        vertical: context.spacingMedium,
+      ),
+      decoration: context.cardDecoration.copyWith(
+        borderRadius: BorderRadius.circular(context.borderRadiusLarge),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1606,12 +1554,7 @@ class DashboardScreen extends StatelessWidget {
           horizontal: horizontalPadding,
           vertical: verticalPadding,
         ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Theme.of(context).colorScheme.surface 
-              : context.cardBackground,
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
-        ),
+        decoration: context.cardDecoration,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1677,12 +1620,7 @@ class DashboardScreen extends StatelessWidget {
           vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
         ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? Theme.of(context).colorScheme.surface 
-              : context.cardBackground,
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue)),
-        ),
+        decoration: context.cardDecoration,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1734,24 +1672,18 @@ class DashboardScreen extends StatelessWidget {
     
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(_cardRadiusValue),
+      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDarkMode ? colorScheme.surface : context.cardBackground,
-          borderRadius: BorderRadius.circular(_cardRadiusValue),
-          border: isDarkMode
-              ? Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1,
-                )
-              : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: context.spacingLarge,
+          vertical: context.spacingMedium,
         ),
+        decoration: context.cardDecoration,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 22),
-            SizedBox(height: 6),
+            SizedBox(height: context.spacingSmall),
             Text(
               title,
               style: TextStyle(
@@ -1781,19 +1713,13 @@ class DashboardScreen extends StatelessWidget {
     
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(_cardRadiusValue),
+      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDarkMode ? colorScheme.surface : context.cardBackground,
-          borderRadius: BorderRadius.circular(_cardRadiusValue),
-          border: isDarkMode
-              ? Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1,
-                )
-              : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: context.spacingLarge,
+          vertical: context.spacingMedium,
         ),
+        decoration: context.cardDecoration,
         child: Stack(
           children: [
             Center(
@@ -1802,7 +1728,7 @@ class DashboardScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(icon, color: color, size: 22),
-                  SizedBox(height: 6),
+                  SizedBox(height: context.spacingSmall),
                   Text(
                     title,
                     style: TextStyle(
@@ -1817,24 +1743,32 @@ class DashboardScreen extends StatelessWidget {
             ),
             if (badgeCount > 0)
               Positioned(
-                top: 0,
-                right: 0,
+                top: context.spacingMicro,
+                right: context.spacingMicro,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: badgeCount > 9 ? 5 : 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1.5,
+                    ),
                   ),
                   constraints: const BoxConstraints(
-                    minWidth: 20,
-                    minHeight: 20,
+                    minWidth: 18,
+                    minHeight: 18,
                   ),
                   child: Text(
                     badgeCount > 99 ? '99+' : badgeCount.toString(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
                     ),
                     textAlign: TextAlign.center,
                   ),

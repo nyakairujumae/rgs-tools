@@ -3,8 +3,12 @@ import 'package:provider/provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/navigation_helper.dart';
+import '../utils/auth_error_handler.dart';
 import '../services/firebase_messaging_service.dart';
+import '../services/badge_service.dart';
 import '../widgets/common/loading_widget.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
@@ -20,10 +24,10 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AdminNotificationProvider>().loadNotifications();
-      // Clear badge when opening notifications
-      FirebaseMessagingService.clearBadge();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<AdminNotificationProvider>().loadNotifications();
+      // Sync badge with database when opening notifications
+      await BadgeService.syncBadgeWithDatabase(context);
     });
   }
 
@@ -46,29 +50,13 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_left,
+                      size: 28,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    onPressed: () => NavigationHelper.safePop(context),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Expanded(
@@ -85,14 +73,11 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                     builder: (context, provider, child) {
                       if (provider.unreadCount > 0) {
                         return TextButton(
-                          onPressed: () {
-                            provider.markAllAsRead();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('All notifications marked as read'),
-                                backgroundColor: AppTheme.secondaryColor,
-                              ),
-                            );
+                          onPressed: () async {
+                            await provider.markAllAsRead();
+                            // Sync badge after marking all as read
+                            await BadgeService.syncBadgeWithDatabase(context);
+                            AuthErrorHandler.showSuccessSnackBar(context, 'All notifications marked as read');
                           },
                           child: Text(
                             'Mark All Read',
@@ -176,10 +161,10 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: AppTheme.secondaryColor),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(18),
                               ),
                             ),
-                            child: Text('Retry'),
+                            child: const Text('Retry'),
                           ),
                         ],
                       ),
@@ -223,7 +208,13 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => provider.loadNotifications(),
+                    onRefresh: () async {
+                      await provider.loadNotifications();
+                      await BadgeService.syncBadgeWithDatabase(context);
+                    },
+                    backgroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.surface
+                        : Colors.white,
                     color: AppTheme.secondaryColor,
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -246,15 +237,18 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   Widget _buildFilterChip(String label, NotificationType? type) {
     final isSelected = _selectedFilter == type;
     
-    return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
+        showCheckmark: false,
         label: Text(
           label,
           style: TextStyle(
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isSelected
+                ? AppTheme.secondaryColor
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
         selected: isSelected,
@@ -263,22 +257,18 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             _selectedFilter = selected ? type : null;
           });
         },
-        selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
-        backgroundColor: AppTheme.cardSurfaceColor(context),
-        checkmarkColor: AppTheme.secondaryColor,
-        padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-          vertical: 0,
-        ),
-        labelPadding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 4),
+        backgroundColor: context.cardBackground,
+        selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+        side: BorderSide(
+          color: isSelected
+              ? AppTheme.secondaryColor
+              : Colors.black.withOpacity(0.04),
+          width: isSelected ? 1.2 : 0.5,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-          side: BorderSide(
-            color: isSelected ? AppTheme.secondaryColor : AppTheme.subtleBorder,
-            width: 1.1,
-          ),
+          borderRadius: BorderRadius.circular(18),
         ),
         elevation: 0,
       ),
@@ -295,29 +285,19 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? Theme.of(context).colorScheme.surface 
-            : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
+          onTap: () async {
             if (!notification.isRead) {
-              provider.markAsRead(notification.id);
+              await provider.markAsRead(notification.id);
+              // Sync badge after marking as read
+              await BadgeService.syncBadgeWithDatabase(context);
             }
             _showNotificationDetails(notification);
           },
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
+          borderRadius: BorderRadius.circular(18), // Match card decoration borderRadius
           child: Padding(
             padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
             child: Row(
@@ -408,13 +388,17 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  onSelected: (value) {
+                  onSelected: (value) async {
                     switch (value) {
                       case 'mark_read':
-                        provider.markAsRead(notification.id);
+                        await provider.markAsRead(notification.id);
+                        // Sync badge after marking as read
+                        await BadgeService.syncBadgeWithDatabase(context);
                         break;
                       case 'delete':
-                        provider.removeNotification(notification.id);
+                        await provider.removeNotification(notification.id);
+                        // Sync badge after deleting
+                        await BadgeService.syncBadgeWithDatabase(context);
                         break;
                     }
                   },
@@ -499,19 +483,44 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   }
 
   void _showNotificationDetails(AdminNotification notification) {
+    final theme = Theme.of(context);
+    final notificationColor = _getNotificationColor(notification.type);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.surface
+            : Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
         ),
-        title: Text(
-          notification.title,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: notificationColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                _getNotificationIcon(notification.type),
+                color: notificationColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                notification.title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -521,18 +530,18 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               notification.message,
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 16),
-            Divider(),
+            Divider(color: Colors.grey.withValues(alpha: 0.2)),
             const SizedBox(height: 8),
             Text(
               'Technician Details:',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 4),
@@ -565,8 +574,11 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
-            child: Text('Close'),
+            child: const Text('Close'),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,10 +8,12 @@ import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../services/report_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/auth_error_handler.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final ReportType reportType;
@@ -93,13 +96,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       final toolProvider = Provider.of<SupabaseToolProvider>(context, listen: false);
       final technicianProvider = Provider.of<SupabaseTechnicianProvider>(context, listen: false);
 
-      // Ensure data is loaded
-      if (toolProvider.tools.isEmpty) {
-        await toolProvider.loadTools();
-      }
-      if (technicianProvider.technicians.isEmpty) {
-        await technicianProvider.loadTechnicians();
-      }
+      // Always refresh data from database to ensure reports have latest information
+      await toolProvider.loadTools();
+      await technicianProvider.loadTechnicians();
 
       final tools = toolProvider.tools;
       final technicians = technicianProvider.technicians;
@@ -121,29 +120,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         });
 
         // Show success message and open file
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 18),
-                SizedBox(width: 8),
-                Text(
-                  'Success',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Report exported successfully',
         );
 
         // Try to open the file
@@ -159,11 +138,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         setState(() {
           _isExporting = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error exporting report: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Error exporting report: $e',
         );
       }
     }
@@ -189,30 +166,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surface
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: context.cardDecoration,
+                          child: const Icon(
+                            Icons.chevron_left,
+                            size: 24,
+                            color: Colors.black87,
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new,
-                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                         ),
-                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -408,11 +374,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         Center(
           child: Container(
             padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            ),
+            decoration: context.cardDecoration,
             child: Column(
               children: [
                 Icon(
@@ -671,22 +633,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -755,42 +702,27 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF06CBFA),
-                      Color(0xFF00AEEA),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: context.cardBackground,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    width: 0.5,
+                  ),
                 ),
-                child: Icon(Icons.build, color: Colors.white, size: 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildToolImage(tool),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -846,32 +778,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+              color: context.cardBackground,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.black.withValues(alpha: 0.04),
+                width: 0.5,
+              ),
             ),
-            child: Icon(Icons.assignment, color: AppTheme.secondaryColor, size: 24),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildToolImage(tool),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -914,23 +838,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
@@ -1011,32 +919,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: Colors.purple.withValues(alpha: 0.12),
+              color: context.cardBackground,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.black.withValues(alpha: 0.04),
+                width: 0.5,
+              ),
             ),
-            child: const Icon(Icons.account_balance_wallet, color: Colors.purple, size: 24),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildToolImage(tool),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1088,35 +988,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+              color: context.cardBackground,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.black.withValues(alpha: 0.04),
+                width: 0.5,
+              ),
             ),
-            child: Icon(
-              Icons.history,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              size: 20,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildToolImage(tool),
             ),
           ),
           const SizedBox(width: 16),
@@ -1180,7 +1068,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           color: Theme.of(context).brightness == Brightness.dark
               ? Theme.of(context).colorScheme.surface
               : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             width: 1.1,
@@ -1260,6 +1148,82 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildToolImage(dynamic tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return _buildPlaceholderImage();
+    }
+
+    final imagePath = tool.imagePath!;
+    
+    // Handle network images
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            decoration: BoxDecoration(
+              color: context.cardBackground,
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Handle local file images
+    if (kIsWeb) {
+      // On web, local file paths might not work, show placeholder
+      return _buildPlaceholderImage();
+    }
+
+    final file = File(imagePath);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage(),
+      );
+    }
+
+    return _buildPlaceholderImage();
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.build,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+          ),
+        ],
+      ),
     );
   }
 }

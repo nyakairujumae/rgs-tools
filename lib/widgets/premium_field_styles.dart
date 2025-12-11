@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class PremiumFieldStyles {
-  static const Color fillColor = Color(0xFFF8F9FB);
-  static const Color borderColor = Color(0xFFE5E7EB);
+  // ChatGPT-style colors
+  static const Color fillColor = Color(0xFFF5F5F5); // Soft off-white card surfaces
+  static const Color borderColor = Color(0xFFE5E5E5); // Light borders
 
   static TextStyle labelTextStyle(BuildContext context) {
     final theme = Theme.of(context);
@@ -81,18 +82,26 @@ class PremiumFieldStyles {
         color: baseColor.withOpacity(0.6),
       ),
       contentPadding:
-          contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 12), // ChatGPT-style padding
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: borderColor, width: 1.1),
+        borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+        borderSide: const BorderSide(color: borderColor, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: borderColor, width: 1.1),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: borderColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.4), // Green focus
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
       ),
       prefixIcon: prefixIcon == null
           ? null
@@ -116,13 +125,13 @@ class PremiumFieldStyles {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
       color: fillColor,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: borderColor, width: 1.1),
+      borderRadius: BorderRadius.circular(16), // ChatGPT-style: 16px for cards
+      border: Border.all(color: borderColor, width: 1),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-          blurRadius: 12,
-          offset: const Offset(0, 6),
+          color: Colors.black.withOpacity(0.04), // Ultra-soft shadow (0.04 opacity)
+          blurRadius: 10,
+          offset: const Offset(0, 4),
         ),
       ],
     );
@@ -169,5 +178,5 @@ class PremiumFieldStyles {
     );
   }
 
-  static const double fieldSpacing = 16;
+  static const double fieldSpacing = 12; // ChatGPT-style: 12px medium gap
 }

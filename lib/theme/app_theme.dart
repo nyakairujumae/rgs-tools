@@ -20,7 +20,8 @@ class AppTheme {
   static const Color scaffoldBackground = Colors.white; // Pure white background
   static const Color subtleSurface = Color(0xFFF9FAFB);
   static const Color subtleBorder = Color(0xFFE5E5E5); // Very subtle borders
-  static const Color cardBorder = Color(0xFFE5E5E5); // Card border color
+  static const Color cardBorder = Color(0xFFE5E5E5); // Card border color (light mode)
+  static const Color darkCardBorder = Color(0xFF21262D); // Card border color (dark mode)
   
   // Spacing constants
   static const double spacingMicro = 4.0;
@@ -36,10 +37,10 @@ class AppTheme {
   
   // Shadow constants
   static BoxShadow get softShadow => BoxShadow(
-    color: Colors.black.withOpacity(0.04),
-    blurRadius: 10,
+    color: Colors.black.withOpacity(0.08), // Soft shadow for depth
+    blurRadius: 12,
     spreadRadius: 0,
-    offset: const Offset(0, 4),
+    offset: const Offset(0, 2),
   );
   
   static List<BoxShadow> get cardShadows => [softShadow];
@@ -183,10 +184,43 @@ class AppTheme {
         : cardBackground; // f5f5f5 input fields in light mode
   }
 
-  // Text colors (user preference: white text)
-  static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Colors.grey;
-  static const Color textHint = Colors.grey;
+  /// Get icon button background color (for social login buttons)
+  static Color getIconButtonBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? const Color(0xFF1E1E1E)
+        : const Color(0xFFF3F3F3);
+  }
+
+  /// Get secondary text color (for subtle text like "Forgot Password")
+  static Color getSecondaryTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey[300]!
+        : Colors.grey[600]!;
+  }
+
+  /// Get card border color (respects theme)
+  static Color getCardBorder(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? darkCardBorder
+        : cardBorder;
+  }
+
+  /// Get card border color for subtle borders (respects theme)
+  static Color getCardBorderSubtle(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.04);
+  }
+
+  // Text colors - ChatGPT-style light theme
+  static const Color textPrimary = Color(0xFF1A1A1A); // Dark grey-black, not pure black
+  static const Color textSecondary = Color.fromRGBO(0, 0, 0, 0.6); // rgba(0,0,0,0.6)
+  static const Color textHint = Color.fromRGBO(0, 0, 0, 0.4);
+  static const Color dividerColor = Color(0xFFE0E0E0); // Divider color
 
   // Status colors
   static const Color statusAvailable = Colors.green;
@@ -224,96 +258,109 @@ class AppTheme {
       splashColor: secondaryColor.withValues(alpha: 0.12),
       highlightColor: secondaryColor.withValues(alpha: 0.1),
 
-      // AppBar theme
+      // AppBar theme - ChatGPT-style
       appBarTheme: const AppBarTheme(
         backgroundColor: scaffoldBackground, // Pure white
-        foregroundColor: Colors.black,
+        foregroundColor: Color(0xFF1A1A1A),
         elevation: 0,
-        shadowColor: Colors.transparent,
+        shadowColor: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0,0,0,0.04)
         scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          color: Colors.black,
-          fontSize: 20,
+          color: Color(0xFF1A1A1A),
+          fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
       ),
 
-      // Card theme - ChatGPT style
+      // Card theme - ChatGPT style (SOFT-FILLED, NO OUTLINES)
       cardTheme: CardThemeData(
-        color: cardBackground, // f5f5f5 for cards
-        elevation: 0,
+        color: cardBackground, // #F5F5F5 for cards
+        elevation: 0, // No elevation/shadow
         shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusLarge),
-          side: const BorderSide(color: cardBorder, width: 1),
+          borderRadius: BorderRadius.circular(18), // Premium rounded corners
+          // Subtle border for lifted effect
+          side: BorderSide(
+            color: Colors.black.withOpacity(0.04),
+            width: 0.5,
+          ),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
 
-      // Text theme
+      // Text theme - ChatGPT-style colors
       textTheme: const TextTheme(
         displayLarge: TextStyle(
-            color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold),
+            color: Color(0xFF1A1A1A), fontSize: 32, fontWeight: FontWeight.bold),
         displayMedium: TextStyle(
-            color: Colors.black, fontSize: 28, fontWeight: FontWeight.bold),
+            color: Color(0xFF1A1A1A), fontSize: 28, fontWeight: FontWeight.bold),
         displaySmall: TextStyle(
-            color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+            color: Color(0xFF1A1A1A), fontSize: 24, fontWeight: FontWeight.bold),
         headlineLarge: TextStyle(
-            color: Colors.black, fontSize: 22, fontWeight: FontWeight.w600),
+            color: Color(0xFF1A1A1A), fontSize: 22, fontWeight: FontWeight.w600),
         headlineMedium: TextStyle(
-            color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+            color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.w600),
         headlineSmall: TextStyle(
-            color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
+            color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
         titleLarge: TextStyle(
-            color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+            color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w600),
         titleMedium: TextStyle(
-            color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+            color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
         titleSmall: TextStyle(
-            color: Colors.black, fontSize: 12, fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(color: Colors.black, fontSize: 16),
-        bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
-        bodySmall: TextStyle(color: Colors.grey, fontSize: 12),
+            color: Color(0xFF1A1A1A), fontSize: 12, fontWeight: FontWeight.w500),
+        bodyLarge: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+        bodyMedium: TextStyle(color: Color(0xFF1A1A1A), fontSize: 14),
+        bodySmall: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 12),
         labelLarge: TextStyle(
-            color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+            color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
         labelMedium: TextStyle(
-            color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+            color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 12, fontWeight: FontWeight.w500),
         labelSmall: TextStyle(
-            color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w500),
+            color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 10, fontWeight: FontWeight.w500),
       ),
 
-      // Input decoration theme - ChatGPT style
+      // Input decoration theme - ChatGPT style (OUTLINED, MODERN, INTERACTIVE)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardBackground, // f5f5f5 input field background
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
-          borderSide: const BorderSide(color: cardBorder, width: 1),
-        ),
+        fillColor: cardBackground, // #F5F5F5 input field background
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Premium padding
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
-          borderSide: const BorderSide(color: cardBorder, width: 1),
+          borderRadius: BorderRadius.circular(16), // Modern rounded corners
+          borderSide: const BorderSide(
+            color: cardBorder, // #E5E5E5 - soft border
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
-          borderSide: BorderSide(color: secondaryColor, width: 2), // Green focus
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: secondaryColor, // Brand green - strong focus state
+            width: 1.4,
+          ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: errorColor, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
-          borderSide: const BorderSide(color: errorColor, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: errorColor, width: 1.4),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: cardBorder, width: 1),
         ),
         labelStyle: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: Color(0xFF1A1A1A),
             fontSize: 13,
             fontWeight: FontWeight.w500),
         hintStyle: const TextStyle(
-            color: Color(0xFF9CA3AF),
-            fontSize: 12.5,
+            color: Colors.black54,
+            fontSize: 15,
             fontWeight: FontWeight.w400),
+        prefixIconColor: Colors.grey[600],
         floatingLabelAlignment: FloatingLabelAlignment.start,
         floatingLabelStyle: const TextStyle(
           color: Color(0xFF4B5563),
@@ -322,7 +369,6 @@ class AppTheme {
           backgroundColor: cardBackground,
         ),
         floatingLabelBehavior: FloatingLabelBehavior.auto,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
 
       // Button themes - ChatGPT style
@@ -330,11 +376,11 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: secondaryColor, // Green accent
           foregroundColor: Colors.white,
-          elevation: 0,
+          elevation: 0, // No hard shadow
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadiusMedium),
+            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14), // ChatGPT-style button padding
         ),
       ),
 
@@ -343,9 +389,9 @@ class AppTheme {
           foregroundColor: secondaryColor,
           side: const BorderSide(color: secondaryColor),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadiusMedium),
+            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
 
@@ -353,9 +399,9 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: secondaryColor, // Green accent text
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadiusMedium),
+            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
 

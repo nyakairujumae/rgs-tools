@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../services/report_service.dart';
@@ -13,6 +14,7 @@ import 'report_detail_screen.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/auth_error_handler.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -93,30 +95,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Theme.of(context).colorScheme.surface
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: () => NavigationHelper.safePop(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: context.cardDecoration,
+                          child: const Icon(
+                            Icons.chevron_left,
+                            size: 24,
+                            color: Colors.black87,
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new,
-                          size: ResponsiveHelper.getResponsiveIconSize(context, 18),
                         ),
-                        onPressed: () => NavigationHelper.safePop(context),
                       ),
                     ),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -222,46 +213,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
         children: [
           // Search Bar
           Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppTheme.cardSurfaceColor(context),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                width: 1.1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            decoration: context.cardDecoration,
             child: TextField(
               controller: _searchController,
               style: TextStyle(
                 fontSize: 14,
                 color: theme.colorScheme.onSurface,
               ),
-              decoration: InputDecoration(
+              decoration: context.chatGPTInputDecoration.copyWith(
                 hintText: 'Search reports...',
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  size: 18,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                ),
+                prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          size: 18,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                        ),
+                        icon: const Icon(Icons.clear, size: 20),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
@@ -269,16 +233,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         },
                       )
                     : null,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                    width: 2,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               onChanged: (value) {
                 setState(() {
@@ -391,27 +345,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
         padding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
         ),
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurfaceColor(context),
-          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-            width: 1.1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: context.cardDecoration,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -458,9 +398,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardTheme.color,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
@@ -522,14 +462,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                          ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                            : Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
+                          ? AppTheme.secondaryColor.withValues(alpha: 0.08)
+                            : context.cardBackground,
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isSelected
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                          width: isSelected ? 2 : 1,
+                              ? AppTheme.secondaryColor
+                              : Colors.black.withValues(alpha: 0.04),
+                          width: isSelected ? 1.2 : 0.5,
                         ),
                       ),
                       child: Row(
@@ -576,9 +516,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardTheme.color,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.5,
@@ -628,14 +568,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                            : Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
+                            ? AppTheme.secondaryColor.withValues(alpha: 0.08)
+                            : context.cardBackground,
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isSelected
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                          width: isSelected ? 2 : 1,
+                              ? AppTheme.secondaryColor
+                              : Colors.black.withValues(alpha: 0.04),
+                          width: isSelected ? 1.2 : 0.5,
                         ),
                       ),
                       child: Row(
@@ -948,18 +888,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final previewTools = tools.take(20).toList();
 
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         children: [
           // Table Header
@@ -1139,22 +1068,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
@@ -1291,18 +1205,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+        decoration: context.cardDecoration,
                 child: Row(
                   children: [
           Container(
@@ -1435,13 +1338,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         // Detailed Breakdown
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Theme.of(context).colorScheme.surface
-              : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-          ),
+          decoration: context.cardDecoration,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1464,18 +1361,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildFinancialCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1577,13 +1463,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 24),
                       Container(
           padding: const EdgeInsets.all(40),
-                        decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.surface
-                : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-          ),
+          decoration: context.cardDecoration,
           child: Center(
             child: Column(
               children: [
@@ -1684,18 +1564,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+        decoration: context.cardDecoration,
       child: Row(
         children: [
           Container(
@@ -1840,17 +1709,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurfaceColor(context),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      decoration: context.cardDecoration,
         child: Row(
           children: [
             Container(
@@ -1899,22 +1758,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildInfoCard(IconData icon, String title, int count, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1995,7 +1839,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         color: Theme.of(context).brightness == Brightness.dark
             ? Theme.of(context).colorScheme.surface
             : Colors.white,
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           width: 1.1,
@@ -2058,13 +1902,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final toolProvider = context.read<SupabaseToolProvider>();
       final technicianProvider = context.read<SupabaseTechnicianProvider>();
 
-      // Ensure data is loaded
-      if (toolProvider.tools.isEmpty) {
-        await toolProvider.loadTools();
-      }
-      if (technicianProvider.technicians.isEmpty) {
-        await technicianProvider.loadTechnicians();
-      }
+      // Always refresh data from database to ensure reports have latest information
+      await toolProvider.loadTools();
+      await technicianProvider.loadTechnicians();
 
       final startDate = _getStartDate();
       final endDate = DateTime.now();
@@ -2089,29 +1929,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
         });
 
         // Show success message and open file
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 18),
-                SizedBox(width: 8),
-                Text(
-                  'Success',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Report exported successfully',
         );
 
         // Try to open the file
@@ -2129,24 +1949,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           _isExporting = false;
         });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text('Error exporting report: $e'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Error exporting report: $e',
         );
       }
     }

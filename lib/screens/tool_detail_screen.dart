@@ -9,6 +9,7 @@ import "../providers/supabase_technician_provider.dart";
 import "../providers/auth_provider.dart";
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/loading_widget.dart';
 import '../utils/error_handler.dart';
@@ -46,7 +47,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
   Widget _buildImagePlaceholder(ColorScheme colorScheme) {
     return Container(
-      color: AppTheme.cardSurfaceColor(context),
+      color: context.cardBackground,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -140,9 +141,22 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.chevron_left,
+                      size: 28,
+                      color: Colors.black87,
+                    ),
                   onPressed: () => NavigationHelper.safePop(context),
+                    splashRadius: 24,
+                    padding: EdgeInsets.zero,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -157,23 +171,30 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                PopupMenuButton<String>(
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                  ),
+                  child: PopupMenuButton<String>(
                   onSelected: _handleMenuAction,
                   icon: Icon(
                     Icons.more_vert,
                     color: theme.textTheme.bodyLarge?.color,
                   ),
+                    padding: EdgeInsets.zero,
                   color: Colors.white,
-                  elevation: 10,
-                  shadowColor: Colors.black.withOpacity(0.12),
+                    elevation: 0, // No elevation - clean design
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(18), // Match card decoration
                     side: BorderSide(
-                      color: Colors.black.withOpacity(0.05),
-                      width: 1,
+                        color: Colors.black.withOpacity(0.04),
+                        width: 0.5,
                     ),
                   ),
                   itemBuilder: (context) => _buildAppBarMenuItems(theme),
+                  ),
                 ),
               ],
             ),
@@ -233,8 +254,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     const SizedBox(height: 12),
                     // Status & Assignment
                     _buildInfoSection('Status & Assignment', [
-                        _buildInfoRow('Status', _currentTool.status, statusWidget: StatusChip(status: _currentTool.status)),
-                        _buildInfoRow('Condition', _currentTool.condition, statusWidget: ConditionChip(condition: _currentTool.condition)),
+                        _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
+                        _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
                         if (_currentTool.assignedTo != null) 
                   Consumer<SupabaseTechnicianProvider>(
                     builder: (context, technicianProvider, child) {
@@ -303,8 +324,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           return Container(
             height: 250,
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: context.cardBackground,
+              borderRadius: BorderRadius.circular(18), // Match card decoration
             ),
             child: Center(
               child: Column(
@@ -323,8 +344,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           return Container(
             height: 250,
             decoration: BoxDecoration(
-              color: isDarkMode ? colorScheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: context.cardBackground,
+              borderRadius: BorderRadius.circular(18), // Match card decoration
             ),
             child: Center(
               child: CircularProgressIndicator(
@@ -353,8 +374,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       return Container(
         width: double.infinity,
         height: 250,
-        color: Colors.grey[200],
-        child: Icon(Icons.image, size: 64, color: Colors.grey[400]),
+        color: context.cardBackground,
+        child: Icon(Icons.image, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
       );
     }
     
@@ -362,8 +383,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return Container(
       height: 250,
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(18), // Match card decoration
       ),
       child: Center(
         child: Column(
@@ -387,19 +408,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.cardSurfaceColor(context),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
+        decoration: context.cardDecoration,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18), // Match card decoration
           child: imageUrls.isNotEmpty
               ? Stack(
                   children: [
@@ -487,7 +498,6 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   Widget _buildInfoSection(String title, List<Widget> children) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final cardColor = AppTheme.cardSurfaceColor(context);
 
     final spacedChildren = <Widget>[];
     for (int i = 0; i < children.length; i++) {
@@ -516,17 +526,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            decoration: context.cardDecoration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: spacedChildren,
@@ -577,6 +577,49 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCompactStatusChip(String status, {bool isAssigned = false}) {
+    // Use app green for assigned tools or "In Use" status
+    final color = (isAssigned || status.toLowerCase() == 'in use')
+        ? AppTheme.secondaryColor 
+        : AppTheme.getStatusColor(status);
+    // Show "Assigned" text if tool is assigned, otherwise show the status
+    final displayText = isAssigned ? 'Assigned' : status;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        displayText,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactConditionChip(String condition) {
+    final color = AppTheme.getConditionColor(condition);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        condition,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 
@@ -717,20 +760,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: colors),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: colors.first.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+        // No shadows - clean design
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(context.borderRadiusLarge),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             alignment: Alignment.center,
@@ -767,22 +804,16 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? colorScheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(18), // Match card decoration
+        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        // No shadows - clean design
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18), // Match card decoration
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
             alignment: Alignment.center,
@@ -925,14 +956,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         icon: Icons.edit_outlined,
         label: 'Edit Tool',
         textColor: textColor,
-        iconColor: iconColor,
+        iconColor: AppTheme.secondaryColor, // Use app green
       ),
       _buildMenuItem(
         value: 'image',
         icon: Icons.camera_alt_outlined,
         label: 'Add Photo',
         textColor: textColor,
-        iconColor: iconColor,
+        iconColor: AppTheme.secondaryColor, // Use app green
       ),
       _buildMenuItem(
         value: 'shared',
@@ -943,7 +974,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             ? 'Make Tool Inventory'
             : 'Make Tool Shared',
         textColor: textColor,
-        iconColor: iconColor,
+        iconColor: AppTheme.secondaryColor, // Use app green
       ),
       _buildMenuItem(
         value: 'maintenance',
@@ -954,14 +985,16 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             ? 'Complete Maintenance'
             : 'Mark for Maintenance',
         textColor: textColor,
-        iconColor: iconColor,
+        iconColor: _currentTool.status == 'Maintenance'
+            ? Colors.green
+            : AppTheme.secondaryColor, // Use app green for mark, green for complete
       ),
       _buildMenuItem(
         value: 'history',
         icon: Icons.history_outlined,
         label: 'View History',
         textColor: textColor,
-        iconColor: iconColor,
+        iconColor: AppTheme.secondaryColor, // Use app green
       ),
       _buildMenuDivider(),
       _buildMenuItem(

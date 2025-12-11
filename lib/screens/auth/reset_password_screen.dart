@@ -200,9 +200,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 alignment: Alignment.topLeft,
                 child: IconButton(
                   icon: Icon(
-                    Icons.arrow_back,
-                    color: colorScheme.onSurface,
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                    Icons.chevron_left,
+                    size: 28,
+                    color: Colors.black87,
                   ),
                   onPressed: () {
                     Navigator.pop(context);

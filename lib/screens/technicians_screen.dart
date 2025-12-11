@@ -7,6 +7,7 @@ import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/technician.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
@@ -40,6 +41,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           _selectedTools = List<String>.from(args['selectedTools']);
         });
       }
+      // Refresh technicians and tools to sync with database
+      context.read<SupabaseTechnicianProvider>().loadTechnicians();
+      context.read<SupabaseToolProvider>().loadTools();
     });
   }
 
@@ -65,9 +69,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+      decoration: context.cardDecoration.copyWith(
+        color: context.cardBackground,
       ),
       child: Row(
         children: [
@@ -229,13 +232,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       padding: const EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                          width: 1.1,
-                        ),
+                      decoration: context.cardDecoration.copyWith(
+                        color: AppTheme.primaryColor.withOpacity(0.08),
                       ),
                       child: Row(
                         children: [
@@ -290,16 +288,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         horizontal: 16, vertical: 12),
                     child: Container(
                       height: 52,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.15),
-                          width: 1.2,
-                        ),
+                      decoration: context.cardDecoration.copyWith(
+                        borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                        color: context.cardBackground,
                       ),
                       child: TextField(
                         style: TextStyle(
@@ -424,13 +415,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   return Column(
                                     children: [
                                       _buildTechnicianCard(technician),
-                                      if (!isLast) ...[
-                                        const SizedBox(height: 12),
-                                        Divider(
-                                          color: const Color(0xFFEAEAEA)
-                                              .withOpacity(0.7),
-                                        ),
-                                      ],
+                                      if (!isLast) const SizedBox(height: 12), // Spacing between cards
                                     ],
                                   );
                                 },
@@ -462,11 +447,11 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                     width: 52,
                     child: FloatingActionButton(
                       onPressed: _showAddTechnicianDialog,
-                      backgroundColor: AppTheme.secondaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 6,
+              backgroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+              ),
+              elevation: 0, // No elevation - clean design
                       child: const Icon(Icons.add, color: Colors.white, size: 24),
                     ),
                   ),
@@ -519,19 +504,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           _showEditTechnicianDialog(technician);
         }
       },
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18), // Match card decoration
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+        decoration: context.cardDecoration.copyWith(
+          color: isSelected
+              ? AppTheme.secondaryColor.withOpacity(0.08)
+              : context.cardBackground,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -665,7 +644,21 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 fit: BoxFit.cover,
                 width: 40,
                 height: 40,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
                 errorBuilder: (context, error, stackTrace) {
+                  debugPrint('❌ Error loading profile picture for ${technician.name}: $error');
+                  debugPrint('❌ URL: ${technician.profilePictureUrl}');
                   return Center(
                     child: Text(
                       initials,
@@ -742,19 +735,16 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   _selectedFilter = filter;
                 });
               },
-              backgroundColor: Colors.transparent,
-              selectedColor: Colors.transparent,
+              backgroundColor: context.cardBackground,
+              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.18),
-                width: 1,
+                    : Colors.black.withOpacity(0.04),
+                width: isSelected ? 1.2 : 0.5,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18), // Match card borderRadius
               ),
             ),
           );
@@ -821,7 +811,10 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
         title: Text(
           'Delete Technician',
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),

@@ -7,9 +7,11 @@ import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../models/user_role.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../config/app_config.dart';
-import '../widgets/premium_field_styles.dart';
+import '../widgets/common/themed_text_field.dart';
+import '../widgets/common/themed_button.dart';
 import 'auth/login_screen.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
@@ -29,7 +31,15 @@ class _TechnicianRegistrationScreenState
   final _confirmPasswordController = TextEditingController();
   final _employeeIdController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _departmentController = TextEditingController();
+  String? _selectedDepartment;
+  
+  final List<String> _departments = [
+    'Repairing',
+    'Maintenance',
+    'Retrofit',
+    'Installation',
+    'Factory',
+  ];
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -45,7 +55,6 @@ class _TechnicianRegistrationScreenState
     _confirmPasswordController.dispose();
     _employeeIdController.dispose();
     _phoneController.dispose();
-    _departmentController.dispose();
     super.dispose();
   }
 
@@ -55,282 +64,342 @@ class _TechnicianRegistrationScreenState
     final colorScheme = theme.colorScheme;
     final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
     final bool isDarkMode = theme.brightness == Brightness.dark;
-    final Color backgroundColor = theme.scaffoldBackgroundColor;
-    final Color fieldIconColor =
-        colorScheme.onSurface.withValues(alpha: 0.7);
+    final Color desktopBackground = const Color(0xFF05070B);
+    final Color desktopCardColor = const Color(0xFF090D14);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor:
+          isDesktopLayout ? desktopBackground : theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Technician Sign Up',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: backgroundColor,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
+        title: isDesktopLayout
+            ? null
+            : const Text(
+                'Technician Registration',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+        backgroundColor:
+            isDesktopLayout ? Colors.transparent : Colors.white,
+        foregroundColor: isDesktopLayout ? Colors.white : Colors.black87,
+        elevation: isDesktopLayout ? 0 : 0,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: isDesktopLayout
+            ? IconButton(
+                icon: const Icon(
+                  Icons.chevron_left,
+                  size: 28,
+                  color: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context),
+                splashRadius: 24,
+              )
+            : Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: context.cardDecoration,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.chevron_left,
+                      size: 24,
+                      color: Colors.black87,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    splashRadius: 24,
+                  ),
+                ),
+              ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktopLayout ? 760 : double.infinity,
-              ),
-              child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                            height: ResponsiveHelper.getResponsiveSpacing(
-                                context, 24)),
-                        Text(
-                          'Create your technician account to access tool tracking, assignments, and maintenance workflows.',
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context, 16),
-                            color: colorScheme.onSurface
-                                .withValues(alpha: 0.75),
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(
-                            height: ResponsiveHelper.getResponsiveSpacing(
-                                context, 28)),
+        child: Container(
+          decoration: isDesktopLayout
+              ? const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF05070B),
+                      Color(0xFF0F1725),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                )
+              : null,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktopLayout ? 48 : 20,
+              vertical: isDesktopLayout ? 10 : 0,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktopLayout ? 640 : double.infinity,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Subtitle above card
+                    Text(
+                      'Register as a technician for RGS HVAC Services',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color: isDesktopLayout
+                            ? Colors.white.withOpacity(0.78)
+                            : colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: context.spacingLarge * 1.5), // 24px
+                    
+                    // Card with form
+                    Container(
+                      padding: EdgeInsets.all(isDesktopLayout ? 32 : context.spacingLarge),
+                      decoration: isDesktopLayout
+                          ? BoxDecoration(
+                              color: desktopCardColor.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(36),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.05),
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black54,
+                                  blurRadius: 30,
+                                  offset: Offset(0, 20),
+                                ),
+                              ],
+                            )
+                          : context.cardDecoration, // ChatGPT-style card for mobile
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                     // Profile Photo Section
                     Center(
                       child: _buildProfilePictureSection(
                         colorScheme,
                         isDarkMode,
                         context,
-                        iconColorOverride: fieldIconColor,
                       ),
                     ),
 
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
+                    SizedBox(height: context.spacingLarge * 1.5), // 24px
 
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+                    // Name Field
+                    ThemedTextField(
+                      controller: _nameController,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
                       label: 'Full Name',
-                      child: TextFormField(
-                        controller: _nameController,
-                        inputFormatters: [
-                          TextInputFormatter.withFunction((oldValue, newValue) {
-                            return TextEditingValue(
-                              text: newValue.text.toUpperCase(),
-                              selection: newValue.selection,
-                            );
-                          }),
-                        ],
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter full name',
-                          prefixIcon: const Icon(Icons.person_outline),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your full name';
-                          }
-                          return null;
-                        },
-                      ),
+                      hint: 'Enter full name',
+                      prefixIcon: Icons.person_outline,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your full name';
+                        }
+                        return null;
+                      },
                     ),
 
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    SizedBox(height: context.spacingMedium), // 12px
 
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+                    // Email Field
+                    ThemedTextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       label: 'Email Address',
-                      child: TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter email address',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email address';
-                          }
-                          if (!AppConfig.isValidEmailFormat(value)) {
-                            return 'Please enter a valid email address (e.g., name@example.com)';
-                          }
-                          return null;
-                        },
-                      ),
+                      hint: 'Enter email address',
+                      prefixIcon: Icons.email_outlined,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email address';
+                        }
+                        if (!AppConfig.isValidEmailFormat(value)) {
+                          return 'Please enter a valid email address (e.g., name@example.com)';
+                        }
+                        return null;
+                      },
                     ),
 
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    SizedBox(height: context.spacingMedium), // 12px
 
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+                    // Phone Number Field
+                    ThemedTextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
                       label: 'Phone Number',
-                      child: TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter phone number',
-                          prefixIcon: const Icon(Icons.phone_iphone),
+                      hint: 'Enter phone number',
+                      prefixIcon: Icons.phone_outlined,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your phone number';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    SizedBox(height: context.spacingMedium), // 12px
+
+                    // Department Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: context.cardBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.black.withOpacity(0.04),
+                          width: 0.5,
                         ),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedDepartment,
+                        decoration: context.chatGPTInputDecoration.copyWith(
+                          labelText: 'Department',
+                          hintText: 'Select department',
+                          prefixIcon: Icon(
+                            Icons.business_outlined,
+                            size: 22,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 52),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        items: _departments.map((String department) {
+                          return DropdownMenuItem<String>(
+                            value: department,
+                            child: Text(
+                              department,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? value) {
+                          setState(() {
+                            _selectedDepartment = value;
+                          });
+                        },
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your phone number';
+                          if (value == null || value.isEmpty) {
+                            return 'Please select your department';
                           }
                           return null;
                         },
-                      ),
-                    ),
-
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
-
-                    PremiumFieldStyles.labeledField(
-                      context: context,
-                      label: 'Department',
-                      child: TextFormField(
-                        controller: _departmentController,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Enter department',
-                          prefixIcon: const Icon(Icons.apartment_outlined),
+                        dropdownColor: Colors.white,
+                        menuMaxHeight: 300,
+                        borderRadius: BorderRadius.circular(20),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your department';
-                          }
-                          return null;
-                        },
+                        icon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          size: 18,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    SizedBox(height: context.spacingMedium), // 12px
 
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+                    // Password Field
+                    ThemedTextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
                       label: 'Password',
-                      child: TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Minimum 6 characters',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
+                      hint: 'Minimum 6 characters',
+                      prefixIcon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          size: 20,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
                         },
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
                     ),
 
-                    const SizedBox(height: PremiumFieldStyles.fieldSpacing),
+                    SizedBox(height: context.spacingMedium), // 12px
 
-                    PremiumFieldStyles.labeledField(
-                      context: context,
+                    // Confirm Password Field
+                    ThemedTextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
                       label: 'Confirm Password',
-                      child: TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        style: PremiumFieldStyles.fieldTextStyle(context),
-                        decoration: PremiumFieldStyles.inputDecoration(
-                          context,
-                          hintText: 'Re-enter password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
+                      hint: 'Re-enter password',
+                      prefixIcon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          size: 20,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword =
+                                !_obscureConfirmPassword;
+                          });
                         },
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
                     ),
 
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
+                    SizedBox(height: context.spacingLarge + context.spacingSmall), // 20px
 
                     // Register Button
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600] ?? Colors.green,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(
-                                  context, isDesktopLayout ? 32 : 28),
-                            ),
-                          ),
-                          elevation: isDesktopLayout ? 6 : 2,
-                          shadowColor: Colors.black.withOpacity(0.25),
-                          minimumSize: const Size.fromHeight(52),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ThemedButton(
+                      onPressed: _isLoading ? null : _handleRegister,
+                      isLoading: _isLoading,
+                      child: const Text(
+                        'Register as Technician',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text(
-                                'Register as Technician',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
                       ),
                     ),
 
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    const SizedBox(height: 24),
 
                     // Login Link
                     InkWell(
@@ -343,17 +412,15 @@ class _TechnicianRegistrationScreenState
                         );
                       },
                       child: Padding(
-                        padding: ResponsiveHelper.getResponsivePadding(
-                          context,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: RichText(
                           text: TextSpan(
                             style: TextStyle(
-                              fontSize:
-                                  ResponsiveHelper.getResponsiveFontSize(context, 15),
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: isDesktopLayout
+                                  ? Colors.white.withOpacity(0.75)
+                                  : colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                             children: [
                               const TextSpan(text: 'Already have an account? '),
@@ -367,6 +434,10 @@ class _TechnicianRegistrationScreenState
                             ],
                           ),
                         ),
+                      ),
+                    ),
+                  ],
+                ),
                       ),
                     ),
                   ],
@@ -392,106 +463,155 @@ class _TechnicianRegistrationScreenState
         ? colorScheme.onSurface.withValues(alpha: 0.35)
         : colorScheme.onSurface.withValues(alpha: 0.08);
 
-    return Column(
-      children: [
-        Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: avatarRadius,
-                backgroundColor: avatarBackground,
-                backgroundImage:
-                    _profileImage != null ? FileImage(_profileImage!) : null,
-                child: _profileImage == null
-                    ? Icon(
-                        Icons.person_outline,
-                        size: avatarRadius,
-                        color: iconColor,
-                      )
-                    : null,
-              ),
-            ],
+    return Center(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: avatarRadius,
+            backgroundColor: avatarBackground,
+            backgroundImage:
+                _profileImage != null ? FileImage(_profileImage!) : null,
+            child: _profileImage == null
+                ? Icon(
+                    Icons.person_outline,
+                    size: avatarRadius,
+                    color: iconColor,
+                  )
+                : null,
           ),
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: ResponsiveHelper.getResponsiveSpacing(context, 14),
-          runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-          alignment: WrapAlignment.center,
-          children: [
-            _buildProfileActionChip(
-              icon: Icons.photo_library_outlined,
-              label: 'Choose Photo',
-              onTap: _selectProfileImage,
-              colorScheme: colorScheme,
-              context: context,
+          // Plus button overlay
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: _showImagePickerOptions,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
             ),
-            _buildProfileActionChip(
-              icon: Icons.camera_alt_outlined,
-              label: 'Take Photo',
-              onTap: _takeProfileImage,
-              colorScheme: colorScheme,
-              context: context,
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildProfileActionChip({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-    required BuildContext context,
-    bool isDestructive = false,
-  }) {
-    final Color bgColor = isDestructive
-        ? Colors.red.withValues(alpha: 0.12)
-        : AppTheme.primaryColor.withValues(alpha: 0.12);
-    final Color fgColor =
-        isDestructive ? Colors.red : AppTheme.primaryColor;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-        ),
-        child: Container(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 14,
-            vertical: 8,
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.4,
+        minChildSize: 0.3,
+        maxChildSize: 0.6,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-            ),
-            border: Border.all(color: fgColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                color: fgColor,
-              ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-              Text(
-                label,
-                style: TextStyle(
-                  color: fgColor,
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                  fontWeight: FontWeight.w600,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-            ],
+                Flexible(
+                  child: ListView(
+                    controller: scrollController,
+                    shrinkWrap: true,
+                    children: [
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.photo_library_outlined,
+                            color: AppTheme.secondaryColor,
+                            size: 22,
+                          ),
+                        ),
+                        title: const Text('Choose from Gallery'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _selectProfileImage();
+                        },
+                      ),
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.camera_alt_outlined,
+                            color: AppTheme.secondaryColor,
+                            size: 22,
+                          ),
+                        ),
+                        title: const Text('Take Photo'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _takeProfileImage();
+                        },
+                      ),
+                      if (_profileImage != null)
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 22,
+                            ),
+                          ),
+                          title: const Text(
+                            'Remove Photo',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _removeProfileImage();
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -562,7 +682,7 @@ class _TechnicianRegistrationScreenState
             ? null
             : _employeeIdController.text.trim(),
         _phoneController.text.trim(), // Required - validator ensures not empty
-        _departmentController.text.trim(), // Required - validator ensures not empty
+        _selectedDepartment ?? '', // Required - validator ensures not empty
         null, // hireDate - will be set by admin
         _profileImage,
       );
@@ -658,16 +778,16 @@ class _TechnicianRegistrationScreenState
           onWillPop: () async => false, // Prevent dismissing by back button
           child: AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
             ),
-            backgroundColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
+            backgroundColor: Colors.white,
             title: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Icon(
                     Icons.email_outlined,
@@ -703,8 +823,12 @@ class _TechnicianRegistrationScreenState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
+                    color: context.cardBackground,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.04),
+                      width: 0.5,
+                    ),
                   ),
                   child: Text(
                     _emailController.text.trim(),
@@ -728,11 +852,11 @@ class _TechnicianRegistrationScreenState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppTheme.secondaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                      width: 1,
+                      color: AppTheme.secondaryColor.withOpacity(0.2),
+                      width: 0.5,
                     ),
                   ),
                   child: Row(
@@ -761,18 +885,17 @@ class _TechnicianRegistrationScreenState
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
-                  // Navigate to login screen - user must confirm email before accessing app
-                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(18),
                   ),
+                  elevation: 0,
                 ),
                 child: Text(
-                  'Go to Login',
+                  'OK',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                   ),

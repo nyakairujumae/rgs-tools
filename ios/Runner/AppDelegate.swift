@@ -18,20 +18,6 @@ import image_picker_ios
 
     GeneratedPluginRegistrant.register(with: self)
 
-    // Note: connectivity_plus is Swift-only and is automatically registered by GeneratedPluginRegistrant
-    // No manual registration needed
-
-    // Manual plugin registration (your custom fixes)
-    if let sharedPrefsRegistrar = self.registrar(forPlugin: "SharedPreferencesPlugin") {
-      SharedPreferencesPlugin.register(with: sharedPrefsRegistrar)
-    }
-    if let sqfliteRegistrar = self.registrar(forPlugin: "SqflitePlugin") {
-      SqflitePlugin.register(with: sqfliteRegistrar)
-    }
-    if let imagePickerRegistrar = self.registrar(forPlugin: "FLTImagePickerPlugin") {
-      FLTImagePickerPlugin.register(with: imagePickerRegistrar)
-    }
-
     // Notification delegate
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
@@ -92,7 +78,11 @@ import image_picker_ios
     let userInfo = notification.request.content.userInfo
     print("📱 Notification received in foreground: \(userInfo)")
 
+    if #available(iOS 14.0, *) {
     completionHandler([.banner, .sound, .badge])
+    } else {
+      completionHandler([.alert, .sound, .badge])
+    }
   }
 
 

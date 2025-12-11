@@ -8,6 +8,8 @@ import '../services/supabase_service.dart';
 import 'auth/login_screen.dart';
 import 'technician_home_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
+import '../widgets/common/themed_button.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
   const PendingApprovalScreen({super.key});
@@ -124,8 +126,6 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
     final status = _approvalStatus?['status'] as String?;
     final isRejected = status == 'rejected';
     final isPending = status == 'pending' || status == null;
@@ -134,227 +134,266 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: Colors.white,
         body: Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+          ),
         ),
       );
     }
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: (isRejected ? Colors.red : Colors.orange)
-                      .withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isRejected ? Icons.cancel : Icons.pending_actions,
-                  size: 60,
-                  color: isRejected ? Colors.red : Colors.orange,
-                ),
-              ),
-              
-              SizedBox(height: 32),
-              
-              // Title
-              Text(
-                isRejected ? 'Account Approval Rejected' : 'Account Pending Approval',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              SizedBox(height: 16),
-              
-              // Description
-              Text(
-                isRejected 
-                  ? 'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.'
-                  : 'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              SizedBox(height: 32),
-              
-              // Status Card
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? colorScheme.surface : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: (isRejected ? Colors.red : Colors.orange)
-                        .withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          Colors.black.withValues(alpha: isDarkMode ? 0.08 : 0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          isRejected ? Icons.info_outline : Icons.info_outline,
-                          color: isRejected ? Colors.red : Colors.orange,
-                          size: 20,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(context.spacingLarge),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: context.spacingLarge),
+                
+                // Main Card Container
+                Container(
+                  padding: EdgeInsets.all(context.spacingLarge * 1.5),
+                  decoration: context.cardDecoration,
+                  child: Column(
+                    children: [
+                      // Icon
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: (isRejected ? Colors.red : Colors.orange)
+                              .withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Current Status',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
+                        child: Icon(
+                          isRejected ? Icons.cancel : Icons.pending_actions,
+                          size: 60,
+                          color: isRejected ? Colors.red : Colors.orange,
+                        ),
+                      ),
+                      
+                      SizedBox(height: context.spacingLarge * 2),
+                      
+                      // Title
+                      Text(
+                        isRejected ? 'Account Approval Rejected' : 'Account Pending Approval',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1A1A1A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: context.spacingMedium),
+                      
+                      // Description
+                      Text(
+                        isRejected 
+                          ? 'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.'
+                          : 'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: context.spacingLarge * 2),
+                      
+                      // Status Card
+                      Container(
+                        padding: EdgeInsets.all(context.spacingLarge),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                          border: Border.all(
+                            color: (isRejected ? Colors.red : Colors.orange)
+                                .withValues(alpha: 0.3),
+                            width: 1,
                           ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (isRejected ? Colors.red : Colors.orange)
-                            .withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isRejected ? 'Rejected' : 'Pending Admin Approval',
-                        style: TextStyle(
-                          color: isRejected ? Colors.red : Colors.orange,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (isRejected && rejectionReason != null) ...[
-                      SizedBox(height: 16),
-                      Divider(
-                        color: colorScheme.onSurface.withValues(alpha: 0.2),
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Column(
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  'Rejection Reason:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                    fontSize: 14,
-                                  ),
+                                Icon(
+                                  isRejected ? Icons.info_outline : Icons.info_outline,
+                                  color: isRejected ? Colors.red : Colors.orange,
+                                  size: 20,
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(width: context.spacingSmall),
                                 Text(
-                                  rejectionReason,
-                                  style: TextStyle(
-                                    color: Colors.red[700],
-                                    fontSize: 14,
+                                  'Current Status',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1A1A1A),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (isRejected && rejectionCount >= 2) ...[
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.red.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.red, size: 20),
-                            SizedBox(width: 8),
-                            Expanded(
+                            SizedBox(height: context.spacingMedium),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: context.spacingMedium,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: (isRejected ? Colors.red : Colors.orange)
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
                               child: Text(
-                                'Warning: This is rejection #$rejectionCount. After 3 rejections, your account will be permanently deleted.',
+                                isRejected ? 'Rejected' : 'Pending Admin Approval',
                                 style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12,
+                                  color: isRejected ? Colors.red : Colors.orange,
                                   fontWeight: FontWeight.w500,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
+                            if (isRejected && rejectionReason != null) ...[
+                              SizedBox(height: context.spacingLarge),
+                              Divider(
+                                color: const Color(0xFFE5E5E5),
+                                height: 1,
+                              ),
+                              SizedBox(height: context.spacingMedium),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: context.spacingSmall),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Rejection Reason:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF1A1A1A),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        SizedBox(height: context.spacingMicro),
+                                        Text(
+                                          rejectionReason,
+                                          style: TextStyle(
+                                            color: Colors.red[700],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            if (isRejected && rejectionCount >= 2) ...[
+                              SizedBox(height: context.spacingMedium),
+                              Container(
+                                padding: EdgeInsets.all(context.spacingMedium),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                  border: Border.all(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.warning, color: Colors.red, size: 20),
+                                    SizedBox(width: context.spacingSmall),
+                                    Expanded(
+                                      child: Text(
+                                        'Warning: This is rejection #$rejectionCount. After 3 rejections, your account will be permanently deleted.',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              
-              SizedBox(height: 32),
-              
-              // Refresh Button (for manual check when pending)
-              if (!isRejected) ...[
+                
+                SizedBox(height: context.spacingLarge * 2),
+                
+                // Refresh Button (for manual check when pending)
+                if (!isRejected) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ThemedButton(
+                      onPressed: _isLoading ? null : () async {
+                        setState(() => _isLoading = true);
+                        await _loadApprovalStatus();
+                      },
+                      isLoading: _isLoading,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (!_isLoading) ...[
+                            Icon(Icons.refresh, size: 20),
+                            SizedBox(width: context.spacingSmall),
+                          ],
+                          Text(
+                            _isLoading ? 'Checking...' : 'Check Approval Status',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: context.spacingMedium),
+                  Text(
+                    'Status is checked automatically every 5 seconds',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: context.spacingLarge),
+                ],
+                
+                // Sign Out Button
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : () async {
-                      setState(() => _isLoading = true);
-                      await _loadApprovalStatus();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: OutlinedButton(
+                    onPressed: () => _signOut(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1A1A1A),
+                      side: BorderSide(
+                        color: const Color(0xFFE5E5E5),
+                        width: 1,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    icon: _isLoading 
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Icon(Icons.refresh),
-                    label: Text(
-                      _isLoading ? 'Checking...' : 'Check Approval Status',
+                    child: Text(
+                      'Sign Out',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -362,53 +401,22 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 12),
+                
+                SizedBox(height: context.spacingLarge),
+                
+                // Contact Info
                 Text(
-                  'Status is checked automatically every 5 seconds',
+                  'Questions? Contact your administrator',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontStyle: FontStyle.italic,
+                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                    fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 16),
+                
+                SizedBox(height: context.spacingLarge),
               ],
-              
-              // Sign Out Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _signOut(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        colorScheme.onSurface.withValues(alpha: 0.3),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              
-              SizedBox(height: 16),
-              
-              // Contact Info
-              Text(
-                'Questions? Contact your administrator',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
         ),
       ),
