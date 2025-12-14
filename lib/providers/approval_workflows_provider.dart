@@ -31,9 +31,12 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
           .toList();
 
       debugPrint('✅ Loaded ${_workflows.length} approval workflows from database');
+      debugPrint('📊 Workflow types: ${_workflows.map((w) => w.requestType).toSet().join(", ")}');
+      debugPrint('📊 Workflow statuses: ${_workflows.map((w) => w.status).toSet().join(", ")}');
     } catch (e) {
       _error = e.toString();
       debugPrint('❌ Error loading approval workflows: $e');
+      debugPrint('❌ Error details: ${e.toString()}');
       // Keep existing workflows on error
     } finally {
       _isLoading = false;

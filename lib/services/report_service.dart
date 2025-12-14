@@ -10,6 +10,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
+import '../models/tool_issue.dart';
+import '../models/approval_workflow.dart';
 import '../services/supabase_service.dart';
 
 enum ReportType {
@@ -18,6 +20,8 @@ enum ReportType {
   toolAssignments,
   technicianSummary,
   toolIssues,
+  toolIssuesSummary,
+  approvalWorkflowsSummary,
   financialSummary,
   toolHistory,
 }
@@ -35,6 +39,8 @@ class ReportService {
     required ReportType reportType,
     required List<Tool> tools,
     required List<dynamic> technicians,
+    List<ToolIssue>? issues,
+    List<ApprovalWorkflow>? workflows,
     DateTime? startDate,
     DateTime? endDate,
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
@@ -44,6 +50,8 @@ class ReportService {
       reportType: reportType,
       tools: tools,
       technicians: technicians,
+      issues: issues,
+      workflows: workflows,
       startDate: startDate,
       endDate: endDate,
     );
@@ -86,6 +94,12 @@ class ReportService {
         break;
       case ReportType.toolIssues:
         await _generateToolIssuesReport(excel, startDate, endDate);
+        break;
+      case ReportType.toolIssuesSummary:
+        await _generateToolIssuesSummaryReport(excel, startDate, endDate);
+        break;
+      case ReportType.approvalWorkflowsSummary:
+        await _generateApprovalWorkflowsSummaryReport(excel, startDate, endDate);
         break;
       case ReportType.financialSummary:
         _generateFinancialSummaryReport(excel, tools);
@@ -168,6 +182,10 @@ class ReportService {
         return 'Technician Summary';
       case ReportType.toolIssues:
         return 'Tool Issues';
+      case ReportType.toolIssuesSummary:
+        return 'Tool Issues Summary';
+      case ReportType.approvalWorkflowsSummary:
+        return 'Approval Workflows Summary';
       case ReportType.financialSummary:
         return 'Financial Summary';
       case ReportType.toolHistory:
@@ -179,6 +197,8 @@ class ReportService {
     required ReportType reportType,
     required List<Tool> tools,
     required List<dynamic> technicians,
+    List<ToolIssue>? issues,
+    List<ApprovalWorkflow>? workflows,
     DateTime? startDate,
     DateTime? endDate,
   }) async {
@@ -187,10 +207,50 @@ class ReportService {
     final reportTitle = _getReportTitle(reportType);
     final dateRangeText = _buildDateRangeText(startDate, endDate);
 
+    // Use provided issues or fetch from database if not provided
     List<dynamic> toolIssues = [];
-    // Fetch tool issues for reports that need them (tool issues report and financial summary)
     if (reportType == ReportType.toolIssues || reportType == ReportType.financialSummary || reportType == ReportType.comprehensive) {
-      toolIssues = await _fetchToolIssues(startDate, endDate);
+      if (issues != null) {
+        // Convert ToolIssue objects to Map format for compatibility
+        toolIssues = issues.map((issue) => issue.toJson()).toList();
+      } else {
+        // Fallback to database fetch if not provided
+        toolIssues = await _fetchToolIssues(startDate, endDate);
+      }
+    }
+    
+    // Filter by date range if provided
+    if (startDate != null || endDate != null) {
+      toolIssues = toolIssues.where((issue) {
+        final reportedAt = issue['reported_at'] ?? issue['reportedAt'];
+        if (reportedAt == null) return false;
+        final date = reportedAt is String ? DateTime.tryParse(reportedAt) : reportedAt;
+        if (date == null) return false;
+        if (startDate != null && date.isBefore(startDate)) return false;
+        if (endDate != null && date.isAfter(endDate)) return false;
+        return true;
+      }).toList();
+    }
+    
+    // Convert approval workflows to Map format for compatibility
+    List<dynamic> approvalWorkflows = [];
+    if (reportType == ReportType.approvalWorkflowsSummary || reportType == ReportType.comprehensive) {
+      if (workflows != null) {
+        approvalWorkflows = workflows.map((workflow) => workflow.toMap()).toList();
+        
+        // Filter by date range if provided
+        if (startDate != null || endDate != null) {
+          approvalWorkflows = approvalWorkflows.where((workflow) {
+            final requestDate = workflow['request_date'];
+            if (requestDate == null) return false;
+            final date = requestDate is String ? DateTime.tryParse(requestDate) : requestDate;
+            if (date == null) return false;
+            if (startDate != null && date.isBefore(startDate)) return false;
+            if (endDate != null && date.isAfter(endDate)) return false;
+            return true;
+          }).toList();
+        }
+      }
     }
 
     pdf.addPage(
@@ -206,6 +266,12 @@ class ReportService {
           switch (reportType) {
             case ReportType.toolIssues:
               widgets.add(_buildToolIssuesPdfSection(toolIssues));
+              break;
+            case ReportType.toolIssuesSummary:
+              widgets.add(_buildToolIssuesSummaryPdfSection(toolIssues));
+              break;
+            case ReportType.approvalWorkflowsSummary:
+              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows));
               break;
             case ReportType.toolsInventory:
               widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
@@ -395,6 +461,95 @@ class ReportService {
                 ));
               }
               
+              // Approval Workflows Section (if any)
+              if (approvalWorkflows.isNotEmpty) {
+                widgets.add(pw.SizedBox(height: 16));
+                widgets.add(pw.Text(
+                  'Approval Workflows Overview',
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey900,
+                  ),
+                ));
+                widgets.add(pw.SizedBox(height: 12));
+                
+                // Calculate metrics
+                final workflowStatusCounts = <String, int>{};
+                final workflowTypeCounts = <String, int>{};
+                for (final item in approvalWorkflows) {
+                  final workflow = item as Map<String, dynamic>;
+                  final status = (workflow['status'] ?? 'Unknown').toString();
+                  final type = (workflow['request_type'] ?? 'Unknown').toString();
+                  workflowStatusCounts[status] = (workflowStatusCounts[status] ?? 0) + 1;
+                  workflowTypeCounts[type] = (workflowTypeCounts[type] ?? 0) + 1;
+                }
+                
+                // Add metric cards
+                widgets.add(pw.Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildMetricCard('Total Workflows', approvalWorkflows.length.toString(), PdfColors.purple),
+                    _buildMetricCard('Pending', workflowStatusCounts['Pending']?.toString() ?? '0', PdfColors.orange),
+                    _buildMetricCard('Approved', workflowStatusCounts['Approved']?.toString() ?? '0', PdfColors.green),
+                    _buildMetricCard('Rejected', workflowStatusCounts['Rejected']?.toString() ?? '0', PdfColors.red),
+                  ],
+                ));
+                widgets.add(pw.SizedBox(height: 18));
+                
+                // Add summary tables
+                widgets.add(pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(child: _buildSummaryTable('By Status', workflowStatusCounts)),
+                    pw.SizedBox(width: 12),
+                    pw.Expanded(child: _buildSummaryTable('By Type', workflowTypeCounts)),
+                  ],
+                ));
+                widgets.add(pw.SizedBox(height: 18));
+                
+                // Add main workflows table
+                final workflowHeaders = [
+                  'Type',
+                  'Title',
+                  'Requester',
+                  'Status',
+                  'Priority',
+                  'Request Date',
+                  'Due Date',
+                ];
+                final workflowData = approvalWorkflows.map<List<String>>((item) {
+                  final workflow = item as Map<String, dynamic>;
+                  return [
+                    workflow['request_type']?.toString() ?? '',
+                    workflow['title']?.toString() ?? '',
+                    workflow['requester_name']?.toString() ?? '',
+                    workflow['status']?.toString() ?? '',
+                    workflow['priority']?.toString() ?? '',
+                    _formatFriendlyDateTime(workflow['request_date']),
+                    _formatFriendlyDateTime(workflow['due_date']) ?? '-',
+                  ];
+                }).toList();
+                widgets.add(pw.Table.fromTextArray(
+                  headers: workflowHeaders,
+                  data: workflowData,
+                  headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
+                  border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                  cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                  columnWidths: const {
+                    0: pw.FlexColumnWidth(2.0),
+                    1: pw.FlexColumnWidth(3.0),
+                    2: pw.FlexColumnWidth(2.0),
+                    3: pw.FlexColumnWidth(1.5),
+                    4: pw.FlexColumnWidth(1.5),
+                    5: pw.FlexColumnWidth(2.0),
+                    6: pw.FlexColumnWidth(2.0),
+                  },
+                ));
+              }
+              
               // Tool History Section
               widgets.add(pw.SizedBox(height: 16));
               widgets.add(pw.Text(
@@ -418,11 +573,32 @@ class ReportService {
       ),
     );
 
-    final directory = await _getDownloadsDirectory();
-    final fileName = 'RGS_Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.pdf';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsBytes(await pdf.save());
-    return file;
+    try {
+      final directory = await _getDownloadsDirectory();
+      final fileName = 'RGS_Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.pdf';
+      final file = File('${directory.path}/$fileName');
+      
+      // Save PDF with error handling
+      final pdfBytes = await pdf.save();
+      await file.writeAsBytes(pdfBytes);
+      
+      debugPrint('✅ PDF report saved successfully: ${file.path}');
+      return file;
+    } catch (e) {
+      debugPrint('❌ Error saving PDF report: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      
+      // If it's a TooManyPagesException, provide helpful error message
+      if (e.toString().contains('TooManyPages') || e.toString().contains('too many pages')) {
+        throw Exception(
+          'The report is too large to generate. '
+          'Please try filtering the data or selecting a shorter time period.'
+        );
+      }
+      
+      // Re-throw with context
+      throw Exception('Failed to save PDF report: $e');
+    }
   }
 
   /// Set all sheets to landscape orientation and optimize column widths
@@ -671,6 +847,156 @@ class ReportService {
     _addInfoRow(sheet, 'Generated', _dateFormat.format(DateTime.now()));
     sheet.appendRow([]);
     _addFinancialData(sheet, tools);
+  }
+
+  /// Tool Issues Summary Report
+  static Future<void> _generateToolIssuesSummaryReport(
+    Excel excel,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) async {
+    final sheet = excel['Tool Issues Summary'];
+    _addHeader(sheet, 'Tool Issues Summary Report', 20);
+    _addInfoRow(sheet, 'Generated', _dateFormat.format(DateTime.now()));
+    sheet.appendRow([]);
+
+    try {
+      final issues = await _fetchToolIssues(startDate, endDate);
+
+      if (issues.isEmpty) {
+        sheet.appendRow(List<dynamic>.from(['No issues found in the selected period.']));
+        return;
+      }
+
+      // Calculate summary statistics
+      final statusCounts = <String, int>{};
+      final priorityCounts = <String, int>{};
+      final typeCounts = <String, int>{};
+      double totalCost = 0.0;
+
+      for (final issue in issues) {
+        final issueMap = issue as Map<String, dynamic>;
+        final status = (issueMap['status'] ?? 'Unknown').toString();
+        final priority = (issueMap['priority'] ?? 'Unspecified').toString();
+        final issueType = (issueMap['issue_type'] ?? 'Unknown').toString();
+        
+        statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+        priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
+        typeCounts[issueType] = (typeCounts[issueType] ?? 0) + 1;
+        
+        final cost = issueMap['estimated_cost'];
+        if (cost is num) {
+          totalCost += cost.toDouble();
+        }
+      }
+
+      // Add summary section
+      _addSectionHeader(sheet, 'Summary Statistics', 16);
+      sheet.appendRow(['Total Issues', issues.length]);
+      sheet.appendRow(['Estimated Total Cost', _currencyFormat.format(totalCost)]);
+      sheet.appendRow([]);
+
+      // Status Distribution
+      _addSectionHeader(sheet, 'Status Distribution', 14);
+      _addTableHeader(sheet, ['Status', 'Count']);
+      for (final entry in statusCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+      sheet.appendRow([]);
+
+      // Priority Distribution
+      _addSectionHeader(sheet, 'Priority Distribution', 14);
+      _addTableHeader(sheet, ['Priority', 'Count']);
+      for (final entry in priorityCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+      sheet.appendRow([]);
+
+      // Issue Type Distribution
+      _addSectionHeader(sheet, 'Issue Type Distribution', 14);
+      _addTableHeader(sheet, ['Issue Type', 'Count']);
+      for (final entry in typeCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+    } catch (e) {
+      debugPrint('Error generating tool issues summary report: $e');
+    }
+  }
+
+  /// Approval Workflows Summary Report
+  static Future<void> _generateApprovalWorkflowsSummaryReport(
+    Excel excel,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) async {
+    final sheet = excel['Approval Workflows Summary'];
+    _addHeader(sheet, 'Approval Workflows Summary Report', 20);
+    _addInfoRow(sheet, 'Generated', _dateFormat.format(DateTime.now()));
+    sheet.appendRow([]);
+
+    try {
+      var query = _client.from('approval_workflows').select();
+      
+      if (startDate != null) {
+        query = query.gte('request_date', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('request_date', endDate.toIso8601String());
+      }
+
+      final workflows = await query.order('request_date', ascending: false);
+
+      if (workflows.isEmpty) {
+        sheet.appendRow(List<dynamic>.from(['No approval workflows found in the selected period.']));
+        return;
+      }
+
+      // Calculate summary statistics
+      final statusCounts = <String, int>{};
+      final typeCounts = <String, int>{};
+      final priorityCounts = <String, int>{};
+
+      for (final workflow in workflows) {
+        final workflowMap = workflow as Map<String, dynamic>;
+        final status = (workflowMap['status'] ?? 'Unknown').toString();
+        final requestType = (workflowMap['request_type'] ?? 'Unknown').toString();
+        final priority = (workflowMap['priority'] ?? 'Medium').toString();
+        
+        statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+        typeCounts[requestType] = (typeCounts[requestType] ?? 0) + 1;
+        priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
+      }
+
+      // Add summary section
+      _addSectionHeader(sheet, 'Summary Statistics', 16);
+      sheet.appendRow(['Total Workflows', workflows.length]);
+      sheet.appendRow([]);
+
+      // Status Distribution
+      _addSectionHeader(sheet, 'Status Distribution', 14);
+      _addTableHeader(sheet, ['Status', 'Count']);
+      for (final entry in statusCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+      sheet.appendRow([]);
+
+      // Request Type Distribution
+      _addSectionHeader(sheet, 'Request Type Distribution', 14);
+      _addTableHeader(sheet, ['Request Type', 'Count']);
+      for (final entry in typeCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+      sheet.appendRow([]);
+
+      // Priority Distribution
+      _addSectionHeader(sheet, 'Priority Distribution', 14);
+      _addTableHeader(sheet, ['Priority', 'Count']);
+      for (final entry in priorityCounts.entries) {
+        sheet.appendRow([entry.key, entry.value]);
+      }
+    } catch (e) {
+      debugPrint('Error generating approval workflows summary report: $e');
+    }
   }
 
   /// Tool History Report
@@ -1239,6 +1565,10 @@ class ReportService {
         return 'TechnicianSummary';
       case ReportType.toolIssues:
         return 'ToolIssues';
+      case ReportType.toolIssuesSummary:
+        return 'ToolIssuesSummary';
+      case ReportType.approvalWorkflowsSummary:
+        return 'ApprovalWorkflowsSummary';
       case ReportType.financialSummary:
         return 'FinancialSummary';
       case ReportType.toolHistory:
@@ -1271,6 +1601,10 @@ class ReportService {
         return 'Technician Summary Report';
       case ReportType.toolIssues:
         return 'Tool Issues Report';
+      case ReportType.toolIssuesSummary:
+        return 'Tool Issues Summary Report';
+      case ReportType.approvalWorkflowsSummary:
+        return 'Approval Workflows Summary Report';
       case ReportType.financialSummary:
         return 'Financial Summary Report';
       case ReportType.toolHistory:
@@ -1638,42 +1972,88 @@ class ReportService {
       'Purchase Price',
     ];
 
-    final tableData = tools.map<List<String>>((tool) {
-      return [
-        tool.name,
-        tool.category,
-        tool.brand ?? '',
-        tool.model ?? '',
-        tool.serialNumber ?? '',
-        tool.status,
-        tool.condition,
-        tool.location ?? '',
-        _getTechnicianName(tool.assignedTo, technicians),
-        _formatDate(tool.purchaseDate),
-        tool.purchasePrice != null ? _currencyFormat.format(tool.purchasePrice) : '',
-      ];
-    }).toList();
+    // Split tools into smaller batches to avoid TooManyPagesException
+    // Process in smaller chunks to allow proper pagination
+    const int batchSize = 10; // Process 10 tools at a time to ensure proper pagination
+    final batches = <List<Tool>>[];
+    for (int i = 0; i < tools.length; i += batchSize) {
+      batches.add(tools.sublist(i, i + batchSize > tools.length ? tools.length : i + batchSize));
+    }
 
-    return pw.Table.fromTextArray(
-      headers: headers,
-      data: tableData,
-      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-      border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
-      columnWidths: const {
-        0: pw.FlexColumnWidth(3.0),
-        1: pw.FlexColumnWidth(2.0),
-        2: pw.FlexColumnWidth(2.0),
-        3: pw.FlexColumnWidth(2.0),
-        4: pw.FlexColumnWidth(2.5),
-        5: pw.FlexColumnWidth(1.5),
-        6: pw.FlexColumnWidth(1.5),
-        7: pw.FlexColumnWidth(2.5),
-        8: pw.FlexColumnWidth(2.5),
-        9: pw.FlexColumnWidth(2.0),
-        10: pw.FlexColumnWidth(2.0),
-      },
+    // Build table widgets for each batch
+    final tableWidgets = <pw.Widget>[];
+    for (int i = 0; i < batches.length; i++) {
+      final batch = batches[i];
+      final tableData = batch.map<List<String>>((tool) {
+        // Ensure purchasePrice is a valid number (not infinity or NaN)
+        String priceStr = '';
+        if (tool.purchasePrice != null) {
+          final price = tool.purchasePrice!;
+          if (price.isFinite && !price.isNaN) {
+            priceStr = _currencyFormat.format(price);
+          }
+        }
+        
+        return [
+          tool.name,
+          tool.category,
+          tool.brand ?? '',
+          tool.model ?? '',
+          tool.serialNumber ?? '',
+          tool.status,
+          tool.condition,
+          tool.location ?? '',
+          _getTechnicianName(tool.assignedTo, technicians),
+          _formatDate(tool.purchaseDate),
+          priceStr,
+        ];
+      }).toList();
+
+      // Add batch header if multiple batches
+      if (batches.length > 1) {
+        tableWidgets.add(
+          pw.Text(
+            'Tools ${i * batchSize + 1} - ${i * batchSize + batch.length} of ${tools.length}',
+            style: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey700, fontStyle: pw.FontStyle.italic),
+          ),
+        );
+        tableWidgets.add(pw.SizedBox(height: 4));
+      }
+
+      // Always include headers to ensure proper column width calculation
+      tableWidgets.add(
+        pw.Table.fromTextArray(
+          headers: headers, // Always show headers for proper column width calculation
+          data: tableData,
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(3.0),
+            1: const pw.FlexColumnWidth(2.0),
+            2: const pw.FlexColumnWidth(2.0),
+            3: const pw.FlexColumnWidth(2.0),
+            4: const pw.FlexColumnWidth(2.5),
+            5: const pw.FlexColumnWidth(1.5),
+            6: const pw.FlexColumnWidth(1.5),
+            7: const pw.FlexColumnWidth(2.5),
+            8: const pw.FlexColumnWidth(2.5),
+            9: const pw.FlexColumnWidth(2.0),
+            10: const pw.FlexColumnWidth(2.0),
+          },
+        ),
+      );
+
+      // Add spacing between batches (except after last batch)
+      if (i < batches.length - 1) {
+        tableWidgets.add(pw.SizedBox(height: 12));
+      }
+    }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: tableWidgets,
     );
   }
 
@@ -1936,6 +2316,264 @@ class ReportService {
     );
   }
 
+  static pw.Widget _buildToolIssuesSummaryPdfSection(List<dynamic> toolIssues) {
+    if (toolIssues.isEmpty) {
+      return _buildPdfPlaceholder('No tool issues found for the selected period.');
+    }
+
+    // Calculate statistics
+    final statusCounts = <String, int>{};
+    final priorityCounts = <String, int>{};
+    final typeCounts = <String, int>{};
+    double totalCost = 0.0;
+    
+    for (final item in toolIssues) {
+      final issue = item as Map<String, dynamic>;
+      final status = (issue['status'] ?? 'Unknown').toString();
+      final priority = (issue['priority'] ?? 'Unspecified').toString();
+      final issueType = (issue['issue_type'] ?? 'Unknown').toString();
+      
+      statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+      priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
+      typeCounts[issueType] = (typeCounts[issueType] ?? 0) + 1;
+      
+      final cost = issue['estimated_cost'];
+      if (cost is num) {
+        totalCost += cost.toDouble();
+      }
+    }
+
+    final openIssues = toolIssues.where((item) {
+      final status = (item['status'] ?? '').toString().toLowerCase();
+      return status != 'resolved' && status != 'closed';
+    }).length;
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'Tool Issues Summary',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+        ),
+        pw.SizedBox(height: 12),
+        
+        // Overview metrics
+        pw.Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildMetricCard('Total Issues', toolIssues.length.toString(), PdfColors.indigo),
+            _buildMetricCard('Open Issues', openIssues.toString(), PdfColors.deepOrange),
+            _buildMetricCard('Estimated Cost', _currencyFormat.format(totalCost), PdfColors.teal),
+          ],
+        ),
+        pw.SizedBox(height: 18),
+        
+        // Status Distribution
+        pw.Text(
+          'Status Distribution',
+          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: const ['Status', 'Count'],
+          data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+          columnWidths: const {
+            0: pw.FlexColumnWidth(2.0),
+            1: pw.FlexColumnWidth(1.0),
+          },
+        ),
+        pw.SizedBox(height: 18),
+        
+        // Priority Distribution
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Priority Distribution',
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Table.fromTextArray(
+                    headers: const ['Priority', 'Count'],
+                    data: priorityCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+                    border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                    cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(2.0),
+                      1: pw.FlexColumnWidth(1.0),
+                    },
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(width: 12),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Issue Type Distribution',
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Table.fromTextArray(
+                    headers: const ['Type', 'Count'],
+                    data: typeCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
+                    border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                    cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(2.0),
+                      1: pw.FlexColumnWidth(1.0),
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildApprovalWorkflowsSummaryPdfSection(List<dynamic> approvalWorkflows) {
+    if (approvalWorkflows.isEmpty) {
+      return _buildPdfPlaceholder('No approval workflows found for the selected period.');
+    }
+
+    // Calculate statistics
+    final statusCounts = <String, int>{};
+    final typeCounts = <String, int>{};
+    final priorityCounts = <String, int>{};
+    
+    for (final item in approvalWorkflows) {
+      final workflow = item as Map<String, dynamic>;
+      final status = (workflow['status'] ?? 'Unknown').toString();
+      final requestType = (workflow['request_type'] ?? 'Unknown').toString();
+      final priority = (workflow['priority'] ?? 'Medium').toString();
+      
+      statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+      typeCounts[requestType] = (typeCounts[requestType] ?? 0) + 1;
+      priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
+    }
+
+    final pendingCount = statusCounts['Pending'] ?? 0;
+    final approvedCount = statusCounts['Approved'] ?? 0;
+    final rejectedCount = statusCounts['Rejected'] ?? 0;
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'Approval Workflows Summary',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+        ),
+        pw.SizedBox(height: 12),
+        
+        // Overview metrics
+        pw.Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildMetricCard('Total Workflows', approvalWorkflows.length.toString(), PdfColors.purple),
+            _buildMetricCard('Pending', pendingCount.toString(), PdfColors.orange),
+            _buildMetricCard('Approved', approvedCount.toString(), PdfColors.green),
+            _buildMetricCard('Rejected', rejectedCount.toString(), PdfColors.red),
+          ],
+        ),
+        pw.SizedBox(height: 18),
+        
+        // Status Distribution
+        pw.Text(
+          'Status Distribution',
+          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: const ['Status', 'Count'],
+          data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
+          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+          cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+          columnWidths: const {
+            0: pw.FlexColumnWidth(2.0),
+            1: pw.FlexColumnWidth(1.0),
+          },
+        ),
+        pw.SizedBox(height: 18),
+        
+        // Request Type and Priority Distribution
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Request Type Distribution',
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Table.fromTextArray(
+                    headers: const ['Type', 'Count'],
+                    data: typeCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
+                    border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                    cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(2.0),
+                      1: pw.FlexColumnWidth(1.0),
+                    },
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(width: 12),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Priority Distribution',
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Table.fromTextArray(
+                    headers: const ['Priority', 'Count'],
+                    data: priorityCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
+                    border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+                    cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(2.0),
+                      1: pw.FlexColumnWidth(1.0),
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   static pw.Widget _buildToolHistoryTable(List<Tool> tools, DateTime? startDate, DateTime? endDate) {
     if (tools.isEmpty) {
       return _buildPdfPlaceholder('No tool history found for the selected period.');
@@ -2037,20 +2675,17 @@ class ReportService {
 
   static Future<Directory> _getDownloadsDirectory() async {
     if (Platform.isIOS) {
-      // For iOS, use native method channel to bypass path_provider and objective_c FFI
-      // This completely avoids FFI dependency which causes issues on real devices
+      // For iOS, use path_provider to get application documents directory
       try {
-        const platform = MethodChannel('com.rgs.app/documents_path');
-        final String documentsPath = await platform.invokeMethod('getDocumentsPath');
-        final directory = Directory(documentsPath);
+        final directory = await getApplicationDocumentsDirectory();
         // Ensure directory exists
         if (!await directory.exists()) {
           await directory.create(recursive: true);
         }
         return directory;
       } catch (e) {
-        // Last resort: use temp directory (no path_provider fallback to avoid FFI)
-        debugPrint('⚠️ Method channel failed, using temp directory: $e');
+        // Fallback: use temp directory
+        debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
         final tempDir = Directory.systemTemp;
         final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
         if (!await fallbackDir.exists()) {

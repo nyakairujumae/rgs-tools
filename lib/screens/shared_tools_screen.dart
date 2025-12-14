@@ -896,19 +896,21 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 },
               ),
             if (tool.status == 'In Use') ...[
-              ListTile(
-                leading: Icon(Icons.swap_horiz, color: AppTheme.accentColor),
-                title: Text(
-                  'Reassign Tool',
-                  style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color),
+              // Hide Reassign Tool for technicians
+              if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+                ListTile(
+                  leading: Icon(Icons.swap_horiz, color: AppTheme.accentColor),
+                  title: Text(
+                    'Reassign Tool',
+                    style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/reassign-tool',
+                        arguments: tool);
+                  },
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/reassign-tool',
-                      arguments: tool);
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.keyboard_return, color: Colors.green),
                 title: Text(
@@ -922,18 +924,20 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 },
               ),
             ],
-            ListTile(
-              leading: const Icon(Icons.edit, color: Colors.orange),
-              title: Text(
-                'Edit Tool',
-                style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color),
+            // Hide Edit Tool for technicians
+            if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+              ListTile(
+                leading: const Icon(Icons.edit, color: Colors.orange),
+                title: Text(
+                  'Edit Tool',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/edit-tool', arguments: tool);
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/edit-tool', arguments: tool);
-              },
-            ),
             ListTile(
               leading: const Icon(Icons.info_outline, color: Colors.blue),
               title: Text(

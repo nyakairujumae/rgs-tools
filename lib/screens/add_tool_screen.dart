@@ -213,21 +213,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: context.cardDecoration.copyWith(
-                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.chevron_left,
-                      size: 28,
-                      color: Colors.black87,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                  ),
+                  onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -379,7 +371,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         }
                         return null;
                       },
-                      dropdownColor: Colors.white,
+                      dropdownColor: Theme.of(context).colorScheme.surface,
                       menuMaxHeight: 300,
                       borderRadius: BorderRadius.circular(20),
                       style: TextStyle(

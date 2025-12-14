@@ -79,34 +79,30 @@ class _TechnicianRegistrationScreenState
                   fontWeight: FontWeight.w600,
                 ),
               ),
-        backgroundColor:
-            isDesktopLayout ? Colors.transparent : Colors.white,
-        foregroundColor: isDesktopLayout ? Colors.white : Colors.black87,
-        elevation: isDesktopLayout ? 0 : 0,
+        backgroundColor: isDesktopLayout ? Colors.transparent : context.appBarBackground,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: isDesktopLayout
             ? IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.chevron_left,
                   size: 28,
-                  color: Colors.white,
+                  color: theme.colorScheme.onSurface,
                 ),
                 onPressed: () => Navigator.pop(context),
                 splashRadius: 24,
               )
             : Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  decoration: context.cardDecoration,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.chevron_left,
-                      size: 24,
-                      color: Colors.black87,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    splashRadius: 24,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    size: 24,
+                    color: theme.colorScheme.onSurface,
                   ),
+                  onPressed: () => Navigator.pop(context),
+                  splashRadius: 24,
                 ),
               ),
       ),
@@ -298,7 +294,7 @@ class _TechnicianRegistrationScreenState
                           }
                           return null;
                         },
-                        dropdownColor: Colors.white,
+                        dropdownColor: Theme.of(context).colorScheme.surface,
                         menuMaxHeight: 300,
                         borderRadius: BorderRadius.circular(20),
                         style: TextStyle(
@@ -780,7 +776,7 @@ class _TechnicianRegistrationScreenState
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             title: Row(
               children: [
                 Container(

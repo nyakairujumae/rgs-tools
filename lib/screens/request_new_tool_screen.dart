@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
+import '../services/image_upload_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
@@ -62,6 +65,10 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   DateTime? _neededBy;
   String _priority = 'Normal';
   bool _isSubmitting = false;
+  
+  // Image upload
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _selectedImages = [];
 
   @override
   void dispose() {
@@ -217,51 +224,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                 hint: _getJustificationHint(),
                                 validator: _req),
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                            Container(
-                              padding: ResponsiveHelper.getResponsivePadding(
-                                context,
-                                all: 16,
-                              ),
-                              decoration: context.cardDecoration.copyWith(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.attachment,
-                                    color: AppTheme.secondaryColor,
-                                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                  ),
-                                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                                  Expanded(
-                                    child: Text(
-                                      'Attach photo or spec (optional)',
-                                      style: TextStyle(
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                      ),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {},
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppTheme.secondaryColor,
-                                      padding: ResponsiveHelper.getResponsivePadding(
-                                        context,
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Attach',
-                                      style: TextStyle(
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            _buildImageAttachmentSection(),
                           ],
                         ),
                       ),
@@ -352,7 +315,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       decoration: context.chatGPTInputDecoration.copyWith(
         labelText: label,
       ),
-      dropdownColor: Colors.white,
+      dropdownColor: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       icon: const Icon(Icons.keyboard_arrow_down),
       menuMaxHeight: 300,
@@ -441,9 +404,30 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      // Upload images if any
+      List<String> imageUrls = [];
+      if (_selectedImages.isNotEmpty) {
+        try {
+          final requestId = DateTime.now().millisecondsSinceEpoch.toString();
+          for (var image in _selectedImages) {
+            final imageUrl = await ImageUploadService.uploadImage(
+              File(image.path),
+              'request_$requestId',
+            );
+            if (imageUrl != null) {
+              imageUrls.add(imageUrl);
+            }
+          }
+          debugPrint('✅ Uploaded ${imageUrls.length} image(s) for request');
+        } catch (e) {
+          debugPrint('⚠️ Failed to upload some images: $e');
+          // Continue with submission even if image upload fails
+        }
+      }
+
       // Create approval workflow in database
       try {
-        final approvalWorkflow = _buildApprovalWorkflow(authProvider, user);
+        final approvalWorkflow = _buildApprovalWorkflow(authProvider, user, imageUrls);
         await SupabaseService.client
             .from('approval_workflows')
             .insert(approvalWorkflow.toMap());
@@ -457,6 +441,9 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       // Create notification for admin - this is the main way admin sees tool requests
       // Store all request details in the notification data
       try {
+        final notificationData = _buildNotificationData(user, authProvider);
+        notificationData['image_urls'] = imageUrls;
+        
         await adminNotificationProvider.createNotification(
           technicianName:
               authProvider.userFullName ?? (user?.email ?? 'Technician'),
@@ -464,7 +451,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           type: NotificationType.toolRequest,
           title: '${_selectedRequestType}: ${_titleCtrl.text.trim()}',
           message: _buildNotificationMessage(authProvider),
-          data: _buildNotificationData(user, authProvider),
+          data: notificationData,
         );
         debugPrint('✅ Created admin notification for tool request');
       } catch (e) {
@@ -600,7 +587,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       decoration: context.chatGPTInputDecoration.copyWith(
         labelText: 'Request Type',
       ),
-      dropdownColor: Colors.white,
+      dropdownColor: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       icon: const Icon(Icons.keyboard_arrow_down),
       menuMaxHeight: 300,
@@ -702,7 +689,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                 label: 'Total Cost (AED)',
                 hint: '0.00',
                 keyboardType: TextInputType.number,
-                readOnly: true,
+                readOnly: false,
               ),
             ),
           ]),
@@ -823,7 +810,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     });
   }
 
-  ApprovalWorkflow _buildApprovalWorkflow(AuthProvider authProvider, user) {
+  ApprovalWorkflow _buildApprovalWorkflow(AuthProvider authProvider, user, List<String> imageUrls) {
     final title = _titleCtrl.text.trim().isEmpty 
         ? _getDefaultTitle() 
         : _titleCtrl.text.trim();
@@ -832,6 +819,9 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         : _descriptionCtrl.text.trim();
 
     final requestData = _buildRequestData();
+    if (imageUrls.isNotEmpty) {
+      requestData['image_urls'] = imageUrls;
+    }
 
     return ApprovalWorkflow(
       requestType: _selectedRequestType,
@@ -1003,7 +993,246 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       _priority = 'Normal';
       _neededBy = null;
       _selectedRequestType = RequestTypes.toolPurchase;
+      _selectedImages.clear();
     });
+  }
+
+  Widget _buildImageAttachmentSection() {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            all: 16,
+          ),
+          decoration: context.cardDecoration.copyWith(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.attachment,
+                color: AppTheme.secondaryColor,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Expanded(
+                child: Text(
+                  'Attach photo or spec (optional)',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _showImagePickerOptions,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.secondaryColor,
+                  padding: ResponsiveHelper.getResponsivePadding(
+                    context,
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                ),
+                child: Text(
+                  'Add Image',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_selectedImages.isNotEmpty) ...[
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+          Wrap(
+            spacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
+            runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
+            children: _selectedImages.asMap().entries.map((entry) {
+              final index = entry.key;
+              final image = entry.value;
+              return Stack(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: context.cardBorder,
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(image.path),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: context.cardBackground,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedImages.removeAt(index);
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showImagePickerOptions() {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Image Source',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImagePickerOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildImagePickerOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: context.cardDecoration.copyWith(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: AppTheme.secondaryColor),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppTheme.secondaryColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to pick image: $e',
+        );
+      }
+    }
   }
 }
 

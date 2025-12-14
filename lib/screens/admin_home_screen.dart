@@ -146,20 +146,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
-      _startPeriodicRefresh();
     });
   }
 
-  void _startPeriodicRefresh() {
-    // Refresh pending approvals and notifications every 30 seconds to catch new registrations/notifications
-    Future.delayed(Duration(seconds: 30), () {
-      if (!_isDisposed && mounted) {
-        context.read<PendingApprovalsProvider>().loadPendingApprovals();
-        context.read<AdminNotificationProvider>().loadNotifications();
-        _startPeriodicRefresh(); // Schedule next refresh
-      }
-    });
-  }
 
   Future<void> _loadData() async {
     if (_isDisposed) return;
@@ -314,9 +303,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               onTap: (index) =>
                   setState(() => _selectedIndex = index.clamp(0, 3)),
               type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.white, // White to match app design
+              backgroundColor: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? 
+                  Theme.of(context).colorScheme.surface,
               selectedItemColor: Theme.of(context).colorScheme.secondary,
-              unselectedItemColor:
+              unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor ??
                   Theme.of(context).colorScheme.onSurface.withValues(alpha:0.5),
               items: const [
                 BottomNavigationBarItem(
@@ -362,10 +352,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       isDismissible: true, // Enable dismiss by tapping outside
       enableDrag: true, // Enable drag to dismiss
       builder: (sheetContext) {
-        // Use white background to match app design
-        final surfaceColor = theme.brightness == Brightness.dark
-            ? theme.colorScheme.surface
-            : Colors.white;
+        // Use theme-aware background
+        final surfaceColor = theme.colorScheme.surface;
         return DraggableScrollableSheet(
           expand: false, // Match technician implementation
           initialChildSize: 0.6,

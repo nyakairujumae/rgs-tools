@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +17,7 @@ import '../utils/error_handler.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/file_helper.dart' if (dart.library.html) '../utils/file_helper_stub.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
@@ -125,7 +128,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                       onRefresh: () async {
                         await toolProvider.loadTools();
                       },
-                      backgroundColor: Colors.white,
+                      backgroundColor: context.scaffoldBackground,
                       color: AppTheme.secondaryColor,
                       child: SingleChildScrollView(
                         padding: ResponsiveHelper.getResponsivePadding(
@@ -308,21 +311,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 54),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 54),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 16),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.build,
-                      color: AppTheme.primaryColor,
-                      size: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                    ),
-                  ),
+                  _buildToolImage(tool, context),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Expanded(
                     child: Column(
@@ -399,6 +388,142 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     );
   }
 
+  List<String> _getToolImageUrls(Tool tool) {
+    if (tool.imagePath == null || tool.imagePath!.isEmpty) {
+      return [];
+    }
+    
+    // Support both single image (backward compatibility) and multiple images (comma-separated)
+    final imagePath = tool.imagePath!;
+    
+    // Check if it's comma-separated (multiple images)
+    if (imagePath.contains(',')) {
+      return imagePath.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    
+    return [imagePath];
+  }
+
+  Widget _buildToolImage(Tool tool, BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final imageUrls = _getToolImageUrls(tool);
+    final imageSize = ResponsiveHelper.getResponsiveIconSize(context, 54);
+
+    if (imageUrls.isEmpty) {
+      // Show placeholder icon if no image
+      return Container(
+        width: imageSize,
+        height: imageSize,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+          ),
+        ),
+        child: Icon(
+          Icons.build,
+          color: AppTheme.primaryColor,
+          size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+        ),
+      );
+    }
+
+    final imageUrl = imageUrls.first;
+
+    return Container(
+      width: imageSize,
+      height: imageSize,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        border: Border.all(
+          color: context.cardBorder,
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+        ),
+        child: _buildImageWidget(imageUrl, colorScheme),
+      ),
+    );
+  }
+
+  Widget _buildImageWidget(String imageUrl, ColorScheme colorScheme) {
+    // Check if it's a network URL
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: context.cardBackground,
+            child: Icon(
+              Icons.build,
+              color: AppTheme.primaryColor,
+              size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: context.cardBackground,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    
+    // Check if it's a local file (not web)
+    if (!kIsWeb && !imageUrl.startsWith('http')) {
+      final localImage = buildLocalFileImage(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+      if (localImage != null) {
+        return localImage;
+      }
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: context.cardBackground,
+        child: Icon(
+          Icons.build,
+          color: AppTheme.primaryColor,
+          size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+        ),
+      );
+    }
+    
+    // Fallback for other cases
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: context.cardBackground,
+      child: Icon(
+        Icons.build,
+        color: AppTheme.primaryColor,
+        size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+      ),
+    );
+  }
+
   Widget _buildSelectedToolCard(BuildContext context, SupabaseTechnicianProvider technicianProvider) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -407,14 +532,12 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 20),
         ),
         border: Border.all(
-          color: isDarkMode 
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.15),
+          color: AppTheme.getCardBorderSubtle(context),
           width: 1,
         ),
         boxShadow: [
@@ -465,7 +588,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                 child: Text(
                   'Status',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: context.secondaryTextColor,
                     fontWeight: FontWeight.w500,
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                   ),
@@ -559,7 +682,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     Icons.calendar_today,
                     color: _checkinDate != null
                         ? AppTheme.primaryColor
-                        : Colors.grey[400],
+                        : theme.colorScheme.onSurface.withOpacity(0.4),
                     size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -572,14 +695,14 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                         fontWeight: FontWeight.w500,
                         color: _checkinDate != null
                             ? theme.colorScheme.onSurface
-                            : Colors.grey[400],
+                            : theme.colorScheme.onSurface.withOpacity(0.4),
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
                     ),
                   ),
                   Icon(
                     Icons.keyboard_arrow_down,
-                    color: Colors.grey[500],
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
                     size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                   ),
                 ],
@@ -612,7 +735,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                 onSelected: (_) => setState(() => _returnCondition = condition),
                 backgroundColor: isSelected
                     ? Colors.green.shade600
-                    : (isDarkMode ? theme.colorScheme.surface : Colors.grey.shade200),
+                    : context.cardBackground,
                 selectedColor: Colors.green.shade600,
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : theme.colorScheme.onSurface,
@@ -621,9 +744,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                 side: BorderSide(
                   color: isSelected
                       ? Colors.green.shade600
-                      : (isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.grey.shade300),
+                      : AppTheme.getCardBorderSubtle(context),
                 ),
               );
             }).toList(),
@@ -644,15 +765,11 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     final canSubmit = _selectedTool != null && _checkinDate != null && !_isSaving;
 
     return SafeArea(
-      child: Container(
+      child: Padding(
         padding: ResponsiveHelper.getResponsivePadding(
           context,
           horizontal: 16,
           vertical: 20,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: context.cardShadows,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

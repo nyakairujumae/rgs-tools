@@ -202,7 +202,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   icon: Icon(
                     Icons.chevron_left,
                     size: 28,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   onPressed: () {
                     Navigator.pop(context);

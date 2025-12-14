@@ -78,17 +78,14 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         surfaceTintColor: Colors.transparent,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: context.cardDecoration,
-            child: IconButton(
-              icon: const Icon(
-                Icons.chevron_left,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () => Navigator.pop(context),
-              splashRadius: 24,
+          child: IconButton(
+            icon: Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            onPressed: () => Navigator.pop(context),
+            splashRadius: 24,
           ),
         ),
       ),
@@ -216,7 +213,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             }
                             return null;
                           },
-                          dropdownColor: Colors.white,
+                          dropdownColor: Theme.of(context).colorScheme.surface,
                           menuMaxHeight: 300,
                           borderRadius: BorderRadius.circular(20),
                           style: TextStyle(
@@ -475,7 +472,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             title: Row(
               children: [
                 Container(

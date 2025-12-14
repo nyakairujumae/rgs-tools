@@ -52,7 +52,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   _buildRoleButton(
                     context: context,
                     label: 'Register as Technician',
-                    color: Colors.black,
+                    color: theme.colorScheme.surface,
                     onTap: () => _navigate(
                       context,
                       const TechnicianRegistrationScreen(),
@@ -139,8 +139,12 @@ class RoleSelectionScreen extends StatelessWidget {
     Curve animationCurve = Curves.easeOut,
   }) {
     bool isPressed = false;
+    final theme = Theme.of(context);
     final borderRadius = BorderRadius.circular(context.borderRadiusLarge);
-    final textColor = Colors.white;
+    // Use theme-aware text color: if color is secondaryColor (green), use white; otherwise use onSurface
+    final textColor = color == AppTheme.secondaryColor 
+        ? Colors.white 
+        : theme.colorScheme.onSurface;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -165,8 +169,8 @@ class RoleSelectionScreen extends StatelessWidget {
                 child: InkWell(
                   onTap: onTap,
                   borderRadius: borderRadius,
-                  splashColor: Colors.white.withOpacity(0.08),
-                  highlightColor: Colors.white.withOpacity(0.06),
+                  splashColor: theme.colorScheme.onSurface.withOpacity(0.08),
+                  highlightColor: theme.colorScheme.onSurface.withOpacity(0.06),
                   onHighlightChanged: (value) =>
                       setStateSB(() => isPressed = value),
                   child: Ink(

@@ -78,7 +78,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                 icon: Icon(
                   Icons.chevron_left,
                   size: 28,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -134,20 +134,13 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: context.cardDecoration.copyWith(
-                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    size: 28,
+                    color: theme.colorScheme.onSurface,
                   ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.chevron_left,
-                      size: 28,
-                      color: Colors.black87,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+                  onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

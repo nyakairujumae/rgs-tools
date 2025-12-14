@@ -269,7 +269,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     return RefreshIndicator(
       onRefresh: () => context.read<ToolIssueProvider>().loadIssues(),
       color: AppTheme.secondaryColor,
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBackground,
       child: ListView.separated(
         padding: EdgeInsets.fromLTRB(
           isDesktop ? 24 : 16,
@@ -392,7 +392,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
@@ -544,7 +544,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
@@ -621,7 +621,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
@@ -769,7 +769,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBackground,
       elevation: 0,
       centerTitle: true,
       titleSpacing: 0,
@@ -783,17 +783,13 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       ),
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () => NavigationHelper.safePop(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: context.cardDecoration,
-            child: const Icon(
-              Icons.chevron_left,
-              size: 24,
-              color: Colors.black87,
-            ),
+        child: IconButton(
+          icon: Icon(
+            Icons.chevron_left,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+          onPressed: () => NavigationHelper.safePop(context),
         ),
       ),
       actions: [],

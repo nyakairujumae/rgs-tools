@@ -61,32 +61,30 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appBarBackground,
       elevation: 0,
       centerTitle: true,
       titleSpacing: 0,
-      title: const Text(
+      foregroundColor: theme.colorScheme.onSurface,
+      title: Text(
         'Tools Under Maintenance',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: theme.colorScheme.onSurface,
         ),
       ),
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () => NavigationHelper.safePop(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            decoration: context.cardDecoration,
-            child: const Icon(
-              Icons.chevron_left,
-              size: 24,
-              color: Colors.black87,
-            ),
+        child: IconButton(
+          icon: Icon(
+            Icons.chevron_left,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+          onPressed: () => NavigationHelper.safePop(context),
         ),
       ),
       actions: [],
@@ -143,7 +141,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
         return RefreshIndicator(
           onRefresh: _loadTools,
           color: AppTheme.secondaryColor,
-          backgroundColor: Colors.white,
+          backgroundColor: context.scaffoldBackground,
           child: ListView.separated(
               padding: EdgeInsets.fromLTRB(
                 ResponsiveHelper.isDesktop(context) ? 24 : 16,

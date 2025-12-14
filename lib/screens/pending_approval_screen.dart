@@ -134,7 +134,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBackground,
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),

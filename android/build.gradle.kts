@@ -20,7 +20,16 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
+            extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+                val currentSdk = (compileSdkVersion as? String)?.toIntOrNull() ?: (compileSdkVersion as? Int) ?: 0
+                if (currentSdk < 36) {
+                    compileSdkVersion(36)
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

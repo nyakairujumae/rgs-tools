@@ -141,22 +141,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: context.cardDecoration.copyWith(
-                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    size: 28,
+                    color: theme.colorScheme.onSurface,
                   ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.chevron_left,
-                      size: 28,
-                      color: Colors.black87,
-                    ),
                   onPressed: () => NavigationHelper.safePop(context),
-                    splashRadius: 24,
-                    padding: EdgeInsets.zero,
-                  ),
+                  splashRadius: 24,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -184,12 +176,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     color: theme.textTheme.bodyLarge?.color,
                   ),
                     padding: EdgeInsets.zero,
-                  color: Colors.white,
+                  color: context.cardBackground,
                     elevation: 0, // No elevation - clean design
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18), // Match card decoration
                     side: BorderSide(
-                        color: Colors.black.withOpacity(0.04),
+                        color: AppTheme.getCardBorderSubtle(context),
                         width: 0.5,
                     ),
                   ),
@@ -628,38 +620,42 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       builder: (context, authProvider, child) {
         // Check if this tool is already assigned to the current user
         final isAssignedToCurrentUser = _currentTool.assignedTo == authProvider.userId;
+        final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
         
         return Column(
           children: [
-            // Primary Action Button - Only show if tool is available AND not assigned to current user
-            if (_currentTool.status == 'Available' && !isAssignedToCurrentUser)
-              _buildFilledActionButton(
-                label: 'Assign to Technician',
-                icon: Icons.person_add,
-                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ToolsScreen(isSelectionMode: true),
-                    ),
-                  );
-                },
-              )
-            else if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
-              _buildFilledActionButton(
-                label: 'Reassign Tool',
-                icon: Icons.swap_horiz,
-                colors: [AppTheme.accentColor, AppTheme.accentColor.withValues(alpha: 0.85)],
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReassignToolScreen(tool: _currentTool),
-                    ),
-                  );
-                },
-              ),
+            // Primary Action Button - Show assign if available and not assigned, or reassign if assigned
+            // Hide reassign button for technicians
+            if (!isTechnician) ...[
+              if (_currentTool.status == 'Available' && !isAssignedToCurrentUser && _currentTool.assignedTo == null)
+                _buildFilledActionButton(
+                  label: 'Assign to Technician',
+                  icon: Icons.person_add,
+                  colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ToolsScreen(isSelectionMode: true),
+                      ),
+                    );
+                  },
+                )
+              else if (_currentTool.assignedTo != null)
+                _buildFilledActionButton(
+                  label: 'Reassign Tool',
+                  icon: Icons.swap_horiz,
+                  colors: [AppTheme.accentColor, AppTheme.accentColor.withValues(alpha: 0.85)],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReassignToolScreen(tool: _currentTool),
+                      ),
+                    );
+                  },
+                ),
+            ],
 
             const SizedBox(height: 12),
 
@@ -696,34 +692,49 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
             const SizedBox(height: 12),
 
-            // Secondary Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOutlinedActionButton(
-                    label: _currentTool.status == 'Maintenance' 
-                        ? 'Complete Maint.' 
-                        : 'Mark for Maint.',
-                    icon: _currentTool.status == 'Maintenance' 
-                        ? Icons.check_circle 
-                        : Icons.build,
-                    color: _currentTool.status == 'Maintenance' 
-                        ? Colors.green 
-                        : AppTheme.primaryColor,
-                    onTap: _scheduleMaintenance,
+            // Secondary Action Buttons - Hide Edit button for technicians
+            if (!isTechnician)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildOutlinedActionButton(
+                      label: _currentTool.status == 'Maintenance' 
+                          ? 'Complete Maint.' 
+                          : 'Mark for Maint.',
+                      icon: _currentTool.status == 'Maintenance' 
+                          ? Icons.check_circle 
+                          : Icons.build,
+                      color: _currentTool.status == 'Maintenance' 
+                          ? Colors.green 
+                          : AppTheme.primaryColor,
+                      onTap: _scheduleMaintenance,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildOutlinedActionButton(
-                    label: 'Edit',
-                    icon: Icons.edit,
-                    color: AppTheme.primaryColor,
-                    onTap: _editTool,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildOutlinedActionButton(
+                      label: 'Edit',
+                      icon: Icons.edit,
+                      color: AppTheme.primaryColor,
+                      onTap: _editTool,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              )
+            else
+              // For technicians, only show maintenance button
+              _buildOutlinedActionButton(
+                label: _currentTool.status == 'Maintenance' 
+                    ? 'Complete Maint.' 
+                    : 'Mark for Maint.',
+                icon: _currentTool.status == 'Maintenance' 
+                    ? Icons.check_circle 
+                    : Icons.build,
+                color: _currentTool.status == 'Maintenance' 
+                    ? Colors.green 
+                    : AppTheme.primaryColor,
+                onTap: _scheduleMaintenance,
+              ),
 
             // Additional Actions
             if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
@@ -949,15 +960,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
   List<PopupMenuEntry<String>> _buildAppBarMenuItems(ThemeData theme) {
     final textColor = theme.colorScheme.onSurface;
-    final iconColor = textColor.withOpacity(0.75);
+    final iconColor = textColor;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
+    
     return [
-      _buildMenuItem(
-        value: 'edit',
-        icon: Icons.edit_outlined,
-        label: 'Edit Tool',
-        textColor: textColor,
-        iconColor: AppTheme.secondaryColor, // Use app green
-      ),
+      // Hide Edit Tool menu item for technicians
+      if (!isTechnician)
+        _buildMenuItem(
+          value: 'edit',
+          icon: Icons.edit_outlined,
+          label: 'Edit Tool',
+          textColor: textColor,
+          iconColor: AppTheme.secondaryColor, // Use app green
+        ),
       _buildMenuItem(
         value: 'image',
         icon: Icons.camera_alt_outlined,
@@ -1009,6 +1025,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   PopupMenuEntry<String> _buildMenuDivider() {
+    final theme = Theme.of(context);
     return PopupMenuItem<String>(
       enabled: false,
       height: 12,
@@ -1018,7 +1035,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           const SizedBox(height: 4),
           Container(
             height: 1,
-            color: Colors.black.withOpacity(0.06),
+            color: theme.colorScheme.onSurface.withOpacity(0.1),
           ),
           const SizedBox(height: 4),
         ],

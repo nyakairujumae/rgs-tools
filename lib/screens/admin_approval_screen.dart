@@ -319,32 +319,31 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
   }
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appBarBackground,
       elevation: 0,
       centerTitle: true,
       titleSpacing: 0,
-      title: const Text(
+      foregroundColor: theme.colorScheme.onSurface,
+      title: Text(
         'Authorize Users',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: theme.colorScheme.onSurface,
         ),
       ),
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: context.cardDecoration,
-          child: IconButton(
-            icon: const Icon(
-              Icons.chevron_left,
-              size: 24,
-              color: Colors.black87,
-            ),
-            onPressed: () => NavigationHelper.safePop(context),
-            splashRadius: 24,
+        child: IconButton(
+          icon: Icon(
+            Icons.chevron_left,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+          onPressed: () => NavigationHelper.safePop(context),
+          splashRadius: 24,
         ),
       ),
       actions: [],
@@ -748,7 +747,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
@@ -808,7 +807,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),

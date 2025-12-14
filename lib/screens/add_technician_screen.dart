@@ -78,15 +78,15 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
           widget.technician == null ? 'Add Technician' : 'Edit Technician',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.appBarBackground,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.chevron_left,
             size: 28,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           onPressed: () => Navigator.pop(context),
           splashRadius: 24,
@@ -258,7 +258,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                           _departmentController.text = value ?? '';
                         });
                       },
-                      dropdownColor: Colors.white,
+                      dropdownColor: Theme.of(context).colorScheme.surface,
                       menuMaxHeight: 300,
                       borderRadius: BorderRadius.circular(20),
                       style: TextStyle(
@@ -333,7 +333,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                             _status = value;
                           });
                         },
-                        dropdownColor: Colors.white,
+                        dropdownColor: Theme.of(context).colorScheme.surface,
                         menuMaxHeight: 300,
                         borderRadius: BorderRadius.circular(20),
                         style: TextStyle(

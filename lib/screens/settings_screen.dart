@@ -78,25 +78,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    height: ResponsiveHelper.getResponsiveIconSize(context, 44),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? Theme.of(context).colorScheme.surface 
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 14),
-                      ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.chevron_left,
+                      size: 28,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.chevron_left,
-                        size: 28,
-                        color: Colors.black87,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Expanded(

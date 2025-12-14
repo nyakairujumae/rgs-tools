@@ -47,8 +47,8 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.appBarBackground,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         title: Text(
           widget.technician.name,
@@ -59,105 +59,99 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
         ),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: context.cardDecoration,
-            child: IconButton(
-              icon: const Icon(
-                Icons.chevron_left,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () => Navigator.pop(context),
+          child: IconButton(
+            icon: Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: Container(
-              decoration: context.cardDecoration,
-              child: PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                color: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: BorderSide(
-                    color: Colors.black.withOpacity(0.04),
-                    width: 0.5,
-                  ),
+            child: PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              color: context.cardBackground,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(
+                  color: AppTheme.getCardBorderSubtle(context),
+                  width: 0.5,
                 ),
-                icon: Icon(
-                  Icons.more_vert,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-                onSelected: (value) {
-                  if (value == 'edit') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddTechnicianScreen(technician: widget.technician),
-                ),
-              );
-                  } else if (value == 'delete') {
-                _deleteTechnician();
-              }
-            },
-            itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    height: 52,
-                    padding: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            color: AppTheme.secondaryColor,
-                            size: 20,
+              ),
+              icon: Icon(
+                Icons.more_vert,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onSelected: (value) {
+                if (value == 'edit') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddTechnicianScreen(technician: widget.technician),
+                    ),
+                  );
+                } else if (value == 'delete') {
+                  _deleteTechnician();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  height: 52,
+                  padding: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: AppTheme.secondaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Edit Technician',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Edit Technician',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  PopupMenuItem<String>(
-                value: 'delete',
-                    height: 52,
-                    padding: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                          const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Delete Technician',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
                 ),
-              ),
-            ],
-              ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  height: 52,
+                  padding: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Delete Technician',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -328,7 +322,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
             Text(
               widget.technician.department!,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppTheme.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -348,13 +342,13 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       showCheckmark: false,
       avatar: Icon(
             isActive ? Icons.check_circle : Icons.pause_circle,
-        color: isActive ? AppTheme.secondaryColor : Colors.grey,
+        color: isActive ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             size: 16,
           ),
       label: Text(
             widget.technician.status,
             style: TextStyle(
-          color: isActive ? AppTheme.secondaryColor : Colors.grey,
+          color: isActive ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           fontWeight: FontWeight.w500,
           fontSize: 13,
         ),
@@ -363,14 +357,14 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       onSelected: null,
       backgroundColor: isActive 
           ? AppTheme.secondaryColor.withOpacity(0.08)
-          : Colors.grey.withOpacity(0.08),
+          : Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
       selectedColor: isActive 
           ? AppTheme.secondaryColor.withOpacity(0.08)
-          : Colors.grey.withOpacity(0.08),
+          : Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       labelPadding: const EdgeInsets.symmetric(horizontal: 4),
       side: BorderSide(
-        color: isActive ? AppTheme.secondaryColor : Colors.grey,
+        color: isActive ? AppTheme.secondaryColor : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         width: 1.2,
       ),
       shape: RoundedRectangleBorder(
@@ -427,7 +421,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.textSecondary, size: 20),
+          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), size: 20),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -436,7 +430,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -460,7 +454,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.info, color: AppTheme.textSecondary, size: 20),
+          Icon(Icons.info, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), size: 20),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -469,7 +463,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 Text(
                   'Status',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -500,20 +494,20 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 Icon(
                   Icons.build,
                   size: 64,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 ),
                 SizedBox(height: 16),
                 Text(
                   'No tools assigned',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'This technician has no tools assigned to them',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -539,7 +533,9 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                     color: context.cardBackground,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.04),
                       width: 0.5,
                     ),
                   ),
@@ -627,14 +623,14 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 Text(
                   'No issues reported',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   'This technician has not reported any tool issues',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -871,7 +867,9 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.surface
+              : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -883,14 +881,15 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.warning, color: Colors.red, size: 24),
+                child: Icon(Icons.warning, color: Colors.red, size: 24),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Delete Technician',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -954,7 +953,12 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -1000,9 +1004,12 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
               style: TextButton.styleFrom(
                 foregroundColor: Colors.red,
               ),
-              child: const Text(
+              child: Text(
                 'Delete',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
               ),
             ),
           ],

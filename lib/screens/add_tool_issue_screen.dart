@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/supabase_tool_provider.dart';
@@ -12,6 +14,7 @@ import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../services/image_upload_service.dart';
 
 class AddToolIssueScreen extends StatefulWidget {
   final Function()? onNavigateToDashboard;
@@ -32,6 +35,10 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   String _selectedIssueType = 'Faulty';
   String _selectedPriority = 'Medium';
   bool _isLoading = false;
+  
+  // Image upload
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _selectedImages = [];
 
   final List<String> _issueTypes = [
     'Faulty',
@@ -65,7 +72,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : Colors.white,
+        backgroundColor: context.appBarBackground,
         elevation: 0,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -75,10 +82,10 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.chevron_left,
               size: 28,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
             onPressed: () {
               // If embedded as tab, navigate to dashboard instead of popping
@@ -267,6 +274,8 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 keyboardType: TextInputType.number,
                                 prefixIcon: Icons.attach_money,
                               ),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                              _buildImageAttachmentSection(),
                             ],
                           ),
                         ),
@@ -316,11 +325,14 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
                             // Submit Button
-                            ThemedButton(
-                              onPressed: _isLoading ? null : _submitReport,
-                              isLoading: _isLoading,
-                              backgroundColor: Colors.red.shade600,
-                              child: const Text('Submit Report'),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ThemedButton(
+                                onPressed: _isLoading ? null : _submitReport,
+                                isLoading: _isLoading,
+                                backgroundColor: Colors.red.shade600,
+                                child: const Text('Submit Report'),
+                              ),
                             ),
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                           ],
@@ -354,7 +366,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         labelText: label,
         prefixIcon: icon != null ? Icon(icon) : null,
       ),
-      dropdownColor: Colors.white,
+      dropdownColor: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       icon: const Icon(Icons.keyboard_arrow_down),
       menuMaxHeight: 300,
@@ -465,6 +477,27 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
       debugPrint('   Priority: $_selectedPriority');
       debugPrint('   Description: ${_descriptionController.text.trim()}');
 
+      // Upload images if any
+      List<String> imageUrls = [];
+      if (_selectedImages.isNotEmpty) {
+        try {
+          final issueId = DateTime.now().millisecondsSinceEpoch.toString();
+          for (var image in _selectedImages) {
+            final imageUrl = await ImageUploadService.uploadImage(
+              File(image.path),
+              'issue_$issueId',
+            );
+            if (imageUrl != null) {
+              imageUrls.add(imageUrl);
+            }
+          }
+          debugPrint('✅ Uploaded ${imageUrls.length} image(s) for issue');
+        } catch (e) {
+          debugPrint('⚠️ Failed to upload some images: $e');
+          // Continue with submission even if image upload fails
+        }
+      }
+
       final issue = ToolIssue(
         toolId: _selectedToolId,
         toolName: selectedTool.name,
@@ -479,6 +512,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         estimatedCost: _estimatedCostController.text.trim().isEmpty 
             ? null 
             : double.tryParse(_estimatedCostController.text.trim()),
+        attachments: imageUrls.isNotEmpty ? imageUrls : null,
       );
 
       debugPrint('📤 Submitting issue to Supabase...');
@@ -494,6 +528,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
           _descriptionController.clear();
           _locationController.clear();
           _estimatedCostController.clear();
+          _selectedImages.clear();
         });
 
         // Show success message
@@ -532,6 +567,244 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Widget _buildImageAttachmentSection() {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: ResponsiveHelper.getResponsivePadding(
+            context,
+            all: 16,
+          ),
+          decoration: context.cardDecoration.copyWith(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.attachment,
+                color: AppTheme.secondaryColor,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+              Expanded(
+                child: Text(
+                  'Attach photo (optional)',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _showImagePickerOptions,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.secondaryColor,
+                  padding: ResponsiveHelper.getResponsivePadding(
+                    context,
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                ),
+                child: Text(
+                  'Add Image',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_selectedImages.isNotEmpty) ...[
+          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+          Wrap(
+            spacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
+            runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 8),
+            children: _selectedImages.asMap().entries.map((entry) {
+              final index = entry.key;
+              final image = entry.value;
+              return Stack(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: context.cardBorder,
+                        width: 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(image.path),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: context.cardBackground,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedImages.removeAt(index);
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showImagePickerOptions() {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Select Image Source',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImagePickerOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildImagePickerOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePickerOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: context.cardDecoration.copyWith(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: AppTheme.secondaryColor),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppTheme.secondaryColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to pick image: $e',
+        );
       }
     }
   }

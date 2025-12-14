@@ -6,6 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
+import '../providers/tool_issue_provider.dart';
+import '../providers/approval_workflows_provider.dart';
+import '../models/tool_issue.dart';
+import '../models/approval_workflow.dart';
 import '../services/report_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
@@ -32,6 +36,33 @@ class ReportDetailScreen extends StatefulWidget {
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   bool _isExporting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Load issues and workflows if needed for the report type
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        if (widget.reportType == ReportType.toolIssuesSummary || 
+            widget.reportType == ReportType.toolIssues ||
+            widget.reportType == ReportType.comprehensive) {
+          final issueProvider = Provider.of<ToolIssueProvider>(context, listen: false);
+          // Always refresh to get latest data
+          if (!issueProvider.isLoading) {
+            issueProvider.loadIssues();
+          }
+        }
+        if (widget.reportType == ReportType.approvalWorkflowsSummary ||
+            widget.reportType == ReportType.comprehensive) {
+          final workflowProvider = Provider.of<ApprovalWorkflowsProvider>(context, listen: false);
+          // Always refresh to get latest data
+          if (!workflowProvider.isLoading) {
+            workflowProvider.loadWorkflows();
+          }
+        }
+      }
+    });
+  }
+
   String _getReportTitle() {
     switch (widget.reportType) {
       case ReportType.toolsInventory:
@@ -42,6 +73,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         return 'Technician Summary Report';
       case ReportType.toolIssues:
         return 'Tool Issues Report';
+      case ReportType.toolIssuesSummary:
+        return 'Tool Issues Summary Report';
+      case ReportType.approvalWorkflowsSummary:
+        return 'Approval Workflows Summary Report';
       case ReportType.financialSummary:
         return 'Financial Summary Report';
       case ReportType.toolHistory:
@@ -61,6 +96,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         return Icons.people;
       case ReportType.toolIssues:
         return Icons.warning_amber;
+      case ReportType.toolIssuesSummary:
+        return Icons.analytics;
+      case ReportType.approvalWorkflowsSummary:
+        return Icons.summarize;
       case ReportType.financialSummary:
         return Icons.account_balance;
       case ReportType.toolHistory:
@@ -103,6 +142,25 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       final tools = toolProvider.tools;
       final technicians = technicianProvider.technicians;
 
+      // Load issues and workflows if needed for reports
+      List<ToolIssue>? issues;
+      List<ApprovalWorkflow>? workflows;
+      
+      if (widget.reportType == ReportType.toolIssuesSummary || 
+          widget.reportType == ReportType.toolIssues ||
+          widget.reportType == ReportType.comprehensive) {
+        final issueProvider = Provider.of<ToolIssueProvider>(context, listen: false);
+        await issueProvider.loadIssues();
+        issues = issueProvider.issues;
+      }
+      
+      if (widget.reportType == ReportType.approvalWorkflowsSummary ||
+          widget.reportType == ReportType.comprehensive) {
+        final workflowProvider = Provider.of<ApprovalWorkflowsProvider>(context, listen: false);
+        await workflowProvider.loadWorkflows();
+        workflows = workflowProvider.workflows;
+      }
+
       final startDate = _getStartDate();
       final endDate = DateTime.now();
 
@@ -112,6 +170,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         technicians: technicians,
         startDate: startDate,
         endDate: endDate,
+        issues: issues,
+        workflows: workflows,
       );
 
       if (mounted) {
@@ -168,17 +228,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          decoration: context.cardDecoration,
-                          child: const Icon(
-                            Icons.chevron_left,
-                            size: 24,
-                            color: Colors.black87,
-                          ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.chevron_left,
+                          size: 24,
+                          color: theme.colorScheme.onSurface,
                         ),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
@@ -216,9 +272,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 ),
               ),
               Expanded(
-                child: Consumer2<SupabaseToolProvider, SupabaseTechnicianProvider>(
-                  builder: (context, toolProvider, technicianProvider, child) {
-                    if (toolProvider.isLoading || technicianProvider.isLoading) {
+                child: Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
+                  builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
+                    if (toolProvider.isLoading || technicianProvider.isLoading || 
+                        (widget.reportType == ReportType.toolIssuesSummary || widget.reportType == ReportType.toolIssues) && issueProvider.isLoading ||
+                        (widget.reportType == ReportType.approvalWorkflowsSummary) && workflowProvider.isLoading) {
                       return const Center(
                         child: LoadingWidget(message: 'Loading data...'),
                       );
@@ -226,10 +284,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
                     final tools = toolProvider.tools;
                     final technicians = technicianProvider.technicians;
+                    final issues = issueProvider.issues;
+                    final workflows = workflowProvider.workflows;
 
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildReportContent(tools, technicians, technicianProvider),
+                      child: _buildReportContent(tools, technicians, technicianProvider, issues, workflows),
                     );
                   },
                 ),
@@ -245,6 +305,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     List tools,
     List technicians,
     SupabaseTechnicianProvider technicianProvider,
+    List issues,
+    List workflows,
   ) {
     switch (widget.reportType) {
       case ReportType.toolsInventory:
@@ -254,7 +316,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       case ReportType.technicianSummary:
         return _buildTechnicianSummaryReport(tools, technicians);
       case ReportType.toolIssues:
-        return _buildIssuesReport();
+        return _buildIssuesReport(issues);
+      case ReportType.toolIssuesSummary:
+        return _buildToolIssuesSummaryReport(issues);
+      case ReportType.approvalWorkflowsSummary:
+        return _buildApprovalWorkflowsSummaryReport(workflows);
       case ReportType.financialSummary:
         return _buildFinancialReport(tools);
       case ReportType.toolHistory:
@@ -367,44 +433,622 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  Widget _buildIssuesReport() {
+  Widget _buildIssuesReport(List issues) {
+    if (issues.isEmpty) {
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          decoration: context.cardDecoration,
+          child: Column(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No Tool Issues Found',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No tool issues found in the selected period.\nAll tool issues will be included in the exported report.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: Container(
-            padding: const EdgeInsets.all(40),
-            decoration: context.cardDecoration,
-            child: Column(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 64,
-                  color: Colors.grey[400],
+        _buildStatsGrid([
+          _buildStatCard('Total Issues', issues.length.toString(), Icons.warning_amber, Colors.red),
+          _buildStatCard('Open', issues.where((i) => i.status == 'Open').length.toString(), Icons.error_outline, Colors.orange),
+          _buildStatCard('Resolved', issues.where((i) => i.status == 'Resolved').length.toString(), Icons.check_circle, Colors.green),
+        ]),
+        const SizedBox(height: 24),
+        _buildSectionTitle('Tool Issues', 'All tool issues will be included in the exported report'),
+        const SizedBox(height: 16),
+        ...issues.map((issue) => _buildIssueCard(issue)),
+      ],
+    );
+  }
+
+  Widget _buildToolIssuesSummaryReport(List issues) {
+    if (issues.isEmpty) {
+      return Center(
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          decoration: context.cardDecoration,
+          child: Column(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No Tool Issues Found',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tool Issues Data',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No tool issues found in the selected period.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'All tool issues, maintenance requests, and resolutions\nwill be included in the exported report',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
-                  ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final openIssues = issues.where((i) => i.status == 'Open').length;
+    final inProgressIssues = issues.where((i) => i.status == 'In Progress').length;
+    final resolvedIssues = issues.where((i) => i.status == 'Resolved').length;
+    final closedIssues = issues.where((i) => i.status == 'Closed').length;
+    
+    final criticalIssues = issues.where((i) => i.priority == 'Critical').length;
+    final highPriorityIssues = issues.where((i) => i.priority == 'High').length;
+    final mediumPriorityIssues = issues.where((i) => i.priority == 'Medium').length;
+    final lowPriorityIssues = issues.where((i) => i.priority == 'Low').length;
+    
+    final faultyTools = issues.where((i) => i.issueType == 'Faulty').length;
+    final lostTools = issues.where((i) => i.issueType == 'Lost').length;
+    final damagedTools = issues.where((i) => i.issueType == 'Damaged').length;
+    final missingParts = issues.where((i) => i.issueType == 'Missing Parts').length;
+    
+    final totalCost = issues.fold(0.0, (sum, issue) => sum + (issue.estimatedCost ?? 0));
+
+    // Sort issues by reported date (newest first)
+    final sortedIssues = List.from(issues)
+      ..sort((a, b) => b.reportedAt.compareTo(a.reportedAt));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatsGrid([
+          _buildStatCard('Total Issues', issues.length.toString(), Icons.warning_amber, Colors.red),
+          _buildStatCard('Open Issues', openIssues.toString(), Icons.error_outline, Colors.orange),
+          _buildStatCard('Resolved', resolvedIssues.toString(), Icons.check_circle, Colors.green),
+          _buildStatCard('Estimated Cost', CurrencyFormatter.formatCurrency(totalCost), Icons.attach_money, Colors.teal),
+        ]),
+        const SizedBox(height: 24),
+        
+        // Status Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Status Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              _buildFinancialRow('Open', openIssues.toDouble()),
+              _buildFinancialRow('In Progress', inProgressIssues.toDouble()),
+              _buildFinancialRow('Resolved', resolvedIssues.toDouble()),
+              _buildFinancialRow('Closed', closedIssues.toDouble()),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Priority Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Priority Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildFinancialRow('Critical', criticalIssues.toDouble()),
+              _buildFinancialRow('High', highPriorityIssues.toDouble()),
+              _buildFinancialRow('Medium', mediumPriorityIssues.toDouble()),
+              _buildFinancialRow('Low', lowPriorityIssues.toDouble()),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Issue Type Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Issue Type Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildFinancialRow('Faulty', faultyTools.toDouble()),
+              _buildFinancialRow('Lost', lostTools.toDouble()),
+              _buildFinancialRow('Damaged', damagedTools.toDouble()),
+              _buildFinancialRow('Missing Parts', missingParts.toDouble()),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 32),
+        _buildSectionTitle('All Tool Issues', 'Complete list of all ${issues.length} issues'),
+        const SizedBox(height: 16),
+        
+        // Issues List
+        ...sortedIssues.map((issue) => _buildDetailedIssueCard(issue)),
+      ],
+    );
+  }
+
+  Widget _buildApprovalWorkflowsSummaryReport(List workflows) {
+    final pendingWorkflows = workflows.where((w) => w.status == 'Pending').length;
+    final approvedWorkflows = workflows.where((w) => w.status == 'Approved').length;
+    final rejectedWorkflows = workflows.where((w) => w.status == 'Rejected').length;
+    final cancelledWorkflows = workflows.where((w) => w.status == 'Cancelled').length;
+    
+    // Count by request type
+    final toolAssignmentCount = workflows.where((w) => w.requestType == 'Tool Assignment').length;
+    final toolPurchaseCount = workflows.where((w) => w.requestType == 'Tool Purchase').length;
+    final toolDisposalCount = workflows.where((w) => w.requestType == 'Tool Disposal').length;
+    final maintenanceCount = workflows.where((w) => w.requestType == 'Maintenance').length;
+    final transferCount = workflows.where((w) => w.requestType == 'Transfer').length;
+    final repairCount = workflows.where((w) => w.requestType == 'Repair').length;
+    final calibrationCount = workflows.where((w) => w.requestType == 'Calibration').length;
+    final certificationCount = workflows.where((w) => w.requestType == 'Certification').length;
+    
+    // Count by priority
+    final criticalPriority = workflows.where((w) => w.priority == 'Critical').length;
+    final highPriority = workflows.where((w) => w.priority == 'High').length;
+    final mediumPriority = workflows.where((w) => w.priority == 'Medium').length;
+    final lowPriority = workflows.where((w) => w.priority == 'Low').length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatsGrid([
+          _buildStatCard('Total Workflows', workflows.length.toString(), Icons.approval, Colors.purple),
+          _buildStatCard('Pending', pendingWorkflows.toString(), Icons.pending, Colors.orange),
+          _buildStatCard('Approved', approvedWorkflows.toString(), Icons.check_circle, Colors.green),
+          _buildStatCard('Rejected', rejectedWorkflows.toString(), Icons.cancel, Colors.red),
+        ]),
+        const SizedBox(height: 24),
+        
+        // Status Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Status Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildFinancialRow('Pending', pendingWorkflows.toDouble()),
+              _buildFinancialRow('Approved', approvedWorkflows.toDouble()),
+              _buildFinancialRow('Rejected', rejectedWorkflows.toDouble()),
+              _buildFinancialRow('Cancelled', cancelledWorkflows.toDouble()),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Request Type Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Request Type Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (toolAssignmentCount > 0)
+                _buildFinancialRow('Tool Assignment', toolAssignmentCount.toDouble()),
+              if (toolPurchaseCount > 0)
+                _buildFinancialRow('Tool Purchase', toolPurchaseCount.toDouble()),
+              if (toolDisposalCount > 0)
+                _buildFinancialRow('Tool Disposal', toolDisposalCount.toDouble()),
+              if (maintenanceCount > 0)
+                _buildFinancialRow('Maintenance', maintenanceCount.toDouble()),
+              if (transferCount > 0)
+                _buildFinancialRow('Transfer', transferCount.toDouble()),
+              if (repairCount > 0)
+                _buildFinancialRow('Repair', repairCount.toDouble()),
+              if (calibrationCount > 0)
+                _buildFinancialRow('Calibration', calibrationCount.toDouble()),
+              if (certificationCount > 0)
+                _buildFinancialRow('Certification', certificationCount.toDouble()),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Priority Distribution
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: context.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Priority Distribution',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (criticalPriority > 0)
+                _buildFinancialRow('Critical', criticalPriority.toDouble()),
+              if (highPriority > 0)
+                _buildFinancialRow('High', highPriority.toDouble()),
+              if (mediumPriority > 0)
+                _buildFinancialRow('Medium', mediumPriority.toDouble()),
+              if (lowPriority > 0)
+                _buildFinancialRow('Low', lowPriority.toDouble()),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildIssueCard(dynamic issue) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: context.cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  issue.toolName ?? 'Unknown Tool',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(issue.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  issue.status ?? 'Unknown',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(issue.status),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Type: ${issue.issueType ?? 'Unknown'} • Priority: ${issue.priority ?? 'Medium'}',
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          if (issue.description != null && issue.description!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              issue.description!,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailedIssueCard(dynamic issue) {
+    final theme = Theme.of(context);
+    final letter = issue.toolName.isNotEmpty ? issue.toolName[0].toUpperCase() : '?';
+    final details = [
+      '#${issue.toolId}',
+      if (issue.location != null && issue.location!.isNotEmpty)
+        issue.location!,
+    ].where((d) => d.isNotEmpty).join(' • ');
+
+    final dateFormat = DateFormat('MMM dd, yyyy');
+    final reportedDate = dateFormat.format(issue.reportedAt);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: context.cardDecoration,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    letter,
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      issue.toolName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (details.isNotEmpty)
+                      Text(
+                        details,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildIssueTypePill(issue.issueType ?? 'Unknown'),
+              _buildPriorityPill(issue.priority ?? 'Medium'),
+              _buildStatusChip(issue.status ?? 'Unknown'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            issue.description ?? 'No description',
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Reported by ${issue.reportedBy} • $reportedDate',
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIssueTypePill(String type) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.04),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        type,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityPill(String priority) {
+    Color color;
+    switch (priority.toLowerCase()) {
+      case 'critical':
+        color = Colors.red;
+        break;
+      case 'high':
+        color = Colors.orange;
+        break;
+      case 'medium':
+        color = Colors.blue;
+        break;
+      case 'low':
+        color = Colors.grey;
+        break;
+      default:
+        color = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        priority,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status) {
+    final color = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'open':
+        return Colors.orange;
+      case 'in progress':
+        return Colors.blue;
+      case 'resolved':
+        return Colors.green;
+      case 'closed':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildFinancialRow(String label, double value, {bool isPercentage = false}) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          Text(
+            isPercentage
+                ? '${value.toStringAsFixed(2)}%'
+                : value.toStringAsFixed(0),
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.rgs.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36  // Required for multiple plugins (printing, app_links, etc.)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

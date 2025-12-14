@@ -811,7 +811,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),

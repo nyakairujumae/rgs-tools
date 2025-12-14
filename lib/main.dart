@@ -15,11 +15,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
+import 'services/first_launch_service.dart';
 import 'models/tool.dart';
 import 'models/user_role.dart';
 import 'providers/auth_provider.dart';
@@ -302,6 +304,45 @@ class ErrorBoundary extends StatelessWidget {
         }
       },
     );
+  }
+}
+
+/// Wrapper to show splash screen only on first launch
+class _FirstLaunchWrapper extends StatefulWidget {
+  final Widget child;
+  
+  const _FirstLaunchWrapper({required this.child});
+  
+  @override
+  State<_FirstLaunchWrapper> createState() => _FirstLaunchWrapperState();
+}
+
+class _FirstLaunchWrapperState extends State<_FirstLaunchWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark first launch as complete in the background without blocking
+    _markFirstLaunchCompleteInBackground();
+  }
+
+  void _markFirstLaunchCompleteInBackground() {
+    // Check and mark first launch complete in the background
+    // This doesn't block the UI - just runs silently
+    FirstLaunchService.isFirstLaunch().then((isFirst) {
+      if (isFirst) {
+        // If it's the first launch, mark it as complete in the background
+        FirstLaunchService.markFirstLaunchComplete();
+      }
+    }).catchError((e) {
+      // Silently handle errors - don't block the app
+      print('⚠️ Error checking first launch (non-critical): $e');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Always show the child immediately - no loading screens
+    return widget.child;
   }
 }
 
@@ -666,7 +707,9 @@ class HvacToolsManagerApp extends StatelessWidget {
       // Desktop (Windows, macOS, Linux) uses real authentication like mobile
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
-        return const SplashTransition(child: RoleSelectionScreen());
+        return _FirstLaunchWrapper(
+          child: const SplashTransition(child: RoleSelectionScreen()),
+        );
       }
       
       // Desktop platforms use real Supabase authentication
@@ -707,14 +750,19 @@ class HvacToolsManagerApp extends StatelessWidget {
           return const TechnicianHomeScreen();
         }
       } else {
-        print('🔍 User not authenticated, showing role selection screen');
-        return const SplashTransition(child: RoleSelectionScreen());
+        print('🔍 User not authenticated, checking first launch');
+        // Check if this is first launch - show splash screen only on first launch
+        return _FirstLaunchWrapper(
+          child: const SplashTransition(child: RoleSelectionScreen()),
+        );
       }
     } catch (e, stackTrace) {
       // Always fallback to role selection screen on any error (for new installs)
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
-      return const SplashTransition(child: RoleSelectionScreen());
+      return _FirstLaunchWrapper(
+        child: const SplashTransition(child: RoleSelectionScreen()),
+      );
     }
   }
 }

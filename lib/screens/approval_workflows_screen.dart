@@ -50,7 +50,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildPremiumAppBar(context),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
       child: Column(
@@ -109,7 +109,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
         await context.read<ApprovalWorkflowsProvider>().loadWorkflows();
       },
       color: AppTheme.secondaryColor,
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBackground,
       child: ListView.separated(
         padding: EdgeInsets.fromLTRB(
           isDesktop ? 24 : 16,
@@ -204,7 +204,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : Colors.black.withOpacity(0.04),
+                    : AppTheme.getCardBorderSubtle(context),
                 width: isSelected ? 1.2 : 0.5,
               ),
               shape: RoundedRectangleBorder(
@@ -253,7 +253,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : Colors.black.withValues(alpha: 0.04),
+                    : AppTheme.getCardBorderSubtle(context),
                 width: isSelected ? 1.2 : 0.5,
               ),
               shape: RoundedRectangleBorder(
@@ -464,7 +464,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       backgroundColor: context.cardBackground,
       selectedColor: _getTypeColor(type).withValues(alpha: 0.08),
       side: BorderSide(
-        color: Colors.black.withValues(alpha: 0.04),
+        color: AppTheme.getCardBorderSubtle(context),
         width: 0.5,
       ),
       shape: RoundedRectangleBorder(
@@ -608,32 +608,33 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   }
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appBarBackground,
       elevation: 0,
       shadowColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
       centerTitle: true,
       titleSpacing: 0,
-      title: const Text(
+      foregroundColor: theme.colorScheme.onSurface,
+      title: Text(
         'Approval Workflows',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: theme.colorScheme.onSurface,
         ),
       ),
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: context.cardDecoration,
-          child: IconButton(
-            icon: const Icon(
-              Icons.chevron_left,
-              size: 24,
-              color: Colors.black87,
-            ),
-        onPressed: () => NavigationHelper.safePop(context),
+        child: IconButton(
+          icon: Icon(
+            Icons.chevron_left,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+          onPressed: () => NavigationHelper.safePop(context),
         ),
       ),
       actions: [],
@@ -713,12 +714,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   void _approveWorkflow(ApprovalWorkflow workflow) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Row(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -781,7 +784,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             child: const Text('Approve'),
           ),
         ],
-      ),
+      );
+    },
     );
   }
 
@@ -790,12 +794,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Row(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -871,7 +877,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             child: const Text('Reject'),
           ),
         ],
-      ),
+      );
+    },
     );
   }
 
@@ -901,12 +908,14 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   void _viewWorkflowDetails(ApprovalWorkflow workflow) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Row(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -1021,7 +1030,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               child: const Text('Close'),
             ),
         ],
-      ),
+      );
+    },
     );
   }
 
@@ -1129,7 +1139,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
                                 icon: Icon(
                                   Icons.chevron_left,
                                   size: 24,
-                                  color: Colors.black87,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 onPressed: () => Navigator.pop(context),
                               ),
@@ -1646,7 +1656,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
                     color: context.cardBackground,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.black.withOpacity(0.04),
+                      color: AppTheme.getCardBorderSubtle(context),
                       width: 0.5,
                     ),
                   ),

@@ -120,14 +120,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 }
               },
-              icon: Image.asset(
-                'assets/images/apple_logo.png',
-                width: 24,
-                height: 24,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.apple,
-                  size: 24,
-                  color: theme.colorScheme.onSurface,
+              icon: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  theme.brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
+                  BlendMode.srcIn,
+                ),
+                child: Image.asset(
+                  'assets/images/apple_logo.png',
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.apple,
+                    size: 24,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
               label: 'Apple',

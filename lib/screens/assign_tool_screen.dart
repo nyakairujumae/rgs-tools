@@ -31,22 +31,19 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.appBarBackground,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Container(
-            decoration: context.cardDecoration,
-            child: IconButton(
-              icon: const Icon(
-                Icons.chevron_left,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () => Navigator.pop(context),
+          child: IconButton(
+            icon: Icon(
+              Icons.chevron_left,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
       ),

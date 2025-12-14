@@ -105,16 +105,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                       child: Row(
                         children: [
-                          Container(
-                            decoration: context.cardDecoration,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.chevron_left,
-                                size: 24,
-                                color: Colors.black87,
-                              ),
-                              onPressed: () => NavigationHelper.safePop(context),
+                          IconButton(
+                            icon: Icon(
+                              Icons.chevron_left,
+                              size: 24,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
+                            onPressed: () => NavigationHelper.safePop(context),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
