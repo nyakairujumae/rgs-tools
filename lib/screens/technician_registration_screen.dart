@@ -95,14 +95,14 @@ class _TechnicianRegistrationScreenState
               )
             : Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: IconButton(
+                  child: IconButton(
                   icon: Icon(
-                    Icons.chevron_left,
-                    size: 24,
+                      Icons.chevron_left,
+                      size: 24,
                     color: theme.colorScheme.onSurface,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  splashRadius: 24,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    splashRadius: 24,
                 ),
               ),
       ),

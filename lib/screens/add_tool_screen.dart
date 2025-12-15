@@ -215,11 +215,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
               children: [
                 IconButton(
                   icon: Icon(
-                    Icons.chevron_left,
-                    size: 28,
+                      Icons.chevron_left,
+                      size: 28,
                     color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  onPressed: () => Navigator.pop(context),
+                    ),
+                    onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

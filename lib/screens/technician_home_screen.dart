@@ -784,7 +784,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor,
+                        color: Colors.red,
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
@@ -2245,6 +2245,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       } catch (e) {
         debugPrint('Could not fetch owner email: $e');
       }
+      
+      // Note: Approval workflows are automatically created by the database function
+      // when create_admin_notification is called with type 'tool_request'
       
       // Create notification in admin_notifications table (for admin visibility)
       try {

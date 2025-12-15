@@ -59,99 +59,99 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
         ),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: IconButton(
+            child: IconButton(
             icon: Icon(
-              Icons.chevron_left,
-              size: 24,
+                Icons.chevron_left,
+                size: 24,
               color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: () => Navigator.pop(context),
+              ),
+              onPressed: () => Navigator.pop(context),
           ),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: PopupMenuButton<String>(
-              padding: EdgeInsets.zero,
+              child: PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
               color: context.cardBackground,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
                   color: AppTheme.getCardBorderSubtle(context),
-                  width: 0.5,
+                    width: 0.5,
+                  ),
                 ),
-              ),
-              icon: Icon(
-                Icons.more_vert,
+                icon: Icon(
+                  Icons.more_vert,
                 color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddTechnicianScreen(technician: widget.technician),
-                    ),
-                  );
-                } else if (value == 'delete') {
-                  _deleteTechnician();
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem<String>(
-                  value: 'edit',
-                  height: 52,
-                  padding: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: AppTheme.secondaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Edit Technician',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddTechnicianScreen(technician: widget.technician),
+                ),
+              );
+                  } else if (value == 'delete') {
+                _deleteTechnician();
+              }
+            },
+            itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    height: 52,
+                    padding: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            color: AppTheme.secondaryColor,
+                            size: 20,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Text(
+                            'Edit Technician',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'delete',
-                  height: 52,
-                  padding: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Delete Technician',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                  PopupMenuItem<String>(
+                value: 'delete',
+                    height: 52,
+                    padding: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                          const Icon(
+                            Icons.delete_outline,
                             color: Colors.red,
+                            size: 20,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Delete Technician',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
                 ),
-              ],
+              ),
+            ],
             ),
           ),
         ],

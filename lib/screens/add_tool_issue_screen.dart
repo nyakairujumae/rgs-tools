@@ -328,10 +328,10 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                             SizedBox(
                               width: double.infinity,
                               child: ThemedButton(
-                                onPressed: _isLoading ? null : _submitReport,
-                                isLoading: _isLoading,
-                                backgroundColor: Colors.red.shade600,
-                                child: const Text('Submit Report'),
+                              onPressed: _isLoading ? null : _submitReport,
+                              isLoading: _isLoading,
+                              backgroundColor: Colors.red.shade600,
+                              child: const Text('Submit Report'),
                               ),
                             ),
                             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),

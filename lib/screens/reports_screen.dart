@@ -111,10 +111,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       padding: const EdgeInsets.all(8.0),
                       child: IconButton(
                         icon: Icon(
-                          Icons.chevron_left,
-                          size: 24,
+                            Icons.chevron_left,
+                            size: 24,
                           color: theme.colorScheme.onSurface,
-                        ),
+                          ),
                         onPressed: () => NavigationHelper.safePop(context),
                       ),
                     ),
@@ -1854,38 +1854,38 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 12),
         
         if (previewIssues.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(40),
-            decoration: context.cardDecoration,
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
+                      Container(
+          padding: const EdgeInsets.all(40),
+          decoration: context.cardDecoration,
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
                     Icons.check_circle,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
                     'No Issues Found',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
+                          style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
+                ),
+                const SizedBox(height: 8),
+                Text(
                     'No tool issues have been reported',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
-                ],
-              ),
-            ),
+                ),
+          ],
+        ),
+      ),
           )
         else
           ...previewIssues.map((issue) {
@@ -1961,7 +1961,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
             ),
-          ),
+        ),
       ],
     );
   }

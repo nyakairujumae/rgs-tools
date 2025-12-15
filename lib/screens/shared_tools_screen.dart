@@ -999,6 +999,9 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         debugPrint('Could not fetch owner email: $e');
       }
       
+      // Note: Approval workflows are automatically created by the database function
+      // when create_admin_notification is called with type 'tool_request'
+      
       // Create notification in admin_notifications table (for admin visibility)
       try {
         await SupabaseService.client.rpc(

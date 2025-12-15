@@ -785,10 +785,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
         padding: const EdgeInsets.all(8.0),
         child: IconButton(
           icon: Icon(
-            Icons.chevron_left,
-            size: 24,
+              Icons.chevron_left,
+              size: 24,
             color: Theme.of(context).colorScheme.onSurface,
-          ),
+            ),
           onPressed: () => NavigationHelper.safePop(context),
         ),
       ),

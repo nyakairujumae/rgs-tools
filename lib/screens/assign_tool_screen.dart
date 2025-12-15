@@ -37,10 +37,10 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
         surfaceTintColor: Colors.transparent,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: IconButton(
+            child: IconButton(
             icon: Icon(
-              Icons.chevron_left,
-              size: 24,
+                Icons.chevron_left,
+                size: 24,
               color: Theme.of(context).colorScheme.onSurface,
             ),
             onPressed: () => Navigator.pop(context),

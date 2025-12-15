@@ -143,12 +143,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               children: [
                 IconButton(
                   icon: Icon(
-                    Icons.chevron_left,
-                    size: 28,
+                      Icons.chevron_left,
+                      size: 28,
                     color: theme.colorScheme.onSurface,
-                  ),
+                    ),
                   onPressed: () => NavigationHelper.safePop(context),
-                  splashRadius: 24,
+                    splashRadius: 24,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -628,33 +628,33 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             // Hide reassign button for technicians
             if (!isTechnician) ...[
               if (_currentTool.status == 'Available' && !isAssignedToCurrentUser && _currentTool.assignedTo == null)
-                _buildFilledActionButton(
-                  label: 'Assign to Technician',
-                  icon: Icons.person_add,
-                  colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ToolsScreen(isSelectionMode: true),
-                      ),
-                    );
-                  },
-                )
+              _buildFilledActionButton(
+                label: 'Assign to Technician',
+                icon: Icons.person_add,
+                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ToolsScreen(isSelectionMode: true),
+                    ),
+                  );
+                },
+              )
               else if (_currentTool.assignedTo != null)
-                _buildFilledActionButton(
-                  label: 'Reassign Tool',
-                  icon: Icons.swap_horiz,
-                  colors: [AppTheme.accentColor, AppTheme.accentColor.withValues(alpha: 0.85)],
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReassignToolScreen(tool: _currentTool),
-                      ),
-                    );
-                  },
-                ),
+              _buildFilledActionButton(
+                label: 'Reassign Tool',
+                icon: Icons.swap_horiz,
+                colors: [AppTheme.accentColor, AppTheme.accentColor.withValues(alpha: 0.85)],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReassignToolScreen(tool: _currentTool),
+                    ),
+                  );
+                },
+              ),
             ],
 
             const SizedBox(height: 12),
@@ -694,32 +694,32 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
             // Secondary Action Buttons - Hide Edit button for technicians
             if (!isTechnician)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildOutlinedActionButton(
-                      label: _currentTool.status == 'Maintenance' 
-                          ? 'Complete Maint.' 
-                          : 'Mark for Maint.',
-                      icon: _currentTool.status == 'Maintenance' 
-                          ? Icons.check_circle 
-                          : Icons.build,
-                      color: _currentTool.status == 'Maintenance' 
-                          ? Colors.green 
-                          : AppTheme.primaryColor,
-                      onTap: _scheduleMaintenance,
-                    ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOutlinedActionButton(
+                    label: _currentTool.status == 'Maintenance' 
+                        ? 'Complete Maint.' 
+                        : 'Mark for Maint.',
+                    icon: _currentTool.status == 'Maintenance' 
+                        ? Icons.check_circle 
+                        : Icons.build,
+                    color: _currentTool.status == 'Maintenance' 
+                        ? Colors.green 
+                        : AppTheme.primaryColor,
+                    onTap: _scheduleMaintenance,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildOutlinedActionButton(
-                      label: 'Edit',
-                      icon: Icons.edit,
-                      color: AppTheme.primaryColor,
-                      onTap: _editTool,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildOutlinedActionButton(
+                    label: 'Edit',
+                    icon: Icons.edit,
+                    color: AppTheme.primaryColor,
+                    onTap: _editTool,
                   ),
-                ],
+                ),
+              ],
               )
             else
               // For technicians, only show maintenance button
@@ -734,7 +734,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     ? Colors.green 
                     : AppTheme.primaryColor,
                 onTap: _scheduleMaintenance,
-              ),
+            ),
 
             // Additional Actions
             if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
@@ -967,13 +967,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     return [
       // Hide Edit Tool menu item for technicians
       if (!isTechnician)
-        _buildMenuItem(
-          value: 'edit',
-          icon: Icons.edit_outlined,
-          label: 'Edit Tool',
-          textColor: textColor,
-          iconColor: AppTheme.secondaryColor, // Use app green
-        ),
+      _buildMenuItem(
+        value: 'edit',
+        icon: Icons.edit_outlined,
+        label: 'Edit Tool',
+        textColor: textColor,
+        iconColor: AppTheme.secondaryColor, // Use app green
+      ),
       _buildMenuItem(
         value: 'image',
         icon: Icons.camera_alt_outlined,

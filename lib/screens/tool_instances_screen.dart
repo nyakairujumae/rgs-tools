@@ -135,9 +135,9 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(
-                    Icons.chevron_left,
-                    size: 28,
+                    icon: Icon(
+                      Icons.chevron_left,
+                      size: 28,
                     color: theme.colorScheme.onSurface,
                   ),
                   onPressed: () => Navigator.pop(context),

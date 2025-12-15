@@ -21,22 +21,39 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 Loading approval workflows from database...');
       final response = await SupabaseService.client
           .from('approval_workflows')
           .select()
           .order('request_date', ascending: false);
 
+      debugPrint('🔍 Raw response from database: ${response.length} items');
+      
       _workflows = (response as List)
-          .map((data) => ApprovalWorkflow.fromMap(data))
+          .map((data) {
+            try {
+              return ApprovalWorkflow.fromMap(data);
+            } catch (e) {
+              debugPrint('❌ Error parsing workflow: $e');
+              debugPrint('❌ Problematic data: $data');
+              rethrow;
+            }
+          })
           .toList();
 
       debugPrint('✅ Loaded ${_workflows.length} approval workflows from database');
-      debugPrint('📊 Workflow types: ${_workflows.map((w) => w.requestType).toSet().join(", ")}');
-      debugPrint('📊 Workflow statuses: ${_workflows.map((w) => w.status).toSet().join(", ")}');
+      if (_workflows.isNotEmpty) {
+        debugPrint('📊 Workflow types: ${_workflows.map((w) => w.requestType).toSet().join(", ")}');
+        debugPrint('📊 Workflow statuses: ${_workflows.map((w) => w.status).toSet().join(", ")}');
+        debugPrint('📊 Sample workflow IDs: ${_workflows.take(3).map((w) => w.id).join(", ")}');
+      } else {
+        debugPrint('⚠️ No workflows found in database');
+      }
     } catch (e) {
       _error = e.toString();
       debugPrint('❌ Error loading approval workflows: $e');
-      debugPrint('❌ Error details: ${e.toString()}');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
       // Keep existing workflows on error
     } finally {
       _isLoading = false;
@@ -46,18 +63,22 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
 
   Future<void> createWorkflow(ApprovalWorkflow workflow) async {
     try {
+      final workflowMap = workflow.toMap(includeId: false);
+      debugPrint('🔍 Creating approval workflow with data: $workflowMap');
+      
       final response = await SupabaseService.client
           .from('approval_workflows')
-          .insert(workflow.toMap())
+          .insert(workflowMap)
           .select()
           .single();
 
       final newWorkflow = ApprovalWorkflow.fromMap(response);
       _workflows.insert(0, newWorkflow);
       notifyListeners();
-      debugPrint('✅ Created approval workflow: ${workflow.title}');
+      debugPrint('✅ Created approval workflow: ${workflow.title} (ID: ${newWorkflow.id})');
     } catch (e) {
       debugPrint('❌ Error creating approval workflow: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }
@@ -101,10 +122,11 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
       if (workflow.id == null) {
         throw Exception('Workflow ID is null');
       }
+      final workflowMap = workflow.toMap(includeId: false);
       await SupabaseService.client
           .from('approval_workflows')
-          .update(workflow.toMap())
-          .eq('id', workflow.id.toString());
+          .update(workflowMap)
+          .eq('id', workflow.id!);
 
       final index = _workflows.indexWhere((w) => w.id == workflow.id);
       if (index != -1) {

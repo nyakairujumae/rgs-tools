@@ -54,7 +54,14 @@ class AdminNotificationProvider extends ChangeNotifier {
       notifyListeners();
       
       // Sync badge with database after loading notifications
-      // Note: We need a BuildContext, so we'll sync badge in the UI layer
+      // Use the unreadCount from the loaded notifications
+      try {
+        final unreadCount = _notifications.where((n) => !n.isRead).length;
+        await BadgeService.updateBadge(unreadCount);
+        debugPrint('✅ [AdminNotifications] Badge synced: $unreadCount unread');
+      } catch (e) {
+        debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
+      }
     } catch (e) {
       debugPrint('Error loading notifications: $e');
       if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
@@ -89,7 +96,13 @@ class AdminNotificationProvider extends ChangeNotifier {
         notifyListeners();
         
         // Sync badge with database after marking as read
-        // Note: We need a BuildContext, so we'll sync badge in the UI layer
+        try {
+          final unreadCount = _notifications.where((n) => !n.isRead).length;
+          await BadgeService.updateBadge(unreadCount);
+          debugPrint('✅ [AdminNotifications] Badge updated after marking as read: $unreadCount unread');
+        } catch (e) {
+          debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
+        }
       }
     } catch (e) {
       debugPrint('Error marking notification as read: $e');
@@ -114,7 +127,12 @@ class AdminNotificationProvider extends ChangeNotifier {
       notifyListeners();
       
       // Sync badge with database after marking all as read
-      // Note: We need a BuildContext, so we'll sync badge in the UI layer
+      try {
+        await BadgeService.clearBadge();
+        debugPrint('✅ [AdminNotifications] Badge cleared after marking all as read');
+      } catch (e) {
+        debugPrint('⚠️ [AdminNotifications] Error clearing badge: $e');
+      }
     } catch (e) {
       debugPrint('Error marking all notifications as read: $e');
       // Still update locally even if API call fails
@@ -176,6 +194,8 @@ class AdminNotificationProvider extends ChangeNotifier {
 
       final notificationId = result.toString();
       debugPrint('✅ Notification created with ID: $notificationId');
+      // Note: Approval workflows are now automatically created by the database function
+      // when tool_request notifications are created - no client-side code needed!
 
       // Send push notification to admins (non-blocking)
       PushNotificationService.sendToAdmins(

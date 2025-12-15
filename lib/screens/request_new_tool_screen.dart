@@ -427,14 +427,22 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
       // Create approval workflow in database
       try {
+        debugPrint('🔍 Creating approval workflow for ${_selectedRequestType} request');
         final approvalWorkflow = _buildApprovalWorkflow(authProvider, user, imageUrls);
-        await SupabaseService.client
-            .from('approval_workflows')
-            .insert(approvalWorkflow.toMap());
+        final workflowMap = approvalWorkflow.toMap(includeId: false);
+        debugPrint('🔍 Approval workflow data: $workflowMap');
         
-        debugPrint('✅ Created approval workflow for ${_selectedRequestType} request');
+        final response = await SupabaseService.client
+            .from('approval_workflows')
+            .insert(workflowMap)
+            .select()
+            .single();
+        
+        debugPrint('✅ Created approval workflow for ${_selectedRequestType} request (ID: ${response['id']})');
       } catch (e) {
         debugPrint('❌ Failed to create approval workflow: $e');
+        debugPrint('❌ Error type: ${e.runtimeType}');
+        debugPrint('❌ Stack trace: ${StackTrace.current}');
         // Continue anyway - notification is still important
       }
 

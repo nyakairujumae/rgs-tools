@@ -1,5 +1,5 @@
 class ApprovalWorkflow {
-  final int? id;
+  final String? id; // Changed from int? to String? to match UUID
   final String requestType; // 'Tool Assignment', 'Tool Purchase', 'Tool Disposal', 'Maintenance', 'Transfer'
   final String title;
   final String description;
@@ -49,9 +49,8 @@ class ApprovalWorkflow {
     this.updatedAt,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = false}) {
+    final map = <String, dynamic>{
       'request_type': requestType,
       'title': title,
       'description': description,
@@ -72,14 +71,23 @@ class ApprovalWorkflow {
       'rejected_by': rejectedBy,
       'request_data': requestData,
       'location': location,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
     };
+
+    // Only include id/created/updated when explicitly requested (e.g., updates)
+    if (includeId && id != null) {
+      map['id'] = id;
+    }
+    if (includeId) {
+      if (createdAt != null) map['created_at'] = createdAt;
+      if (updatedAt != null) map['updated_at'] = updatedAt;
+    }
+
+    return map;
   }
 
   factory ApprovalWorkflow.fromMap(Map<String, dynamic> map) {
     return ApprovalWorkflow(
-      id: map['id'],
+      id: map['id']?.toString(), // Convert to string to handle UUID
       requestType: map['request_type'],
       title: map['title'],
       description: map['description'],
@@ -128,7 +136,7 @@ class ApprovalWorkflow {
   }
 
   ApprovalWorkflow copyWith({
-    int? id,
+    String? id,
     String? requestType,
     String? title,
     String? description,
@@ -275,7 +283,7 @@ class ApprovalWorkflowService {
     final now = DateTime.now();
     return [
       ApprovalWorkflow(
-        id: 1,
+        id: '1',
         requestType: RequestTypes.toolAssignment,
         title: 'Assign Digital Multimeter to Ahmed Hassan',
         description: 'Request to assign Digital Multimeter (Serial: FL123456) to Ahmed Hassan for Site A project',
@@ -298,7 +306,7 @@ class ApprovalWorkflowService {
         },
       ),
       ApprovalWorkflow(
-        id: 2,
+        id: '2',
         requestType: RequestTypes.toolPurchase,
         title: 'Purchase New Refrigerant Manifold Gauge Set',
         description: 'Request to purchase 5 new Yellow Jacket manifold gauge sets for upcoming projects',
@@ -323,7 +331,7 @@ class ApprovalWorkflowService {
         },
       ),
       ApprovalWorkflow(
-        id: 3,
+        id: '3',
         requestType: RequestTypes.maintenance,
         title: 'Maintenance for Vacuum Pump',
         description: 'Request for annual maintenance of Vacuum Pump (Serial: VP789012)',
@@ -345,7 +353,7 @@ class ApprovalWorkflowService {
         },
       ),
       ApprovalWorkflow(
-        id: 4,
+        id: '4',
         requestType: RequestTypes.toolDisposal,
         title: 'Dispose of Damaged Safety Harness',
         description: 'Request to dispose of damaged safety harness (Serial: SH345678) due to wear and tear',
@@ -370,7 +378,7 @@ class ApprovalWorkflowService {
         },
       ),
       ApprovalWorkflow(
-        id: 5,
+        id: '5',
         requestType: RequestTypes.transfer,
         title: 'Transfer Cordless Drill to Site A',
         description: 'Request to transfer Cordless Drill (Serial: CD901234) from Main Office to Site A',

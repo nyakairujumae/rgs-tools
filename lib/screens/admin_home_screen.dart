@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
@@ -123,6 +124,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   late int _selectedIndex;
   bool _isDisposed = false;
   late List<Widget> _screens;
+  Timer? _notificationRefreshTimer;
 
   @override
   void initState() {
@@ -146,6 +148,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
+      // Refresh notifications every 30 seconds to update badges in real-time
+      _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted && !_isDisposed) {
+          context.read<AdminNotificationProvider>().loadNotifications();
+        }
+      });
     });
   }
 
@@ -176,6 +184,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _notificationRefreshTimer?.cancel();
     _isDisposed = true;
     super.dispose();
   }

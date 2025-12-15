@@ -107,11 +107,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         children: [
                           IconButton(
                             icon: Icon(
-                              Icons.chevron_left,
-                              size: 24,
+                                Icons.chevron_left,
+                                size: 24,
                               color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            onPressed: () => NavigationHelper.safePop(context),
+                              ),
+                              onPressed: () => NavigationHelper.safePop(context),
                           ),
                           const SizedBox(width: 16),
                           Expanded(

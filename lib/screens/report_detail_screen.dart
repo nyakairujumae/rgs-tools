@@ -230,10 +230,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       padding: const EdgeInsets.all(8.0),
                       child: IconButton(
                         icon: Icon(
-                          Icons.chevron_left,
-                          size: 24,
+                            Icons.chevron_left,
+                            size: 24,
                           color: theme.colorScheme.onSurface,
-                        ),
+                          ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -489,37 +489,37 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget _buildToolIssuesSummaryReport(List issues) {
     if (issues.isEmpty) {
       return Center(
-        child: Container(
-          padding: const EdgeInsets.all(40),
-          decoration: context.cardDecoration,
-          child: Column(
-            children: [
-              Icon(
+          child: Container(
+            padding: const EdgeInsets.all(40),
+            decoration: context.cardDecoration,
+            child: Column(
+              children: [
+                Icon(
                 Icons.check_circle_outline,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 16),
-              Text(
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
                 'No Tool Issues Found',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.grey[300],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
+                const SizedBox(height: 8),
+                Text(
                 'No tool issues found in the selected period.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey[400],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       );
     }
 

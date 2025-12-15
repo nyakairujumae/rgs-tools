@@ -46,18 +46,10 @@ DROP POLICY IF EXISTS "Technicians can view their own approval workflows" ON app
 DROP POLICY IF EXISTS "Technicians can insert their own approval workflows" ON approval_workflows;
 
 -- Create improved RLS policies
--- Admins can view all approval workflows (using a more reliable check)
-CREATE POLICY "Admins can view all approval workflows" ON approval_workflows
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE users.id = auth.uid() 
-      AND users.role = 'admin'
-    )
-    OR
-    -- Also allow if user has admin role in auth metadata (fallback)
-    (auth.jwt() ->> 'user_role') = 'admin'
-  );
+-- First, allow all authenticated users to view all workflows (simplest approach)
+-- This ensures admins can see all workflows including those created by technicians
+CREATE POLICY "Authenticated users can view all workflows" ON approval_workflows
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Admins can update all approval workflows
 CREATE POLICY "Admins can update approval workflows" ON approval_workflows
@@ -83,18 +75,13 @@ CREATE POLICY "Admins can insert approval workflows" ON approval_workflows
     (auth.jwt() ->> 'user_role') = 'admin'
   );
 
--- Technicians can view their own approval workflows
+-- Technicians can view their own approval workflows (redundant but kept for clarity)
 CREATE POLICY "Technicians can view their own approval workflows" ON approval_workflows
   FOR SELECT USING (auth.uid() = requester_id);
 
 -- Technicians can insert their own approval workflows
 CREATE POLICY "Technicians can insert their own approval workflows" ON approval_workflows
   FOR INSERT WITH CHECK (auth.uid() = requester_id);
-
--- Also allow authenticated users to view all workflows (for admin section)
--- This ensures admins can always see workflows regardless of RLS complexity
-CREATE POLICY "Authenticated users can view all workflows" ON approval_workflows
-  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Create functions for approve and reject if they don't exist
 CREATE OR REPLACE FUNCTION public.approve_workflow(workflow_id UUID, approver_comments TEXT DEFAULT NULL)
@@ -156,4 +143,64 @@ CREATE TRIGGER update_approval_workflows_updated_at
 GRANT SELECT, INSERT, UPDATE ON approval_workflows TO authenticated;
 GRANT SELECT ON approval_workflows TO anon;
 
-SELECT '✅ Approval workflows table and RLS policies created/updated successfully!' as status;
+-- ============================================================================
+-- STEP 3: Create function to create approval workflows (bypasses RLS)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.create_approval_workflow(
+    p_request_type TEXT,
+    p_title TEXT,
+    p_description TEXT,
+    p_requester_id UUID,
+    p_requester_name TEXT,
+    p_requester_role TEXT DEFAULT 'Technician',
+    p_status TEXT DEFAULT 'Pending',
+    p_priority TEXT DEFAULT 'Medium',
+    p_location TEXT DEFAULT NULL,
+    p_request_data JSONB DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_id UUID;
+BEGIN
+    INSERT INTO approval_workflows (
+        request_type,
+        title,
+        description,
+        requester_id,
+        requester_name,
+        requester_role,
+        status,
+        priority,
+        request_date,
+        location,
+        request_data
+    )
+    VALUES (
+        p_request_type,
+        p_title,
+        p_description,
+        p_requester_id,
+        p_requester_name,
+        p_requester_role,
+        p_status,
+        p_priority,
+        NOW(),
+        p_location,
+        p_request_data
+    )
+    RETURNING id INTO v_id;
+    
+    RETURN v_id;
+END;
+$$;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.create_approval_workflow TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_approval_workflow TO anon;
+
+SELECT '✅ Approval workflows table, RLS policies, and function created/updated successfully!' as status;

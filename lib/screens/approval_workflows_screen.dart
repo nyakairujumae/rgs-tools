@@ -1,4 +1,4 @@
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/approval_workflow.dart';
@@ -22,6 +22,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   String _selectedType = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Timer? _refreshTimer;
+  bool _isDisposed = false;
   final List<String> _filters = [
     'All',
     'Pending',
@@ -43,7 +45,21 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ApprovalWorkflowsProvider>().loadWorkflows();
+      // Refresh workflows every 30 seconds to catch new requests
+      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted && !_isDisposed) {
+          context.read<ApprovalWorkflowsProvider>().loadWorkflows();
+        }
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _refreshTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
