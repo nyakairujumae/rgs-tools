@@ -519,12 +519,12 @@ class HvacToolsManagerApp extends StatelessWidget {
                       settings: RouteSettings(name: '/reset-password'),
                     );
                   } else if (type == 'signup' || hasAccessToken || uriString.contains('email-confirmation')) {
-                    // Email confirmation - get session from URL
+                    // Email confirmation - get session from URL and auto-login
                     print('✅ Email confirmation detected, getting session from URL...');
                     print('🔐 Full URI: $uri');
                     print('🔐 Query parameters: ${uri.queryParameters}');
                     
-                    // Process the session and navigate directly - no loading screen
+                    // Process the session and navigate directly to home - no role selection
                     return MaterialPageRoute(
                       builder: (context) {
                         // Process the session when the route is built
@@ -533,7 +533,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                             print('🔐 Getting session from URL...');
                             print('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
                             
-                            // Try to get session from URL
+                            // Get session from URL (this confirms the email and creates the session)
                             final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                             
                             if (sessionResponse.session != null) {
@@ -541,41 +541,64 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ User: ${sessionResponse.session!.user.email}');
                               print('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
                               
-                              // Re-initialize auth provider to pick up new session
+                              // Get auth provider and re-initialize to pick up new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              
+                              // Wait for auth provider to fully initialize with the new session
                               await authProvider.initialize();
                               
-                              // Auto-login: Navigate directly to appropriate screen based on user role
-                              final navigator = Navigator.of(context, rootNavigator: true);
+                              // Wait a bit more to ensure auth state is fully updated
+                              await Future.delayed(const Duration(milliseconds: 500));
                               
-                              // Clear all previous routes and navigate to the appropriate home screen
+                              // Check authentication status after initialization
                               if (authProvider.isAuthenticated) {
+                                print('✅ User authenticated after email confirmation');
+                                
+                                // Navigate directly to appropriate home screen based on role
+                                final navigator = Navigator.of(context, rootNavigator: true);
+                                
                                 if (authProvider.isAdmin) {
-                                  print('✅ Auto-logging in as admin');
+                                  print('✅ Auto-logging in as admin - redirecting to admin home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/admin',
                                     (route) => false,
                                   );
-                                } else if (authProvider.isPendingApproval) {
+                                } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
                                   print('✅ Auto-logging in - pending approval');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/pending-approval',
                                     (route) => false,
                                   );
                                 } else {
-                                  print('✅ Auto-logging in as technician');
+                                  print('✅ Auto-logging in as technician - redirecting to technician home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/technician',
                                     (route) => false,
                                   );
                                 }
                               } else {
-                                // Fallback: if not authenticated, go to role selection
-                                print('⚠️ Session created but not authenticated, redirecting to role selection');
-                                navigator.pushNamedAndRemoveUntil(
-                                  '/role-selection',
-                                  (route) => false,
-                                );
+                                // If still not authenticated after initialization, there's an issue
+                                print('⚠️ Session created but user not authenticated after initialization');
+                                print('⚠️ This might indicate a role assignment issue');
+                                
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Email confirmed, but authentication failed. Please try logging in.'),
+                                      backgroundColor: Colors.orange,
+                                      duration: Duration(seconds: 5),
+                                    ),
+                                  );
+                                  // Redirect to role selection as fallback
+                                  Future.delayed(const Duration(seconds: 2), () {
+                                    if (context.mounted) {
+                                      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                        '/role-selection',
+                                        (route) => false,
+                                      );
+                                    }
+                                  });
+                                }
                               }
                             } else {
                               print('⚠️ No session returned from URL');
@@ -584,14 +607,14 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Show error message and redirect to role selection
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  const SnackBar(
                                     content: Text('Email confirmation failed. The link may be invalid or expired.'),
                                     backgroundColor: Colors.red,
                                     duration: Duration(seconds: 5),
                                   ),
                                 );
                                 // Redirect to role selection after showing error
-                                Future.delayed(Duration(seconds: 2), () {
+                                Future.delayed(const Duration(seconds: 2), () {
                                   if (context.mounted) {
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
                                       '/role-selection',
@@ -611,11 +634,11 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 SnackBar(
                                   content: Text('Error confirming email: ${e.toString()}'),
                                   backgroundColor: Colors.red,
-                                  duration: Duration(seconds: 5),
+                                  duration: const Duration(seconds: 5),
                                 ),
                               );
                               // Redirect to role selection after showing error
-                              Future.delayed(Duration(seconds: 2), () {
+                              Future.delayed(const Duration(seconds: 2), () {
                                 if (context.mounted) {
                                   Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
                                     '/role-selection',
@@ -628,6 +651,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                         });
                         
                         // Return invisible widget - no loading screen
+                        // The navigation will happen in the postFrameCallback above
                         return const SizedBox.shrink();
                       },
                       settings: RouteSettings(name: '/auth-callback'),

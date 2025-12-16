@@ -408,7 +408,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
         
         // Try to determine role from email - check for admin patterns
-        UserRole role = UserRole.technician;
+        // Default to pending (unknown) instead of assuming technician
+        UserRole role = UserRole.pending;
         final emailLower = email.toLowerCase();
         
         if (emailLower.contains('admin') || emailLower.contains('manager') || 
@@ -416,6 +417,10 @@ class _LoginScreenState extends State<LoginScreen> {
             emailLower.contains('@mekar.ae') || 
             emailLower.contains('@gmail.com')) {
           role = UserRole.admin;
+        } else {
+          // For web simulation, if no admin pattern, still use pending
+          // User should register with explicit role
+          role = UserRole.pending;
         }
         
         // Set the simulated user in AuthProvider

@@ -4,6 +4,7 @@ import 'supabase_service.dart';
 /// Service to send FCM push notifications via Supabase Edge Function
 class PushNotificationService {
   /// Send push notification to a specific user by user_id
+  /// Sends to all tokens for that user (both Android and iOS if available)
   static Future<bool> sendToUser({
     required String userId,
     required String title,
@@ -11,25 +12,37 @@ class PushNotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Get FCM token for the user
-      final tokenResponse = await SupabaseService.client
+      // Get ALL FCM tokens for the user (both Android and iOS)
+      final tokensResponse = await SupabaseService.client
           .from('user_fcm_tokens')
-          .select('fcm_token')
-          .eq('user_id', userId)
-          .maybeSingle();
+          .select('fcm_token, platform')
+          .eq('user_id', userId);
 
-      if (tokenResponse == null || tokenResponse['fcm_token'] == null) {
-        debugPrint('⚠️ [Push] No FCM token found for user: $userId');
+      if (tokensResponse.isEmpty) {
+        debugPrint('⚠️ [Push] No FCM tokens found for user: $userId');
         return false;
       }
 
-      final token = tokenResponse['fcm_token'] as String;
-      return await sendToToken(
-        token: token,
-        title: title,
-        body: body,
-        data: data,
-      );
+      // Send to all tokens for this user
+      int successCount = 0;
+      for (final tokenRecord in tokensResponse) {
+        final token = tokenRecord['fcm_token'] as String?;
+        final platform = tokenRecord['platform'] as String?;
+        
+        if (token != null && token.isNotEmpty) {
+          debugPrint('📤 [Push] Sending to ${platform ?? 'unknown'} token for user: $userId');
+          final success = await sendToToken(
+            token: token,
+            title: title,
+            body: body,
+            data: data,
+          );
+          if (success) successCount++;
+        }
+      }
+
+      debugPrint('✅ [Push] Sent to $successCount/${tokensResponse.length} tokens for user: $userId');
+      return successCount > 0;
     } catch (e) {
       debugPrint('❌ [Push] Error sending to user $userId: $e');
       return false;

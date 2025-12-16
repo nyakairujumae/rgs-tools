@@ -170,7 +170,8 @@ class FirebaseMessagingService {
       
       debugPrint('📤 [FCM] Saving token for user: ${user.id}, platform: $platform');
       
-      // Upsert with user_id as conflict target
+      // Upsert with (user_id, platform) as conflict target
+      // This allows users to have both Android and iOS tokens
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
@@ -178,7 +179,7 @@ class FirebaseMessagingService {
             'fcm_token': token,
             'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id');
+          }, onConflict: 'user_id,platform');
       
       debugPrint('✅ [FCM] Token saved to Supabase successfully');
     } catch (e, stackTrace) {
@@ -192,17 +193,17 @@ class FirebaseMessagingService {
       }
       if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
         debugPrint('⚠️ [FCM] Duplicate key error - trying update instead...');
-        // Try update instead
+        // Try update instead (for the specific user_id + platform combination)
         try {
           final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
           await SupabaseService.client
               .from('user_fcm_tokens')
               .update({
                 'fcm_token': token,
-                'platform': platform,
                 'updated_at': DateTime.now().toIso8601String(),
               })
-              .eq('user_id', user.id);
+              .eq('user_id', user.id)
+              .eq('platform', platform);
           debugPrint('✅ [FCM] Token updated successfully');
         } catch (updateError) {
           debugPrint('❌ [FCM] Update also failed: $updateError');
@@ -328,7 +329,8 @@ class FirebaseMessagingService {
       
       debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
       
-      // Upsert with user_id as conflict target
+      // Upsert with (user_id, platform) as conflict target
+      // This allows users to have both Android and iOS tokens
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
@@ -336,7 +338,7 @@ class FirebaseMessagingService {
             'fcm_token': token,
             'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id');
+          }, onConflict: 'user_id,platform');
       
       debugPrint('✅ [FCM] Token sent to server successfully');
     } catch (e, stackTrace) {

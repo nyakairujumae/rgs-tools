@@ -1,7 +1,10 @@
--- Fix RLS policies for approval_workflows to ensure requests are visible
--- This fixes the issue where requests don't appear in the approval workflow section
+-- ============================================================================
+-- COMPLETE APPROVAL WORKFLOWS SETUP - Run this in Supabase SQL Editor
+-- ============================================================================
+-- Copy and paste this ENTIRE file into Supabase SQL Editor and run it
+-- Do NOT copy line by line - copy the entire file
 
--- First, create the table if it doesn't exist
+-- Step 1: Create table if it doesn't exist
 CREATE TABLE IF NOT EXISTS approval_workflows (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   request_type TEXT NOT NULL CHECK (request_type IN ('Tool Assignment', 'Tool Purchase', 'Tool Disposal', 'Maintenance', 'Transfer', 'Repair', 'Calibration', 'Certification')),
@@ -28,30 +31,28 @@ CREATE TABLE IF NOT EXISTS approval_workflows (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better performance
+-- Step 2: Create indexes
 CREATE INDEX IF NOT EXISTS idx_approval_workflows_status ON approval_workflows(status);
 CREATE INDEX IF NOT EXISTS idx_approval_workflows_request_type ON approval_workflows(request_type);
 CREATE INDEX IF NOT EXISTS idx_approval_workflows_requester_id ON approval_workflows(requester_id);
 CREATE INDEX IF NOT EXISTS idx_approval_workflows_assigned_to ON approval_workflows(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_approval_workflows_due_date ON approval_workflows(due_date);
 
--- Enable RLS
+-- Step 3: Enable RLS
 ALTER TABLE approval_workflows ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist
+-- Step 4: Drop existing policies
 DROP POLICY IF EXISTS "Admins can view all approval workflows" ON approval_workflows;
 DROP POLICY IF EXISTS "Admins can update approval workflows" ON approval_workflows;
 DROP POLICY IF EXISTS "Admins can insert approval workflows" ON approval_workflows;
 DROP POLICY IF EXISTS "Technicians can view their own approval workflows" ON approval_workflows;
 DROP POLICY IF EXISTS "Technicians can insert their own approval workflows" ON approval_workflows;
+DROP POLICY IF EXISTS "Authenticated users can view all workflows" ON approval_workflows;
 
--- Create improved RLS policies
--- First, allow all authenticated users to view all workflows (simplest approach)
--- This ensures admins can see all workflows including those created by technicians
+-- Step 5: Create RLS policies
 CREATE POLICY "Authenticated users can view all workflows" ON approval_workflows
   FOR SELECT USING (auth.role() = 'authenticated');
 
--- Admins can update all approval workflows
 CREATE POLICY "Admins can update approval workflows" ON approval_workflows
   FOR UPDATE USING (
     EXISTS (
@@ -63,7 +64,6 @@ CREATE POLICY "Admins can update approval workflows" ON approval_workflows
     (auth.jwt() ->> 'user_role') = 'admin'
   );
 
--- Admins can insert approval workflows
 CREATE POLICY "Admins can insert approval workflows" ON approval_workflows
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -75,15 +75,13 @@ CREATE POLICY "Admins can insert approval workflows" ON approval_workflows
     (auth.jwt() ->> 'user_role') = 'admin'
   );
 
--- Technicians can view their own approval workflows (redundant but kept for clarity)
 CREATE POLICY "Technicians can view their own approval workflows" ON approval_workflows
   FOR SELECT USING (auth.uid() = requester_id);
 
--- Technicians can insert their own approval workflows
 CREATE POLICY "Technicians can insert their own approval workflows" ON approval_workflows
   FOR INSERT WITH CHECK (auth.uid() = requester_id);
 
--- Create functions for approve and reject if they don't exist
+-- Step 6: Create approve/reject functions
 CREATE OR REPLACE FUNCTION public.approve_workflow(workflow_id UUID, approver_comments TEXT DEFAULT NULL)
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -124,7 +122,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Create trigger for updated_at
+-- Step 7: Create trigger for updated_at
 CREATE OR REPLACE FUNCTION update_approval_workflows_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -139,14 +137,11 @@ CREATE TRIGGER update_approval_workflows_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_approval_workflows_updated_at();
 
--- Grant necessary permissions
+-- Step 8: Grant permissions
 GRANT SELECT, INSERT, UPDATE ON approval_workflows TO authenticated;
 GRANT SELECT ON approval_workflows TO anon;
 
--- ============================================================================
--- STEP 3: Create function to create approval workflows (bypasses RLS)
--- ============================================================================
-
+-- Step 9: Create function to create approval workflows
 CREATE OR REPLACE FUNCTION public.create_approval_workflow(
     p_request_type TEXT,
     p_title TEXT,
@@ -199,8 +194,82 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission
 GRANT EXECUTE ON FUNCTION public.create_approval_workflow TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_approval_workflow TO anon;
 
-SELECT '✅ Approval workflows table, RLS policies, and function created/updated successfully!' as status;
+-- Step 10: Update create_admin_notification to auto-create workflows
+CREATE OR REPLACE FUNCTION public.create_admin_notification(
+    p_title TEXT,
+    p_message TEXT,
+    p_technician_name TEXT,
+    p_technician_email TEXT,
+    p_type TEXT,
+    p_data JSONB DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_notification_id UUID;
+    v_workflow_id UUID;
+    v_requester_id UUID;
+    v_tool_name TEXT;
+    v_requester_name TEXT;
+BEGIN
+    INSERT INTO admin_notifications (
+        title,
+        message,
+        technician_name,
+        technician_email,
+        type,
+        is_read,
+        timestamp,
+        data
+    )
+    VALUES (
+        p_title,
+        p_message,
+        p_technician_name,
+        p_technician_email,
+        p_type,
+        false,
+        NOW(),
+        p_data
+    )
+    RETURNING id INTO v_notification_id;
+    
+    IF p_type = 'tool_request' AND p_data IS NOT NULL THEN
+        v_requester_id := (p_data->>'requester_id')::UUID;
+        v_tool_name := COALESCE(p_data->>'tool_name', 'Unknown Tool');
+        v_requester_name := COALESCE(p_data->>'requester_name', p_technician_name);
+        
+        IF v_requester_id IS NOT NULL THEN
+            BEGIN
+                SELECT public.create_approval_workflow(
+                    p_request_type := 'Tool Assignment',
+                    p_title := 'Tool Assignment Request: ' || v_tool_name,
+                    p_description := v_requester_name || ' requested the tool "' || v_tool_name || '"',
+                    p_requester_id := v_requester_id,
+                    p_requester_name := v_requester_name,
+                    p_requester_role := 'Technician',
+                    p_status := 'Pending',
+                    p_priority := 'Medium',
+                    p_location := p_data->>'location',
+                    p_request_data := p_data
+                ) INTO v_workflow_id;
+            EXCEPTION WHEN OTHERS THEN
+                NULL;
+            END;
+        END IF;
+    END IF;
+    
+    RETURN v_notification_id;
+END;
+$$;
+
+-- Success message
+SELECT '✅ Approval workflows setup complete!' as status;
+
+

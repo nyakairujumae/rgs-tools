@@ -44,6 +44,11 @@ class AuthErrorHandler {
         errorString.contains('invalid_credentials') ||
         errorString.contains('wrong password') ||
         errorString.contains('incorrect password')) {
+      // Check if the error message indicates email exists
+      if (errorString.contains('already registered') || 
+          errorString.contains('email is already')) {
+        return '📧 This email is already registered. Please check your password or use "Forgot Password" to reset it.';
+      }
       return '🔐 Sorry, your email or password is incorrect. Please try again.';
     }
     
@@ -51,6 +56,12 @@ class AuthErrorHandler {
         errorString.contains('account not found') ||
         errorString.contains('email not found')) {
       return '👤 Sorry, we couldn\'t find an account with this email. Please check your email or create a new account.';
+    }
+    
+    if (errorString.contains('not available') ||
+        errorString.contains('not registered') ||
+        errorString.contains('please register first')) {
+      return '📝 Your account is not available. Please register first by creating a new account.';
     }
     
     if (errorString.contains('email not confirmed') ||
@@ -63,7 +74,8 @@ class AuthErrorHandler {
     if (errorString.contains('email already registered') || 
         errorString.contains('user already exists') ||
         errorString.contains('email already exists') ||
-        errorString.contains('already registered')) {
+        errorString.contains('already registered') ||
+        errorString.contains('this email is already registered')) {
       return '📧 This email is already registered. Please sign in or use a different email address.';
     }
     

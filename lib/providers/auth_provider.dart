@@ -12,7 +12,7 @@ import '../config/supabase_config.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
-  UserRole _userRole = UserRole.technician;
+  UserRole _userRole = UserRole.pending; // Default to pending (unknown) instead of technician
   bool _isLoading = false;
   bool _isInitialized = false;
   bool _isLoggingOut = false;
@@ -254,18 +254,108 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ Could not send FCM token after initialization: $e');
         }
       } else {
-        print('🔍 No user found, setting default role');
-        _userRole = UserRole.technician;
+        print('🔍 No user found, setting role to pending (unknown)');
+        _userRole = UserRole.pending; // Unknown user - no default role
       }
     } catch (e) {
       print('❌ Error initializing auth: $e');
-      // Set default values on error
-      _userRole = UserRole.technician;
+      // Set to pending on error - don't assume role
+      _userRole = UserRole.pending;
     } finally {
       print('🔍 AuthProvider initialization complete');
       _isLoading = false;
       _isInitialized = true;
       notifyListeners();
+    }
+  }
+
+  /// Check if email is available (not already registered)
+  /// Returns true if email is available, false if already in use
+  Future<bool> isEmailAvailable(String email) async {
+    try {
+      // Method 1: Use SQL function (most reliable - checks both auth.users and public.users)
+      try {
+        final result = await SupabaseService.client
+            .rpc('check_email_available', params: {'check_email': email})
+            .timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                throw TimeoutException('Email check timed out');
+              },
+            );
+        
+        final isAvailable = result as bool? ?? true; // Default to available if null
+        debugPrint('✅ [Email Check] SQL function result: $isAvailable for $email');
+        return isAvailable;
+      } catch (rpcError) {
+        debugPrint('⚠️ [Email Check] SQL function not available, using fallback method: $rpcError');
+        // Fall through to backup method
+      }
+      
+      // Method 2: Fallback - Check public.users directly
+      try {
+        final publicUser = await SupabaseService.client
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 3));
+        
+        if (publicUser != null) {
+          debugPrint('⚠️ [Email Check] Email already exists in public.users: $email');
+          return false;
+        }
+      } catch (e) {
+        debugPrint('⚠️ [Email Check] Could not check public.users: $e');
+      }
+      
+      // Method 3: Last resort - Try to sign in with dummy password
+      // This checks auth.users but is less reliable due to error message parsing
+      try {
+        await SupabaseService.client.auth.signInWithPassword(
+          email: email,
+          password: 'dummy_check_password_12345_xyz',
+        ).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            throw TimeoutException('Email check timed out');
+          },
+        );
+        // If we get here (unlikely with dummy password), email exists
+        debugPrint('⚠️ [Email Check] Email already exists (sign in succeeded): $email');
+        return false;
+      } catch (signInError) {
+        final errorString = signInError.toString().toLowerCase();
+        
+        // If error says "invalid login credentials" or "invalid_credentials"
+        // This means email EXISTS but password is wrong
+        if (errorString.contains('invalid login credentials') ||
+            errorString.contains('invalid_credentials') ||
+            errorString.contains('wrong password') ||
+            errorString.contains('incorrect password')) {
+          debugPrint('⚠️ [Email Check] Email already exists (invalid credentials): $email');
+          return false; // Email is already registered
+        }
+        
+        // If error says "user not found" or "email not found"
+        // This means email does NOT exist
+        if (errorString.contains('user not found') ||
+            errorString.contains('email not found') ||
+            errorString.contains('account not found')) {
+          debugPrint('✅ [Email Check] Email is available (user not found): $email');
+          return true; // Email is available
+        }
+        
+        // For other errors, assume email is available (safer for registration)
+        // The signUp will fail with a proper error if email actually exists
+        debugPrint('⚠️ [Email Check] Could not determine email availability, assuming available: $email');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('⚠️ [Email Check] Error checking email availability: $e');
+      // If check fails, assume email is available
+      // The signUp will fail with proper error if email actually exists
+      return true;
     }
   }
 
@@ -290,10 +380,19 @@ class AuthProvider with ChangeNotifier {
       }
       debugPrint('✅ Database connection verified');
       
+      // Check if email is already in use BEFORE attempting signup
+      // This prevents sending confirmation emails for existing emails
+      debugPrint('🔍 Checking if email is available: $email');
+      final emailAvailable = await isEmailAvailable(email);
+      if (!emailAvailable) {
+        throw Exception('This email is already registered. Please sign in or use a different email address.');
+      }
+      debugPrint('✅ Email is available, proceeding with registration');
+      
       // Email confirmation may be enabled in Supabase
       // If enabled, users won't have a session until they confirm their email
       debugPrint('🔍 Calling Supabase auth.signUp...');
-      debugPrint('🔍 SignUp parameters: email=$email, role=${role?.value ?? "technician"}');
+      debugPrint('🔍 SignUp parameters: email=$email, role=${role?.value ?? "NULL (must be set)"}');
       
       // Try signUp with retry logic
       AuthResponse? response;
@@ -303,12 +402,17 @@ class AuthProvider with ChangeNotifier {
           debugPrint('🔍 SignUp attempt $attempt/$maxRetries...');
           
           // Timeout set to 30 seconds (email confirmation is disabled, so should be faster)
+          // Ensure role is explicitly provided - no automatic defaults
+          if (role == null) {
+            throw Exception('Role must be explicitly specified during registration');
+          }
+          
           response = await SupabaseService.client.auth.signUp(
             email: email,
             password: password,
             data: {
               'full_name': fullName,
-              'role': role?.value ?? 'technician', // Default to 'technician' for new registrations
+              'role': role.value, // Role must be explicitly set - no default
             },
             emailRedirectTo: 'com.rgs.app://auth/callback',
           ).timeout(
@@ -349,7 +453,8 @@ class AuthProvider with ChangeNotifier {
         debugPrint('🔍 User created: ${_user!.id}, hasSession: $hasSession, emailConfirmed: ${_user!.emailConfirmedAt != null}');
         
         // For technicians, create pending approval instead of user record
-        if (role == UserRole.technician || role == null) {
+        // Role must be explicitly set - no null check (role is required)
+        if (role == UserRole.technician) {
           // Email confirmation may be enabled - if so, we won't have a session
           // But we can still create the pending approval record (it will be created by trigger or we create it)
           if (hasSession) {
@@ -451,6 +556,8 @@ class AuthProvider with ChangeNotifier {
         debugPrint('⚠️ Network error detected');
       } else if (e.toString().contains('email') && e.toString().contains('already')) {
         debugPrint('⚠️ Email already registered');
+        // Re-throw with clearer message
+        throw Exception('This email is already registered. Please sign in or use a different email address.');
       }
       
       rethrow;
@@ -821,6 +928,25 @@ class AuthProvider with ChangeNotifier {
           break;
         } catch (e) {
           final errorString = e.toString().toLowerCase();
+          
+          // Check if email exists but password is wrong
+          if (errorString.contains('invalid login credentials') || 
+              errorString.contains('invalid_credentials') ||
+              errorString.contains('wrong password') ||
+              errorString.contains('incorrect password')) {
+            // Email exists but password is wrong - provide helpful message
+            debugPrint('⚠️ Email exists but password is incorrect');
+            throw Exception('This email is already registered. Please check your password or use "Forgot Password" to reset it.');
+          }
+          
+          // Check if user not found (email doesn't exist)
+          if (errorString.contains('user not found') ||
+              errorString.contains('email not found') ||
+              errorString.contains('account not found')) {
+            debugPrint('⚠️ Email not found');
+            throw Exception('No account found with this email. Please check your email or create a new account.');
+          }
+          
           final isConnectionError = errorString.contains('connection') || 
               errorString.contains('network') ||
               errorString.contains('timeout') ||
@@ -851,28 +977,62 @@ class AuthProvider with ChangeNotifier {
       if (authResponse.user != null) {
         _user = authResponse.user;
         
-        // Load user role - don't fail login if this fails
+        // Load user role - this is critical for determining if account is registered
         try {
           await _loadUserRole();
+          
+          // After loading role, check if user has a valid role
+          // If role is still pending (unknown), the account is not properly registered
+          if (_userRole == UserRole.pending) {
+            // Check if user record exists in database
+            final userRecord = await client
+                .from('users')
+                .select('id, role')
+                .eq('id', _user!.id)
+                .maybeSingle();
+            
+            if (userRecord == null || userRecord['role'] == null) {
+              // User doesn't have a registered account - sign them out and show error
+              debugPrint('❌ User logged in but account is not registered (no role found)');
+              await signOut();
+              throw Exception('Your account is not available. Please register first by creating a new account.');
+            }
+          }
         } catch (e) {
+          // If error is about account not being registered, rethrow it
+          if (e.toString().contains('not available') || e.toString().contains('not registered')) {
+            rethrow;
+          }
+          
           debugPrint('⚠️ Error loading user role after sign in: $e');
           // Try to use saved role or metadata as fallback
           try {
             final savedRole = await _getSavedUserRole();
-            if (savedRole != null) {
+            if (savedRole != null && savedRole != UserRole.pending) {
               _userRole = savedRole;
               debugPrint('✅ Using saved role after load error: ${_userRole.value}');
             } else {
               // Try user metadata
               final roleFromMetadata = _user!.userMetadata?['role'] as String?;
-              if (roleFromMetadata != null) {
+              if (roleFromMetadata != null && roleFromMetadata.isNotEmpty) {
                 _userRole = UserRoleExtension.fromString(roleFromMetadata);
                 debugPrint('✅ Using role from metadata: ${_userRole.value}');
+              } else {
+                // No role found anywhere - account is not registered
+                debugPrint('❌ No role found in saved role or metadata - account not registered');
+                await signOut();
+                throw Exception('Your account is not available. Please register first by creating a new account.');
               }
             }
             notifyListeners();
           } catch (fallbackError) {
             debugPrint('❌ Fallback role loading also failed: $fallbackError');
+            // If fallback also fails and we still don't have a role, account is not registered
+            if (_userRole == UserRole.pending) {
+              await signOut();
+              throw Exception('Your account is not available. Please register first by creating a new account.');
+            }
+            rethrow;
           }
         }
         
@@ -889,29 +1049,52 @@ class AuthProvider with ChangeNotifier {
         
         // Ensure user record exists in public.users table
         // This handles cases where users confirmed email before the trigger was set up
+        // BUT: Only create if role is explicitly set - no defaults
         try {
           final userRecord = await client
               .from('users')
-              .select('id')
+              .select('id, role')
               .eq('id', _user!.id)
               .maybeSingle();
           
           if (userRecord == null) {
-            debugPrint('⚠️ User record not found in public.users, creating it...');
-            // Create user record from auth user data
+            // User record doesn't exist - check if we have a role to create it with
+            final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+            
+            if (roleFromMetadata == null || roleFromMetadata.isEmpty) {
+              // No role in metadata - account is not properly registered
+              debugPrint('❌ User record not found and no role in metadata - account not registered');
+              await signOut();
+              throw Exception('Your account is not available. Please register first by creating a new account.');
+            }
+            
+            debugPrint('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
+            // Create user record from auth user data - role must be explicitly set
             await client.from('users').insert({
               'id': _user!.id,
               'email': _user!.email ?? email,
               'full_name': _user!.userMetadata?['full_name'] ?? 
                           _user!.userMetadata?['name'] ?? 
                           _user!.email?.split('@')[0] ?? 'User',
-              'role': _user!.userMetadata?['role'] ?? 'technician',
+              'role': roleFromMetadata, // Role must be explicitly set, no default
             });
-            debugPrint('✅ Created user record in public.users');
+            debugPrint('✅ Created user record in public.users with role: $roleFromMetadata');
+          } else {
+            final role = userRecord['role'] as String?;
+            if (role == null || role.isEmpty) {
+              // User record exists but has no role - account is not properly registered
+              debugPrint('❌ User record exists but has no role - account not properly registered');
+              await signOut();
+              throw Exception('Your account is not available. Please register first by creating a new account.');
+            }
           }
         } catch (e) {
+          // If error is about account not being registered, rethrow it
+          if (e.toString().contains('not available') || e.toString().contains('not registered')) {
+            rethrow;
+          }
           debugPrint('⚠️ Could not check/create user record: $e');
-          // Don't block login - user record might be created by trigger later
+          // Don't block login for other errors - user record might be created by trigger later
         }
         
         // Validate admin domain restrictions
@@ -990,7 +1173,7 @@ class AuthProvider with ChangeNotifier {
       
       // Clear user data first to prevent widget tree issues
       _user = null;
-      _userRole = UserRole.technician;
+      _userRole = UserRole.pending; // Reset to pending (unknown) after logout
       notifyListeners();
       
       // Then sign out from Supabase
@@ -1002,7 +1185,7 @@ class AuthProvider with ChangeNotifier {
       debugPrint('❌ AuthProvider: Error type: ${e.runtimeType}');
       // Ensure user data is cleared even on error
       _user = null;
-      _userRole = UserRole.technician;
+      _userRole = UserRole.pending; // Reset to pending on error
     } finally {
 _isLoading = false;
       _isLoggingOut = false;
@@ -1077,7 +1260,7 @@ _isLoading = false;
     
     // Clear any existing real session first to avoid conflicts
     _user = null;
-    _userRole = UserRole.technician;
+    _userRole = UserRole.pending; // Reset to pending before setting explicit role
     
     // Create a mock user object with simulated ID
     _user = User(
@@ -1102,7 +1285,7 @@ _isLoading = false;
 
   Future<void> _loadUserRole() async {
     if (_user == null) {
-      _userRole = UserRole.technician;
+      _userRole = UserRole.pending; // No user - role is unknown (pending)
       return;
     }
 
@@ -1269,31 +1452,58 @@ _isLoading = false;
             
             // Only create admin users for specific domains, technicians must be approved first
             try {
-              String role = 'technician'; // Default to technician
-              if (_user!.email != null && 
-                  (_user!.email!.endsWith('@royalgulf.ae') || 
-                   _user!.email!.endsWith('@mekar.ae') || 
+              // Get role from metadata - must be explicitly set, no default
+              String? role = _user!.userMetadata?['role'] as String?;
+              
+              // If no role in metadata, try to get from database
+              if (role == null || role.isEmpty) {
+                try {
+                  final userRecord = await SupabaseService.client
+                      .from('users')
+                      .select('role')
+                      .eq('id', _user!.id)
+                      .maybeSingle();
+                  role = userRecord?['role'] as String?;
+                } catch (e) {
+                  debugPrint('⚠️ Could not get role from database: $e');
+                }
+              }
+              
+              // Only create user record if role is explicitly set
+              // No automatic role assignment - role must be provided during registration
+              if (role == null || role.isEmpty) {
+                debugPrint('⚠️ No role in user metadata - cannot create user record');
+                debugPrint('⚠️ User must register with explicit role (admin or technician)');
+                return; // Don't create user record without explicit role
+              }
+              
+              debugPrint('🔍 Creating user record with explicit role: $role');
+              
+              // Determine if admin based on email domain (only if role is already admin)
+              // Don't auto-assign admin based on domain - role must be explicit
+              if (role == 'admin' && _user!.email != null &&
+                  (_user!.email!.endsWith('@royalgulf.ae') ||
+                   _user!.email!.endsWith('@mekar.ae') ||
                    _user!.email!.endsWith('@gmail.com'))) {
-                role = 'admin';
                 debugPrint('🔍 Admin domain detected, creating admin user');
               
                 // Create user record for admins immediately
-              await SupabaseService.client
-                  .from('users')
-                  .insert({
-                    'id': _user!.id,
-                    'email': _user!.email ?? 'user@example.com',
-                    'full_name': _user!.userMetadata?['full_name'] ?? 'User',
-                    'role': role,
-                    'created_at': DateTime.now().toIso8601String(),
-                  });
+                await SupabaseService.client
+                    .from('users')
+                    .insert({
+                      'id': _user!.id,
+                      'email': _user!.email ?? 'user@example.com',
+                      'full_name': _user!.userMetadata?['full_name'] ?? 'User',
+                      'role': role, // Use explicit role from metadata - no default
+                      'created_at': DateTime.now().toIso8601String(),
+                    });
               
-              _userRole = UserRoleExtension.fromString(role);
-              await _saveUserRole(_userRole);
+                _userRole = UserRoleExtension.fromString(role);
+                await _saveUserRole(_userRole);
                 debugPrint('✅ Created admin user with role: $role');
                 notifyListeners();
                 return;
-              } else {
+              } else if (role == 'technician') {
                 // For technicians, check if they're approved
                 if (pendingApproval != null && pendingApproval['status'] == 'approved') {
                   // Technician was approved, user record should exist from approval function
@@ -1303,8 +1513,8 @@ _isLoading = false;
                   debugPrint('⚠️ Technician not approved - setting role to pending');
                   _userRole = UserRole.pending;
                   await _saveUserRole(_userRole);
-              notifyListeners();
-              return;
+                  notifyListeners();
+                  return;
                 }
               }
             } catch (insertError) {
@@ -1316,13 +1526,13 @@ _isLoading = false;
           
           if (retryCount >= maxRetries) {
             debugPrint('❌ Max retries reached, keeping current role: ${_userRole.value}');
-            // Conservative approach: only assign admin role if explicitly confirmed
-            // For now, default to technician for all failed cases to prevent role mixing
-            if (_userRole == UserRole.technician) {
-              debugPrint('🔄 Keeping technician role as safe default');
-              _userRole = UserRole.technician;
-              notifyListeners();
+            // Don't default to any role - keep current role or set to pending if unknown
+            if (_userRole == UserRole.pending) {
+              debugPrint('🔄 Role is pending (unknown) - user needs to register with explicit role');
+            } else {
+              debugPrint('🔄 Keeping current role: ${_userRole.value}');
             }
+            notifyListeners();
             return;
           }
           
@@ -1340,7 +1550,7 @@ _isLoading = false;
   Future<void> forceReAuthentication() async {
     debugPrint('🔄 Forcing re-authentication...');
     _user = null;
-    _userRole = UserRole.technician;
+    _userRole = UserRole.pending; // Reset to pending (unknown) when forcing re-auth
     notifyListeners();
     
     // Clear Supabase session

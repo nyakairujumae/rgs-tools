@@ -14,6 +14,7 @@ import 'request_new_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
+import '../services/push_notification_service.dart';
 import 'settings_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
 import '../theme/app_theme.dart';
@@ -22,7 +23,6 @@ import '../widgets/common/themed_card.dart';
 import '../services/badge_service.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
-import '../services/supabase_service.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../models/user_role.dart';
@@ -37,7 +37,7 @@ class TechnicianHomeScreen extends StatefulWidget {
   State<TechnicianHomeScreen> createState() => _TechnicianHomeScreenState();
 }
 
-class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
+class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with WidgetsBindingObserver {
   int _unreadNotificationCount = 0;
   Timer? _notificationRefreshTimer;
   int _selectedIndex = 0;
@@ -48,6 +48,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _screens = [
       TechnicianDashboardScreen(
         key: const ValueKey('tech_dashboard'),
@@ -72,17 +73,33 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> {
       // Sync badge with database when screen initializes (like admin section)
       await BadgeService.syncBadgeWithDatabase(context);
       _refreshUnreadCount();
-      // Refresh unread count every 30 seconds
+      // Refresh unread count and sync badge every 30 seconds (like admin section)
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted && !_isDisposed) {
           _refreshUnreadCount();
+          // Also sync badge periodically to ensure it stays updated
+          BadgeService.syncBadgeWithDatabase(context).catchError((e) {
+            debugPrint('⚠️ Error syncing badge: $e');
+          });
         }
       });
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isDisposed && mounted) {
+      // Sync badge when app comes back to foreground (like admin section)
+      BadgeService.syncBadgeWithDatabase(context).catchError((e) {
+        debugPrint('⚠️ Error syncing badge on resume: $e');
+      });
+      _refreshUnreadCount();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _isDisposed = true;
     _notificationRefreshTimer?.cancel();
     super.dispose();
@@ -2295,6 +2312,23 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         });
         debugPrint('✅ Created technician notification for tool request');
         debugPrint('✅ Notification sent to technician: $ownerId');
+        
+        // Send push notification to the tool holder
+        try {
+          await PushNotificationService.sendToUser(
+            userId: ownerId,
+            title: 'Tool Request: ${tool.name}',
+            body: '$requesterName needs the tool "${tool.name}" that you currently have',
+            data: {
+              'type': 'tool_request',
+              'tool_id': tool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to tool holder');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to tool holder: $pushError');
+        }
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');
         debugPrint('❌ Error details: ${e.toString()}');
