@@ -7,6 +7,7 @@ import 'dart:async';
 import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/first_launch_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
 
@@ -936,7 +937,7 @@ class AuthProvider with ChangeNotifier {
               errorString.contains('incorrect password')) {
             // Email exists but password is wrong - provide helpful message
             debugPrint('⚠️ Email exists but password is incorrect');
-            throw Exception('This email is already registered. Please check your password or use "Forgot Password" to reset it.');
+            throw Exception('Incorrect password. Please check your password or use "Forgot Password" to reset it.');
           }
           
           // Check if user not found (email doesn't exist)
@@ -1039,6 +1040,15 @@ class AuthProvider with ChangeNotifier {
         // Send FCM token to server after successful login
         // Try immediately, and also retry after a delay in case Firebase is still initializing
         _sendFCMTokenAfterLogin();
+        
+        // Mark first launch as complete after successful login
+        // This ensures splash screen only shows on first install
+        try {
+          await FirstLaunchService.markFirstLaunchComplete();
+          debugPrint('✅ First launch marked as complete');
+        } catch (e) {
+          debugPrint('⚠️ Could not mark first launch complete (non-critical): $e');
+        }
         
         // CRITICAL: Check if email is confirmed before allowing access
         if (_user!.emailConfirmedAt == null) {

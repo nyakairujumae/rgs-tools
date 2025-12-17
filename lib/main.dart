@@ -52,8 +52,18 @@ import 'package:firebase_messaging/firebase_messaging.dart'
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Preserve the native splash screen - we'll remove it manually after initialization
-  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+  // Check if this is first launch - only show splash on first launch
+  final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
+  
+  if (isFirstLaunch) {
+    // Only preserve native splash screen on first launch
+    FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+    print('🚀 App starting (first launch) - showing splash screen...');
+  } else {
+    // Not first launch - remove splash immediately
+    FlutterNativeSplash.remove();
+    print('🚀 App starting (returning user) - skipping splash screen...');
+  }
 
   print('🚀 App starting...');
 
@@ -67,21 +77,24 @@ void main() async {
   // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
+      // CRITICAL: Initialize Firebase BEFORE runApp()
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
       print('✅ Firebase initialized successfully');
       
-      // Initialize Firebase Messaging Service
+      // CRITICAL: Register background message handler BEFORE runApp()
+      // Must be top-level function with @pragma('vm:entry-point')
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      print('✅ Background message handler registered');
+      
+      // Initialize Firebase Messaging Service (after Firebase and handler registration)
       await fcm_service.FirebaseMessagingService.initialize();
       print('✅ Firebase Messaging initialized');
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Firebase initialization failed: $e');
+      print('❌ Stack trace: $stackTrace');
     }
-    
-    // Register background message handler (must be called before runApp)
-    // Use the handler from firebase_messaging_service.dart (top-level function)
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   // Initialize Supabase (works on web too)
@@ -434,9 +447,19 @@ class HvacToolsManagerApp extends StatelessWidget {
           };
           
           // Remove native splash immediately when initialization completes
+          // Only if it was preserved (first launch)
           // Do this synchronously to minimize delay
           if (authProvider.isInitialized && !authProvider.isLoading) {
-            FlutterNativeSplash.remove();
+            // Check if splash was preserved (first launch)
+            // If not first launch, splash was already removed in main()
+            FirstLaunchService.isFirstLaunch().then((isFirst) {
+              if (isFirst) {
+                FlutterNativeSplash.remove();
+              }
+            }).catchError((e) {
+              // If check fails, try to remove anyway (safe to call multiple times)
+              FlutterNativeSplash.remove();
+            });
           }
           
           // Always render MaterialApp (like mom.dart)

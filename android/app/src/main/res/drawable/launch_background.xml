@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- White background (good for black text logo) -->
+    <!-- White background (matching iOS) -->
     <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@android:color/white"/>
-        </shape>
+        <color android:color="@android:color/white"/>
     </item>
-    <!-- Splash logo centered - using rgs2.png with black letters -->
+    <!-- Centered logo (matching iOS LaunchImage) -->
     <item>
         <bitmap 
             android:gravity="center" 

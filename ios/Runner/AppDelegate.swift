@@ -70,17 +70,26 @@ import image_picker_ios
 
 
   // MARK: - iOS Foreground Notification
+  // CRITICAL: This handles notifications when app is in foreground
+  // Must return proper presentation options for notifications to appear
   @available(iOS 10.0, *)
   override func userNotificationCenter(_ center: UNUserNotificationCenter,
                 willPresent notification: UNNotification,
                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
 
     let userInfo = notification.request.content.userInfo
-    print("📱 Notification received in foreground: \(userInfo)")
+    print("📱 [iOS] Notification received in foreground")
+    print("📱 [iOS] Title: \(notification.request.content.title)")
+    print("📱 [iOS] Body: \(notification.request.content.body)")
+    print("📱 [iOS] User Info: \(userInfo)")
 
+    // CRITICAL: Return presentation options to show notification in foreground
+    // This works in conjunction with setForegroundNotificationPresentationOptions in Flutter
     if #available(iOS 14.0, *) {
-    completionHandler([.banner, .sound, .badge])
+      // iOS 14+: Use banner, sound, and badge
+      completionHandler([.banner, .sound, .badge])
     } else {
+      // iOS 10-13: Use alert, sound, and badge
       completionHandler([.alert, .sound, .badge])
     }
   }

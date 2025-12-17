@@ -39,15 +39,15 @@ class AuthErrorHandler {
       return '⏱️ Request timed out. Please check your internet connection and try again.';
     }
     
-    // Authentication errors
+    // Authentication errors (login)
     if (errorString.contains('invalid login credentials') || 
         errorString.contains('invalid_credentials') ||
         errorString.contains('wrong password') ||
         errorString.contains('incorrect password')) {
-      // Check if the error message indicates email exists
-      if (errorString.contains('already registered') || 
-          errorString.contains('email is already')) {
-        return '📧 This email is already registered. Please check your password or use "Forgot Password" to reset it.';
+      // For login errors, just say password is incorrect (don't mention "email already registered")
+      if (errorString.contains('incorrect password') || 
+          errorString.contains('check your password')) {
+        return '🔐 Incorrect password. Please check your password or use "Forgot Password" to reset it.';
       }
       return '🔐 Sorry, your email or password is incorrect. Please try again.';
     }

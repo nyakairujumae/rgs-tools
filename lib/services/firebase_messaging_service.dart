@@ -15,7 +15,9 @@ const String _backgroundChannelId = 'rgs_notifications';
 const String _backgroundChannelName = 'RGS Notifications';
 const String _backgroundChannelDesc = 'Notifications from RGS Tools app';
 
-/// Clean Firebase Messaging Service - Fresh Implementation
+/// Production-ready Firebase Messaging Service
+/// Handles notifications in foreground, background, and terminated states
+/// Compatible with notification + data payloads from any backend
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
@@ -44,7 +46,7 @@ class FirebaseMessagingService {
       
       debugPrint('✅ [FCM] Firebase is initialized');
       
-      // Initialize local notifications
+      // Initialize local notifications FIRST (needed for foreground notifications)
       await _initializeLocalNotifications();
       
       // Request notification permissions
@@ -53,6 +55,17 @@ class FirebaseMessagingService {
       if (permission.authorizationStatus == AuthorizationStatus.authorized ||
           permission.authorizationStatus == AuthorizationStatus.provisional) {
         debugPrint('✅ [FCM] Notification permission granted');
+        
+        // CRITICAL: Set iOS foreground notification presentation options
+        // This ensures notifications appear when app is in foreground
+        if (Platform.isIOS) {
+          await _messaging.setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          debugPrint('✅ [FCM] iOS foreground notification options set');
+        }
         
         // Get FCM token
         await _getFCMToken();
@@ -65,7 +78,7 @@ class FirebaseMessagingService {
         
         debugPrint('✅ [FCM] Initialization complete');
       } else {
-        debugPrint('❌ [FCM] Notification permission denied');
+        debugPrint('❌ [FCM] Notification permission denied: ${permission.authorizationStatus}');
       }
     } catch (e, stackTrace) {
       debugPrint('❌ [FCM] Initialization error: $e');
@@ -93,13 +106,15 @@ class FirebaseMessagingService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
       
-      // Create Android notification channel
+      // Create Android notification channel (required for Android 8.0+)
       const androidChannel = AndroidNotificationChannel(
         _androidChannelId,
         _androidChannelName,
         description: _androidChannelDesc,
         importance: Importance.high,
         showBadge: true,
+        playSound: true,
+        enableVibration: true,
       );
       
       final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
@@ -132,6 +147,8 @@ class FirebaseMessagingService {
       
       if (_fcmToken != null) {
         debugPrint('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
+        debugPrint('📱 [FCM] Platform: ${Platform.isIOS ? "iOS" : "Android"}');
+        debugPrint('📱 [FCM] Full token length: ${_fcmToken!.length}');
         
         // Save token locally
         final prefs = await SharedPreferences.getInstance();
@@ -150,14 +167,14 @@ class FirebaseMessagingService {
       } else {
         debugPrint('⚠️ [FCM] FCM token is null');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ [FCM] Error getting token: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
   /// Send FCM token to Supabase
   static Future<void> _sendTokenToServer(String token) async {
-    // Get user outside try block so it's accessible in catch block
     final user = SupabaseService.client.auth.currentUser;
     if (user == null) {
       debugPrint('⚠️ [FCM] No user logged in, skipping token save');
@@ -165,13 +182,10 @@ class FirebaseMessagingService {
     }
     
     try {
-      // Detect platform
       final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
       
       debugPrint('📤 [FCM] Saving token for user: ${user.id}, platform: $platform');
       
-      // Upsert with (user_id, platform) as conflict target
-      // This allows users to have both Android and iOS tokens
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
@@ -184,16 +198,10 @@ class FirebaseMessagingService {
       debugPrint('✅ [FCM] Token saved to Supabase successfully');
     } catch (e, stackTrace) {
       debugPrint('❌ [FCM] Error saving token: $e');
-      debugPrint('❌ [FCM] Error type: ${e.runtimeType}');
       debugPrint('❌ [FCM] Stack trace: $stackTrace');
       
-      // Check for specific error types
-      if (e.toString().contains('permission denied') || e.toString().contains('RLS')) {
-        debugPrint('⚠️ [FCM] RLS policy might be blocking the insert. Check Supabase RLS policies.');
-      }
+      // Try update as fallback
       if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
-        debugPrint('⚠️ [FCM] Duplicate key error - trying update instead...');
-        // Try update instead (for the specific user_id + platform combination)
         try {
           final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
           await SupabaseService.client
@@ -212,39 +220,86 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Set up message handlers
+  /// Set up message handlers for foreground, background, and terminated states
   static void _setupMessageHandlers() {
-    // Foreground messages
+    // ============================================
+    // FOREGROUND MESSAGES (App is open)
+    // ============================================
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint('📱 [FCM] Foreground message received: ${message.notification?.title}');
+      debugPrint('📱 [FCM] ========== FOREGROUND MESSAGE ==========');
+      debugPrint('📱 [FCM] Message ID: ${message.messageId}');
+      debugPrint('📱 [FCM] From: ${message.from}');
+      debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+      debugPrint('📱 [FCM] Data: ${message.data}');
+      debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
       
-      // Show local notification
+      // Show local notification (required for foreground on both platforms)
       await _showLocalNotification(message);
       
       // Update badge
       await _updateBadge();
+      
+      debugPrint('📱 [FCM] ======================================');
     });
     
-    // Background messages (when app is in background)
+    // ============================================
+    // BACKGROUND MESSAGES (App is minimized)
+    // ============================================
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('📱 [FCM] App opened from notification: ${message.notification?.title}');
-      // Handle navigation if needed
+      debugPrint('📱 [FCM] ========== APP OPENED FROM BACKGROUND ==========');
+      debugPrint('📱 [FCM] Message ID: ${message.messageId}');
+      debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+      debugPrint('📱 [FCM] Data: ${message.data}');
+      debugPrint('📱 [FCM] ================================================');
+      
+      // Handle navigation based on data
+      _handleNotificationNavigation(message);
     });
     
-    // Check if app was opened from terminated state
+    // ============================================
+    // TERMINATED STATE (App was closed)
+    // ============================================
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('📱 [FCM] App opened from terminated state: ${message.notification?.title}');
-        // Handle navigation if needed
+        debugPrint('📱 [FCM] ========== APP OPENED FROM TERMINATED ==========');
+        debugPrint('📱 [FCM] Message ID: ${message.messageId}');
+        debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+        debugPrint('📱 [FCM] Data: ${message.data}');
+        debugPrint('📱 [FCM] ================================================');
+        
+        // Handle navigation based on data
+        _handleNotificationNavigation(message);
       }
     });
   }
 
-  /// Show local notification
+  /// Show local notification (for foreground messages)
+  /// Handles both notification payload and data-only messages
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      final notification = message.notification;
-      if (notification == null) return;
+      // Extract title and body from notification payload OR data payload
+      String? title;
+      String? body;
+      
+      if (message.notification != null) {
+        title = message.notification!.title;
+        body = message.notification!.body;
+      } else if (message.data.isNotEmpty) {
+        // Fallback to data payload if notification is null (data-only message)
+        title = message.data['title'] as String? ?? message.data['notification_title'] as String?;
+        body = message.data['body'] as String? ?? message.data['notification_body'] as String? ?? message.data['message'] as String?;
+      }
+      
+      // If still no title/body, skip showing notification
+      if (title == null || body == null) {
+        debugPrint('⚠️ [FCM] No title/body found in notification or data payload');
+        return;
+      }
+      
+      debugPrint('📱 [FCM] Showing local notification: $title - $body');
+      
+      // Get current badge count
+      final badgeCount = await BadgeService.getBadgeCount();
       
       const androidDetails = AndroidNotificationDetails(
         _androidChannelId,
@@ -253,10 +308,10 @@ class FirebaseMessagingService {
         importance: Importance.high,
         priority: Priority.high,
         showWhen: true,
+        enableVibration: true,
+        playSound: true,
+        number: null, // Don't show number in notification itself
       );
-      
-      // Get current badge count for notification
-      final badgeCount = await BadgeService.getBadgeCount();
       
       final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
@@ -270,30 +325,62 @@ class FirebaseMessagingService {
         iOS: iosDetails,
       );
       
+      // Use messageId as notification ID, or fallback to hash
+      final notificationId = message.messageId?.hashCode ?? message.hashCode;
+      
       await _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
+        notificationId,
+        title,
+        body,
         details,
+        payload: message.data.toString(), // Pass data as payload for tap handling
       );
       
-      debugPrint('✅ [FCM] Local notification shown');
-    } catch (e) {
-      debugPrint('❌ [FCM] Error showing notification: $e');
+      debugPrint('✅ [FCM] Local notification displayed successfully');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FCM] Error showing local notification: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
-  /// Handle notification tap
+  /// Handle notification tap navigation
   static void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('📱 [FCM] Notification tapped: ${response.id}');
-    // Handle navigation if needed
+    debugPrint('📱 [FCM] ========== NOTIFICATION TAPPED ==========');
+    debugPrint('📱 [FCM] Notification ID: ${response.id}');
+    debugPrint('📱 [FCM] Action ID: ${response.actionId}');
+    debugPrint('📱 [FCM] Payload: ${response.payload}');
+    debugPrint('📱 [FCM] =========================================');
+    
+    // Parse payload and handle navigation
+    if (response.payload != null && response.payload!.isNotEmpty) {
+      try {
+        // Payload might be data map as string, parse if needed
+        // For now, just log it - navigation can be handled by app-specific logic
+        debugPrint('📱 [FCM] Payload data available for navigation');
+      } catch (e) {
+        debugPrint('⚠️ [FCM] Error parsing payload: $e');
+      }
+    }
+  }
+
+  /// Handle navigation when app is opened from notification
+  static void _handleNotificationNavigation(RemoteMessage message) {
+    // Extract navigation data from message.data
+    final type = message.data['type'] as String?;
+    final id = message.data['id'] as String?;
+    
+    debugPrint('📱 [FCM] Navigation - Type: $type, ID: $id');
+    
+    // Navigation logic can be implemented here based on app structure
+    // For now, just log the data
   }
 
   /// Update app badge (increment by 1)
   static Future<void> _updateBadge() async {
     try {
       await BadgeService.incrementBadge();
-      debugPrint('✅ [FCM] Badge incremented');
+      final badgeCount = await BadgeService.getBadgeCount();
+      debugPrint('✅ [FCM] Badge updated to: $badgeCount');
     } catch (e) {
       debugPrint('❌ [FCM] Error updating badge: $e');
     }
@@ -324,13 +411,10 @@ class FirebaseMessagingService {
   /// Send token to server (public method for manual refresh)
   static Future<void> sendTokenToServer(String token, String userId) async {
     try {
-      // Detect platform
       final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
       
       debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
       
-      // Upsert with (user_id, platform) as conflict target
-      // This allows users to have both Android and iOS tokens
       await SupabaseService.client
           .from('user_fcm_tokens')
           .upsert({
@@ -360,15 +444,23 @@ class FirebaseMessagingService {
 
 /// Background message handler (must be top-level function)
 /// This runs when app is in background or terminated state
+/// Handles both notification + data and data-only payloads
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('📱 [FCM] ========== BACKGROUND/TERMINATED MESSAGE ==========');
+  debugPrint('📱 [FCM] Message ID: ${message.messageId}');
+  debugPrint('📱 [FCM] From: ${message.from}');
+  debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+  debugPrint('📱 [FCM] Data: ${message.data}');
+  debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
+  
   // Initialize Firebase if not already initialized (background handlers run in separate isolate)
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    debugPrint('✅ [FCM] Firebase initialized in background handler');
   }
-  debugPrint('📱 [FCM] Background/Terminated message: ${message.notification?.title}');
   
   try {
     // Initialize local notifications plugin (needed in background isolate)
@@ -378,6 +470,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
+    
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
@@ -388,11 +481,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     
     // Create Android notification channel if needed
     const androidChannel = AndroidNotificationChannel(
-      'rgs_notifications',
-      'RGS Notifications',
-      description: 'Notifications from RGS Tools app',
+      _backgroundChannelId,
+      _backgroundChannelName,
+      description: _backgroundChannelDesc,
       importance: Importance.high,
       showBadge: true,
+      playSound: true,
+      enableVibration: true,
     );
     
     final androidPlugin = localNotifications.resolvePlatformSpecificImplementation<
@@ -403,24 +498,45 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await BadgeService.incrementBadge();
     final badgeCount = await BadgeService.getBadgeCount();
     
-    // Show local notification with badge number
-    final notification = message.notification;
-    if (notification != null) {
+    // Extract title and body from notification OR data payload
+    String? title;
+    String? body;
+    
+    if (message.notification != null) {
+      title = message.notification!.title;
+      body = message.notification!.body;
+    } else if (message.data.isNotEmpty) {
+      // Handle data-only messages (extract from data payload)
+      title = message.data['title'] as String? ?? 
+              message.data['notification_title'] as String? ??
+              message.data['notification']?['title'] as String?;
+      body = message.data['body'] as String? ?? 
+             message.data['notification_body'] as String? ??
+             message.data['message'] as String? ??
+             message.data['notification']?['body'] as String?;
+    }
+    
+    // Only show notification if we have title and body
+    if (title != null && body != null) {
+      debugPrint('📱 [FCM] Showing background notification: $title - $body');
+      
       final androidDetails = AndroidNotificationDetails(
-        'rgs_notifications',
-        'RGS Notifications',
-        channelDescription: 'Notifications from RGS Tools app',
+        _backgroundChannelId,
+        _backgroundChannelName,
+        channelDescription: _backgroundChannelDesc,
         importance: Importance.high,
         priority: Priority.high,
         showWhen: true,
-        number: badgeCount, // Show badge number in notification
+        enableVibration: true,
+        playSound: true,
+        number: null,
       );
       
       final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        badgeNumber: badgeCount, // Set badge number for iOS
+        badgeNumber: badgeCount > 0 ? badgeCount : null,
       );
       
       final details = NotificationDetails(
@@ -428,17 +544,25 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         iOS: iosDetails,
       );
       
+      final notificationId = message.messageId?.hashCode ?? message.hashCode;
+      
       await localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
+        notificationId,
+        title,
+        body,
         details,
+        payload: message.data.toString(),
       );
       
-      debugPrint('✅ [FCM] Background notification shown with badge: $badgeCount');
+      debugPrint('✅ [FCM] Background notification displayed with badge: $badgeCount');
+    } else {
+      debugPrint('⚠️ [FCM] No title/body found in notification or data payload - skipping display');
+      // Still update badge even if we can't show notification
     }
-  } catch (e) {
+    
+    debugPrint('📱 [FCM] ====================================================');
+  } catch (e, stackTrace) {
     debugPrint('❌ [FCM] Error handling background message: $e');
+    debugPrint('❌ [FCM] Stack trace: $stackTrace');
   }
 }
-

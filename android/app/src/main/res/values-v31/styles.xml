@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
+    <!-- Simplified to match iOS: white background with centered logo -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <!-- White background for black text logo -->
+        <!-- White background matching iOS -->
         <item name="android:windowSplashScreenBackground">#FFFFFF</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs2</item>
-        <!-- White icon background (Flutter's default white rounded circle) -->
+        <!-- White icon background matching iOS -->
         <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.
