@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- White background -->
+    <!-- White background (good for black text logo) -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@android:color/white"/>
         </shape>
     </item>
-    <!-- Splash logo centered -->
+    <!-- Splash logo centered - using rgs2.png with black letters -->
     <item>
         <bitmap 
             android:gravity="center" 
-            android:src="@drawable/rgs_logo"/>
+            android:src="@drawable/rgs2"/>
     </item>
 </layer-list>

@@ -1058,27 +1058,78 @@ class AuthProvider with ChangeNotifier {
               .maybeSingle();
           
           if (userRecord == null) {
-            // User record doesn't exist - check if we have a role to create it with
-            final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+            // User record doesn't exist - wait a moment and retry (trigger might still be processing)
+            debugPrint('⚠️ User record not found, waiting for trigger or checking metadata...');
+            await Future.delayed(const Duration(milliseconds: 1000));
             
-            if (roleFromMetadata == null || roleFromMetadata.isEmpty) {
-              // No role in metadata - account is not properly registered
-              debugPrint('❌ User record not found and no role in metadata - account not registered');
-              await signOut();
-              throw Exception('Your account is not available. Please register first by creating a new account.');
+            // Retry checking for user record (trigger might have created it)
+            final retryUserRecord = await client
+                .from('users')
+                .select('id, role')
+                .eq('id', _user!.id)
+                .maybeSingle();
+            
+            if (retryUserRecord != null) {
+              debugPrint('✅ User record found after retry - trigger created it');
+              // Continue with login
+            } else {
+              // Still no user record - check if we have a role to create it with
+              final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+              
+              debugPrint('🔍 Role in metadata: $roleFromMetadata');
+              debugPrint('🔍 Full metadata: ${_user!.userMetadata}');
+              
+              if (roleFromMetadata == null || roleFromMetadata.isEmpty) {
+                // No role in metadata - account is not properly registered
+                debugPrint('❌ User record not found and no role in metadata - account not registered');
+                debugPrint('❌ This might mean the registration did not include a role');
+                await signOut();
+                throw Exception('Your account is not available. Please register first by creating a new account with a role (admin or technician).');
+              }
+              
+              debugPrint('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
+              // Create user record from auth user data - role must be explicitly set
+              try {
+                await client.from('users').insert({
+                  'id': _user!.id,
+                  'email': _user!.email ?? email,
+                  'full_name': _user!.userMetadata?['full_name'] ?? 
+                              _user!.userMetadata?['name'] ?? 
+                              _user!.email?.split('@')[0] ?? 'User',
+                  'role': roleFromMetadata, // Role must be explicitly set, no default
+                });
+                debugPrint('✅ Created user record in public.users with role: $roleFromMetadata');
+                
+                // If technician, also create pending approval
+                if (roleFromMetadata == 'technician') {
+                  try {
+                    await client.from('pending_user_approvals').upsert({
+                      'user_id': _user!.id,
+                      'email': _user!.email ?? email,
+                      'full_name': _user!.userMetadata?['full_name'] ?? 
+                                  _user!.userMetadata?['name'] ?? 
+                                  _user!.email?.split('@')[0] ?? 'User',
+                      'status': 'pending',
+                    }, onConflict: 'user_id');
+                    debugPrint('✅ Created pending approval for technician');
+                  } catch (e) {
+                    debugPrint('⚠️ Could not create pending approval (might already exist): $e');
+                  }
+                }
+              } catch (insertError) {
+                debugPrint('❌ Error creating user record: $insertError');
+                // Check if it was created by another process
+                final finalCheck = await client
+                    .from('users')
+                    .select('id')
+                    .eq('id', _user!.id)
+                    .maybeSingle();
+                if (finalCheck == null) {
+                  await signOut();
+                  throw Exception('Failed to create user record. Please try registering again.');
+                }
+              }
             }
-            
-            debugPrint('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
-            // Create user record from auth user data - role must be explicitly set
-            await client.from('users').insert({
-              'id': _user!.id,
-              'email': _user!.email ?? email,
-              'full_name': _user!.userMetadata?['full_name'] ?? 
-                          _user!.userMetadata?['name'] ?? 
-                          _user!.email?.split('@')[0] ?? 'User',
-              'role': roleFromMetadata, // Role must be explicitly set, no default
-            });
-            debugPrint('✅ Created user record in public.users with role: $roleFromMetadata');
           } else {
             final role = userRecord['role'] as String?;
             if (role == null || role.isEmpty) {
@@ -1345,13 +1396,71 @@ _isLoading = false;
               );
 
           if (response != null && response['role'] != null) {
-            final newRole = UserRoleExtension.fromString(response['role']);
-            _userRole = newRole;
-            // Save role to local storage for future offline use
-            await _saveUserRole(newRole);
-            debugPrint('✅ User role loaded from database: ${_userRole.value}');
-            notifyListeners();
-            return;
+            final roleFromDb = response['role'] as String;
+            final newRole = UserRoleExtension.fromString(roleFromDb);
+            
+            // CRITICAL: If role is 'technician', check pending approvals FIRST
+            // Technicians with pending approval should have UserRole.pending, not UserRole.technician
+            if (roleFromDb == 'technician') {
+              debugPrint('🔍 User has technician role, checking pending approval status...');
+              try {
+                final pendingApproval = await SupabaseService.client
+                    .from('pending_user_approvals')
+                    .select('status')
+                    .eq('user_id', _user!.id)
+                    .order('created_at', ascending: false)
+                    .limit(1)
+                    .maybeSingle()
+                    .timeout(
+                      const Duration(seconds: 3),
+                      onTimeout: () {
+                        throw TimeoutException('Pending approval check timed out', const Duration(seconds: 3));
+                      },
+                    );
+                
+                if (pendingApproval != null) {
+                  final status = pendingApproval['status'] as String?;
+                  debugPrint('🔍 Found pending approval with status: $status');
+                  
+                  if (status == 'pending' || status == 'rejected') {
+                    // Technician is pending approval - set role to pending
+                    debugPrint('⚠️ Technician has pending/rejected approval - setting role to pending');
+                    _userRole = UserRole.pending;
+                    await _saveUserRole(_userRole);
+                    notifyListeners();
+                    return;
+                  } else if (status == 'approved') {
+                    // Technician is approved - use technician role
+                    debugPrint('✅ Technician is approved - using technician role');
+                    _userRole = newRole;
+                    await _saveUserRole(newRole);
+                    notifyListeners();
+                    return;
+                  }
+                } else {
+                  // No pending approval record - if user record exists, they're approved
+                  debugPrint('✅ No pending approval found - technician is approved');
+                  _userRole = newRole;
+                  await _saveUserRole(newRole);
+                  notifyListeners();
+                  return;
+                }
+              } catch (e) {
+                debugPrint('⚠️ Error checking pending approval: $e');
+                // On error, default to technician role (safer than blocking)
+                _userRole = newRole;
+                await _saveUserRole(newRole);
+                notifyListeners();
+                return;
+              }
+            } else {
+              // Not a technician (admin or other) - use role from database
+              _userRole = newRole;
+              await _saveUserRole(newRole);
+              debugPrint('✅ User role loaded from database: ${_userRole.value}');
+              notifyListeners();
+              return;
+            }
           } else {
             debugPrint('⚠️ No role found in database, keeping current role: ${_userRole.value}');
             return;

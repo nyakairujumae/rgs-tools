@@ -40,6 +40,9 @@ import 'services/supabase_auth_storage.dart';
 import 'services/image_upload_service.dart';
 import 'services/firebase_messaging_service.dart' as fcm_service
     if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
+// Import background handler (top-level function)
+import 'services/firebase_messaging_service.dart' show firebaseMessagingBackgroundHandler
+    if (dart.library.html) 'services/firebase_messaging_service_stub.dart' show firebaseMessagingBackgroundHandler;
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
@@ -77,6 +80,7 @@ void main() async {
     }
     
     // Register background message handler (must be called before runApp)
+    // Use the handler from firebase_messaging_service.dart (top-level function)
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
@@ -540,6 +544,13 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ Session created from email confirmation');
                               print('✅ User: ${sessionResponse.session!.user.email}');
                               print('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
+                              print('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
+                              print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
+                              
+                              // Wait a moment for database trigger to create user record
+                              // The trigger fires when email_confirmed_at is set
+                              print('⏳ Waiting for database trigger to create user record...');
+                              await Future.delayed(const Duration(seconds: 2));
                               
                               // Get auth provider and re-initialize to pick up new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -553,6 +564,27 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Check authentication status after initialization
                               if (authProvider.isAuthenticated) {
                                 print('✅ User authenticated after email confirmation');
+                                print('✅ User role: ${authProvider.userRole}');
+                                print('✅ Is admin: ${authProvider.isAdmin}');
+                                print('✅ Is pending approval: ${authProvider.isPendingApproval}');
+                                
+                                // For technicians, explicitly check approval status
+                                if (!authProvider.isAdmin) {
+                                  print('🔍 Checking approval status for technician...');
+                                  final approvalStatus = await authProvider.checkApprovalStatus();
+                                  print('🔍 Approval status: $approvalStatus');
+                                  
+                                  if (approvalStatus == false) {
+                                    // Technician is pending approval
+                                    print('✅ Technician is pending approval - redirecting to pending approval screen');
+                                    final navigator = Navigator.of(context, rootNavigator: true);
+                                    navigator.pushNamedAndRemoveUntil(
+                                      '/pending-approval',
+                                      (route) => false,
+                                    );
+                                    return;
+                                  }
+                                }
                                 
                                 // Navigate directly to appropriate home screen based on role
                                 final navigator = Navigator.of(context, rootNavigator: true);
@@ -791,10 +823,5 @@ class HvacToolsManagerApp extends StatelessWidget {
   }
 }
 
-/// Initialize Firebase asynchronously after app starts (more resilient to channel errors)
-/// Background message handler (must be top-level function)
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  await fcm_service.firebaseMessagingBackgroundHandler(message);
-}
+// Background message handler is defined in firebase_messaging_service.dart
+// It's imported above and registered in main() function

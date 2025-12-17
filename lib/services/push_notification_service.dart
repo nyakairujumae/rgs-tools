@@ -57,13 +57,46 @@ class PushNotificationService {
   }) async {
     try {
       // Get all admin user IDs
-      final adminsResponse = await SupabaseService.client
-          .from('users')
-          .select('id')
-          .eq('role', 'admin');
+      // First try using RPC function (bypasses RLS), fallback to direct query
+      List<Map<String, dynamic>> adminsResponse;
+      
+      try {
+        // Try RPC function first (bypasses RLS)
+        final rpcResponse = await SupabaseService.client.rpc('get_admin_user_ids');
+        if (rpcResponse != null && rpcResponse is List) {
+          adminsResponse = List<Map<String, dynamic>>.from(rpcResponse);
+          debugPrint('✅ [Push] Found ${adminsResponse.length} admin users via RPC function');
+        } else {
+          throw Exception('RPC function returned unexpected format');
+        }
+      } catch (rpcError) {
+        debugPrint('⚠️ [Push] RPC function not available, using direct query: $rpcError');
+        // Fallback to direct query
+        adminsResponse = await SupabaseService.client
+            .from('users')
+            .select('id, email, role')
+            .eq('role', 'admin');
+        debugPrint('🔍 [Push] Found ${adminsResponse.length} admin users via direct query');
+      }
 
       if (adminsResponse.isEmpty) {
-        debugPrint('⚠️ [Push] No admin users found');
+        debugPrint('⚠️ [Push] No admin users found with role="admin"');
+        debugPrint('⚠️ [Push] This might be due to:');
+        debugPrint('⚠️ [Push] 1. No users have role="admin" in database');
+        debugPrint('⚠️ [Push] 2. RLS policies blocking the query');
+        debugPrint('⚠️ [Push] 3. Case sensitivity issue (check if role is "Admin" instead of "admin")');
+        
+        // Try to get all users to debug
+        try {
+          final allUsers = await SupabaseService.client
+              .from('users')
+              .select('id, email, role')
+              .limit(10);
+          debugPrint('🔍 [Push] Sample users in database: $allUsers');
+        } catch (e) {
+          debugPrint('⚠️ [Push] Could not query users table: $e');
+        }
+        
         return 0;
       }
 
