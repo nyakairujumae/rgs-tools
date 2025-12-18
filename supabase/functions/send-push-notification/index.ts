@@ -176,9 +176,11 @@ serve(async (req) => {
     }
     
     // Prepare FCM v1 API payload
+    // Note: "from" is the Firebase project (identified by OAuth token in Authorization header)
+    // "to" is the device token (sent as "token" field)
     const fcmPayload = {
       message: {
-        token: token,
+        token: token, // This is the "to" (device FCM token)
         notification: {
           title: title,
           body: body,

@@ -186,18 +186,50 @@ class PushNotificationService {
         final responseData = response.data;
         if (responseData is Map && responseData['success'] == true) {
           debugPrint('✅ [Push] Notification sent successfully');
+          debugPrint('✅ [Push] FCM message name: ${responseData['name']}');
           return true;
         } else if (responseData is Map && responseData['error'] != null) {
-          debugPrint('❌ [Push] Edge Function error: ${responseData['error']}');
+          debugPrint('❌ [Push] ========== EDGE FUNCTION ERROR ==========');
+          debugPrint('❌ [Push] Error: ${responseData['error']}');
           debugPrint('❌ [Push] Error details: ${responseData['details']}');
+          debugPrint('❌ [Push] =========================================');
+          
+          // Provide specific guidance based on error
+          final errorStr = responseData['error'].toString().toLowerCase();
+          if (errorStr.contains('google_project_id') || errorStr.contains('not configured')) {
+            debugPrint('⚠️ [Push] ACTION REQUIRED: Add GOOGLE_PROJECT_ID secret in Supabase Dashboard');
+          } else if (errorStr.contains('client_email') || errorStr.contains('private_key')) {
+            debugPrint('⚠️ [Push] ACTION REQUIRED: Add GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY secrets');
+          } else if (errorStr.contains('authenticate') || errorStr.contains('auth')) {
+            debugPrint('⚠️ [Push] ACTION REQUIRED: Check Google service account credentials');
+          } else if (errorStr.contains('invalid token') || errorStr.contains('token')) {
+            debugPrint('⚠️ [Push] Token may be invalid or expired - user needs to re-login');
+          }
+          
           return false;
         } else {
           debugPrint('⚠️ [Push] Unexpected response format: $responseData');
+          debugPrint('⚠️ [Push] Expected: {"success": true} or {"error": "..."}');
           return false;
         }
       } else {
-        debugPrint('❌ [Push] Edge Function returned status: ${response.status}');
+        debugPrint('❌ [Push] ========== EDGE FUNCTION FAILED ==========');
+        debugPrint('❌ [Push] Status code: ${response.status}');
         debugPrint('❌ [Push] Response: ${response.data}');
+        
+        // Provide specific guidance based on status code
+        if (response.status == 404) {
+          debugPrint('❌ [Push] Edge Function NOT FOUND (404)');
+          debugPrint('⚠️ [Push] ACTION REQUIRED: Deploy Edge Function');
+          debugPrint('⚠️ [Push] Run: supabase functions deploy send-push-notification');
+        } else if (response.status == 401 || response.status == 403) {
+          debugPrint('❌ [Push] Authentication/Authorization error (${response.status})');
+          debugPrint('⚠️ [Push] Check Supabase anon key and RLS policies');
+        } else if (response.status == 500) {
+          debugPrint('❌ [Push] Edge Function server error (500)');
+          debugPrint('⚠️ [Push] Check Edge Function logs in Supabase Dashboard');
+          debugPrint('⚠️ [Push] Likely cause: Missing secrets or invalid credentials');
+        }
         
         // Try to extract error message
         if (response.data is Map) {
@@ -205,6 +237,7 @@ class PushNotificationService {
           debugPrint('❌ [Push] Error message: $errorMsg');
         }
         
+        debugPrint('❌ [Push] =========================================');
         return false;
       }
     } catch (e, stackTrace) {

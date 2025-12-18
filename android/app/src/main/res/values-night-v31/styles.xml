@@ -9,7 +9,7 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- White background matching iOS (even in dark mode) -->
         <item name="android:windowSplashScreenBackground">#FFFFFF</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs2</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs</item>
         <!-- White icon background matching iOS -->
         <item name="android:windowSplashScreenIconBackgroundColor">#FFFFFF</item>
     </style>

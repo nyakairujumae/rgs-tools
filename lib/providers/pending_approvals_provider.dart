@@ -254,6 +254,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
         debugPrint('✅ Created technician notification for approval in notification center');
         
         // Send push notification to the approved user
+        // Note: fromUserId is null here because this is a system notification (admin approved)
         try {
           await PushNotificationService.sendToUser(
             userId: approval.userId,

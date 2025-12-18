@@ -52,46 +52,33 @@ import 'package:firebase_messaging/firebase_messaging.dart'
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // CRITICAL: Check if user is already logged in (session persisted)
-  // If user is logged in, don't show splash screen even on first launch
-  bool shouldShowSplash = true;
+  // CRITICAL: Splash screen ONLY on fresh install (first launch)
+  // After first launch, NEVER show splash again, even if user is not logged in
+  bool shouldShowSplash = false;
   
   try {
-    // Check if there's a persisted session
-    final supabaseClient = SupabaseService.client;
-    final currentSession = supabaseClient.auth.currentSession;
-    final currentUser = supabaseClient.auth.currentUser;
-    
-    if (currentSession != null || currentUser != null) {
-      // User has persisted session - don't show splash
-      shouldShowSplash = false;
-      print('✅ User session found - skipping splash screen');
-    } else {
-      // No session - check if this is first launch
-      final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
-      shouldShowSplash = isFirstLaunch;
-      
-      if (isFirstLaunch) {
-        print('🚀 App starting (first launch) - showing splash screen...');
-      } else {
-        print('🚀 App starting (returning user, no session) - skipping splash screen...');
-      }
-    }
-  } catch (e) {
-    // If check fails, default to first launch check
-    print('⚠️ Error checking session: $e');
     final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
     shouldShowSplash = isFirstLaunch;
+    
+    if (isFirstLaunch) {
+      print('🚀 App starting (FIRST LAUNCH - fresh install) - showing splash screen...');
+    } else {
+      print('🚀 App starting (NOT first launch) - skipping splash screen...');
+    }
+  } catch (e) {
+    // If check fails, assume not first launch (don't show splash)
+    print('⚠️ Error checking first launch: $e');
+    shouldShowSplash = false;
   }
   
   if (shouldShowSplash) {
-    // Only preserve native splash screen if user is not logged in AND it's first launch
+    // Only preserve native splash screen on first launch (fresh install)
     FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-    print('🚀 Showing splash screen (first launch, no session)');
+    print('🚀 Showing splash screen (first launch only)');
   } else {
-    // User is logged in OR not first launch - remove splash immediately
+    // Not first launch - remove splash immediately
     FlutterNativeSplash.remove();
-    print('🚀 Skipping splash screen (user logged in or not first launch)');
+    print('🚀 Skipping splash screen (not first launch)');
   }
 
   print('🚀 App starting...');
@@ -487,30 +474,23 @@ class HvacToolsManagerApp extends StatelessWidget {
             return const SizedBox.shrink();
           };
           
-          // Remove native splash immediately when initialization completes
-          // CRITICAL: Only remove if user is NOT logged in (splash should stay if user is logged in and navigating)
-          // If user is logged in, splash was already removed in main()
+          // Remove native splash when initialization completes
+          // If it was first launch, mark it complete and remove splash
+          // After first launch, splash is already removed in main(), so this is safe to call
           if (authProvider.isInitialized && !authProvider.isLoading) {
-            // Check if user is logged in
-            if (authProvider.isAuthenticated) {
-              // User is logged in - splash should already be removed in main()
-              // But remove it here as well to be safe (safe to call multiple times)
+            // Check if this was first launch and mark it complete
+            FirstLaunchService.isFirstLaunch().then((isFirst) {
+              if (isFirst) {
+                // This is first launch - mark it complete immediately
+                FirstLaunchService.markFirstLaunchComplete();
+                print('✅ First launch marked as complete');
+              }
+              // Remove splash (safe to call multiple times)
               FlutterNativeSplash.remove();
-            } else {
-              // User not logged in - check if splash was preserved (first launch)
-              FirstLaunchService.isFirstLaunch().then((isFirst) {
-                if (isFirst) {
-                  // First launch, no session - remove splash after showing login screen
-                  FlutterNativeSplash.remove();
-                } else {
-                  // Not first launch, no session - splash already removed in main()
-                  FlutterNativeSplash.remove();
-                }
-              }).catchError((e) {
-                // If check fails, try to remove anyway (safe to call multiple times)
-                FlutterNativeSplash.remove();
-              });
-            }
+            }).catchError((e) {
+              // If check fails, try to remove anyway (safe to call multiple times)
+              FlutterNativeSplash.remove();
+            });
           }
           
           // Always render MaterialApp (like mom.dart)
