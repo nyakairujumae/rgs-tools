@@ -12,14 +12,40 @@ class PushNotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      debugPrint('📤 [Push] ========== SENDING TO USER ==========');
+      debugPrint('📤 [Push] User ID: $userId');
+      debugPrint('📤 [Push] Title: $title');
+      debugPrint('📤 [Push] Body: $body');
+      
       // Get ALL FCM tokens for the user (both Android and iOS)
+      debugPrint('🔍 [Push] Querying tokens for user: $userId');
       final tokensResponse = await SupabaseService.client
           .from('user_fcm_tokens')
-          .select('fcm_token, platform')
+          .select('fcm_token, platform, updated_at')
           .eq('user_id', userId);
 
+      debugPrint('📊 [Push] Found ${tokensResponse.length} token(s) for user');
+      
       if (tokensResponse.isEmpty) {
+        debugPrint('⚠️ [Push] ========== NO TOKENS FOUND ==========');
         debugPrint('⚠️ [Push] No FCM tokens found for user: $userId');
+        debugPrint('⚠️ [Push] This means:');
+        debugPrint('⚠️ [Push] 1. Token was never saved to database');
+        debugPrint('⚠️ [Push] 2. RLS policy is blocking the query');
+        debugPrint('⚠️ [Push] 3. User logged out and token was deleted');
+        debugPrint('⚠️ [Push] ======================================');
+        
+        // Try to query all tokens to see if RLS is the issue
+        try {
+          final allTokens = await SupabaseService.client
+              .from('user_fcm_tokens')
+              .select('user_id, platform')
+              .limit(5);
+          debugPrint('🔍 [Push] Sample tokens in database: ${allTokens.length} total');
+        } catch (e) {
+          debugPrint('⚠️ [Push] Could not query tokens table (RLS may be blocking): $e');
+        }
+        
         return false;
       }
 
@@ -28,20 +54,31 @@ class PushNotificationService {
       for (final tokenRecord in tokensResponse) {
         final token = tokenRecord['fcm_token'] as String?;
         final platform = tokenRecord['platform'] as String?;
+        final updatedAt = tokenRecord['updated_at'] as String?;
+        
+        debugPrint('📱 [Push] Token record: platform=$platform, updated=$updatedAt');
         
         if (token != null && token.isNotEmpty) {
-          debugPrint('📤 [Push] Sending to ${platform ?? 'unknown'} token for user: $userId');
+          debugPrint('📤 [Push] Sending to ${platform ?? 'unknown'} token (${token.substring(0, 20)}...)');
           final success = await sendToToken(
             token: token,
             title: title,
             body: body,
             data: data,
           );
-          if (success) successCount++;
+          if (success) {
+            successCount++;
+            debugPrint('✅ [Push] Successfully sent to ${platform ?? 'unknown'} token');
+          } else {
+            debugPrint('❌ [Push] Failed to send to ${platform ?? 'unknown'} token');
+          }
+        } else {
+          debugPrint('⚠️ [Push] Token is null or empty for platform: $platform');
         }
       }
 
       debugPrint('✅ [Push] Sent to $successCount/${tokensResponse.length} tokens for user: $userId');
+      debugPrint('📤 [Push] ======================================');
       return successCount > 0;
     } catch (e) {
       debugPrint('❌ [Push] Error sending to user $userId: $e');

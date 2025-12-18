@@ -146,9 +146,11 @@ class AuthProvider with ChangeNotifier {
             print('⚠️ Session refresh returned null - session may be invalid');
           }
         } catch (e) {
-          print('❌ Failed to refresh session: $e');
-          // If refresh fails, clear the expired session
-          session = null;
+          print('⚠️ Failed to refresh session: $e');
+          print('⚠️ Maintaining session for persistence - will retry on next action');
+          // CRITICAL: Don't clear session on refresh failure - maintain persistence
+          // Keep the session so user stays logged in
+          // Session will be refreshed automatically when user performs an action
         }
       }
       
@@ -171,21 +173,27 @@ class AuthProvider with ChangeNotifier {
             }
             
             // Try to get a fresh session for this user (non-blocking)
+            // CRITICAL: Don't clear user if refresh fails - maintain persistence
             try {
               final refreshResponse = await SupabaseService.client.auth
                   .refreshSession()
                   .timeout(
-                const Duration(seconds: 2),
+                const Duration(seconds: 5), // Increased timeout
                 onTimeout: () =>
                     throw TimeoutException('Session refresh timed out'),
               );
               if (refreshResponse?.session != null) {
                 _user = refreshResponse!.session!.user;
                 print('✅ Restored session for user: ${_user?.email}');
+              } else {
+                print('⚠️ Session refresh returned null, but maintaining user for persistence');
+                // Keep the user - session will refresh on next action
               }
             } catch (e) {
               print('⚠️ Could not refresh session for existing user: $e');
-              // Continue with the user anyway - they might still be authenticated
+              print('⚠️ Maintaining user session for persistence - will retry on next action');
+              // CRITICAL: Continue with the user anyway - maintain persistence
+              // Session will be refreshed automatically when user performs an action
             }
           }
         } catch (e) {
@@ -1041,6 +1049,13 @@ class AuthProvider with ChangeNotifier {
         // Try immediately, and also retry after a delay in case Firebase is still initializing
         _sendFCMTokenAfterLogin();
         
+        // Also try to save token from local storage (in case it was saved before login)
+        try {
+          await FirebaseMessagingService.saveTokenFromLocalStorage();
+        } catch (e) {
+          debugPrint('⚠️ Could not save FCM token from local storage: $e');
+        }
+        
         // Mark first launch as complete after successful login
         // This ensures splash screen only shows on first install
         try {
@@ -1360,29 +1375,31 @@ _isLoading = false;
       }
 
       // Check if session is expired and refresh if needed
+      // CRITICAL: Don't clear user on refresh failure - maintain persistence
       final session = SupabaseService.client.auth.currentSession;
       if (session != null && session.isExpired) {
         debugPrint('🔄 Session expired, attempting to refresh...');
         try {
           final refreshResponse = await SupabaseService.client.auth.refreshSession().timeout(
-            const Duration(seconds: 3),
+            const Duration(seconds: 5), // Increased timeout for better reliability
             onTimeout: () {
-              throw TimeoutException('Session refresh timed out', const Duration(seconds: 3));
+              throw TimeoutException('Session refresh timed out', const Duration(seconds: 5));
             },
           );
           if (refreshResponse.session != null) {
             debugPrint('✅ Session refreshed successfully');
             _user = refreshResponse.session!.user;
           } else {
-            debugPrint('❌ Session refresh failed - no new session');
-            // Don't clear user data immediately, try to maintain session
-            debugPrint('🔄 Attempting to maintain session...');
+            debugPrint('⚠️ Session refresh returned null, but maintaining session for persistence');
+            // CRITICAL: Don't clear user - maintain session persistence
+            // Session will be refreshed when user performs an action
             return;
           }
         } catch (e) {
-          debugPrint('❌ Failed to refresh session: $e');
-          // Don't clear user data on refresh failure, maintain session
-          debugPrint('🔄 Maintaining session despite refresh failure...');
+          debugPrint('⚠️ Failed to refresh session: $e');
+          debugPrint('⚠️ Maintaining session for persistence - will retry on next action');
+          // CRITICAL: Don't clear user data on refresh failure - maintain persistence
+          // Session will be refreshed automatically when user performs an action
           return;
         }
       }
@@ -1884,44 +1901,59 @@ _isLoading = false;
   /// Send FCM token to server
   Future<void> _sendFCMTokenToServer(String token, String userId) async {
     try {
+      debugPrint('📤 [FCM] Sending token to server via FirebaseMessagingService...');
       await FirebaseMessagingService.sendTokenToServer(token, userId);
-    } catch (e) {
-      debugPrint('⚠️ Could not send FCM token to server: $e');
+      debugPrint('✅ [FCM] Token send completed');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FCM] Could not send FCM token to server: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
   /// Send FCM token after login with retry logic
   /// This handles cases where Firebase might not be initialized yet
   Future<void> _sendFCMTokenAfterLogin() async {
-    if (_user == null) return;
+    if (_user == null) {
+      debugPrint('⚠️ [FCM] Cannot send token: user is null');
+      return;
+    }
+    
+    debugPrint('🔄 [FCM] Attempting to save FCM token after login for user: ${_user!.id}');
     
     // Try immediately
     try {
       final fcmToken = await _getFCMTokenIfAvailable();
-      if (fcmToken != null) {
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        debugPrint('✅ [FCM] Token obtained, sending to server...');
         await _sendFCMTokenToServer(fcmToken, _user!.id);
-        debugPrint('✅ FCM token sent to server after login');
+        debugPrint('✅ [FCM] Token sent to server after login');
         return; // Success, no need to retry
+      } else {
+        debugPrint('⚠️ [FCM] Token is null or empty');
       }
-    } catch (e) {
-      debugPrint('⚠️ Could not get FCM token immediately after login: $e');
+    } catch (e, stackTrace) {
+      debugPrint('⚠️ [FCM] Could not get FCM token immediately after login: $e');
+      debugPrint('⚠️ [FCM] Stack trace: $stackTrace');
     }
     
     // If token not available, retry after delays (Firebase might still be initializing)
-    debugPrint('🔄 FCM token not available immediately, will retry...');
+    debugPrint('🔄 [FCM] Token not available immediately, will retry...');
     
     // Retry after 2 seconds
     Future.delayed(const Duration(seconds: 2), () async {
       if (_user == null) return;
       try {
         final fcmToken = await _getFCMTokenIfAvailable();
-        if (fcmToken != null) {
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          debugPrint('✅ [FCM] Token obtained on retry (2s), sending to server...');
           await _sendFCMTokenToServer(fcmToken, _user!.id);
-          debugPrint('✅ FCM token sent to server after retry (2s)');
+          debugPrint('✅ [FCM] Token sent to server after retry (2s)');
           return;
+        } else {
+          debugPrint('⚠️ [FCM] Token still null/empty on retry (2s)');
         }
       } catch (e) {
-        debugPrint('⚠️ FCM token retry (2s) failed: $e');
+        debugPrint('⚠️ [FCM] Token retry (2s) failed: $e');
       }
       
       // Retry after 5 seconds
@@ -1929,14 +1961,22 @@ _isLoading = false;
         if (_user == null) return;
         try {
           final fcmToken = await _getFCMTokenIfAvailable();
-          if (fcmToken != null) {
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            debugPrint('✅ [FCM] Token obtained on retry (5s), sending to server...');
             await _sendFCMTokenToServer(fcmToken, _user!.id);
-            debugPrint('✅ FCM token sent to server after retry (5s)');
+            debugPrint('✅ [FCM] Token sent to server after retry (5s)');
           } else {
-            debugPrint('⚠️ FCM token still not available after 5 seconds - Firebase may not be initialized');
+            debugPrint('⚠️ [FCM] Token still not available after 5 seconds - Firebase may not be initialized');
+            debugPrint('⚠️ [FCM] Will try to save from local storage...');
+            // Last resort: try to save from local storage
+            try {
+              await FirebaseMessagingService.saveTokenFromLocalStorage();
+            } catch (e) {
+              debugPrint('⚠️ [FCM] Could not save from local storage: $e');
+            }
           }
         } catch (e) {
-          debugPrint('⚠️ FCM token retry (5s) failed: $e');
+          debugPrint('⚠️ [FCM] Token retry (5s) failed: $e');
         }
       });
     });

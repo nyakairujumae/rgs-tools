@@ -52,17 +52,46 @@ import 'package:firebase_messaging/firebase_messaging.dart'
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Check if this is first launch - only show splash on first launch
-  final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
+  // CRITICAL: Check if user is already logged in (session persisted)
+  // If user is logged in, don't show splash screen even on first launch
+  bool shouldShowSplash = true;
   
-  if (isFirstLaunch) {
-    // Only preserve native splash screen on first launch
+  try {
+    // Check if there's a persisted session
+    final supabaseClient = SupabaseService.client;
+    final currentSession = supabaseClient.auth.currentSession;
+    final currentUser = supabaseClient.auth.currentUser;
+    
+    if (currentSession != null || currentUser != null) {
+      // User has persisted session - don't show splash
+      shouldShowSplash = false;
+      print('✅ User session found - skipping splash screen');
+    } else {
+      // No session - check if this is first launch
+      final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
+      shouldShowSplash = isFirstLaunch;
+      
+      if (isFirstLaunch) {
+        print('🚀 App starting (first launch) - showing splash screen...');
+      } else {
+        print('🚀 App starting (returning user, no session) - skipping splash screen...');
+      }
+    }
+  } catch (e) {
+    // If check fails, default to first launch check
+    print('⚠️ Error checking session: $e');
+    final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
+    shouldShowSplash = isFirstLaunch;
+  }
+  
+  if (shouldShowSplash) {
+    // Only preserve native splash screen if user is not logged in AND it's first launch
     FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-    print('🚀 App starting (first launch) - showing splash screen...');
+    print('🚀 Showing splash screen (first launch, no session)');
   } else {
-    // Not first launch - remove splash immediately
+    // User is logged in OR not first launch - remove splash immediately
     FlutterNativeSplash.remove();
-    print('🚀 App starting (returning user) - skipping splash screen...');
+    print('🚀 Skipping splash screen (user logged in or not first launch)');
   }
 
   print('🚀 App starting...');
@@ -77,18 +106,30 @@ void main() async {
   // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
-      // CRITICAL: Initialize Firebase BEFORE runApp()
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      print('✅ Firebase initialized successfully');
+      // CRITICAL: Check if Firebase is already initialized (prevents duplicate initialization)
+      if (Firebase.apps.isNotEmpty) {
+        print('⚠️ Firebase already initialized (${Firebase.apps.length} app(s))');
+        for (final app in Firebase.apps) {
+          print('⚠️ Existing app: ${app.name}, Project: ${app.options.projectId}');
+        }
+        print('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
+      } else {
+        // CRITICAL: Initialize Firebase BEFORE runApp()
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        print('✅ Firebase initialized successfully');
+        print('✅ Firebase project: ${Firebase.app().options.projectId}');
+      }
       
       // CRITICAL: Register background message handler BEFORE runApp()
       // Must be top-level function with @pragma('vm:entry-point')
+      // Note: This can only be called once, subsequent calls are ignored
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       print('✅ Background message handler registered');
       
       // Initialize Firebase Messaging Service (after Firebase and handler registration)
+      // This has its own guard to prevent duplicate initialization
       await fcm_service.FirebaseMessagingService.initialize();
       print('✅ Firebase Messaging initialized');
     } catch (e, stackTrace) {
@@ -447,19 +488,29 @@ class HvacToolsManagerApp extends StatelessWidget {
           };
           
           // Remove native splash immediately when initialization completes
-          // Only if it was preserved (first launch)
-          // Do this synchronously to minimize delay
+          // CRITICAL: Only remove if user is NOT logged in (splash should stay if user is logged in and navigating)
+          // If user is logged in, splash was already removed in main()
           if (authProvider.isInitialized && !authProvider.isLoading) {
-            // Check if splash was preserved (first launch)
-            // If not first launch, splash was already removed in main()
-            FirstLaunchService.isFirstLaunch().then((isFirst) {
-              if (isFirst) {
-                FlutterNativeSplash.remove();
-              }
-            }).catchError((e) {
-              // If check fails, try to remove anyway (safe to call multiple times)
+            // Check if user is logged in
+            if (authProvider.isAuthenticated) {
+              // User is logged in - splash should already be removed in main()
+              // But remove it here as well to be safe (safe to call multiple times)
               FlutterNativeSplash.remove();
-            });
+            } else {
+              // User not logged in - check if splash was preserved (first launch)
+              FirstLaunchService.isFirstLaunch().then((isFirst) {
+                if (isFirst) {
+                  // First launch, no session - remove splash after showing login screen
+                  FlutterNativeSplash.remove();
+                } else {
+                  // Not first launch, no session - splash already removed in main()
+                  FlutterNativeSplash.remove();
+                }
+              }).catchError((e) {
+                // If check fails, try to remove anyway (safe to call multiple times)
+                FlutterNativeSplash.remove();
+              });
+            }
           }
           
           // Always render MaterialApp (like mom.dart)
