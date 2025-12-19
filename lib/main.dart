@@ -75,6 +75,10 @@ void main() async {
     // Only preserve native splash screen on first launch (fresh install)
     FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
     print('🚀 Showing splash screen (first launch only)');
+    // Mark first launch complete immediately to prevent future splash replays
+    FirstLaunchService.markFirstLaunchComplete().catchError((e) {
+      print('⚠️ Could not mark first launch complete: $e');
+    });
   } else {
     // Not first launch - remove splash immediately
     FlutterNativeSplash.remove();
@@ -115,10 +119,7 @@ void main() async {
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       print('✅ Background message handler registered');
       
-      // Initialize Firebase Messaging Service (after Firebase and handler registration)
-      // This has its own guard to prevent duplicate initialization
-      await fcm_service.FirebaseMessagingService.initialize();
-      print('✅ Firebase Messaging initialized');
+      // Firebase Messaging initialization is deferred until after Supabase initializes
     } catch (e, stackTrace) {
       print('❌ Firebase initialization failed: $e');
       print('❌ Stack trace: $stackTrace');
@@ -233,6 +234,17 @@ void main() async {
             });
         } catch (e) {
           print('⚠️ Could not set up auth state listener: $e');
+        }
+      }
+
+      if (supabaseInitialized && !kIsWeb) {
+        try {
+          // Initialize Firebase Messaging Service after Supabase init to avoid fallback auth client usage
+          await fcm_service.FirebaseMessagingService.initialize();
+          print('✅ Firebase Messaging initialized');
+        } catch (e, stackTrace) {
+          print('❌ Firebase Messaging initialization failed: $e');
+          print('❌ Stack trace: $stackTrace');
         }
       }
   } catch (supabaseError, stackTrace) {
@@ -495,22 +507,8 @@ class HvacToolsManagerApp extends StatelessWidget {
           };
           
           // Remove native splash when initialization completes
-          // If it was first launch, mark it complete and remove splash
-          // After first launch, splash is already removed in main(), so this is safe to call
           if (authProvider.isInitialized && !authProvider.isLoading) {
-            // Check if this was first launch and mark it complete
-            FirstLaunchService.isFirstLaunch().then((isFirst) {
-              if (isFirst) {
-                // This is first launch - mark it complete immediately
-                FirstLaunchService.markFirstLaunchComplete();
-                print('✅ First launch marked as complete');
-              }
-              // Remove splash (safe to call multiple times)
-              FlutterNativeSplash.remove();
-            }).catchError((e) {
-              // If check fails, try to remove anyway (safe to call multiple times)
-              FlutterNativeSplash.remove();
-            });
+            FlutterNativeSplash.remove();
           }
           
           // Always render MaterialApp (like mom.dart)

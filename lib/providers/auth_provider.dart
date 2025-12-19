@@ -1048,15 +1048,6 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ Could not save FCM token from local storage: $e');
         }
         
-        // Mark first launch as complete after successful login
-        // This ensures splash screen only shows on first install
-        try {
-          await FirstLaunchService.markFirstLaunchComplete();
-          debugPrint('✅ First launch marked as complete');
-        } catch (e) {
-          debugPrint('⚠️ Could not mark first launch complete (non-critical): $e');
-        }
-        
         // CRITICAL: Check if email is confirmed before allowing access
         if (_user!.emailConfirmedAt == null) {
           debugPrint('❌ Email not confirmed - blocking access');

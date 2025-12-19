@@ -11,7 +11,15 @@ class SupabaseService {
   // Get the Supabase client - ensures it's initialized
   static SupabaseClient get client {
     if (_client != null) {
-      // Removed excessive logging - only log on first access or errors
+      if (!_initialized) {
+        try {
+          _client = Supabase.instance.client;
+          _initialized = true;
+          debugPrint('✅ Promoted to Supabase.instance.client');
+        } catch (_) {
+          // Keep fallback client if Supabase.instance is still unavailable
+        }
+      }
       return _client!;
     }
     
