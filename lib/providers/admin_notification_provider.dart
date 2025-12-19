@@ -24,7 +24,13 @@ class AdminNotificationProvider extends ChangeNotifier {
       _notifications.where((n) => n.type == type).toList();
 
   /// Load notifications from Supabase
-  Future<void> loadNotifications() async {
+  Future<void> loadNotifications({bool skipIfLoading = true}) async {
+    // Prevent concurrent loads
+    if (_isLoading && skipIfLoading) {
+      debugPrint('⚠️ [AdminNotifications] Already loading, skipping duplicate call');
+      return;
+    }
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -55,10 +61,14 @@ class AdminNotificationProvider extends ChangeNotifier {
       
       // Sync badge with database after loading notifications
       // Use the unreadCount from the loaded notifications
+      // Only update if count changed to prevent unnecessary updates
       try {
         final unreadCount = _notifications.where((n) => !n.isRead).length;
-        await BadgeService.updateBadge(unreadCount);
-        debugPrint('✅ [AdminNotifications] Badge synced: $unreadCount unread');
+        final currentBadge = await BadgeService.getBadgeCount();
+        if (unreadCount != currentBadge) {
+          await BadgeService.updateBadge(unreadCount);
+          debugPrint('✅ [AdminNotifications] Badge synced: $unreadCount unread');
+        }
       } catch (e) {
         debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
       }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _documentsChannelName = 'com.rgs.app/documents_path';
@@ -119,22 +120,45 @@ class _FileStore {
   }
 
   Future<Directory> _resolveStorageDirectory() async {
-    // Try shared method channel (implemented on iOS & Android)
-    final channelPath = await _tryGetDocumentsPathViaChannel();
-    if (channelPath != null) {
-      final directory = Directory(channelPath);
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
+    // CRITICAL: Use path_provider for reliable persistent storage
+    // This ensures sessions survive app termination on both iOS and Android
+    try {
+      // Get application documents directory (persistent, survives app termination)
+      final appDocDir = await getApplicationDocumentsDirectory();
+      debugPrint('✅ Using application documents directory: ${appDocDir.path}');
+      
+      // Create a subdirectory for Supabase session storage
+      final supabaseDir = Directory(p.join(appDocDir.path, 'supabase_storage'));
+      if (!await supabaseDir.exists()) {
+        await supabaseDir.create(recursive: true);
+        debugPrint('✅ Created Supabase storage directory');
       }
-      return directory;
+      
+      return supabaseDir;
+    } catch (e) {
+      debugPrint('⚠️ Failed to get application documents directory: $e');
+      debugPrint('⚠️ Falling back to method channel...');
+      
+      // Fallback to method channel if path_provider fails
+      final channelPath = await _tryGetDocumentsPathViaChannel();
+      if (channelPath != null) {
+        final directory = Directory(channelPath);
+        if (!await directory.exists()) {
+          await directory.create(recursive: true);
+        }
+        debugPrint('✅ Using method channel directory: ${directory.path}');
+        return directory;
+      }
+      
+      // Last resort: use system temp (NOT recommended, but better than crashing)
+      debugPrint('⚠️ WARNING: Falling back to system temp directory (sessions may not persist)');
+      final fallback =
+          Directory(p.join(Directory.systemTemp.path, 'rgs_app_storage'));
+      if (!await fallback.exists()) {
+        await fallback.create(recursive: true);
+      }
+      return fallback;
     }
-
-    final fallback =
-        Directory(p.join(Directory.systemTemp.path, 'rgs_app_storage'));
-    if (!await fallback.exists()) {
-      await fallback.create(recursive: true);
-    }
-    return fallback;
   }
 
   Future<String?> _tryGetDocumentsPathViaChannel() async {

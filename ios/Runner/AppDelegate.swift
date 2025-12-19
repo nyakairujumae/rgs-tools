@@ -18,6 +18,25 @@ import image_picker_ios
 
     GeneratedPluginRegistrant.register(with: self)
 
+    // Provide documents path for Supabase session persistence storage
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let documentsChannel = FlutterMethodChannel(name: "com.rgs.app/documents_path",
+                                                  binaryMessenger: controller.binaryMessenger)
+      documentsChannel.setMethodCallHandler { call, result in
+        if call.method == "getDocumentsPath" {
+          if let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first {
+            result(documentsPath)
+          } else {
+            result(FlutterError(code: "no_path",
+                                message: "Unable to locate documents directory",
+                                details: nil))
+          }
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
+      }
+    }
+
     // Notification delegate
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
@@ -107,4 +126,3 @@ import image_picker_ios
     completionHandler()
   }
 }
-

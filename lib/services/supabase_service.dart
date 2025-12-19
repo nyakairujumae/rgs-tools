@@ -11,8 +11,7 @@ class SupabaseService {
   // Get the Supabase client - ensures it's initialized
   static SupabaseClient get client {
     if (_client != null) {
-      debugPrint('🔍 Using existing Supabase client');
-      debugPrint('🔍 Config URL: ${SupabaseConfig.url}');
+      // Removed excessive logging - only log on first access or errors
       return _client!;
     }
     

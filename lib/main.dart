@@ -277,7 +277,7 @@ void main() async {
   print('Starting app...');
   
   // Run the app
-  runApp(const HvacToolsManagerApp());
+  runApp(HvacToolsManagerApp(initialFirstLaunch: shouldShowSplash));
 }
 
 
@@ -354,40 +354,55 @@ class ErrorBoundary extends StatelessWidget {
 
 /// Wrapper to show splash screen only on first launch
 class _FirstLaunchWrapper extends StatefulWidget {
-  final Widget child;
+  final Widget firstLaunchChild;
+  final Widget defaultChild;
+  final bool initialFirstLaunchState;
   
-  const _FirstLaunchWrapper({required this.child});
+  const _FirstLaunchWrapper({
+    required this.firstLaunchChild,
+    required this.defaultChild,
+    required this.initialFirstLaunchState,
+  });
   
   @override
   State<_FirstLaunchWrapper> createState() => _FirstLaunchWrapperState();
 }
 
 class _FirstLaunchWrapperState extends State<_FirstLaunchWrapper> {
+  bool? _isFirstLaunch;
+  
   @override
   void initState() {
     super.initState();
-    // Mark first launch as complete in the background without blocking
-    _markFirstLaunchCompleteInBackground();
+    _isFirstLaunch = widget.initialFirstLaunchState ? true : null;
+    _evaluateFirstLaunch();
   }
-
-  void _markFirstLaunchCompleteInBackground() {
-    // Check and mark first launch complete in the background
-    // This doesn't block the UI - just runs silently
-    FirstLaunchService.isFirstLaunch().then((isFirst) {
+  
+  Future<void> _evaluateFirstLaunch() async {
+    try {
+      final isFirst = await FirstLaunchService.isFirstLaunch();
+      if (!mounted) return;
       if (isFirst) {
-        // If it's the first launch, mark it as complete in the background
-        FirstLaunchService.markFirstLaunchComplete();
+        await FirstLaunchService.markFirstLaunchComplete();
       }
-    }).catchError((e) {
-      // Silently handle errors - don't block the app
+      if (_isFirstLaunch != isFirst) {
+        setState(() => _isFirstLaunch = isFirst);
+      }
+    } catch (e) {
+      if (!mounted) return;
       print('⚠️ Error checking first launch (non-critical): $e');
-    });
+      if (_isFirstLaunch != false) {
+        setState(() => _isFirstLaunch = false);
+      }
+    }
   }
-
+  
   @override
   Widget build(BuildContext context) {
-    // Always show the child immediately - no loading screens
-    return widget.child;
+    if (_isFirstLaunch == true) {
+      return widget.firstLaunchChild;
+    }
+    return widget.defaultChild;
   }
 }
 
@@ -443,7 +458,12 @@ class _SplashTransitionState extends State<SplashTransition>
 }
 
 class HvacToolsManagerApp extends StatelessWidget {
-  const HvacToolsManagerApp({super.key});
+  final bool initialFirstLaunch;
+
+  const HvacToolsManagerApp({
+    super.key,
+    required this.initialFirstLaunch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -818,7 +838,9 @@ class HvacToolsManagerApp extends StatelessWidget {
       if (kIsWeb) {
         print('🔍 Web platform detected, showing RoleSelectionScreen');
         return _FirstLaunchWrapper(
-          child: const SplashTransition(child: RoleSelectionScreen()),
+          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+          defaultChild: const RoleSelectionScreen(),
+          initialFirstLaunchState: initialFirstLaunch,
         );
       }
       
@@ -863,7 +885,9 @@ class HvacToolsManagerApp extends StatelessWidget {
         print('🔍 User not authenticated, checking first launch');
         // Check if this is first launch - show splash screen only on first launch
         return _FirstLaunchWrapper(
-          child: const SplashTransition(child: RoleSelectionScreen()),
+          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+          defaultChild: const RoleSelectionScreen(),
+          initialFirstLaunchState: initialFirstLaunch,
         );
       }
     } catch (e, stackTrace) {
@@ -871,7 +895,9 @@ class HvacToolsManagerApp extends StatelessWidget {
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
       return _FirstLaunchWrapper(
-        child: const SplashTransition(child: RoleSelectionScreen()),
+        firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+        defaultChild: const RoleSelectionScreen(),
+        initialFirstLaunchState: initialFirstLaunch,
       );
     }
   }

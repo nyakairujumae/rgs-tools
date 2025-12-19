@@ -12,6 +12,33 @@ class PushNotificationTestService {
     };
 
     try {
+      // Add overall timeout to prevent infinite hanging
+      return await Future.any([
+        _performTest(results),
+        Future.delayed(const Duration(seconds: 30), () {
+          results['error'] = 'Test timed out after 30 seconds';
+          results['steps'].add({
+            'step': 'Timeout',
+            'status': 'failed',
+            'message': 'Test took too long - check Edge Function logs',
+          });
+          return results;
+        }),
+      ]);
+    } catch (e, stackTrace) {
+      results['error'] = e.toString();
+      results['stack_trace'] = stackTrace.toString();
+      results['steps'].add({
+        'step': 'Error',
+        'status': 'failed',
+        'message': e.toString(),
+      });
+      return results;
+    }
+  }
+
+  static Future<Map<String, dynamic>> _performTest(Map<String, dynamic> results) async {
+    try {
       // Step 1: Check if user is logged in
       final user = SupabaseService.client.auth.currentUser;
       if (user == null) {
@@ -88,6 +115,12 @@ class PushNotificationTestService {
             'test': 'true',
             'timestamp': DateTime.now().toIso8601String(),
           },
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('⚠️ [Test] sendToToken timed out after 10 seconds');
+            return false;
+          },
         );
 
         if (success) {
@@ -119,6 +152,7 @@ class PushNotificationTestService {
       results['success'] = successCount > 0;
       results['summary'] = 'Test completed: $successCount success, $failCount failed';
 
+      return results;
     } catch (e, stackTrace) {
       results['error'] = e.toString();
       results['stack_trace'] = stackTrace.toString();
@@ -127,9 +161,8 @@ class PushNotificationTestService {
         'status': 'failed',
         'message': e.toString(),
       });
+      return results;
     }
-
-    return results;
   }
 
   /// Test Edge Function directly
