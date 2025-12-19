@@ -441,23 +441,8 @@ class FirebaseMessagingService {
       debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
       debugPrint('📱 [FCM] App State: FOREGROUND');
       
-      // CRITICAL RULE: Check if message has notification payload
-      if (message.notification != null) {
-        // Message has notification payload → iOS/Android OS handles it automatically
-        // On iOS, setForegroundNotificationPresentationOptions makes it appear
-        // On Android, OS shows it automatically
-        // DO NOT show local notification (would cause duplicate)
-        debugPrint('📱 [FCM] Message has notification payload → OS handles display');
-        debugPrint('📱 [FCM] iOS: setForegroundNotificationPresentationOptions makes it appear');
-        debugPrint('📱 [FCM] Android: OS shows notification automatically');
-        debugPrint('📱 [FCM] NOT showing local notification (prevents duplicate)');
-      } else if (message.data.isNotEmpty) {
-        // Data-only message → We must show local notification
-        debugPrint('📱 [FCM] Data-only message → Showing local notification');
-        await _showLocalNotification(message);
-      } else {
-        debugPrint('⚠️ [FCM] Message has no notification payload and no data - skipping');
-      }
+      // Always show a local notification so the user sees alerts while the app is in the foreground
+      await _showLocalNotification(message);
       
       // Update badge regardless of notification type
       await _updateBadge();
@@ -499,32 +484,25 @@ class FirebaseMessagingService {
     debugPrint('📱 [FCM] =========================================');
   }
 
-  /// Show local notification (ONLY for data-only messages)
-  /// 
-  /// CRITICAL: This should ONLY be called when message.notification == null
-  /// If message has notification payload, OS handles it automatically
+  /// Show local notification for every incoming message when the app is in the foreground
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      // Extract title and body from data payload (notification payload should not exist)
-      String? title;
-      String? body;
-      
-      if (message.data.isNotEmpty) {
-        title = message.data['title'] as String? ?? 
-                message.data['notification_title'] as String?;
-        body = message.data['body'] as String? ?? 
-               message.data['notification_body'] as String? ?? 
-               message.data['message'] as String?;
-      }
+      String? title = message.notification?.title ??
+          (message.data['title'] as String?) ??
+          (message.data['notification_title'] as String?);
+      String? body = message.notification?.body ??
+          (message.data['body'] as String?) ??
+          (message.data['notification_body'] as String?) ??
+          (message.data['message'] as String?);
       
       // If still no title/body, skip showing notification
       if (title == null || body == null) {
-        debugPrint('⚠️ [FCM] No title/body found in data payload - skipping local notification');
+        debugPrint('⚠️ [FCM] No title/body found in payload - skipping local notification');
         return;
       }
       
       debugPrint('📱 [FCM] Showing local notification: $title - $body');
-      debugPrint('📱 [FCM] This is a data-only message (no notification payload)');
+      debugPrint('📱 [FCM] Local notification shown while app is foreground');
       
       // Get current badge count
       final badgeCount = await BadgeService.getBadgeCount();

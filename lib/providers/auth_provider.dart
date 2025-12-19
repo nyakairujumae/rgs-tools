@@ -13,7 +13,7 @@ import '../config/supabase_config.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
-  UserRole _userRole = UserRole.pending; // Default to pending (unknown) instead of technician
+  UserRole _userRole = UserRole.technician;
   bool _isLoading = false;
   bool _isInitialized = false;
   bool _isLoggingOut = false;
@@ -23,25 +23,13 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated {
-    // CRITICAL: Return true if we have a user, even if session is temporarily null
-    // Session will be restored automatically, but user should stay logged in
+    // Check if we have both a user AND a valid session
     if (_user == null) return false;
-    
-    // If we have a user, check if email is confirmed
-    if (_user!.emailConfirmedAt == null) return false;
-    
-    // If we have a confirmed user, they are authenticated
-    // Session might be temporarily null during restoration, but that's OK
     try {
       final session = SupabaseService.client.auth.currentSession;
-      final currentUser = SupabaseService.client.auth.currentUser;
-      // Return true if we have either a session OR a currentUser
-      // This ensures users stay authenticated even if session is being restored
-      return session != null || currentUser != null;
+      return session != null;
     } catch (e) {
-      // If there's an error checking, but we have a user, still consider authenticated
-      // Session will be restored on next action
-      return true;
+      return false;
     }
   }
   bool get isAdmin => _userRole == UserRole.admin;
@@ -130,39 +118,13 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('🔍 Getting current session...');
-      // CRITICAL: Wait longer to ensure Supabase has fully restored persisted session
-      // Supabase needs time to read from file storage and restore the session
-      // Increased delay to give Supabase more time to restore from persistent storage
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Small delay to ensure Supabase has restored any persisted session
+      // Reduced delay since we're now waiting in the UI layer
+      await Future.delayed(const Duration(milliseconds: 200));
       
-      // Get current session (this is local, no network call - reads from persisted storage)
+      // Get current session (this is local, no network call)
       var session = SupabaseService.client.auth.currentSession;
       print('🔍 Current session: ${session != null ? "Found (user: ${session.user.email})" : "None"}');
-      
-      // Also check currentUser as fallback (sometimes session is null but user exists)
-      final currentUser = SupabaseService.client.auth.currentUser;
-      if (session == null && currentUser != null) {
-        print('🔍 No session but currentUser exists: ${currentUser.email}');
-        print('🔍 This indicates session storage might not be fully restored yet');
-        print('🔍 Using currentUser to maintain persistence');
-        // Use currentUser directly - session will be restored on next action
-        _user = currentUser;
-        session = null; // Keep session as null, but we have user
-      }
-      
-      // If still no session or user, try one more time after additional delay
-      if (session == null && _user == null) {
-        print('🔍 No session or user found - waiting a bit more for restoration...');
-        await Future.delayed(const Duration(milliseconds: 300));
-        session = SupabaseService.client.auth.currentSession;
-        final currentUser2 = SupabaseService.client.auth.currentUser;
-        if (session != null) {
-          print('✅ Session restored after additional delay');
-        } else if (currentUser2 != null) {
-          print('✅ Found currentUser after additional delay: ${currentUser2.email}');
-          _user = currentUser2;
-        }
-      }
       
       // If session exists but is expired, try to refresh it (non-blocking for UI)
       if (session != null && session.isExpired) {
@@ -184,22 +146,13 @@ class AuthProvider with ChangeNotifier {
             print('⚠️ Session refresh returned null - session may be invalid');
           }
         } catch (e) {
-          print('⚠️ Failed to refresh session: $e');
-          print('⚠️ Maintaining session for persistence - will retry on next action');
-          // CRITICAL: Don't clear session on refresh failure - maintain persistence
-          // Keep the session so user stays logged in
-          // Session will be refreshed automatically when user performs an action
+          print('❌ Failed to refresh session: $e');
+          // If refresh fails, clear the expired session
+          session = null;
         }
       }
       
-      // CRITICAL: Only set user from session if we don't already have one from currentUser
-      // This prevents overwriting a valid user with null
-      if (_user == null) {
-        _user = session?.user;
-      } else if (session != null && session.user != null) {
-        // If we have both, prefer the session user (it's more up-to-date)
-        _user = session.user;
-      }
+      _user = session?.user;
       
       // Fallback: Check if there's a user stored even if session is null
       // This can happen if session storage is cleared but user data persists
@@ -218,27 +171,21 @@ class AuthProvider with ChangeNotifier {
             }
             
             // Try to get a fresh session for this user (non-blocking)
-            // CRITICAL: Don't clear user if refresh fails - maintain persistence
             try {
               final refreshResponse = await SupabaseService.client.auth
                   .refreshSession()
                   .timeout(
-                const Duration(seconds: 5), // Increased timeout
+                const Duration(seconds: 2),
                 onTimeout: () =>
                     throw TimeoutException('Session refresh timed out'),
               );
               if (refreshResponse?.session != null) {
                 _user = refreshResponse!.session!.user;
                 print('✅ Restored session for user: ${_user?.email}');
-              } else {
-                print('⚠️ Session refresh returned null, but maintaining user for persistence');
-                // Keep the user - session will refresh on next action
               }
             } catch (e) {
               print('⚠️ Could not refresh session for existing user: $e');
-              print('⚠️ Maintaining user session for persistence - will retry on next action');
-              // CRITICAL: Continue with the user anyway - maintain persistence
-              // Session will be refreshed automatically when user performs an action
+              // Continue with the user anyway - they might still be authenticated
             }
           }
         } catch (e) {
@@ -249,89 +196,11 @@ class AuthProvider with ChangeNotifier {
       print('🔍 Current user: ${_user?.email ?? "None"}');
 
       // Listen to auth state changes
-      // CRITICAL: Don't clear user on SIGNED_OUT events if we have a persisted user
-      // Only clear on explicit sign out, not on app restart/initialization
       print('🔍 Setting up auth state listener...');
       SupabaseService.client.auth.onAuthStateChange.listen((data) {
         print('🔍 Auth state changed: ${data.session?.user?.email ?? "None"}');
-        print('🔍 Auth event: ${data.event}');
-        
-        // CRITICAL: Handle different auth events
-        // Never clear user unless explicitly signing out
-        if (data.event == AuthChangeEvent.signedOut) {
-          // Only clear user on explicit sign out
-          // Don't clear if this is just a session restoration issue
-          print('🔍 Signed out event detected');
-          // Only clear if we explicitly signed out (not just session restoration)
-          if (_isLoggingOut) {
-            print('🔍 Explicit sign out - clearing user');
-            _user = null;
-            _userRole = UserRole.pending;
-          } else {
-            print('⚠️ Signed out event but NOT explicitly logging out');
-            print('⚠️ This is likely a session restoration issue - maintaining user for persistence');
-            // CRITICAL: Don't clear user - this might be a session restoration issue
-            // Try to restore session if we have a user
-            if (_user != null) {
-              print('🔍 Attempting to restore session for existing user');
-              // Try to get session again
-              final currentSession = SupabaseService.client.auth.currentSession;
-              final currentUser = SupabaseService.client.auth.currentUser;
-              if (currentSession != null || currentUser != null) {
-                _user = currentSession?.user ?? currentUser;
-                print('✅ Session restored for user: ${_user?.email}');
-              } else {
-                print('⚠️ Could not restore session, but maintaining user: ${_user?.email}');
-              }
-            }
-          }
-        } else if (data.session != null && data.session!.user != null) {
-          // Session exists - update user
-          print('✅ Session available - updating user');
-          _user = data.session!.user;
-          _loadUserRole();
-        } else if (data.session == null && _user != null) {
-          // Session is null but we have a user - try to restore
-          print('⚠️ Session is null but user exists - attempting to restore');
-          final currentUser = SupabaseService.client.auth.currentUser;
-          if (currentUser != null && currentUser.id == _user!.id) {
-            print('✅ Found currentUser matching existing user - maintaining session');
-            _user = currentUser;
-          } else {
-            print('⚠️ No matching currentUser found - but maintaining user for persistence');
-            // CRITICAL: Don't clear user - maintain persistence
-            // This might be a temporary session restoration issue
-            // User will stay logged in and session will be restored on next action
-          }
-        } else if (data.session == null && _user == null) {
-          // Both session and user are null - but check if there's a persisted user
-          print('⚠️ Both session and user are null - checking for persisted user');
-          final persistedUser = SupabaseService.client.auth.currentUser;
-          if (persistedUser != null) {
-            print('✅ Found persisted user: ${persistedUser.email} - restoring');
-            _user = persistedUser;
-            // Try to restore session (non-blocking, fire and forget)
-            SupabaseService.client.auth.refreshSession().timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => throw TimeoutException('Session refresh timed out'),
-            ).then((refreshResponse) {
-              if (refreshResponse.session != null) {
-                _user = refreshResponse.session!.user;
-                print('✅ Session restored for persisted user');
-                _loadUserRole();
-                notifyListeners();
-              }
-            }).catchError((e) {
-              print('⚠️ Could not refresh session for persisted user: $e');
-              print('⚠️ Maintaining user anyway - session will refresh on next action');
-            });
-          }
-        }
-        
-        // Only notify if user actually changed
-        if (_user != null) {
-          _loadUserRole();
-        }
+        _user = data.session?.user;
+        _loadUserRole();
         notifyListeners();
       });
 
@@ -386,13 +255,13 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ Could not send FCM token after initialization: $e');
         }
       } else {
-        print('🔍 No user found, setting role to pending (unknown)');
-        _userRole = UserRole.pending; // Unknown user - no default role
+        print('🔍 No user found, setting default role');
+        _userRole = UserRole.technician;
       }
     } catch (e) {
       print('❌ Error initializing auth: $e');
-      // Set to pending on error - don't assume role
-      _userRole = UserRole.pending;
+      // Set default values on error
+      _userRole = UserRole.technician;
     } finally {
       print('🔍 AuthProvider initialization complete');
       _isLoading = false;

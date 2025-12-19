@@ -93,12 +93,17 @@ class PushNotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      debugPrint('📤 [Push] ========== SENDING TO ADMINS ==========');
+      debugPrint('📤 [Push] Title: $title');
+      debugPrint('📤 [Push] Body: $body');
+      
       // Get all admin user IDs
       // First try using RPC function (bypasses RLS), fallback to direct query
       List<Map<String, dynamic>> adminsResponse;
       
       try {
         // Try RPC function first (bypasses RLS)
+        debugPrint('🔍 [Push] Attempting to get admin users via RPC function...');
         final rpcResponse = await SupabaseService.client.rpc('get_admin_user_ids');
         if (rpcResponse != null && rpcResponse is List) {
           adminsResponse = List<Map<String, dynamic>>.from(rpcResponse);
@@ -109,6 +114,7 @@ class PushNotificationService {
       } catch (rpcError) {
         debugPrint('⚠️ [Push] RPC function not available, using direct query: $rpcError');
         // Fallback to direct query
+        debugPrint('🔍 [Push] Querying users table for admin role...');
         adminsResponse = await SupabaseService.client
             .from('users')
             .select('id, email, role')
@@ -117,11 +123,12 @@ class PushNotificationService {
       }
 
       if (adminsResponse.isEmpty) {
-        debugPrint('⚠️ [Push] No admin users found with role="admin"');
-        debugPrint('⚠️ [Push] This might be due to:');
-        debugPrint('⚠️ [Push] 1. No users have role="admin" in database');
-        debugPrint('⚠️ [Push] 2. RLS policies blocking the query');
-        debugPrint('⚠️ [Push] 3. Case sensitivity issue (check if role is "Admin" instead of "admin")');
+        debugPrint('❌ [Push] ========== NO ADMIN USERS FOUND ==========');
+        debugPrint('❌ [Push] No admin users found with role="admin"');
+        debugPrint('❌ [Push] This might be due to:');
+        debugPrint('❌ [Push] 1. No users have role="admin" in database');
+        debugPrint('❌ [Push] 2. RLS policies blocking the query');
+        debugPrint('❌ [Push] 3. Case sensitivity issue (check if role is "Admin" instead of "admin")');
         
         // Try to get all users to debug
         try {
@@ -133,26 +140,43 @@ class PushNotificationService {
         } catch (e) {
           debugPrint('⚠️ [Push] Could not query users table: $e');
         }
-        
+        debugPrint('❌ [Push] =========================================');
         return 0;
       }
 
+      debugPrint('📤 [Push] Sending to ${adminsResponse.length} admin(s)...');
       int successCount = 0;
+      int failCount = 0;
       for (final admin in adminsResponse) {
         final adminId = admin['id'] as String;
+        final adminEmail = admin['email'] as String? ?? 'unknown';
+        debugPrint('📤 [Push] Sending to admin: $adminEmail ($adminId)');
         final success = await sendToUser(
           userId: adminId,
           title: title,
           body: body,
           data: data,
         );
-        if (success) successCount++;
+        if (success) {
+          successCount++;
+          debugPrint('✅ [Push] Successfully sent to admin: $adminEmail');
+        } else {
+          failCount++;
+          debugPrint('❌ [Push] Failed to send to admin: $adminEmail');
+        }
       }
 
-      debugPrint('✅ [Push] Sent to $successCount/${adminsResponse.length} admins');
+      debugPrint('✅ [Push] ========== ADMIN NOTIFICATION SUMMARY ==========');
+      debugPrint('✅ [Push] Total admins: ${adminsResponse.length}');
+      debugPrint('✅ [Push] Success: $successCount');
+      debugPrint('✅ [Push] Failed: $failCount');
+      debugPrint('✅ [Push] ================================================');
       return successCount;
-    } catch (e) {
-      debugPrint('❌ [Push] Error sending to admins: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Push] ========== ERROR SENDING TO ADMINS ==========');
+      debugPrint('❌ [Push] Error: $e');
+      debugPrint('❌ [Push] Stack trace: $stackTrace');
+      debugPrint('❌ [Push] =============================================');
       return 0;
     }
   }

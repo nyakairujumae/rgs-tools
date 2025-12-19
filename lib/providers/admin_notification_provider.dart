@@ -208,6 +208,7 @@ class AdminNotificationProvider extends ChangeNotifier {
       // when tool_request notifications are created - no client-side code needed!
 
       // Send push notification to admins (non-blocking)
+      debugPrint('📤 [Push] Attempting to send push notification to admins...');
       PushNotificationService.sendToAdmins(
         title: title ?? _getNotificationTitle(type, technicianName),
         body: message ?? _getNotificationMessage(type, technicianName),
@@ -216,8 +217,18 @@ class AdminNotificationProvider extends ChangeNotifier {
           'notification_id': notificationId,
           if (data != null) ...data,
         },
-      ).catchError((e) {
-        debugPrint('⚠️ Could not send push notification: $e');
+      ).then((count) {
+        debugPrint('✅ [Push] Push notification sent to $count admin(s)');
+        if (count == 0) {
+          debugPrint('⚠️ [Push] WARNING: No admins received the notification!');
+          debugPrint('⚠️ [Push] This might mean:');
+          debugPrint('⚠️ [Push] 1. No admin users found in database');
+          debugPrint('⚠️ [Push] 2. Admin users have no FCM tokens');
+          debugPrint('⚠️ [Push] 3. RLS policies blocking token queries');
+        }
+      }).catchError((e, stackTrace) {
+        debugPrint('❌ [Push] ERROR sending push notification: $e');
+        debugPrint('❌ [Push] Stack trace: $stackTrace');
       });
 
       // Create notification object from the data we already have

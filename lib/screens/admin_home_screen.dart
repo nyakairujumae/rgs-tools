@@ -41,7 +41,6 @@ import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../models/user_role.dart';
 import 'package:intl/intl.dart';
-import '../services/push_notification_test_service.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final int initialTab;
@@ -280,12 +279,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                     },
                   ),
                   actions: [
-                    // Test push notification button (for debugging)
-                    IconButton(
-                      icon: const Icon(Icons.bug_report),
-                      tooltip: 'Test Push Notification',
-                      onPressed: () => _testPushNotification(context),
-                    ),
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, child) {
                         if (authProvider.isLoading ||
@@ -801,96 +794,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         ),
       ],
     );
-  }
-
-  Future<void> _testPushNotification(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    try {
-      debugPrint('🧪 [Test] Starting push notification test...');
-      final results = await PushNotificationTestService.testPushToCurrentUser();
-      
-      if (!context.mounted) return;
-      Navigator.pop(context); // Close loading dialog
-
-      // Show results
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(results['success'] == true ? '✅ Test Successful' : '❌ Test Failed'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (results['error'] != null)
-                  Text(
-                    'Error: ${results['error']}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                if (results['summary'] != null)
-                  Text(results['summary']),
-                const SizedBox(height: 16),
-                const Text('Steps:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ...(results['steps'] as List).map((step) => Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${step['step']}: ${step['status']}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: step['status'] == 'success' 
-                              ? Colors.green 
-                              : step['status'] == 'failed' 
-                                  ? Colors.red 
-                                  : Colors.orange,
-                        ),
-                      ),
-                      if (step['message'] != null)
-                        Text(
-                          step['message'],
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                    ],
-                  ),
-                )),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      Navigator.pop(context); // Close loading dialog
-      
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('❌ Test Error'),
-          content: Text('Error: $e'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   Future<void> _performLogout(AuthProvider authProvider) async {

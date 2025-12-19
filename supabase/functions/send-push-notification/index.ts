@@ -297,26 +297,41 @@ serve(async (req) => {
     // Prepare FCM v1 API payload
     // Note: "from" is the Firebase project (identified by OAuth token in Authorization header)
     // "to" is the device token (sent as "token" field)
+    const safeData = data ? Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, String(value)])
+    ) : undefined;
+
     const fcmPayload = {
       message: {
-        token: token, // This is the "to" (device FCM token)
+        token,
         notification: {
-          title: title,
-          body: body,
+          title,
+          body,
         },
-        data: data ? Object.fromEntries(
-          Object.entries(data).map(([key, value]) => [key, String(value)])
-        ) : {},
+        data: safeData,
         android: {
           priority: "high",
         },
         apns: {
           headers: {
             "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              alert: {
+                title,
+                body,
+              },
+              sound: "default",
+              badge: 1,
+            },
           },
         },
       },
     };
+
+    console.log("✅ Final FCM payload", JSON.stringify(fcmPayload));
     
     // Send to FCM v1 API
     console.log("📤 Preparing FCM v1 API request...");
