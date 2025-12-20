@@ -250,6 +250,8 @@ class ReportService {
             return true;
           }).toList();
         }
+      } else {
+        approvalWorkflows = await _fetchApprovalWorkflows(startDate, endDate);
       }
     }
 
@@ -1589,6 +1591,19 @@ class ReportService {
     return await query.order('reported_at', ascending: false);
   }
 
+  static Future<List<dynamic>> _fetchApprovalWorkflows(DateTime? startDate, DateTime? endDate) async {
+    var query = _client.from('approval_workflows').select();
+
+    if (startDate != null) {
+      query = query.gte('request_date', startDate.toIso8601String());
+    }
+    if (endDate != null) {
+      query = query.lte('request_date', endDate.toIso8601String());
+    }
+
+    return await query.order('request_date', ascending: false);
+  }
+
   static String _getReportTitle(ReportType type) {
     switch (type) {
       case ReportType.comprehensive:
@@ -2720,4 +2735,3 @@ class ReportService {
     return Directory.systemTemp;
   }
 }
-

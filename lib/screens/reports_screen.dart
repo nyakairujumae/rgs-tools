@@ -88,6 +88,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Ensure admin reports load fresh data for previews and exports
+      Future.wait([
+        context.read<SupabaseToolProvider>().loadTools(),
+        context.read<SupabaseTechnicianProvider>().loadTechnicians(),
+        context.read<ToolIssueProvider>().loadIssues(),
+        context.read<ApprovalWorkflowsProvider>().loadWorkflows(),
+      ]);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(

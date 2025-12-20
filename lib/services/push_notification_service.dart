@@ -17,69 +17,30 @@ class PushNotificationService {
       debugPrint('📤 [Push] Title: $title');
       debugPrint('📤 [Push] Body: $body');
       
-      // Get ALL FCM tokens for the user (both Android and iOS)
-      debugPrint('🔍 [Push] Querying tokens for user: $userId');
-      final tokensResponse = await SupabaseService.client
-          .from('user_fcm_tokens')
-          .select('fcm_token, platform, updated_at')
-          .eq('user_id', userId);
+      // Send via Edge Function, which selects the latest token per platform
+      final response = await SupabaseService.client.functions.invoke(
+        'send-push-notification',
+        body: {
+          'user_id': userId,
+          'title': title,
+          'body': body,
+          if (data != null) 'data': data,
+        },
+      );
 
-      debugPrint('📊 [Push] Found ${tokensResponse.length} token(s) for user');
-      
-      if (tokensResponse.isEmpty) {
-        debugPrint('⚠️ [Push] ========== NO TOKENS FOUND ==========');
-        debugPrint('⚠️ [Push] No FCM tokens found for user: $userId');
-        debugPrint('⚠️ [Push] This means:');
-        debugPrint('⚠️ [Push] 1. Token was never saved to database');
-        debugPrint('⚠️ [Push] 2. RLS policy is blocking the query');
-        debugPrint('⚠️ [Push] 3. User logged out and token was deleted');
-        debugPrint('⚠️ [Push] ======================================');
-        
-        // Try to query all tokens to see if RLS is the issue
-        try {
-          final allTokens = await SupabaseService.client
-              .from('user_fcm_tokens')
-              .select('user_id, platform')
-              .limit(5);
-          debugPrint('🔍 [Push] Sample tokens in database: ${allTokens.length} total');
-        } catch (e) {
-          debugPrint('⚠️ [Push] Could not query tokens table (RLS may be blocking): $e');
-        }
-        
-        return false;
-      }
+      debugPrint('📥 [Push] Edge Function response status: ${response.status}');
+      debugPrint('📥 [Push] Edge Function response data: ${response.data}');
 
-      // Send to all tokens for this user
-      int successCount = 0;
-      for (final tokenRecord in tokensResponse) {
-        final token = tokenRecord['fcm_token'] as String?;
-        final platform = tokenRecord['platform'] as String?;
-        final updatedAt = tokenRecord['updated_at'] as String?;
-        
-        debugPrint('📱 [Push] Token record: platform=$platform, updated=$updatedAt');
-        
-        if (token != null && token.isNotEmpty) {
-          debugPrint('📤 [Push] Sending to ${platform ?? 'unknown'} token (${token.substring(0, 20)}...)');
-          final success = await sendToToken(
-            token: token,
-            title: title,
-            body: body,
-            data: data,
-          );
-          if (success) {
-            successCount++;
-            debugPrint('✅ [Push] Successfully sent to ${platform ?? 'unknown'} token');
-          } else {
-            debugPrint('❌ [Push] Failed to send to ${platform ?? 'unknown'} token');
-          }
-        } else {
-          debugPrint('⚠️ [Push] Token is null or empty for platform: $platform');
+      if (response.status == 200 && response.data is Map) {
+        final responseData = response.data as Map;
+        if (responseData['success'] == true) {
+          debugPrint('✅ [Push] Notification sent successfully via Edge Function');
+          return true;
         }
       }
 
-      debugPrint('✅ [Push] Sent to $successCount/${tokensResponse.length} tokens for user: $userId');
-      debugPrint('📤 [Push] ======================================');
-      return successCount > 0;
+      debugPrint('❌ [Push] Failed to send notification via Edge Function');
+      return false;
     } catch (e) {
       debugPrint('❌ [Push] Error sending to user $userId: $e');
       return false;
@@ -524,6 +485,5 @@ class PushNotificationService {
   }
 
 }
-
 
 

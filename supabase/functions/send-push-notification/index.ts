@@ -2,11 +2,101 @@
 // Uses GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_PROJECT_ID from secrets
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const GOOGLE_PROJECT_ID = Deno.env.get("GOOGLE_PROJECT_ID");
 const GOOGLE_CLIENT_EMAIL = Deno.env.get("GOOGLE_CLIENT_EMAIL");
 const GOOGLE_PRIVATE_KEY = Deno.env.get("GOOGLE_PRIVATE_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const FCM_V1_URL = `https://fcm.googleapis.com/v1/projects/${GOOGLE_PROJECT_ID}/messages:send`;
+const TOKEN_MAX_AGE_DAYS = 90;
+
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    })
+  : null;
+
+function normalizePlatform(platform?: string): "ios" | "android" | null {
+  if (!platform) return null;
+  const normalized = platform.toLowerCase();
+  if (normalized === "ios" || normalized === "android") {
+    return normalized as "ios" | "android";
+  }
+  return null;
+}
+
+async function cleanupOldTokens(): Promise<void> {
+  if (!supabase) {
+    return;
+  }
+
+  const cutoff = new Date(Date.now() - TOKEN_MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from("user_fcm_tokens")
+    .delete()
+    .lt("updated_at", cutoff);
+
+  if (error) {
+    console.warn("⚠️ Cleanup old tokens failed:", error);
+  }
+}
+
+async function fetchLatestToken(userId: string, platform: "ios" | "android") {
+  if (!supabase) {
+    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
+  }
+
+  const { data, error } = await supabase
+    .from("user_fcm_tokens")
+    .select("fcm_token, platform, updated_at")
+    .eq("user_id", userId)
+    .eq("platform", platform)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch token: ${error.message}`);
+  }
+
+  return data?.fcm_token ? { token: data.fcm_token, platform } : null;
+}
+
+async function deleteToken(token: string) {
+  if (!supabase) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("user_fcm_tokens")
+    .delete()
+    .eq("fcm_token", token);
+
+  if (error) {
+    console.warn("⚠️ Failed to delete invalid token:", error);
+  }
+}
+
+function extractFcmErrorCode(responseData: any): string | null {
+  const details = responseData?.error?.details;
+  if (Array.isArray(details)) {
+    for (const detail of details) {
+      if (detail?.errorCode) {
+        return String(detail.errorCode);
+      }
+    }
+  }
+
+  const message = responseData?.error?.message;
+  if (typeof message === "string") {
+    if (message.includes("UNREGISTERED")) return "UNREGISTERED";
+    if (message.includes("InvalidArgument")) return "INVALID_ARGUMENT";
+  }
+
+  return null;
+}
 
 // Generate OAuth2 access token from service account credentials
 async function getAccessToken(): Promise<string> {
@@ -208,15 +298,27 @@ serve(async (req) => {
     }
     
     // Get request body
-    const { token, title, body, data } = await req.json();
+    const { token, user_id, platform, title, body, data } = await req.json();
     
     // Validate required fields
-    if (!token || !title || !body) {
+    if (!title || !body) {
       return new Response(
         JSON.stringify({ 
-          error: "Missing required fields: token, title, and body are required" 
+          error: "Missing required fields: title and body are required" 
         }),
         { 
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!token && !user_id) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing required fields: provide token or user_id",
+        }),
+        {
           status: 400,
           headers: { "Content-Type": "application/json" },
         }
@@ -294,108 +396,152 @@ serve(async (req) => {
       );
     }
     
-    // Prepare FCM v1 API payload
-    // Note: "from" is the Firebase project (identified by OAuth token in Authorization header)
-    // "to" is the device token (sent as "token" field)
+    await cleanupOldTokens();
+
     const safeData = data ? Object.fromEntries(
       Object.entries(data).map(([key, value]) => [key, String(value)])
     ) : undefined;
 
-    const fcmPayload = {
-      message: {
-        token,
-        notification: {
-          title,
-          body,
-        },
-        data: safeData,
-        android: {
-          priority: "high",
-        },
-        apns: {
-          headers: {
-            "apns-priority": "10",
-            "apns-push-type": "alert",
-          },
-          payload: {
-            aps: {
-              alert: {
-                title,
-                body,
-              },
-              sound: "default",
-              badge: 1,
-            },
-          },
-        },
-      },
-    };
+    let targets: Array<{ token: string; platform: string }> = [];
 
-    console.log("✅ Final FCM payload", JSON.stringify(fcmPayload));
-    
-    // Send to FCM v1 API
-    console.log("📤 Preparing FCM v1 API request...");
-    console.log("📤 FCM URL:", FCM_V1_URL);
-    console.log("📤 Access token length:", accessToken?.length || 0);
-    console.log("📤 Access token preview:", accessToken ? `${accessToken.substring(0, 30)}...` : "MISSING");
-    console.log("📤 Access token full (first 100 chars):", accessToken ? accessToken.substring(0, 100) : "MISSING");
-    console.log("📤 Authorization header value:", `Bearer ${accessToken?.substring(0, 30)}...`);
-    console.log("📤 FCM payload:", JSON.stringify(fcmPayload, null, 2));
-    
-    // Verify token format
-    if (!accessToken || accessToken.length < 100) {
-      throw new Error(`Invalid access token: token is ${accessToken?.length || 0} characters (expected > 100)`);
+    if (token) {
+      targets = [{ token: String(token), platform: normalizePlatform(platform) ?? "unknown" }];
+    } else {
+      const normalizedPlatform = normalizePlatform(platform);
+      const platformsToFetch = normalizedPlatform ? [normalizedPlatform] : ["android", "ios"];
+      const fetchedTargets: Array<{ token: string; platform: string }> = [];
+
+      for (const platformToFetch of platformsToFetch) {
+        const result = await fetchLatestToken(user_id, platformToFetch);
+        if (result?.token) {
+          fetchedTargets.push({ token: result.token, platform: platformToFetch });
+        }
+      }
+
+      targets = fetchedTargets;
     }
-    
-    if (!accessToken.startsWith("ya29.") && !accessToken.startsWith("1//")) {
-      console.warn("⚠️ Access token doesn't start with expected prefix (ya29. or 1//)");
-    }
-    
-    const requestHeaders = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${accessToken}`,
-    };
-    
-    console.log("📤 Request headers:", JSON.stringify({
-      "Content-Type": requestHeaders["Content-Type"],
-      "Authorization": `Bearer ${accessToken.substring(0, 30)}...`,
-    }, null, 2));
-    
-    const response = await fetch(FCM_V1_URL, {
-      method: "POST",
-      headers: requestHeaders,
-      body: JSON.stringify(fcmPayload),
-    });
-    
-    console.log("📥 FCM API response status:", response.status, response.statusText);
-    const responseData = await response.json();
-    console.log("📥 FCM API response data:", JSON.stringify(responseData, null, 2));
-    
-    if (!response.ok) {
-      console.error("❌ FCM v1 API error:", responseData);
-      console.error("❌ Response status:", response.status);
-      console.error("❌ Response headers:", Object.fromEntries(response.headers.entries()));
+
+    if (targets.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          error: "Failed to send notification",
-          details: responseData 
+        JSON.stringify({
+          error: "No active FCM token found for user/platform",
         }),
-        { 
-          status: response.status,
+        {
+          status: 404,
           headers: { "Content-Type": "application/json" },
         }
       );
     }
-    
-    console.log("Push notification sent successfully:", responseData);
-    
+
+    const results: Array<{ token: string; platform: string; success: boolean; name?: string; error?: any }> = [];
+
+    for (const target of targets) {
+      const fcmPayload = {
+        message: {
+          token: target.token,
+          notification: {
+            title,
+            body,
+          },
+          data: safeData,
+          android: {
+            priority: "high",
+          },
+          apns: {
+            headers: {
+              "apns-priority": "10",
+              "apns-push-type": "alert",
+            },
+            payload: {
+              aps: {
+                alert: {
+                  title,
+                  body,
+                },
+                sound: "default",
+                badge: 1,
+              },
+            },
+          },
+        },
+      };
+
+      console.log("✅ Final FCM payload", JSON.stringify(fcmPayload));
+      
+      // Send to FCM v1 API
+      console.log("📤 Preparing FCM v1 API request...");
+      console.log("📤 FCM URL:", FCM_V1_URL);
+      console.log("📤 Access token length:", accessToken?.length || 0);
+      console.log("📤 Access token preview:", accessToken ? `${accessToken.substring(0, 30)}...` : "MISSING");
+      console.log("📤 Authorization header value:", `Bearer ${accessToken?.substring(0, 30)}...`);
+      console.log("📤 FCM payload:", JSON.stringify(fcmPayload, null, 2));
+      
+      // Verify token format
+      if (!accessToken || accessToken.length < 100) {
+        throw new Error(`Invalid access token: token is ${accessToken?.length || 0} characters (expected > 100)`);
+      }
+      
+      if (!accessToken.startsWith("ya29.") && !accessToken.startsWith("1//")) {
+        console.warn("⚠️ Access token doesn't start with expected prefix (ya29. or 1//)");
+      }
+      
+      const requestHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      };
+      
+      console.log("📤 Request headers:", JSON.stringify({
+        "Content-Type": requestHeaders["Content-Type"],
+        "Authorization": `Bearer ${accessToken.substring(0, 30)}...`,
+      }, null, 2));
+      
+      const response = await fetch(FCM_V1_URL, {
+        method: "POST",
+        headers: requestHeaders,
+        body: JSON.stringify(fcmPayload),
+      });
+      
+      console.log("📥 FCM API response status:", response.status, response.statusText);
+      const responseData = await response.json();
+      console.log("📥 FCM API response data:", JSON.stringify(responseData, null, 2));
+      
+      if (!response.ok) {
+        const errorCode = extractFcmErrorCode(responseData);
+        console.error("❌ FCM v1 API error:", responseData);
+        console.error("❌ Response status:", response.status);
+        console.error("❌ Response headers:", Object.fromEntries(response.headers.entries()));
+
+        if (errorCode === "UNREGISTERED" || errorCode === "INVALID_ARGUMENT") {
+          await deleteToken(target.token);
+        }
+
+        results.push({
+          token: target.token,
+          platform: target.platform,
+          success: false,
+          error: responseData,
+        });
+        continue;
+      }
+      
+      console.log("Push notification sent successfully:", responseData);
+      results.push({
+        token: target.token,
+        platform: target.platform,
+        success: true,
+        name: responseData.name,
+      });
+    }
+
+    const anySuccess = results.some((result) => result.success);
+
     return new Response(
       JSON.stringify({ 
-        success: true,
-        name: responseData.name 
+        success: anySuccess,
+        results,
       }),
       {
-        status: 200,
+        status: anySuccess ? 200 : 500,
         headers: { "Content-Type": "application/json" },
       }
     );

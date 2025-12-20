@@ -42,9 +42,106 @@ class FirebaseMessagingService {
   static bool _iosForegroundOptionsSet = false;
   static StreamSubscription<RemoteMessage>? _foregroundSubscription;
   static StreamSubscription<RemoteMessage>? _backgroundSubscription;
+  static StreamSubscription<String>? _tokenRefreshSubscription;
 
   /// Get current FCM token
   static String? get fcmToken => _fcmToken;
+
+  static String _getPlatformTag() {
+    if (Platform.isIOS) return 'ios';
+    if (Platform.isAndroid) return 'android';
+    return 'unknown';
+  }
+
+  /// Register the current token to backend (app start + login)
+  static Future<void> registerCurrentToken({bool forceRefresh = false}) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        debugPrint('❌ [FCM] Cannot register token: Firebase not initialized');
+        return;
+      }
+
+      String? token;
+      if (forceRefresh) {
+        token = await refreshToken();
+      } else {
+        token = await _messaging.getToken();
+        if (token == null || token.isEmpty) {
+          token = await refreshToken();
+        }
+      }
+
+      if (token == null || token.isEmpty) {
+        debugPrint('❌ [FCM] Cannot register token: token is null/empty');
+        return;
+      }
+
+      _fcmToken = token;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', token);
+
+      final user = SupabaseService.client.auth.currentUser;
+      if (user != null) {
+        await _sendTokenToServer(token);
+      } else {
+        debugPrint('⚠️ [FCM] Token saved locally, user not logged in');
+      }
+
+      _ensureTokenRefreshListener();
+    } catch (e) {
+      debugPrint('❌ [FCM] Error registering current token: $e');
+    }
+  }
+  
+  /// Force refresh FCM token (useful when token is null)
+  static Future<String?> refreshToken() async {
+    try {
+      debugPrint('🔄 [FCM] Force refreshing FCM token...');
+      
+      // Verify Firebase is initialized
+      if (Firebase.apps.isEmpty) {
+        debugPrint('❌ [FCM] Cannot refresh token: Firebase not initialized');
+        return null;
+      }
+      
+      // Check notification settings
+      try {
+        final settings = await _messaging.getNotificationSettings();
+        if (settings.authorizationStatus == AuthorizationStatus.denied) {
+          debugPrint('❌ [FCM] Cannot refresh token: Notification permission denied');
+          return null;
+        }
+      } catch (e) {
+        debugPrint('⚠️ [FCM] Could not check notification settings: $e');
+      }
+      
+      // Get new token
+      final newToken = await _messaging.getToken();
+      if (newToken != null && newToken.isNotEmpty) {
+        _fcmToken = newToken;
+        debugPrint('✅ [FCM] Token refreshed: ${newToken.substring(0, 20)}...');
+        
+        // Save to local storage
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', newToken);
+        
+        // Save to server if user is logged in
+        final user = SupabaseService.client.auth.currentUser;
+        if (user != null) {
+          await _sendTokenToServer(newToken);
+        }
+        
+        return newToken;
+      } else {
+        debugPrint('❌ [FCM] Token refresh returned null');
+        return null;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FCM] Error refreshing token: $e');
+      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      return null;
+    }
+  }
 
   /// Initialize Firebase Messaging
   /// Call this after Firebase.initializeApp() completes
@@ -105,13 +202,37 @@ class FirebaseMessagingService {
         // Subscribe to topics
         await _subscribeToTopics();
         
-        // Mark as initialized
+        // Mark as initialized even if token wasn't obtained (handlers are set up)
+        // Token can be obtained later via refreshToken()
         _isInitialized = true;
         
         debugPrint('✅ [FCM] Initialization complete');
+        if (_fcmToken == null || _fcmToken!.isEmpty) {
+          debugPrint('⚠️ [FCM] WARNING: Initialization complete but token is null');
+          debugPrint('⚠️ [FCM] Token will be obtained on next refresh or when permissions are granted');
+          
+          // Retry getting token after a delay (in case permissions were just granted)
+          Future.delayed(const Duration(seconds: 3), () async {
+            if (_fcmToken == null || _fcmToken!.isEmpty) {
+              debugPrint('🔄 [FCM] Retrying token retrieval after initialization...');
+              final retryToken = await refreshToken();
+              if (retryToken != null) {
+                debugPrint('✅ [FCM] Token obtained on retry');
+              } else {
+                debugPrint('⚠️ [FCM] Token still null after retry - check notification permissions');
+              }
+            }
+          });
+        }
         debugPrint('🔥 [FCM] =========================================');
       } else {
         debugPrint('❌ [FCM] Notification permission denied: ${permission.authorizationStatus}');
+        debugPrint('❌ [FCM] Token cannot be obtained without permission');
+        debugPrint('❌ [FCM] User must grant notification permission in device settings');
+        debugPrint('❌ [FCM] Initialization will be retried when permission is granted');
+        // Don't mark as initialized if permission is denied - we want to retry
+        // But set up handlers anyway in case permission is granted later
+        _setupMessageHandlers();
         debugPrint('🔥 [FCM] =========================================');
       }
     } catch (e, stackTrace) {
@@ -229,7 +350,29 @@ class FirebaseMessagingService {
   static Future<void> _getFCMToken() async {
     try {
       debugPrint('🔄 [FCM] Requesting FCM token...');
+      debugPrint('🔄 [FCM] Firebase apps count: ${Firebase.apps.length}');
+      debugPrint('🔄 [FCM] Platform: ${Platform.isIOS ? "iOS" : (Platform.isAndroid ? "Android" : "Unknown")}');
+      
+      // Check notification settings before requesting token
+      try {
+        final settings = await _messaging.getNotificationSettings();
+        debugPrint('🔄 [FCM] Notification settings:');
+        debugPrint('🔄 [FCM]   Authorization: ${settings.authorizationStatus}');
+        debugPrint('🔄 [FCM]   Alert: ${settings.alert}');
+        debugPrint('🔄 [FCM]   Badge: ${settings.badge}');
+        debugPrint('🔄 [FCM]   Sound: ${settings.sound}');
+        
+        if (settings.authorizationStatus == AuthorizationStatus.denied) {
+          debugPrint('❌ [FCM] Notification permission is DENIED - token cannot be obtained');
+          debugPrint('❌ [FCM] User must grant notification permission in device settings');
+          return;
+        }
+      } catch (settingsError) {
+        debugPrint('⚠️ [FCM] Could not check notification settings: $settingsError');
+      }
+      
       _fcmToken = await _messaging.getToken();
+      debugPrint('🔄 [FCM] getToken() returned: ${_fcmToken != null ? "Token (${_fcmToken!.length} chars)" : "NULL"}');
       
       if (_fcmToken != null && _fcmToken!.isNotEmpty) {
         debugPrint('✅ [FCM] ========== TOKEN OBTAINED ==========');
@@ -254,29 +397,36 @@ class FirebaseMessagingService {
         
         debugPrint('✅ [FCM] ===================================');
         
-        // Listen for token refresh
-        _messaging.onTokenRefresh.listen((newToken) async {
-          debugPrint('🔄 [FCM] ========== TOKEN REFRESHED ==========');
-          debugPrint('🔄 [FCM] New token: ${newToken.substring(0, 20)}...');
-          _fcmToken = newToken;
-          await prefs.setString('fcm_token', newToken);
-          
-          // Try to save to server if user is logged in
-          final currentUser = SupabaseService.client.auth.currentUser;
-          if (currentUser != null) {
-            debugPrint('🔄 [FCM] User is logged in, saving refreshed token...');
-            await _sendTokenToServer(newToken);
-          } else {
-            debugPrint('⚠️ [FCM] User not logged in, refreshed token saved locally');
-          }
-          debugPrint('🔄 [FCM] =====================================');
-        });
+        _ensureTokenRefreshListener();
       } else {
-        debugPrint('⚠️ [FCM] FCM token is null or empty');
-        debugPrint('⚠️ [FCM] This may indicate:');
-        debugPrint('⚠️ [FCM] 1. Firebase not properly initialized');
-        debugPrint('⚠️ [FCM] 2. Notification permissions not granted');
-        debugPrint('⚠️ [FCM] 3. Network connectivity issues');
+        debugPrint('❌ [FCM] ========== TOKEN IS NULL OR EMPTY ==========');
+        debugPrint('❌ [FCM] FCM token is null or empty');
+        debugPrint('❌ [FCM] This may indicate:');
+        debugPrint('❌ [FCM] 1. Firebase not properly initialized');
+        debugPrint('❌ [FCM] 2. Notification permissions not granted');
+        debugPrint('❌ [FCM] 3. Network connectivity issues');
+        debugPrint('❌ [FCM] 4. Platform-specific issue (iOS simulator, etc.)');
+        
+        // Try to get more diagnostic info
+        try {
+          final settings = await _messaging.getNotificationSettings();
+          debugPrint('❌ [FCM] Current notification settings:');
+          debugPrint('❌ [FCM]   Authorization: ${settings.authorizationStatus}');
+          debugPrint('❌ [FCM]   Alert: ${settings.alert}');
+          debugPrint('❌ [FCM]   Badge: ${settings.badge}');
+          debugPrint('❌ [FCM]   Sound: ${settings.sound}');
+          
+          if (settings.authorizationStatus == AuthorizationStatus.denied) {
+            debugPrint('❌ [FCM] ACTION REQUIRED: Notification permission is DENIED');
+            debugPrint('❌ [FCM] User must enable notifications in device settings');
+          } else if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+            debugPrint('❌ [FCM] Permission not yet requested - this should not happen');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [FCM] Could not get notification settings for diagnosis: $e');
+        }
+        
+        debugPrint('❌ [FCM] ============================================');
       }
     } catch (e, stackTrace) {
       debugPrint('❌ [FCM] ========== TOKEN GET ERROR ==========');
@@ -285,6 +435,34 @@ class FirebaseMessagingService {
       debugPrint('❌ [FCM] Stack trace: $stackTrace');
       debugPrint('❌ [FCM] ======================================');
     }
+  }
+
+  static void _ensureTokenRefreshListener() {
+    if (_tokenRefreshSubscription != null) {
+      return;
+    }
+
+    _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((newToken) async {
+      if (newToken.isEmpty) {
+        debugPrint('⚠️ [FCM] Token refresh returned empty token');
+        return;
+      }
+
+      debugPrint('🔄 [FCM] ========== TOKEN REFRESHED ==========');
+      debugPrint('🔄 [FCM] New token: ${newToken.substring(0, 20)}...');
+      _fcmToken = newToken;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', newToken);
+
+      final currentUser = SupabaseService.client.auth.currentUser;
+      if (currentUser != null) {
+        debugPrint('🔄 [FCM] User is logged in, saving refreshed token...');
+        await _sendTokenToServer(newToken);
+      } else {
+        debugPrint('⚠️ [FCM] User not logged in, refreshed token saved locally');
+      }
+      debugPrint('🔄 [FCM] =====================================');
+    });
   }
 
   /// Send FCM token to Supabase
@@ -297,7 +475,18 @@ class FirebaseMessagingService {
     }
     
     try {
-      final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
+      final platform = _getPlatformTag();
+      final trimmedToken = token.trim();
+
+      if (trimmedToken.isEmpty) {
+        debugPrint('⚠️ [FCM] Token is empty after trimming, skipping save');
+        return;
+      }
+
+      if (platform == 'unknown') {
+        debugPrint('⚠️ [FCM] Platform is unknown, skipping token save');
+        return;
+      }
       
       debugPrint('📤 [FCM] ========== SAVING TOKEN ==========');
       debugPrint('📤 [FCM] User ID: ${user.id}');
@@ -305,54 +494,26 @@ class FirebaseMessagingService {
       debugPrint('📤 [FCM] Token (first 30 chars): ${token.substring(0, token.length > 30 ? 30 : token.length)}...');
       debugPrint('📤 [FCM] Token length: ${token.length}');
       
-      // Try upsert first (handles both insert and update)
       try {
-        final result = await SupabaseService.client
+        await SupabaseService.client
             .from('user_fcm_tokens')
-            .upsert({
-              'user_id': user.id,
-              'fcm_token': token,
-              'platform': platform,
-              'updated_at': DateTime.now().toIso8601String(),
-            }, onConflict: 'user_id,platform');
-        
-        debugPrint('✅ [FCM] Upsert completed');
-        debugPrint('📥 [FCM] Upsert result: $result');
-      } catch (upsertError) {
-        debugPrint('⚠️ [FCM] Upsert failed, trying insert: $upsertError');
-        
-        // If upsert fails, try insert
-        try {
-          await SupabaseService.client
-              .from('user_fcm_tokens')
-              .insert({
-                'user_id': user.id,
-                'fcm_token': token,
-                'platform': platform,
-                'updated_at': DateTime.now().toIso8601String(),
-              });
-          debugPrint('✅ [FCM] Insert successful');
-        } catch (insertError) {
-          debugPrint('⚠️ [FCM] Insert failed, trying update: $insertError');
-          
-          // If insert fails, try update
-          try {
-            await SupabaseService.client
-                .from('user_fcm_tokens')
-                .update({
-                  'fcm_token': token,
-                  'updated_at': DateTime.now().toIso8601String(),
-                })
-                .eq('user_id', user.id)
-                .eq('platform', platform);
-            debugPrint('✅ [FCM] Update successful');
-          } catch (updateError) {
-            debugPrint('❌ [FCM] All save methods failed');
-            debugPrint('❌ [FCM] Update error: $updateError');
-            rethrow;
-          }
-        }
+            .delete()
+            .eq('user_id', user.id)
+            .eq('platform', platform);
+        debugPrint('✅ [FCM] Existing token deleted for user/platform');
+      } catch (deleteError) {
+        debugPrint('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
       }
+
+      await SupabaseService.client
+          .from('user_fcm_tokens')
+          .insert({
+            'user_id': user.id,
+            'fcm_token': trimmedToken,
+            'platform': platform,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+      debugPrint('✅ [FCM] Insert successful');
       
       // Verify token was saved by querying it back
       try {
@@ -367,7 +528,7 @@ class FirebaseMessagingService {
         
         if (verifyResponse != null) {
           final savedToken = verifyResponse['fcm_token'] as String?;
-          if (savedToken != null && savedToken == token) {
+          if (savedToken != null && savedToken == trimmedToken) {
             debugPrint('✅ [FCM] Token verified in database');
             debugPrint('✅ [FCM] Saved token matches: ${savedToken.substring(0, 20)}...');
           } else {
@@ -614,18 +775,40 @@ class FirebaseMessagingService {
   /// Send token to server (public method for manual refresh)
   static Future<void> sendTokenToServer(String token, String userId) async {
     try {
-      final platform = Platform.isIOS ? 'ios' : (Platform.isAndroid ? 'android' : 'unknown');
+      final platform = _getPlatformTag();
+      final trimmedToken = token.trim();
+
+      if (trimmedToken.isEmpty) {
+        debugPrint('⚠️ [FCM] Token is empty after trimming, skipping save');
+        return;
+      }
+
+      if (platform == 'unknown') {
+        debugPrint('⚠️ [FCM] Platform is unknown, skipping token save');
+        return;
+      }
       
       debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
-      
+
+      try {
+        await SupabaseService.client
+            .from('user_fcm_tokens')
+            .delete()
+            .eq('user_id', userId)
+            .eq('platform', platform);
+        debugPrint('✅ [FCM] Existing token deleted for user/platform');
+      } catch (deleteError) {
+        debugPrint('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
+      }
+
       await SupabaseService.client
           .from('user_fcm_tokens')
-          .upsert({
+          .insert({
             'user_id': userId,
-            'fcm_token': token,
+            'fcm_token': trimmedToken,
             'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id,platform');
+          });
       
       debugPrint('✅ [FCM] Token sent to server successfully');
     } catch (e, stackTrace) {
@@ -658,15 +841,6 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Refresh FCM token manually
-  static Future<void> refreshToken() async {
-    try {
-      await _getFCMToken();
-      debugPrint('✅ [FCM] Token refreshed');
-    } catch (e) {
-      debugPrint('❌ [FCM] Error refreshing token: $e');
-    }
-  }
 }
 
 /// Background message handler (must be top-level function)

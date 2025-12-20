@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
-    <!-- Simplified to match iOS: black background with centered logo (even in dark mode) -->
+    <!-- Simplified to match main splash background -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <!-- Black background matching iOS style -->
+        <!-- White background matching main splash -->
         <item name="android:windowSplashScreenBackground">@color/launch_background_color</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs</item>
-        <!-- Black icon background matching iOS style -->
+        <!-- White icon background matching main splash -->
         <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_background_color</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.

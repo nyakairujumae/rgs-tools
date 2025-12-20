@@ -22,7 +22,9 @@ import '../theme/theme_extensions.dart';
 import '../widgets/common/themed_card.dart';
 import '../services/badge_service.dart';
 import '../providers/admin_notification_provider.dart';
+import '../providers/technician_notification_provider.dart';
 import '../models/admin_notification.dart';
+import '../models/technician_notification.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../models/user_role.dart';
@@ -70,6 +72,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
+      // Load notifications from provider (will set up realtime subscription)
+      await context.read<TechnicianNotificationProvider>().loadNotifications();
       // Sync badge with database when screen initializes (like admin section)
       await BadgeService.syncBadgeWithDatabase(context);
       _refreshUnreadCount();
@@ -976,24 +980,67 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                   Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
                   // Content
                   Expanded(
-                    child: Consumer<AuthProvider>(
-                      builder: (context, authProvider, child) {
+                    child: Consumer2<AuthProvider, TechnicianNotificationProvider>(
+                      builder: (context, authProvider, notificationProvider, child) {
+                        // Combine technician notifications from provider with admin notifications
+                        final technicianNotifications = notificationProvider.notifications;
+                        final technicianEmail = authProvider.user?.email;
+                        
                         return StatefulBuilder(
                           builder: (context, setState) {
                             return FutureBuilder<List<Map<String, dynamic>>>(
                               key: ValueKey(_notificationRefreshKey),
-                              future: _loadTechnicianNotifications(
-                                  authProvider.user?.email, authProvider),
-                              builder: (context, snapshot) {
-                                final notifications = snapshot.data ?? [];
+                              future: _loadAdminNotificationsForTechnician(technicianEmail),
+                              builder: (context, adminSnapshot) {
+                                // Convert technician notifications to map format
+                                final techNotifications = technicianNotifications.map((n) {
+                                  return {
+                                    'id': n.id,
+                                    'title': n.title,
+                                    'message': n.message,
+                                    'technician_name': authProvider.userFullName ?? 'You',
+                                    'technician_email': technicianEmail ?? '',
+                                    'type': n.type.value,
+                                    'timestamp': n.timestamp.toIso8601String(),
+                                    'is_read': n.isRead,
+                                    'data': n.data,
+                                  };
+                                }).toList();
+                                
+                                // Combine with admin notifications
+                                final adminNotifications = adminSnapshot.data ?? [];
+                                final allNotifications = [...techNotifications, ...adminNotifications];
+                                
+                                // Sort by timestamp (newest first) and remove duplicates
+                                allNotifications.sort((a, b) {
+                                  final aTime = DateTime.parse(a['timestamp']?.toString() ?? DateTime.now().toIso8601String());
+                                  final bTime = DateTime.parse(b['timestamp']?.toString() ?? DateTime.now().toIso8601String());
+                                  return bTime.compareTo(aTime);
+                                });
+                                
+                                // Remove duplicates based on ID
+                                final seen = <String>{};
+                                final unique = <Map<String, dynamic>>[];
+                                for (var notification in allNotifications) {
+                                  final id = notification['id']?.toString();
+                                  if (id != null && !seen.contains(id)) {
+                                    seen.add(id);
+                                    unique.add(notification);
+                                  }
+                                }
+                                
+                                final notifications = unique.take(20).toList();
 
                                 return RefreshIndicator(
-                                  onRefresh: () async {
-                                    await BadgeService.syncBadgeWithDatabase(context);
-                                    _refreshUnreadCount();
-                                    // Trigger rebuild to reload notifications
-                                    setState(() {});
-                                  },
+                              onRefresh: () async {
+                                // Reload notifications from provider
+                                await notificationProvider.loadNotifications();
+                                await BadgeService.syncBadgeWithDatabase(context);
+                                _refreshUnreadCount();
+                                // Trigger rebuild by incrementing key and calling setState
+                                _notificationRefreshKey++;
+                                setState(() {});
+                              },
                               backgroundColor: Theme.of(context).brightness == Brightness.dark
                                   ? Theme.of(context).colorScheme.surface
                                   : Colors.white,
@@ -1003,8 +1050,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 children: [
                                   // Real Notifications List
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting)
+                                  if (adminSnapshot.connectionState ==
+                                      ConnectionState.waiting || notificationProvider.isLoading)
                                     Center(
                                       child: Padding(
                                         padding: const EdgeInsets.all(24),
@@ -1021,14 +1068,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                                           () {
                                             // Update notification and trigger rebuild
                                             _notificationRefreshKey++;
-                                            setState(() {});
                                             // Also refresh unread count
                                             _refreshUnreadCount();
                                           },
                                         )),
                                     const SizedBox(height: 16),
-                                  ] else if (snapshot.connectionState ==
+                                  ] else if (adminSnapshot.connectionState ==
                                           ConnectionState.done &&
+                                      !notificationProvider.isLoading &&
                                       notifications.isEmpty) ...[
                                     Center(
                                       child: Padding(
@@ -1068,7 +1115,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                                   ],
                                 ],
                               ),
-                            );
+                                );
                               },
                             );
                           },
@@ -1131,79 +1178,22 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     }
   }
 
-  Future<List<Map<String, dynamic>>> _loadTechnicianNotifications(
-      String? technicianEmail, AuthProvider authProvider) async {
+  /// Load admin notifications for technician (where technician_email matches)
+  Future<List<Map<String, dynamic>>> _loadAdminNotificationsForTechnician(
+      String? technicianEmail) async {
     if (technicianEmail == null) return [];
 
     try {
-      final List<Map<String, dynamic>> allNotifications = [];
+      final adminNotifications = await SupabaseService.client
+          .from('admin_notifications')
+          .select()
+          .eq('technician_email', technicianEmail)
+          .order('timestamp', ascending: false)
+          .limit(20);
       
-      // Load notifications from admin_notifications (where technician_email matches)
-      try {
-        final adminNotifications = await SupabaseService.client
-            .from('admin_notifications')
-            .select()
-            .eq('technician_email', technicianEmail)
-            .order('timestamp', ascending: false)
-            .limit(20);
-        
-        allNotifications.addAll((adminNotifications as List).cast<Map<String, dynamic>>());
-      } catch (e) {
-        debugPrint('⚠️ Error loading admin notifications: $e');
-      }
-
-      // Load notifications from technician_notifications (where user_id matches)
-      try {
-        if (authProvider.user != null) {
-          final technicianNotifications = await SupabaseService.client
-              .from('technician_notifications')
-              .select()
-              .eq('user_id', authProvider.user!.id)
-              .order('timestamp', ascending: false)
-              .limit(20);
-          
-          // Convert technician_notifications format to match admin_notifications format
-          final converted = (technicianNotifications as List).map((n) {
-            return {
-              'id': n['id'],
-              'title': n['title'],
-              'message': n['message'],
-              'technician_name': authProvider.userFullName ?? 'You',
-              'technician_email': technicianEmail,
-              'type': n['type'] ?? 'general',
-              'timestamp': n['timestamp'],
-              'is_read': n['is_read'] ?? false,
-              'data': n['data'],
-            };
-          }).toList();
-          
-          allNotifications.addAll(converted);
-        }
-      } catch (e) {
-        debugPrint('⚠️ Error loading technician notifications (table might not exist): $e');
-      }
-
-      // Sort by timestamp (newest first) and remove duplicates
-      allNotifications.sort((a, b) {
-        final aTime = DateTime.parse(a['timestamp']?.toString() ?? DateTime.now().toIso8601String());
-        final bTime = DateTime.parse(b['timestamp']?.toString() ?? DateTime.now().toIso8601String());
-        return bTime.compareTo(aTime);
-      });
-
-      // Remove duplicates based on ID
-      final seen = <String>{};
-      final unique = <Map<String, dynamic>>[];
-      for (var notification in allNotifications) {
-        final id = notification['id']?.toString();
-        if (id != null && !seen.contains(id)) {
-          seen.add(id);
-          unique.add(notification);
-        }
-      }
-
-      return unique.take(20).toList();
+      return (adminNotifications as List).cast<Map<String, dynamic>>();
     } catch (e) {
-      debugPrint('Error loading technician notifications: $e');
+      debugPrint('⚠️ Error loading admin notifications for technician: $e');
       return [];
     }
   }

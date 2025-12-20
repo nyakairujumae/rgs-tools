@@ -31,6 +31,7 @@ import 'providers/tool_issue_provider.dart';
 import 'providers/request_thread_provider.dart';
 import 'providers/pending_approvals_provider.dart';
 import 'providers/admin_notification_provider.dart';
+import 'providers/technician_notification_provider.dart';
 import 'providers/approval_workflows_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
@@ -48,6 +49,7 @@ import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
+bool _splashRemoved = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -239,12 +241,30 @@ void main() async {
 
       if (supabaseInitialized && !kIsWeb) {
         try {
+          print('🔥 Starting Firebase Messaging initialization...');
           // Initialize Firebase Messaging Service after Supabase init to avoid fallback auth client usage
           await fcm_service.FirebaseMessagingService.initialize();
           print('✅ Firebase Messaging initialized');
+          
+          // Verify token was obtained
+          final token = fcm_service.FirebaseMessagingService.fcmToken;
+          if (token != null && token.isNotEmpty) {
+            print('✅ FCM token obtained: ${token.substring(0, 20)}...');
+          } else {
+            print('⚠️ WARNING: FCM token is null after initialization');
+            print('⚠️ This may prevent push notifications from working');
+            print('⚠️ Check notification permissions and Firebase configuration');
+          }
         } catch (e, stackTrace) {
           print('❌ Firebase Messaging initialization failed: $e');
+          print('❌ Error type: ${e.runtimeType}');
           print('❌ Stack trace: $stackTrace');
+        }
+      } else {
+        if (kIsWeb) {
+          print('⚠️ Skipping Firebase Messaging initialization (web platform)');
+        } else if (!supabaseInitialized) {
+          print('⚠️ Skipping Firebase Messaging initialization (Supabase not initialized)');
         }
       }
   } catch (supabaseError, stackTrace) {
@@ -490,6 +510,7 @@ class HvacToolsManagerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
         ChangeNotifierProvider(create: (_) => RequestThreadProvider()),
         ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
+        ChangeNotifierProvider(create: (_) => TechnicianNotificationProvider()),
         ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
@@ -506,8 +527,14 @@ class HvacToolsManagerApp extends StatelessWidget {
             return const SizedBox.shrink();
           };
           
-          // Remove native splash when initialization completes
-          if (authProvider.isInitialized && !authProvider.isLoading) {
+          if (!initialFirstLaunch && !_splashRemoved) {
+            _splashRemoved = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              FlutterNativeSplash.remove();
+            });
+          }
+
+          if (initialFirstLaunch && authProvider.isInitialized && !authProvider.isLoading) {
             FlutterNativeSplash.remove();
           }
           

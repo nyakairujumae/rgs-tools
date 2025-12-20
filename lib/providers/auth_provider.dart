@@ -232,27 +232,12 @@ class AuthProvider with ChangeNotifier {
           }
         }
         
-        // Send FCM token to server after initialization if available (non-blocking)
+        // Register FCM token on app start (non-blocking)
         try {
-          final fcmToken = await _getFCMTokenIfAvailable().timeout(
-            const Duration(seconds: 2),
-            onTimeout: () {
-              debugPrint('⚠️ FCM token fetch timed out');
-              return null;
-            },
-          );
-          if (fcmToken != null) {
-            _sendFCMTokenToServer(fcmToken, _user!.id).timeout(
-              const Duration(seconds: 3),
-              onTimeout: () {
-                debugPrint('⚠️ FCM token send timed out');
-              },
-            ).catchError((e) {
-              debugPrint('⚠️ Could not send FCM token: $e');
-            });
-          }
+          await FirebaseMessagingService.registerCurrentToken()
+              .timeout(const Duration(seconds: 3));
         } catch (e) {
-          debugPrint('⚠️ Could not send FCM token after initialization: $e');
+          debugPrint('⚠️ Could not register FCM token after initialization: $e');
         }
       } else {
         print('🔍 No user found, setting default role');
@@ -1871,10 +1856,25 @@ _isLoading = false;
     }
   }
 
-  /// Get FCM token if available
+  /// Get FCM token if available, or try to refresh it
   Future<String?> _getFCMTokenIfAvailable() async {
     try {
-      return FirebaseMessagingService.fcmToken;
+      // First, try to get existing token
+      var token = FirebaseMessagingService.fcmToken;
+      if (token != null && token.isNotEmpty) {
+        return token;
+      }
+      
+      // If token is null, try to refresh it
+      debugPrint('🔄 [FCM] Token is null, attempting to refresh...');
+      token = await FirebaseMessagingService.refreshToken();
+      if (token != null && token.isNotEmpty) {
+        debugPrint('✅ [FCM] Token obtained after refresh');
+        return token;
+      }
+      
+      debugPrint('⚠️ [FCM] Token still null after refresh attempt');
+      return null;
     } catch (e) {
       debugPrint('⚠️ Could not get FCM token: $e');
       return null;
@@ -1905,17 +1905,11 @@ _isLoading = false;
     
     // Try immediately
     try {
-      final fcmToken = await _getFCMTokenIfAvailable();
-      if (fcmToken != null && fcmToken.isNotEmpty) {
-        debugPrint('✅ [FCM] Token obtained, sending to server...');
-        await _sendFCMTokenToServer(fcmToken, _user!.id);
-        debugPrint('✅ [FCM] Token sent to server after login');
-        return; // Success, no need to retry
-      } else {
-        debugPrint('⚠️ [FCM] Token is null or empty');
-      }
+      await FirebaseMessagingService.registerCurrentToken(forceRefresh: true);
+      debugPrint('✅ [FCM] Token registration attempted after login');
+      return; // Success path will be handled inside registration
     } catch (e, stackTrace) {
-      debugPrint('⚠️ [FCM] Could not get FCM token immediately after login: $e');
+      debugPrint('⚠️ [FCM] Could not register FCM token immediately after login: $e');
       debugPrint('⚠️ [FCM] Stack trace: $stackTrace');
     }
     
@@ -1926,15 +1920,9 @@ _isLoading = false;
     Future.delayed(const Duration(seconds: 2), () async {
       if (_user == null) return;
       try {
-        final fcmToken = await _getFCMTokenIfAvailable();
-        if (fcmToken != null && fcmToken.isNotEmpty) {
-          debugPrint('✅ [FCM] Token obtained on retry (2s), sending to server...');
-          await _sendFCMTokenToServer(fcmToken, _user!.id);
-          debugPrint('✅ [FCM] Token sent to server after retry (2s)');
-          return;
-        } else {
-          debugPrint('⚠️ [FCM] Token still null/empty on retry (2s)');
-        }
+        await FirebaseMessagingService.registerCurrentToken();
+        debugPrint('✅ [FCM] Token registration attempted on retry (2s)');
+        return;
       } catch (e) {
         debugPrint('⚠️ [FCM] Token retry (2s) failed: $e');
       }
@@ -1943,21 +1931,8 @@ _isLoading = false;
       Future.delayed(const Duration(seconds: 3), () async {
         if (_user == null) return;
         try {
-          final fcmToken = await _getFCMTokenIfAvailable();
-          if (fcmToken != null && fcmToken.isNotEmpty) {
-            debugPrint('✅ [FCM] Token obtained on retry (5s), sending to server...');
-            await _sendFCMTokenToServer(fcmToken, _user!.id);
-            debugPrint('✅ [FCM] Token sent to server after retry (5s)');
-          } else {
-            debugPrint('⚠️ [FCM] Token still not available after 5 seconds - Firebase may not be initialized');
-            debugPrint('⚠️ [FCM] Will try to save from local storage...');
-            // Last resort: try to save from local storage
-            try {
-              await FirebaseMessagingService.saveTokenFromLocalStorage();
-            } catch (e) {
-              debugPrint('⚠️ [FCM] Could not save from local storage: $e');
-            }
-          }
+          await FirebaseMessagingService.registerCurrentToken();
+          debugPrint('✅ [FCM] Token registration attempted on retry (5s)');
         } catch (e) {
           debugPrint('⚠️ [FCM] Token retry (5s) failed: $e');
         }

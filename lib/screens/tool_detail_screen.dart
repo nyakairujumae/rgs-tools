@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../utils/file_helper.dart' if (dart.library.html) '../utils/file_helper_stub.dart';
@@ -16,6 +16,8 @@ import '../utils/error_handler.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/auth_error_handler.dart';
+import '../services/push_notification_service.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
@@ -683,6 +685,31 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     icon: Icons.badge_outlined,
                     colors: [Colors.grey.shade700, Colors.grey.shade500],
                     onTap: _releaseBadge,
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+
+            // Request Button for Technicians viewing shared tools assigned to someone else
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
+                final currentUserId = authProvider.userId;
+                
+                // Show Request button for shared tools that have a holder (badged to someone else)
+                // Match the carousel logic: show if tool is shared, has an assignedTo, and it's not the current user
+                if (isTechnician &&
+                    _currentTool.toolType == 'shared' &&
+                    _currentTool.assignedTo != null &&
+                    _currentTool.assignedTo!.isNotEmpty &&
+                    (currentUserId == null || currentUserId != _currentTool.assignedTo)) {
+                  return _buildFilledActionButton(
+                    label: 'Request Tool',
+                    icon: Icons.request_quote,
+                    colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withValues(alpha: 0.85)],
+                    onTap: () => _sendToolRequest(context),
                   );
                 }
 
@@ -1368,6 +1395,135 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _sendToolRequest(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    final requesterId = auth.user?.id;
+    final requesterName = auth.userFullName ?? 'Unknown Technician';
+    final requesterEmail = auth.user?.email ?? 'unknown@technician';
+    
+    if (requesterId == null) {
+      AuthErrorHandler.showErrorSnackBar(
+        context,
+        'You need to be signed in to request a tool.',
+      );
+      return;
+    }
+    
+    final ownerId = _currentTool.assignedTo;
+    if (ownerId == null || ownerId.isEmpty) {
+      AuthErrorHandler.showErrorSnackBar(
+        context,
+        'This tool is not assigned to anyone.',
+      );
+      return;
+    }
+    
+    try {
+      // Get owner email from users table
+      String ownerEmail = 'unknown@owner';
+      try {
+        final userResponse = await SupabaseService.client
+            .from('users')
+            .select('email')
+            .eq('id', ownerId)
+            .maybeSingle();
+        
+        if (userResponse != null && userResponse['email'] != null) {
+          ownerEmail = userResponse['email'] as String;
+        }
+      } catch (e) {
+        debugPrint('Could not fetch owner email: $e');
+      }
+      
+      // Note: Approval workflows are automatically created by the database function
+      // when create_admin_notification is called with type 'tool_request'
+      
+      // Create notification in admin_notifications table (for admin visibility)
+      try {
+        await SupabaseService.client.rpc(
+          'create_admin_notification',
+          params: {
+            'p_title': 'Tool Request: ${_currentTool.name}',
+            'p_message': '$requesterName requested the tool "${_currentTool.name}"',
+            'p_technician_name': requesterName,
+            'p_technician_email': requesterEmail,
+            'p_type': 'tool_request',
+            'p_data': {
+              'tool_id': _currentTool.id,
+              'tool_name': _currentTool.name,
+              'requester_id': requesterId,
+              'requester_name': requesterName,
+              'requester_email': requesterEmail,
+              'owner_id': ownerId,
+            },
+          },
+        );
+        debugPrint('✅ Created admin notification for tool request');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create admin notification: $e');
+      }
+      
+      // Create notification in technician_notifications table for the tool owner
+      // This will appear in the technician's notification center
+      try {
+        await SupabaseService.client.from('technician_notifications').insert({
+          'user_id': ownerId, // The technician who has the tool
+          'title': 'Tool Request: ${_currentTool.name}',
+          'message': '$requesterName needs the tool "${_currentTool.name}" that you currently have',
+          'type': 'tool_request',
+          'is_read': false,
+          'timestamp': DateTime.now().toIso8601String(),
+          'data': {
+            'tool_id': _currentTool.id,
+            'tool_name': _currentTool.name,
+            'requester_id': requesterId,
+            'requester_name': requesterName,
+            'requester_email': requesterEmail,
+            'owner_id': ownerId,
+          },
+        });
+        debugPrint('✅ Created technician notification for tool request');
+        debugPrint('✅ Notification sent to technician: $ownerId');
+        
+        // Send push notification to the tool holder
+        try {
+          await PushNotificationService.sendToUser(
+            userId: ownerId,
+            title: 'Tool Request: ${_currentTool.name}',
+            body: '$requesterName needs the tool "${_currentTool.name}" that you currently have',
+            data: {
+              'type': 'tool_request',
+              'tool_id': _currentTool.id,
+              'requester_id': requesterId,
+            },
+          );
+          debugPrint('✅ Push notification sent to tool holder');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification to tool holder: $pushError');
+        }
+      } catch (e) {
+        debugPrint('❌ Failed to create technician notification: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
+        // Still show success message even if notification fails
+      }
+      
+      if (mounted) {
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Tool request sent to ${_currentTool.assignedTo == requesterId ? 'the owner' : 'the tool holder'}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error sending tool request: $e');
+      if (mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to send request: $e',
+        );
       }
     }
   }

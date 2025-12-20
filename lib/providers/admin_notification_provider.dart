@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
@@ -9,6 +11,8 @@ class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> _notifications = [];
   bool _isLoading = false;
   String? _error;
+  RealtimeChannel? _realtimeChannel;
+  StreamSubscription? _realtimeSubscription;
 
   List<AdminNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -72,6 +76,9 @@ class AdminNotificationProvider extends ChangeNotifier {
       } catch (e) {
         debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
       }
+      
+      // Set up realtime subscription for real-time updates
+      _setupRealtimeSubscription();
     } catch (e) {
       debugPrint('Error loading notifications: $e');
       if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
@@ -324,6 +331,109 @@ class AdminNotificationProvider extends ChangeNotifier {
       case NotificationType.general:
         return 'New notification from $technicianName';
     }
+  }
+
+  /// Set up realtime subscription for real-time notification updates
+  void _setupRealtimeSubscription() {
+    // Clean up existing subscription
+    _realtimeChannel?.unsubscribe();
+    _realtimeSubscription?.cancel();
+    
+    try {
+      debugPrint('📡 [AdminNotifications] Setting up realtime subscription...');
+      
+      final channel = SupabaseService.client.channel('admin_notifications_realtime');
+      
+      // Listen for new notifications (INSERT)
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'admin_notifications',
+        callback: (payload) async {
+          debugPrint('📡 [AdminNotifications] New notification received via realtime');
+          try {
+            final newNotification = AdminNotification.fromJson(payload.newRecord);
+            _notifications.insert(0, newNotification);
+            notifyListeners();
+            
+            // Update badge in real-time
+            final unreadCount = _notifications.where((n) => !n.isRead).length;
+            await BadgeService.updateBadge(unreadCount);
+            debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+          } catch (e) {
+            debugPrint('⚠️ [AdminNotifications] Error processing new notification: $e');
+            // Reload notifications if parsing fails
+            loadNotifications(skipIfLoading: false);
+          }
+        },
+      );
+      
+      // Listen for notification updates (UPDATE - when marked as read)
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'admin_notifications',
+        callback: (payload) async {
+          debugPrint('📡 [AdminNotifications] Notification updated via realtime');
+          try {
+            final updatedNotification = AdminNotification.fromJson(payload.newRecord);
+            final index = _notifications.indexWhere((n) => n.id == updatedNotification.id);
+            if (index != -1) {
+              _notifications[index] = updatedNotification;
+              notifyListeners();
+              
+              // Update badge in real-time
+              final unreadCount = _notifications.where((n) => !n.isRead).length;
+              await BadgeService.updateBadge(unreadCount);
+              debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+            } else {
+              // Notification not in local list, reload
+              loadNotifications(skipIfLoading: false);
+            }
+          } catch (e) {
+            debugPrint('⚠️ [AdminNotifications] Error processing notification update: $e');
+            loadNotifications(skipIfLoading: false);
+          }
+        },
+      );
+      
+      // Listen for notification deletions (DELETE)
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.delete,
+        schema: 'public',
+        table: 'admin_notifications',
+        callback: (payload) async {
+          debugPrint('📡 [AdminNotifications] Notification deleted via realtime');
+          try {
+            final deletedId = payload.oldRecord['id'] as String;
+            _notifications.removeWhere((n) => n.id == deletedId);
+            notifyListeners();
+            
+            // Update badge in real-time
+            final unreadCount = _notifications.where((n) => !n.isRead).length;
+            await BadgeService.updateBadge(unreadCount);
+            debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+          } catch (e) {
+            debugPrint('⚠️ [AdminNotifications] Error processing notification deletion: $e');
+            loadNotifications(skipIfLoading: false);
+          }
+        },
+      );
+      
+      channel.subscribe();
+      _realtimeChannel = channel;
+      debugPrint('✅ [AdminNotifications] Realtime subscription active');
+    } catch (e) {
+      debugPrint('⚠️ [AdminNotifications] Error setting up realtime subscription: $e');
+      debugPrint('⚠️ [AdminNotifications] Notifications will still work, but updates may be delayed');
+    }
+  }
+
+  @override
+  void dispose() {
+    _realtimeChannel?.unsubscribe();
+    _realtimeSubscription?.cancel();
+    super.dispose();
   }
 
 }

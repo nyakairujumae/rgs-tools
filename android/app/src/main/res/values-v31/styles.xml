@@ -7,10 +7,10 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <!-- Black background matching iOS style -->
+        <!-- White background matching main splash -->
         <item name="android:windowSplashScreenBackground">@color/launch_background_color</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs</item>
-        <!-- White icon background matching iOS -->
+        <!-- White icon background matching main splash -->
         <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_background_color</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.
