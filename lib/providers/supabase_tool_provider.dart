@@ -50,6 +50,7 @@ class SupabaseToolProvider with ChangeNotifier {
       // Send push notification to admins about new tool (non-blocking)
       try {
         await PushNotificationService.sendToAdmins(
+          fromUserId: null, // System notification
           title: 'New Tool Added',
           body: '${tool.name} has been added to the inventory',
           data: {

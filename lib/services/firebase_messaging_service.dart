@@ -602,8 +602,15 @@ class FirebaseMessagingService {
       debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
       debugPrint('📱 [FCM] App State: FOREGROUND');
       
-      // Always show a local notification so the user sees alerts while the app is in the foreground
-      await _showLocalNotification(message);
+      // FCM automatically shows notifications when notification field is present
+      // Only show local notification if this is a data-only message (no notification field)
+      // This prevents duplicate notifications
+      if (message.notification == null) {
+        debugPrint('📱 [FCM] Data-only message, showing local notification');
+        await _showLocalNotification(message);
+      } else {
+        debugPrint('📱 [FCM] Notification field present, FCM will show it automatically (skipping local notification to avoid duplicates)');
+      }
       
       // Update badge regardless of notification type
       await _updateBadge();
@@ -693,7 +700,25 @@ class FirebaseMessagingService {
       );
       
       // Use messageId as notification ID, or fallback to hash
-      final notificationId = message.messageId?.hashCode ?? message.hashCode;
+      // Use absolute value to ensure positive ID (required by some platforms)
+      final notificationId = (message.messageId?.hashCode ?? message.hashCode).abs() % 2147483647;
+      
+      // Check if we've already shown this notification (prevent duplicates)
+      // Use a combination of messageId and timestamp to create unique ID
+      final uniqueId = '${message.messageId}_${message.sentTime?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch}';
+      final notificationKey = 'shown_notification_$uniqueId';
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check if we've already shown this notification in the last 5 seconds (deduplication window)
+      final lastShown = prefs.getInt(notificationKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - lastShown < 5000) {
+        debugPrint('⚠️ [FCM] Duplicate notification detected, skipping (shown ${(now - lastShown) / 1000}s ago)');
+        return;
+      }
+      
+      // Mark as shown
+      await prefs.setInt(notificationKey, now);
       
       await _localNotifications.show(
         notificationId,

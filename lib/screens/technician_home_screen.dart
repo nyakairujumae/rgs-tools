@@ -15,6 +15,7 @@ import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/user_name_service.dart';
 import 'settings_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
 import '../theme/app_theme.dart';
@@ -1443,12 +1444,24 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   }
 
   void _setupAutoSlide(List<Tool> featuredTools) {
-    // Only setup if the list actually changed
+    // Don't setup auto-slide if there's only one or no tools
+    if (featuredTools.length <= 1) {
+      debugPrint('⏸️ Auto-slide disabled: ${featuredTools.length} tool(s)');
+      _autoSlideTimer?.cancel();
+      _autoSlideTimer = null;
+      return;
+    }
+    
+    // Only setup if the list actually changed OR timer is not running
     final toolsChanged = _lastFeaturedTools.length != featuredTools.length ||
         !_lastFeaturedTools.every((tool) => featuredTools.any((t) => t.id == tool.id));
     
-    if (!toolsChanged && _autoSlideTimer != null) {
-      return; // List hasn't changed and timer is running, don't reset
+    // Check if timer is actually active (not just exists)
+    final timerIsActive = _autoSlideTimer != null && _autoSlideTimer!.isActive;
+    
+    if (!toolsChanged && timerIsActive) {
+      debugPrint('✅ Auto-slide already running, skipping setup');
+      return; // List hasn't changed and timer is active, don't reset
     }
     
     _lastFeaturedTools = List.from(featuredTools);
@@ -1456,12 +1469,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     // Cancel existing timer if any
     _autoSlideTimer?.cancel();
     _autoSlideTimer = null;
-    
-    // Don't setup auto-slide if there's only one or no tools
-    if (featuredTools.length <= 1) {
-      debugPrint('⏸️ Auto-slide disabled: ${featuredTools.length} tool(s)');
-      return;
-    }
     
     // Wait for next frame to ensure PageController is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1474,6 +1481,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && _sharedToolsController.hasClients) {
             _startAutoSlideTimer(featuredTools);
+          } else {
+            // If still not ready, try again after another delay
+            Future.delayed(const Duration(milliseconds: 1000), () {
+              if (mounted && _sharedToolsController.hasClients) {
+                _startAutoSlideTimer(featuredTools);
+              }
+            });
           }
         });
         return;
@@ -1514,7 +1528,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     
     // Check if controller is attached
     if (!_sharedToolsController.hasClients) {
-      debugPrint('⏸️ PageController not attached, skipping slide');
+      debugPrint('⏸️ PageController not attached, will retry setup...');
+      // Try to restart the timer setup if controller becomes available
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _sharedToolsController.hasClients && _autoSlideTimer == null) {
+          debugPrint('🔄 PageController now available, restarting auto-slide...');
+          _startAutoSlideTimer(featuredTools);
+        }
+      });
       return; // Skip this iteration, try again next time
     }
     
@@ -1531,7 +1552,16 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       );
     } catch (e) {
       debugPrint('❌ Error in auto-slide: $e');
-      // Don't cancel, just skip this iteration
+      // If there's an error, try to restart the timer
+      if (mounted && _autoSlideTimer != null) {
+        _autoSlideTimer?.cancel();
+        _autoSlideTimer = null;
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted && _sharedToolsController.hasClients) {
+            _startAutoSlideTimer(featuredTools);
+          }
+        });
+      }
     }
   }
 
@@ -2717,21 +2747,36 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       return const SizedBox.shrink();
     }
     
-    String name = 'Technician';
-    for (final t in technicians) {
-      if (t.id == tool.assignedTo) {
-        final parts = (t.name).trim().split(RegExp(r"\s+"));
-        name = parts.isNotEmpty ? parts.first : t.name;
-        break;
-      }
-    }
-    return Text(
-      '$name has this tool',
-      style: TextStyle(
-        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onSurface.withOpacity(0.7),
-      ),
+    // Fetch user name from users table (not technicians table)
+    // tool.assignedTo contains user ID from users table
+    return FutureBuilder<String>(
+      future: UserNameService.getUserName(tool.assignedTo!),
+      builder: (context, snapshot) {
+        String name = 'Technician';
+        
+        if (snapshot.hasData) {
+          name = UserNameService.getFirstName(snapshot.data!);
+        } else if (snapshot.hasError) {
+          debugPrint('⚠️ Error fetching user name for ${tool.assignedTo}: ${snapshot.error}');
+          // Fallback: try to find in technicians list as backup
+          for (final t in technicians) {
+            if (t.id == tool.assignedTo) {
+              final parts = (t.name).trim().split(RegExp(r"\s+"));
+              name = parts.isNotEmpty ? parts.first : t.name;
+              break;
+            }
+          }
+        }
+        
+        return Text(
+          '$name has this tool',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        );
+      },
     );
   }
 

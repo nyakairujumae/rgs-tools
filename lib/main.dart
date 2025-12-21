@@ -56,6 +56,7 @@ void main() async {
   
   // CRITICAL: Splash screen ONLY on fresh install (first launch)
   // After first launch, NEVER show splash again, even if user is not logged in
+  // Use single persistent boolean flag - save immediately when splash is shown
   bool shouldShowSplash = false;
   
   try {
@@ -63,28 +64,25 @@ void main() async {
     shouldShowSplash = isFirstLaunch;
     
     if (isFirstLaunch) {
-      print('🚀 App starting (FIRST LAUNCH - fresh install) - showing splash screen...');
+      print('🚀 App starting (FIRST INSTALL) - will show splash screen');
+      // CRITICAL: Save flag IMMEDIATELY before preserving splash
+      // This ensures splash will never show again, even if app crashes
+      await FirstLaunchService.markSplashShown();
+      print('✅ Splash flag saved - will never show again');
+      
+      // Only preserve native splash screen on first install
+      FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+      print('🚀 Native splash preserved (first install only)');
     } else {
-      print('🚀 App starting (NOT first launch) - skipping splash screen...');
+      // Not first install - remove splash immediately
+      FlutterNativeSplash.remove();
+      print('🚀 Skipping splash screen (already shown before)');
     }
   } catch (e) {
-    // If check fails, assume not first launch (don't show splash)
-    print('⚠️ Error checking first launch: $e');
+    // If check fails, assume splash was shown (don't show again)
+    print('⚠️ Error checking splash status: $e - assuming splash was shown');
     shouldShowSplash = false;
-  }
-  
-  if (shouldShowSplash) {
-    // Only preserve native splash screen on first launch (fresh install)
-    FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-    print('🚀 Showing splash screen (first launch only)');
-    // Mark first launch complete immediately to prevent future splash replays
-    FirstLaunchService.markFirstLaunchComplete().catchError((e) {
-      print('⚠️ Could not mark first launch complete: $e');
-    });
-  } else {
-    // Not first launch - remove splash immediately
     FlutterNativeSplash.remove();
-    print('🚀 Skipping splash screen (not first launch)');
   }
 
   print('🚀 App starting...');
@@ -384,57 +382,26 @@ class ErrorBoundary extends StatelessWidget {
   }
 }
 
-/// Wrapper to show splash screen only on first launch
-class _FirstLaunchWrapper extends StatefulWidget {
+/// Simplified wrapper - just uses the initial state passed from main()
+/// No re-checking, no async operations, no state changes
+/// The flag is already saved in main() before this widget is created
+class _FirstLaunchWrapper extends StatelessWidget {
   final Widget firstLaunchChild;
   final Widget defaultChild;
-  final bool initialFirstLaunchState;
+  final bool shouldShowSplash;
   
   const _FirstLaunchWrapper({
     required this.firstLaunchChild,
     required this.defaultChild,
-    required this.initialFirstLaunchState,
+    required this.shouldShowSplash,
   });
   
   @override
-  State<_FirstLaunchWrapper> createState() => _FirstLaunchWrapperState();
-}
-
-class _FirstLaunchWrapperState extends State<_FirstLaunchWrapper> {
-  bool? _isFirstLaunch;
-  
-  @override
-  void initState() {
-    super.initState();
-    _isFirstLaunch = widget.initialFirstLaunchState ? true : null;
-    _evaluateFirstLaunch();
-  }
-  
-  Future<void> _evaluateFirstLaunch() async {
-    try {
-      final isFirst = await FirstLaunchService.isFirstLaunch();
-      if (!mounted) return;
-      if (isFirst) {
-        await FirstLaunchService.markFirstLaunchComplete();
-      }
-      if (_isFirstLaunch != isFirst) {
-        setState(() => _isFirstLaunch = isFirst);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      print('⚠️ Error checking first launch (non-critical): $e');
-      if (_isFirstLaunch != false) {
-        setState(() => _isFirstLaunch = false);
-      }
-    }
-  }
-  
-  @override
   Widget build(BuildContext context) {
-    if (_isFirstLaunch == true) {
-      return widget.firstLaunchChild;
-    }
-    return widget.defaultChild;
+    // Simple check: if shouldShowSplash is true, show splash child
+    // Otherwise show default child (login/role selection)
+    // No async, no state changes, no re-checking
+    return shouldShowSplash ? firstLaunchChild : defaultChild;
   }
 }
 
@@ -534,8 +501,13 @@ class HvacToolsManagerApp extends StatelessWidget {
             });
           }
 
+          // Remove native splash when auth is initialized (only if it was shown)
           if (initialFirstLaunch && authProvider.isInitialized && !authProvider.isLoading) {
-            FlutterNativeSplash.remove();
+            if (!_splashRemoved) {
+              _splashRemoved = true;
+              FlutterNativeSplash.remove();
+              print('✅ Native splash removed after initialization');
+            }
           }
           
           // Always render MaterialApp (like mom.dart)
@@ -865,7 +837,7 @@ class HvacToolsManagerApp extends StatelessWidget {
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),
-          initialFirstLaunchState: initialFirstLaunch,
+          shouldShowSplash: initialFirstLaunch,
         );
       }
       

@@ -33,16 +33,47 @@ class PushNotificationService {
 
       if (response.status == 200 && response.data is Map) {
         final responseData = response.data as Map;
-        if (responseData['success'] == true) {
+        debugPrint('📊 [Push] Response data type: ${responseData.runtimeType}');
+        debugPrint('📊 [Push] Response keys: ${responseData.keys.toList()}');
+        
+        // Check for success field
+        final success = responseData['success'];
+        debugPrint('📊 [Push] Success value: $success (type: ${success.runtimeType})');
+        
+        if (success == true) {
+          // Also check results array for detailed success info
+          if (responseData['results'] != null && responseData['results'] is List) {
+            final results = responseData['results'] as List;
+            debugPrint('📊 [Push] Results count: ${results.length}');
+            for (var i = 0; i < results.length; i++) {
+              final result = results[i];
+              if (result is Map) {
+                debugPrint('📊 [Push] Result $i: success=${result['success']}, platform=${result['platform']}');
+                if (result['error'] != null) {
+                  debugPrint('⚠️ [Push] Result $i error: ${result['error']}');
+                }
+              }
+            }
+          }
+          
           debugPrint('✅ [Push] Notification sent successfully via Edge Function');
           return true;
+        } else {
+          debugPrint('❌ [Push] Edge Function returned success=false');
+          debugPrint('❌ [Push] Full response: ${responseData.toString()}');
         }
+      } else {
+        debugPrint('❌ [Push] Invalid response format');
+        debugPrint('❌ [Push] Status: ${response.status}');
+        debugPrint('❌ [Push] Data type: ${response.data.runtimeType}');
+        debugPrint('❌ [Push] Data: ${response.data}');
       }
 
       debugPrint('❌ [Push] Failed to send notification via Edge Function');
       return false;
-    } catch (e) {
-      debugPrint('❌ [Push] Error sending to user $userId: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Push] Exception sending to user $userId: $e');
+      debugPrint('❌ [Push] Stack trace: $stackTrace');
       return false;
     }
   }
@@ -52,6 +83,7 @@ class PushNotificationService {
     required String title,
     required String body,
     Map<String, dynamic>? data,
+    String? fromUserId, // Optional: user ID who triggered the notification
   }) async {
     try {
       debugPrint('📤 [Push] ========== SENDING TO ADMINS ==========');

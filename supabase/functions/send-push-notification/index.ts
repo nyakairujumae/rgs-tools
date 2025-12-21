@@ -64,6 +64,31 @@ async function fetchLatestToken(userId: string, platform: "ios" | "android") {
   return data?.fcm_token ? { token: data.fcm_token, platform } : null;
 }
 
+async function fetchTokenPlatform(token: string): Promise<"ios" | "android" | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("user_fcm_tokens")
+      .select("platform")
+      .eq("fcm_token", token)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const platform = normalizePlatform(data.platform);
+    return platform;
+  } catch (e) {
+    console.warn("⚠️ Could not fetch platform for token:", e);
+    return null;
+  }
+}
+
 async function deleteToken(token: string) {
   if (!supabase) {
     return;
@@ -297,8 +322,29 @@ serve(async (req) => {
       );
     }
     
-    // Get request body
-    const { token, user_id, platform, title, body, data } = await req.json();
+    // Get request body with better error handling
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      // Remove any control characters that might cause JSON parsing issues
+      const cleanedBodyText = bodyText.replace(/[\x00-\x1F\x7F]/g, '');
+      requestBody = JSON.parse(cleanedBodyText);
+    } catch (parseError: any) {
+      console.error("❌ JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({
+          error: "Invalid JSON in request body",
+          details: parseError.message || "Could not parse JSON",
+          hint: "Check for special characters or malformed JSON. Make sure all strings are properly quoted."
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+    
+    const { token, user_id, platform, title, body, data } = requestBody;
     
     // Validate required fields
     if (!title || !body) {
@@ -405,9 +451,23 @@ serve(async (req) => {
     let targets: Array<{ token: string; platform: string }> = [];
 
     if (token) {
-      targets = [{ token: String(token), platform: normalizePlatform(platform) ?? "unknown" }];
+      // Try to detect platform from database if not provided
+      let detectedPlatform = normalizePlatform(platform);
+      if (!detectedPlatform) {
+        console.log("🔍 Platform not provided, trying to detect from database...");
+        detectedPlatform = await fetchTokenPlatform(String(token));
+        if (detectedPlatform) {
+          console.log(`✅ Platform detected from database: ${detectedPlatform}`);
+        } else {
+          console.warn("⚠️ Could not detect platform, defaulting to android");
+          detectedPlatform = "android"; // Default to android if we can't detect
+        }
+      }
+      targets = [{ token: String(token), platform: detectedPlatform }];
     } else {
       const normalizedPlatform = normalizePlatform(platform);
+      // Only fetch tokens for the specified platform, or if not specified, fetch for both but send to each separately
+      // This prevents sending duplicate notifications if user has both Android and iOS tokens
       const platformsToFetch = normalizedPlatform ? [normalizedPlatform] : ["android", "ios"];
       const fetchedTargets: Array<{ token: string; platform: string }> = [];
 
@@ -418,7 +478,14 @@ serve(async (req) => {
         }
       }
 
+      // If no platform specified and user has tokens for both platforms, 
+      // we'll send to both but they're separate notifications (one per platform)
+      // This is expected behavior - user might have multiple devices
       targets = fetchedTargets;
+      
+      if (targets.length > 1 && !normalizedPlatform) {
+        console.log(`ℹ️ User has tokens for ${targets.length} platforms, will send to all (user may have multiple devices)`);
+      }
     }
 
     if (targets.length === 0) {
@@ -436,7 +503,8 @@ serve(async (req) => {
     const results: Array<{ token: string; platform: string; success: boolean; name?: string; error?: any }> = [];
 
     for (const target of targets) {
-      const fcmPayload = {
+      // Build platform-specific payload
+      const fcmPayload: any = {
         message: {
           token: target.token,
           notification: {
@@ -444,27 +512,66 @@ serve(async (req) => {
             body,
           },
           data: safeData,
-          android: {
-            priority: "high",
-          },
-          apns: {
-            headers: {
-              "apns-priority": "10",
-              "apns-push-type": "alert",
-            },
-            payload: {
-              aps: {
-                alert: {
-                  title,
-                  body,
-                },
-                sound: "default",
-                badge: 1,
-              },
-            },
-          },
         },
       };
+
+      // Add Android-specific config
+      if (target.platform === "android") {
+        fcmPayload.message.android = {
+          priority: "high",
+          notification: {
+            sound: "default",
+            channelId: "rgs_notifications",
+          },
+        };
+      }
+
+      // Add iOS-specific config
+      if (target.platform === "ios") {
+        fcmPayload.message.apns = {
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              alert: {
+                title,
+                body,
+              },
+              sound: "default",
+              badge: 1,
+            },
+          },
+        };
+      }
+
+      // If platform is unknown, include both (fallback)
+      if (target.platform === "unknown") {
+        fcmPayload.message.android = {
+          priority: "high",
+          notification: {
+            sound: "default",
+            channelId: "rgs_notifications",
+          },
+        };
+        fcmPayload.message.apns = {
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              alert: {
+                title,
+                body,
+              },
+              sound: "default",
+              badge: 1,
+            },
+          },
+        };
+      }
 
       console.log("✅ Final FCM payload", JSON.stringify(fcmPayload));
       

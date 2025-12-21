@@ -4,7 +4,7 @@
     <item>
         <color android:color="@android:color/white"/>
     </item>
-    <!-- Centered logo (matching iOS LaunchImage) -->
+    <!-- Centered logo (small, resized image) -->
     <item>
         <bitmap 
             android:gravity="center" 

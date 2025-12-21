@@ -1,59 +1,82 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service to track if this is the first launch of the app
+/// Service to track if splash screen has been shown
+/// Uses a single persistent boolean flag in local storage
+/// Flag is saved immediately when splash is first shown
 class FirstLaunchService {
-  static const String _firstLaunchKey = 'has_completed_first_launch';
+  static const String _splashShownKey = 'splash_screen_shown';
+  static bool? _cachedValue;
 
-  /// Check if this is the first launch (before first login)
-  /// Returns true if the user has never completed the splash screen
+  /// Check if splash screen has been shown before
+  /// Returns false if splash has been shown (should NOT show again)
+  /// Returns true if splash has NOT been shown (should show on first install)
   static Future<bool> isFirstLaunch() async {
+    // Return cached value if available (synchronous check)
+    if (_cachedValue != null) {
+      return _cachedValue!;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 3),
         onTimeout: () {
-          throw TimeoutException('SharedPreferences timeout');
+          print('⚠️ SharedPreferences timeout, assuming splash was shown');
+          return SharedPreferences.getInstance();
         },
       );
-      return !(prefs.getBool(_firstLaunchKey) ?? false);
+      
+      final splashShown = prefs.getBool(_splashShownKey) ?? false;
+      _cachedValue = !splashShown; // Cache the inverse (isFirstLaunch)
+      
+      print('🔍 Splash screen check: ${splashShown ? "ALREADY SHOWN" : "NOT SHOWN YET"}');
+      return !splashShown;
     } catch (e) {
-      // If we can't check, assume it's not first launch to avoid blocking
-      print('⚠️ Error checking first launch status: $e');
+      // If we can't check, assume splash was shown (don't show again)
+      print('⚠️ Error checking splash status: $e - assuming splash was shown');
+      _cachedValue = false;
       return false;
     }
   }
 
-  /// Mark that the first launch has been completed
-  /// This should be called after the splash screen is shown and user proceeds
-  static Future<void> markFirstLaunchComplete() async {
+  /// Mark that the splash screen has been shown
+  /// This should be called IMMEDIATELY when splash is first shown
+  /// This flag persists forever - splash will never show again
+  static Future<void> markSplashShown() async {
     try {
       final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 3),
         onTimeout: () {
-          throw TimeoutException('SharedPreferences timeout');
+          print('⚠️ SharedPreferences timeout while saving splash flag');
+          return SharedPreferences.getInstance();
         },
       );
-      await prefs.setBool(_firstLaunchKey, true);
-      print('✅ First launch marked as complete');
+      
+      await prefs.setBool(_splashShownKey, true);
+      _cachedValue = false; // Update cache
+      
+      print('✅ Splash screen flag saved - will NEVER show again');
     } catch (e) {
-      print('⚠️ Error marking first launch complete: $e');
-      // Don't throw - this is not critical
+      print('⚠️ Error saving splash flag: $e');
+      // Still update cache even if save fails
+      _cachedValue = false;
     }
   }
 
-  /// Reset first launch status (useful for testing)
-  static Future<void> resetFirstLaunch() async {
+  /// Reset splash flag (useful for testing only)
+  static Future<void> resetSplashFlag() async {
     try {
       final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 3),
         onTimeout: () {
           throw TimeoutException('SharedPreferences timeout');
         },
       );
-      await prefs.remove(_firstLaunchKey);
-      print('✅ First launch status reset');
+      await prefs.remove(_splashShownKey);
+      _cachedValue = null; // Clear cache
+      print('✅ Splash flag reset (testing only)');
     } catch (e) {
-      print('⚠️ Error resetting first launch status: $e');
+      print('⚠️ Error resetting splash flag: $e');
     }
   }
 }

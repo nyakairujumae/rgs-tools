@@ -1071,6 +1071,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           await PushNotificationService.sendToAdmins(
             title: 'Tool Request: ${tool.name}',
             body: '$requesterName requested the tool "${tool.name}"',
+            fromUserId: requesterId, // Who sent the request
             data: {
               'type': 'tool_request',
               'tool_id': tool.id,

@@ -137,6 +137,7 @@ class ToolIssueProvider with ChangeNotifier {
           await PushNotificationService.sendToAdmins(
             title: 'Issue Report',
             body: '${technicianName} reported a ${issue.issueType.toLowerCase()} issue for ${issue.toolName}',
+            fromUserId: issue.reportedByUserId, // Technician who reported the issue
             data: {
               'type': 'issue_report',
               'issue_id': newIssue.id,

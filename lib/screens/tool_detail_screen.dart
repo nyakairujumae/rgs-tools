@@ -18,6 +18,7 @@ import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../services/push_notification_service.dart';
+import '../services/user_name_service.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
@@ -251,10 +252,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
                         _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
                         if (_currentTool.assignedTo != null) 
-                  Consumer<SupabaseTechnicianProvider>(
-                    builder: (context, technicianProvider, child) {
-                      final technicianName = technicianProvider.getTechnicianNameById(_currentTool.assignedTo) ?? 'Unknown';
-                      return _buildInfoRow('Assigned To', technicianName);
+                  FutureBuilder<String>(
+                    future: UserNameService.getUserName(_currentTool.assignedTo!),
+                    builder: (context, snapshot) {
+                      final name = snapshot.hasData ? snapshot.data! : 'Unknown';
+                      return _buildInfoRow('Assigned To', name);
                     },
                   ),
                 if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
@@ -1692,4 +1694,5 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       },
     );
   }
+
 }
