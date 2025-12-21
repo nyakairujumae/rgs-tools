@@ -350,6 +350,7 @@ class AuthProvider with ChangeNotifier {
     required String password,
     String? fullName,
     UserRole? role,
+    String? positionId, // Admin position ID
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -558,7 +559,7 @@ class AuthProvider with ChangeNotifier {
     String name,
     String email,
     String password,
-    String position,
+    String positionId, // Changed from position name to position_id
   ) async {
     // Validate email domain
     if (!email.endsWith('@royalgulf.ae') && 
@@ -567,12 +568,13 @@ class AuthProvider with ChangeNotifier {
       throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
     }
 
-    debugPrint('🔍 Starting admin registration for: $email');
+    debugPrint('🔍 Starting admin registration for: $email with position_id: $positionId');
     final response = await signUp(
       email: email,
       password: password,
       fullName: name,
       role: UserRole.admin,
+      positionId: positionId, // Pass position_id to signUp
     );
 
     // Verify that user was actually created
@@ -607,23 +609,43 @@ class AuthProvider with ChangeNotifier {
         if (userRecord == null) {
           debugPrint('⚠️ User record not found in users table, creating manually...');
           // Create user record manually if trigger didn't fire
+          final userData = {
+            'id': response.user!.id,
+            'email': email,
+            'full_name': name,
+            'role': 'admin',
+          };
+          
+          // Add position_id if provided
+          if (positionId != null && positionId.isNotEmpty) {
+            userData['position_id'] = positionId;
+            debugPrint('🔍 Adding position_id to user record: $positionId');
+          }
+          
           await SupabaseService.client
               .from('users')
-              .insert({
-                'id': response.user!.id,
-                'email': email,
-                'full_name': name,
-                'role': 'admin',
-              })
+              .insert(userData)
               .timeout(
                 const Duration(seconds: 15),
                 onTimeout: () {
                   throw TimeoutException('Failed to create user record. Please try again.');
                 },
               );
-          debugPrint('✅ User record created manually');
+          debugPrint('✅ User record created manually with position_id');
         } else {
           debugPrint('✅ User record exists in users table');
+          // Update position_id if it wasn't set by trigger
+          if (positionId != null && positionId.isNotEmpty && userRecord['position_id'] == null) {
+            try {
+              await SupabaseService.client
+                  .from('users')
+                  .update({'position_id': positionId})
+                  .eq('id', response.user!.id);
+              debugPrint('✅ Updated user record with position_id: $positionId');
+            } catch (e) {
+              debugPrint('⚠️ Could not update position_id: $e');
+            }
+          }
         }
       } catch (e) {
         debugPrint('⚠️ Error verifying/creating user record: $e');

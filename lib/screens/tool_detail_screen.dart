@@ -708,8 +708,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     _currentTool.assignedTo!.isNotEmpty &&
                     (currentUserId == null || currentUserId != _currentTool.assignedTo)) {
                   return _buildFilledActionButton(
-                    label: 'Request Tool',
-                    icon: Icons.request_quote,
+                    label: 'Request from Holder',
+                    icon: Icons.handshake,
                     colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withValues(alpha: 0.85)],
                     onTap: () => _sendToolRequest(context),
                   );

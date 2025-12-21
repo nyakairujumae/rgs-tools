@@ -153,8 +153,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         if (mounted && !_isDisposed) {
           // Skip if already loading to prevent duplicate calls
           context.read<AdminNotificationProvider>().loadNotifications(skipIfLoading: true);
-        }
-      });
+      }
+    });
     });
   }
 

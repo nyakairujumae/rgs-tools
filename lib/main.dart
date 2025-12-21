@@ -618,10 +618,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
                               print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
                               
-                              // Wait a moment for database trigger to create user record
+                              // Wait for database trigger to create user record and pending approval
                               // The trigger fires when email_confirmed_at is set
-                              print('⏳ Waiting for database trigger to create user record...');
-                              await Future.delayed(const Duration(seconds: 2));
+                              // For technicians, this also creates a pending_user_approvals record
+                              print('⏳ Waiting for database trigger to create user record and pending approval...');
                               
                               // Get auth provider and re-initialize to pick up new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -629,8 +629,89 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Wait for auth provider to fully initialize with the new session
                               await authProvider.initialize();
                               
+                              // For technicians, we need to wait for the database trigger and check pending approvals
+                              // Retry logic to ensure trigger has completed
+                              bool isTechnician = false;
+                              bool hasPendingApproval = false;
+                              
+                              // Check user role from metadata first
+                              final userRoleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                              print('🔍 User role from metadata: $userRoleFromMetadata');
+                              
+                              if (userRoleFromMetadata != 'admin') {
+                                isTechnician = true;
+                                print('🔍 User is a technician - checking for pending approval...');
+                                
+                                // Retry checking for pending approval (database trigger might need time)
+                                for (int attempt = 0; attempt < 5; attempt++) {
+                                  await Future.delayed(Duration(milliseconds: 500 + (attempt * 200)));
+                                  
+                                  try {
+                                    // Check pending_user_approvals table directly
+                                    final pendingApproval = await SupabaseService.client
+                                        .from('pending_user_approvals')
+                                        .select('status')
+                                        .eq('user_id', sessionResponse.session!.user.id)
+                                        .order('created_at', ascending: false)
+                                        .limit(1)
+                                        .maybeSingle();
+                                    
+                                    if (pendingApproval != null) {
+                                      final status = pendingApproval['status'] as String?;
+                                      print('🔍 Found pending approval record (attempt ${attempt + 1}): $status');
+                                      
+                                      if (status == 'pending' || status == 'rejected') {
+                                        hasPendingApproval = true;
+                                        print('✅ Technician has pending approval - will redirect to pending approval screen');
+                                        break;
+                                      } else if (status == 'approved') {
+                                        print('✅ Technician is approved - will redirect to technician home');
+                                        hasPendingApproval = false;
+                                        break;
+                                      }
+                                    } else {
+                                      print('⏳ No pending approval record found yet (attempt ${attempt + 1}/5)...');
+                                    }
+                                  } catch (e) {
+                                    print('⚠️ Error checking pending approval (attempt ${attempt + 1}): $e');
+                                  }
+                                }
+                                
+                                // If we still don't have a pending approval record after retries,
+                                // check if user record exists - if not, assume pending (new registration)
+                                if (!hasPendingApproval) {
+                                  try {
+                                    final userRecord = await SupabaseService.client
+                                        .from('users')
+                                        .select('role')
+                                        .eq('id', sessionResponse.session!.user.id)
+                                        .maybeSingle();
+                                    
+                                    if (userRecord == null) {
+                                      // User record doesn't exist yet - trigger might still be running
+                                      // For safety, assume pending approval for new technician registrations
+                                      print('⚠️ User record not found - assuming pending approval for new registration');
+                                      hasPendingApproval = true;
+                                    } else {
+                                      // User record exists - check approval status
+                                      final approvalStatus = await authProvider.checkApprovalStatus();
+                                      if (approvalStatus == false) {
+                                        hasPendingApproval = true;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    print('⚠️ Error checking user record: $e');
+                                    // On error, assume pending approval for safety
+                                    hasPendingApproval = true;
+                                  }
+                                }
+                              }
+                              
                               // Wait a bit more to ensure auth state is fully updated
-                              await Future.delayed(const Duration(milliseconds: 500));
+                              await Future.delayed(const Duration(milliseconds: 300));
+                              
+                              // Re-initialize auth provider to pick up any role changes
+                              await authProvider.initialize();
                               
                               // Check authentication status after initialization
                               if (authProvider.isAuthenticated) {
@@ -639,25 +720,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 print('✅ Is admin: ${authProvider.isAdmin}');
                                 print('✅ Is pending approval: ${authProvider.isPendingApproval}');
                                 
-                                // For technicians, explicitly check approval status
-                                if (!authProvider.isAdmin) {
-                                  print('🔍 Checking approval status for technician...');
-                                  final approvalStatus = await authProvider.checkApprovalStatus();
-                                  print('🔍 Approval status: $approvalStatus');
-                                  
-                                  if (approvalStatus == false) {
-                                    // Technician is pending approval
-                                    print('✅ Technician is pending approval - redirecting to pending approval screen');
-                                    final navigator = Navigator.of(context, rootNavigator: true);
-                                    navigator.pushNamedAndRemoveUntil(
-                                      '/pending-approval',
-                                      (route) => false,
-                                    );
-                                    return;
-                                  }
-                                }
-                                
-                                // Navigate directly to appropriate home screen based on role
+                                // Navigate directly to appropriate screen
                                 final navigator = Navigator.of(context, rootNavigator: true);
                                 
                                 if (authProvider.isAdmin) {
@@ -666,16 +729,24 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     '/admin',
                                     (route) => false,
                                   );
-                                } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-                                  print('✅ Auto-logging in - pending approval');
+                                } else if (isTechnician && (hasPendingApproval || authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
+                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/pending-approval',
                                     (route) => false,
                                   );
-                                } else {
-                                  print('✅ Auto-logging in as technician - redirecting to technician home');
+                                } else if (isTechnician) {
+                                  // Technician is approved
+                                  print('✅ Auto-logging in as approved technician - redirecting to technician home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/technician',
+                                    (route) => false,
+                                  );
+                                } else {
+                                  // Fallback - should not reach here
+                                  print('⚠️ Unknown user role - redirecting to role selection');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/role-selection',
                                     (route) => false,
                                   );
                                 }
@@ -884,7 +955,7 @@ class HvacToolsManagerApp extends StatelessWidget {
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),
-          initialFirstLaunchState: initialFirstLaunch,
+          shouldShowSplash: initialFirstLaunch,
         );
       }
     } catch (e, stackTrace) {
@@ -894,7 +965,7 @@ class HvacToolsManagerApp extends StatelessWidget {
       return _FirstLaunchWrapper(
         firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
         defaultChild: const RoleSelectionScreen(),
-        initialFirstLaunchState: initialFirstLaunch,
+        shouldShowSplash: initialFirstLaunch,
       );
     }
   }
