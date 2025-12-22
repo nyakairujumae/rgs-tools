@@ -47,6 +47,7 @@ class ThemedButton extends StatelessWidget {
           backgroundColor: backgroundColor ?? AppTheme.secondaryColor, // Green accent
           foregroundColor: Colors.white,
           elevation: 0, // No hard shadow
+          side: BorderSide.none, // No border - clean edges
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
           ),

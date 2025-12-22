@@ -148,24 +148,13 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                     child: Column(
                         children: [
                         // Compact Search Bar
-                          Container(
-                          height: 52,
-                            decoration: BoxDecoration(
-                            color: AppTheme.cardSurfaceColor(context),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: AppTheme.subtleBorder,
-                              width: 1.1,
-                            ),
-                              boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
-                          ),
-                          child: TextField(
+                          TextField(
                             controller: _searchController,
                             style: TextStyle(
                               fontSize: 14,
                               color: theme.colorScheme.onSurface,
                             ),
-                            decoration: InputDecoration(
+                            decoration: context.chatGPTInputDecoration.copyWith(
                               hintText: 'Search tools...',
                               hintStyle: TextStyle(
                                 fontSize: 14,
@@ -192,16 +181,6 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                       },
                                     )
                                   : null,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.8),
-                                  width: 2,
-                                ),
-                              ),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
                             ),
@@ -211,8 +190,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                               });
                             },
                           ),
-                        ),
-                        SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
                         // Professional Filter Row
                         Row(

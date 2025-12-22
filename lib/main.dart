@@ -94,6 +94,33 @@ void main() async {
     print('Stack trace: ${details.stack}');
   };
 
+  // CRITICAL: Register background message handler BEFORE runApp()
+  // Must be top-level function with @pragma('vm:entry-point')
+  // Note: This can only be called once, subsequent calls are ignored
+  if (!kIsWeb) {
+    try {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      print('✅ Background message handler registered');
+    } catch (e) {
+      print('⚠️ Could not register background handler: $e');
+    }
+  }
+
+  print('🚀 Starting app immediately - initialization will happen in background...');
+  
+  // Run the app IMMEDIATELY - don't wait for initialization
+  runApp(HvacToolsManagerApp(initialFirstLaunch: shouldShowSplash));
+  
+  // Initialize everything in background AFTER UI is shown
+  // This allows the app to open quickly while services load
+  _initializeServicesInBackground();
+}
+
+/// Initialize all services in background after UI is shown
+/// This prevents blocking the splash screen and allows app to open quickly
+Future<void> _initializeServicesInBackground() async {
+  print('🔄 Starting background initialization...');
+  
   // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
@@ -105,21 +132,13 @@ void main() async {
         }
         print('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
       } else {
-        // CRITICAL: Initialize Firebase BEFORE runApp()
+        // Initialize Firebase in background
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
         );
-        print('✅ Firebase initialized successfully');
+        print('✅ Firebase initialized successfully (background)');
         print('✅ Firebase project: ${Firebase.app().options.projectId}');
       }
-      
-      // CRITICAL: Register background message handler BEFORE runApp()
-      // Must be top-level function with @pragma('vm:entry-point')
-      // Note: This can only be called once, subsequent calls are ignored
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      print('✅ Background message handler registered');
-      
-      // Firebase Messaging initialization is deferred until after Supabase initializes
     } catch (e, stackTrace) {
       print('❌ Firebase initialization failed: $e');
       print('❌ Stack trace: $stackTrace');
@@ -127,7 +146,7 @@ void main() async {
   }
 
   // Initialize Supabase (works on web too)
-  print('Initializing Supabase...');
+  print('🔄 Initializing Supabase in background...');
   bool supabaseInitialized = false;
   
   try {
@@ -155,7 +174,7 @@ void main() async {
               throw TimeoutException('Supabase initialization timed out');
             },
           );
-          print('✅ Supabase initialized successfully');
+          print('✅ Supabase initialized successfully (background)');
           supabaseInitialized = true;
         } on PlatformException catch (e) {
           // Handle shared_preferences channel errors
@@ -239,10 +258,10 @@ void main() async {
 
       if (supabaseInitialized && !kIsWeb) {
         try {
-          print('🔥 Starting Firebase Messaging initialization...');
+          print('🔥 Starting Firebase Messaging initialization (background)...');
           // Initialize Firebase Messaging Service after Supabase init to avoid fallback auth client usage
           await fcm_service.FirebaseMessagingService.initialize();
-          print('✅ Firebase Messaging initialized');
+          print('✅ Firebase Messaging initialized (background)');
           
           // Verify token was obtained
           final token = fcm_service.FirebaseMessagingService.fcmToken;
@@ -276,38 +295,35 @@ void main() async {
     // Initialize local database (for offline support) - skip on web
     if (!kIsWeb) {
       try {
-        print('Initializing local database...');
+        print('🔄 Initializing local database (background)...');
         await DatabaseHelper.instance.database;
-        print('Local database initialized successfully');
+        print('✅ Local database initialized successfully (background)');
       } catch (e) {
-        print('Database initialization failed: $e');
+        print('⚠️ Database initialization failed: $e');
         // Continue without local database
       }
 
       // Ensure image storage bucket exists (non-blocking)
-      print('Checking image storage bucket...');
+      print('🔄 Checking image storage bucket (background)...');
       try {
         await ImageUploadService.ensureBucketExists();
-        print('Image storage bucket ready');
+        print('✅ Image storage bucket ready (background)');
       } catch (e) {
-        print('Image storage bucket check failed (non-critical): $e');
+        print('⚠️ Image storage bucket check failed (non-critical): $e');
         // Continue without failing - this is not critical for app startup
       }
 
       // Initialize session management for extended timeouts
-      print('Initializing session management...');
+      print('🔄 Initializing session management (background)...');
       try {
         // This will be handled by AuthProvider
-        print('Session management ready for 30-day timeouts');
+        print('✅ Session management ready for 30-day timeouts (background)');
       } catch (e) {
-        print('Session management initialization failed (non-critical): $e');
+        print('⚠️ Session management initialization failed (non-critical): $e');
       }
     }
-
-  print('Starting app...');
   
-  // Run the app
-  runApp(HvacToolsManagerApp(initialFirstLaunch: shouldShowSplash));
+  print('✅ Background initialization complete');
 }
 
 
@@ -468,7 +484,16 @@ class HvacToolsManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final authProvider = AuthProvider();
+            // Initialize in background - don't block UI
+            authProvider.initialize().catchError((e) {
+              print('⚠️ Auth initialization error (non-blocking): $e');
+            });
+            return authProvider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseToolProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseTechnicianProvider()),
@@ -494,24 +519,19 @@ class HvacToolsManagerApp extends StatelessWidget {
             return const SizedBox.shrink();
           };
           
-          if (!initialFirstLaunch && !_splashRemoved) {
+          // Remove splash screen quickly - don't wait for initialization
+          if (!_splashRemoved) {
             _splashRemoved = true;
+            // Remove splash immediately - initialization happens in background
             WidgetsBinding.instance.addPostFrameCallback((_) {
               FlutterNativeSplash.remove();
+              print('✅ Native splash removed immediately');
             });
           }
-
-          // Remove native splash when auth is initialized (only if it was shown)
-          if (initialFirstLaunch && authProvider.isInitialized && !authProvider.isLoading) {
-            if (!_splashRemoved) {
-              _splashRemoved = true;
-              FlutterNativeSplash.remove();
-              print('✅ Native splash removed after initialization');
-            }
-          }
           
-          // Always render MaterialApp (like mom.dart)
-          // The native splash (preserved in main()) stays visible until we remove it above
+          // Always render MaterialApp immediately
+          // Show UI right away - initialization happens in background
+          // The Consumer will rebuild when auth state changes
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
@@ -894,24 +914,12 @@ class HvacToolsManagerApp extends StatelessWidget {
         return const SplashTransition(child: RoleSelectionScreen());
       }
       
-      // Don't show any Flutter screen during initialization
-      // The native splash (preserved in main()) stays visible until we remove it
-      // The removal happens in the Consumer builder above
+      // Show UI immediately - initialization happens in background
+      // Don't block on initialization - show safe default screen
       if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 Initialization in progress - showing UI while auth loads');
-        if (authProvider.isAuthenticated) {
-          if (authProvider.isAdmin) {
-            return AdminHomeScreenErrorBoundary(
-              child: AdminHomeScreen(
-                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-              ),
-            );
-          }
-          if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-            return const PendingApprovalScreen();
-          }
-          return const TechnicianHomeScreen();
-        }
+        print('🔍 Initialization in progress - showing safe default screen');
+        // Show role selection screen while loading - it's safe and won't crash
+        // Auth will update UI when ready via notifyListeners()
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),
@@ -939,37 +947,48 @@ class HvacToolsManagerApp extends StatelessWidget {
       }
 
       // Check authentication status and route accordingly
-      if (authProvider.isAuthenticated) {
-        print('🔍 User is authenticated, routing to appropriate screen');
-        print('🔍 User role: ${authProvider.userRole}');
-        print('🔍 Is admin: ${authProvider.isAdmin}');
-        print('🔍 Is pending: ${authProvider.isPendingApproval}');
-        
-        // Route based on user role
-        if (authProvider.isAdmin) {
-          print('🔍 Routing to AdminHomeScreen');
-          return AdminHomeScreenErrorBoundary(
-            child: AdminHomeScreen(
-              key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-            ),
-          );
-        } else if (!authProvider.isEmailConfirmed) {
-          // Email not confirmed - show role selection (user needs to confirm email first)
-          // After confirmation, they'll be auto-logged in via deep link
-          print('❌ Email not confirmed - showing role selection');
-          return const SplashTransition(child: RoleSelectionScreen());
-        } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-          // Check approval status for technicians
-          print('🔍 Technician user detected, checking approval status...');
-          return const PendingApprovalScreen();
+      // CRITICAL: Only access auth properties if provider is initialized to prevent crashes
+      try {
+        if (authProvider.isAuthenticated) {
+          print('🔍 User is authenticated, routing to appropriate screen');
+          print('🔍 User role: ${authProvider.userRole}');
+          print('🔍 Is admin: ${authProvider.isAdmin}');
+          print('🔍 Is pending: ${authProvider.isPendingApproval}');
+          
+          // Route based on user role
+          if (authProvider.isAdmin) {
+            print('🔍 Routing to AdminHomeScreen');
+            return AdminHomeScreenErrorBoundary(
+              child: AdminHomeScreen(
+                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+              ),
+            );
+          } else if (!authProvider.isEmailConfirmed) {
+            // Email not confirmed - show role selection (user needs to confirm email first)
+            // After confirmation, they'll be auto-logged in via deep link
+            print('❌ Email not confirmed - showing role selection');
+            return const SplashTransition(child: RoleSelectionScreen());
+          } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
+            // Check approval status for technicians
+            print('🔍 Technician user detected, checking approval status...');
+            return const PendingApprovalScreen();
+          } else {
+            // Technician is approved - send to home screen
+            print('🔍 Routing to TechnicianHomeScreen');
+            return const TechnicianHomeScreen();
+          }
         } else {
-          // Technician is approved - send to home screen
-          print('🔍 Routing to TechnicianHomeScreen');
-          return const TechnicianHomeScreen();
+          print('🔍 User not authenticated, showing role selection');
+          // Show role selection screen - safe default
+          return _FirstLaunchWrapper(
+            firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+            defaultChild: const RoleSelectionScreen(),
+            shouldShowSplash: initialFirstLaunch,
+          );
         }
-      } else {
-        print('🔍 User not authenticated, checking first launch');
-        // Check if this is first launch - show splash screen only on first launch
+      } catch (e) {
+        // If any error accessing auth properties, show safe default screen
+        print('⚠️ Error accessing auth properties: $e - showing safe default');
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),

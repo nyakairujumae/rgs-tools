@@ -543,8 +543,16 @@ class _LoginScreenState extends State<LoginScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.secondaryColor,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              minimumSize: const Size(120, 44), // Ensure button is wide enough
             ),
-            child: Text('Send Reset Link'),
+            child: Text(
+              'Send Reset Link',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
         ),

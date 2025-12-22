@@ -286,62 +286,52 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
-                    child: Container(
-                      height: 52,
-                      decoration: context.cardDecoration.copyWith(
-                        borderRadius: BorderRadius.circular(context.borderRadiusMedium),
-                        color: context.cardBackground,
+                    child: TextField(
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
-                      child: TextField(
-                        style: TextStyle(
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                      decoration: context.chatGPTInputDecoration.copyWith(
+                        hintText: 'Search technicians...',
+                        hintStyle: TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.45),
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search technicians...',
-                          hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.45),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            size: 18,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.45),
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear,
-                                    size: 18,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.45),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                              : null,
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          size: 18,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.45),
                         ),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  size: 18,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.45),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                       ),
                     ),
                   ),

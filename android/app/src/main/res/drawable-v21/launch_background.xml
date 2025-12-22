@@ -4,13 +4,13 @@
     <item>
         <color android:color="@color/launch_background_color"/>
     </item>
-    <!-- Centered small logo -->
+    <!-- Centered logo with proper scaling -->
     <item
-        android:width="60dp"
-        android:height="60dp"
+        android:width="200dp"
+        android:height="200dp"
         android:gravity="center">
         <bitmap 
             android:gravity="center" 
-            android:src="@drawable/splash"/>
+            android:src="@drawable/splash_android"/>
     </item>
 </layer-list>

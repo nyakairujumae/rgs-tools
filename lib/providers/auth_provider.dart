@@ -434,8 +434,24 @@ class AuthProvider with ChangeNotifier {
 
       debugPrint('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
 
+      // CRITICAL FIX: Only update _user if we don't already have a logged-in user
+      // This prevents admin's session from being replaced when creating technician accounts
       if (response.user != null) {
-        _user = response.user;
+        // Save current user before potentially updating
+        final wasAlreadyLoggedIn = _user != null;
+        final previousUserId = _user?.id;
+        
+        // Only update _user if we're not already logged in (self-registration)
+        // If we're already logged in (admin creating technician), preserve current user
+        if (!wasAlreadyLoggedIn) {
+          _user = response.user;
+          debugPrint('🔍 Updated _user to new user: ${_user!.id} (self-registration)');
+        } else {
+          debugPrint('🔍 Preserving current logged-in user (ID: $previousUserId) - admin creating technician');
+          debugPrint('🔍 New technician user ID: ${response.user!.id}');
+          // Don't update _user - keep the current admin user
+        }
+        
         final hasSession = response.session != null;
         debugPrint('🔍 User created: ${_user!.id}, hasSession: $hasSession, emailConfirmed: ${_user!.emailConfirmedAt != null}');
         
@@ -1262,10 +1278,9 @@ _isLoading = false;
 
   Future<void> resetPassword(String email, {String? redirectTo}) async {
     try {
-      // Use web URL that redirects to app (less likely to be flagged by email clients)
-      // The web URL should redirect to com.rgs.app://reset-password
-      // If web URL not available, fallback to direct deep link
-      final redirectUrl = redirectTo ?? 'https://rgstools.app/reset-password';
+      // Use direct deep link (simpler, no web page needed)
+      // If you want to use web redirect later, change to: 'https://rgstools.app/reset-password'
+      final redirectUrl = redirectTo ?? 'com.rgs.app://reset-password';
       
       debugPrint('🔍 Sending password reset email to: $email');
       debugPrint('🔍 Redirect URL: $redirectUrl');
@@ -1286,12 +1301,21 @@ _isLoading = false;
   /// This is different from self-registration:
   /// - Admin-created: Creates account with random password, auto-confirms email, sends password reset
   /// - Self-registered: User provides password, may need email confirmation
+  /// 
+  /// IMPORTANT: This method preserves the current admin's session and does NOT replace it
   Future<String?> createTechnicianAuthAccount({
     required String email,
     required String name,
   }) async {
+    // CRITICAL: Save current admin's user and session to restore after creating technician
+    final currentAdminUser = _user;
+    final currentAdminSession = SupabaseService.client.auth.currentSession;
+    final currentAdminRole = _userRole;
+    
     try {
       debugPrint('🔍 Creating auth account for admin-added technician: $email');
+      debugPrint('🔍 Current admin user: ${currentAdminUser?.id ?? "null"}');
+      debugPrint('🔍 Current admin role: ${currentAdminRole.value}');
       
       // Check if email already has an auth account
       final emailAvailable = await isEmailAvailable(email);
@@ -1321,10 +1345,11 @@ _isLoading = false;
       debugPrint('🔍 Creating auth account with auto-confirmed email...');
       
       // Create auth account with technician role
-      // Use metadata to mark as admin-created so triggers know to auto-confirm
+      // CRITICAL: Temporarily set a flag to prevent signUp from updating _user
+      // We'll manually restore the admin's session immediately after
       final response = await signUp(
         email: email,
-        password: randomPassword, // Random password - technician will set their own
+        password: randomPassword,
         fullName: name.toUpperCase(),
         role: UserRole.technician,
       );
@@ -1335,6 +1360,40 @@ _isLoading = false;
       
       final userId = response.user!.id;
       debugPrint('✅ Auth account created: $userId');
+      
+      // CRITICAL: Immediately restore admin's session and user
+      // signUp may have updated _user and created a new session - we need to restore
+      debugPrint('🔍 Restoring admin session and user state...');
+      
+      // Restore admin's user object
+      _user = currentAdminUser;
+      _userRole = currentAdminRole;
+      
+      // Restore admin's session if it exists
+      if (currentAdminSession != null) {
+        try {
+          // Set the session back to admin's session using access token
+          await SupabaseService.client.auth.setSession(
+            currentAdminSession.accessToken,
+          );
+          debugPrint('✅ Admin session restored successfully');
+          debugPrint('✅ Admin user ID: ${currentAdminUser?.id}');
+          debugPrint('✅ Admin role: ${currentAdminRole.value}');
+        } catch (e) {
+          debugPrint('⚠️ Could not restore session: $e');
+          // Try to refresh the session
+          try {
+            await SupabaseService.client.auth.refreshSession();
+            debugPrint('✅ Session refreshed instead');
+          } catch (refreshError) {
+            debugPrint('❌ Could not refresh session: $refreshError');
+          }
+        }
+      } else {
+        debugPrint('⚠️ No admin session to restore');
+      }
+      
+      notifyListeners(); // Update UI with restored admin state
       
       // Wait for database trigger to auto-confirm email
       // The trigger should run immediately after user creation
@@ -1386,9 +1445,35 @@ _isLoading = false;
     } catch (e, stackTrace) {
       debugPrint('❌ Error creating technician auth account: $e');
       debugPrint('❌ Stack trace: $stackTrace');
+      
+      // CRITICAL: Always restore admin session even on error
+      debugPrint('🔍 Restoring admin session after error...');
+      _user = currentAdminUser;
+      _userRole = currentAdminRole;
+      
+      if (currentAdminSession != null) {
+        try {
+          await SupabaseService.client.auth.setSession(
+            currentAdminSession.accessToken,
+          );
+          debugPrint('✅ Admin session restored after error');
+        } catch (restoreError) {
+          debugPrint('⚠️ Could not restore session after error: $restoreError');
+          // Try to refresh instead
+          try {
+            await SupabaseService.client.auth.refreshSession();
+            debugPrint('✅ Session refreshed after error');
+          } catch (refreshError) {
+            debugPrint('❌ Could not refresh session after error: $refreshError');
+          }
+        }
+      }
+      
+      notifyListeners();
       rethrow;
     }
   }
+
 
   /// Generate a secure random password
   /// This is used for admin-created accounts - technician will set their own password
