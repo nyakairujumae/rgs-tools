@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/supabase_technician_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
@@ -221,6 +222,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     // Department Field
                     DropdownButtonFormField<String>(
                       value: _departmentController.text.isEmpty ? null : _departmentController.text,
+                      isExpanded: true,
                       decoration: context.chatGPTInputDecoration.copyWith(
                         labelText: 'Department',
                         hintText: 'Select department',
@@ -249,10 +251,30 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                                 fontWeight: FontWeight.w500,
                                 color: theme.colorScheme.onSurface,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         );
                       }).toList(),
+                      selectedItemBuilder: (BuildContext context) {
+                        return [
+                          'Repairing',
+                          'Maintenance',
+                          'Retrofit',
+                          'Installation',
+                          'Factory',
+                        ].map<Widget>((String department) {
+                          return Text(
+                            department,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }).toList();
+                      },
                       onChanged: (String? value) {
                         setState(() {
                           _departmentController.text = value ?? '';
@@ -474,35 +496,102 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
       );
 
       final technicianProvider = context.read<SupabaseTechnicianProvider>();
+      final authProvider = context.read<AuthProvider>();
 
       if (widget.technician == null) {
-        await technicianProvider.addTechnician(technician);
+        // For new technicians, create auth account first (if email provided)
+        String? userId;
+        if (technician.email != null && technician.email!.isNotEmpty) {
+          try {
+            debugPrint('🔍 Creating auth account for admin-added technician: ${technician.email}');
+            userId = await authProvider.createTechnicianAuthAccount(
+              email: technician.email!,
+              name: technician.name,
+            );
+            debugPrint('✅ Auth account created with user_id: $userId');
+          } catch (e) {
+            debugPrint('⚠️ Error creating auth account: $e');
+            // If email already exists, try to get existing user_id
+            if (e.toString().contains('already registered')) {
+              // Try to find existing user
+              try {
+                final userRecord = await SupabaseService.client
+                    .from('users')
+                    .select('id')
+                    .eq('email', technician.email!)
+                    .maybeSingle();
+                if (userRecord != null) {
+                  userId = userRecord['id'] as String;
+                  debugPrint('✅ Found existing user_id: $userId');
+                }
+              } catch (findError) {
+                debugPrint('⚠️ Could not find existing user: $findError');
+              }
+            } else {
+              // Re-throw if it's a different error
+              rethrow;
+            }
+          }
+        }
+        
+        // Add technician record (with user_id if available)
+        await technicianProvider.addTechnician(technician, userId: userId);
+        
+        // Show success message with email info
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Technician added successfully!',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (technician.email != null && technician.email!.isNotEmpty) ...[
+                    SizedBox(height: 4),
+                    Text(
+                      'Password reset email sent to ${technician.email}\nTechnician should use the password reset email to set their password.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: EdgeInsets.all(16),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
       } else {
+        // Updating existing technician - no auth account creation needed
         await technicianProvider.updateTechnician(technician);
+        
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Technician updated successfully!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: EdgeInsets.all(16),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
 
       // Refresh list to ensure latest data (including profile urls)
       await technicianProvider.loadTechnicians();
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.technician == null 
-                  ? 'Technician added successfully!' 
-                  : 'Technician updated successfully!'
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: EdgeInsets.all(16),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -188,57 +188,40 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: Column(
                       children: [
                         // Compact Search Bar
-                        Container(
-                          height: 52,
-                          decoration: context.cardDecoration.copyWith(
-                            borderRadius: BorderRadius.circular(context.borderRadiusMedium),
-                            color: context.cardBackground,
+                        TextField(
+                          controller: _searchController,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          child: TextField(
-                            controller: _searchController,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: theme.colorScheme.onSurface,
+                          decoration: context.chatGPTInputDecoration.copyWith(
+                            hintText: 'Search tools...',
+                            prefixIcon: Icon(
+                              Icons.search,
+                              size: 18,
+                              color: theme.colorScheme.onSurface
+                                  .withOpacity(0.45),
                             ),
-                            decoration: InputDecoration(
-                              hintText: 'Search tools...',
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.45),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                size: 18,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.45),
-                              ),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear,
-                                        size: 18,
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.45),
-                                      ),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        FocusScope.of(context).unfocus();
-                                      },
-                                    )
-                                  : null,
-                              focusedBorder: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      size: 18,
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.45),
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                  )
+                                : null,
                           ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
                         ),
                         SizedBox(height: 12),
 

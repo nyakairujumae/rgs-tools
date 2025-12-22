@@ -37,6 +37,7 @@ import 'admin_role_management_screen.dart';
 import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
+import 'technician_my_tools_screen.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../models/user_role.dart';
@@ -414,6 +415,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                             _buildAccountDetails(parentContext, authProvider),
                             const SizedBox(height: 24),
                             _buildSectionLabel(parentContext, 'Preferences'),
+                            const SizedBox(height: 12),
+                            _buildProfileOption(
+                              context: parentContext,
+                              icon: Icons.build,
+                              label: 'My Tools',
+                              iconColor: AppTheme.primaryColor,
+                              backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                Navigator.push(
+                                  parentContext,
+                                  MaterialPageRoute(
+                                    builder: (_) => const TechnicianMyToolsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                             const SizedBox(height: 12),
                             _buildProfileOption(
                               context: parentContext,

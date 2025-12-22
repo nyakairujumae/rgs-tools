@@ -281,23 +281,20 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: context.cardDecoration,
-        child: TextField(
-          controller: _searchController,
-          decoration: context.chatGPTInputDecoration.copyWith(
-            hintText: 'Search tools, models, or locations...',
-            prefixIcon: const Icon(Icons.search, size: 20),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
-          ),
+      child: TextField(
+        controller: _searchController,
+        decoration: context.chatGPTInputDecoration.copyWith(
+          hintText: 'Search tools, models, or locations...',
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
         ),
       ),
     );

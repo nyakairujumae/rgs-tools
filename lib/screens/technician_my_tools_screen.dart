@@ -12,6 +12,7 @@ import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import 'technician_add_tool_screen.dart';
+import 'add_tool_screen.dart';
 import 'tool_detail_screen.dart';
 
 class TechnicianMyToolsScreen extends StatefulWidget {
@@ -52,9 +53,16 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
   }
 
   Future<void> _openAddTool() async {
+    final authProvider = context.read<AuthProvider>();
+    final isAdmin = authProvider.isAdmin;
+    
     final added = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => const TechnicianAddToolScreen()),
+      MaterialPageRoute(
+        builder: (context) => isAdmin 
+            ? const AddToolScreen() 
+            : const TechnicianAddToolScreen(),
+      ),
     );
     if (added == true && mounted) {
       await context.read<SupabaseToolProvider>().loadTools();

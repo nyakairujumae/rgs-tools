@@ -47,11 +47,18 @@ class SupabaseTechnicianProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addTechnician(Technician technician) async {
+  Future<void> addTechnician(Technician technician, {String? userId}) async {
     try {
+      final technicianMap = technician.toMap();
+      
+      // Add user_id if provided (links technician to auth account)
+      if (userId != null) {
+        technicianMap['user_id'] = userId;
+      }
+      
       final response = await SupabaseService.client
           .from('technicians')
-          .insert(technician.toMap())
+          .insert(technicianMap)
           .select()
           .single();
 

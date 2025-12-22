@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Black background -->
-    <item>
-        <color android:color="@color/launch_background_color"/>
-    </item>
-    <!-- Centered small logo -->
     <item
         android:width="60dp"
         android:height="60dp"
         android:gravity="center">
-        <bitmap 
-            android:gravity="center" 
+        <bitmap
+            android:gravity="center"
             android:src="@drawable/splash"/>
     </item>
 </layer-list>

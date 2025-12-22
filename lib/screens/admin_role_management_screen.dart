@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_role.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
 
 class AdminRoleManagementScreen extends StatefulWidget {
@@ -127,38 +128,38 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
       body: Column(
         children: [
           // Search Bar
-          Container(
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-              decoration: InputDecoration(
-                hintText: 'Search users by email or name...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: Colors.grey[400]),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          Builder(
+            builder: (builderContext) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                decoration: builderContext.chatGPTInputDecoration.copyWith(
+                  hintText: 'Search users by email or name...',
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                ),
               ),
             ),
           ),

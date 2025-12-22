@@ -146,39 +146,36 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: context.cardDecoration,
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => _searchQuery = value),
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: TextStyle(
+          fontSize: 14,
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+        ),
+        decoration: context.chatGPTInputDecoration.copyWith(
+          hintText: 'Search requests, tools, or reporters...',
+          prefixIcon: Icon(
+            Icons.search,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
           ),
-          decoration: context.chatGPTInputDecoration.copyWith(
-            hintText: 'Search requests, tools, or reporters...',
-            prefixIcon: Icon(
-              Icons.search,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-            ),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      size: 20,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.55),
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
-          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    size: 20,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.55),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
         ),
       ),
     );

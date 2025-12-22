@@ -19,8 +19,8 @@
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="tWc-Dq-wcI"/>
                             <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="120" id="logo-width"/>
-                                    <constraint firstAttribute="height" constant="120" id="logo-height"/>
+                                    <constraint firstAttribute="width" constant="60" id="logo-width"/>
+                                    <constraint firstAttribute="height" constant="60" id="logo-height"/>
                                 </constraints>
                             </imageView>
                         </subviews>

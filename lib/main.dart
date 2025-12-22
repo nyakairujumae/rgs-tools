@@ -629,86 +629,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Wait for auth provider to fully initialize with the new session
                               await authProvider.initialize();
                               
-                              // For technicians, we need to wait for the database trigger and check pending approvals
-                              // Retry logic to ensure trigger has completed
-                              bool isTechnician = false;
-                              bool hasPendingApproval = false;
-                              
-                              // Check user role from metadata first
-                              final userRoleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                              print('🔍 User role from metadata: $userRoleFromMetadata');
-                              
-                              if (userRoleFromMetadata != 'admin') {
-                                isTechnician = true;
-                                print('🔍 User is a technician - checking for pending approval...');
-                                
-                                // Retry checking for pending approval (database trigger might need time)
-                                for (int attempt = 0; attempt < 5; attempt++) {
-                                  await Future.delayed(Duration(milliseconds: 500 + (attempt * 200)));
-                                  
-                                  try {
-                                    // Check pending_user_approvals table directly
-                                    final pendingApproval = await SupabaseService.client
-                                        .from('pending_user_approvals')
-                                        .select('status')
-                                        .eq('user_id', sessionResponse.session!.user.id)
-                                        .order('created_at', ascending: false)
-                                        .limit(1)
-                                        .maybeSingle();
-                                    
-                                    if (pendingApproval != null) {
-                                      final status = pendingApproval['status'] as String?;
-                                      print('🔍 Found pending approval record (attempt ${attempt + 1}): $status');
-                                      
-                                      if (status == 'pending' || status == 'rejected') {
-                                        hasPendingApproval = true;
-                                        print('✅ Technician has pending approval - will redirect to pending approval screen');
-                                        break;
-                                      } else if (status == 'approved') {
-                                        print('✅ Technician is approved - will redirect to technician home');
-                                        hasPendingApproval = false;
-                                        break;
-                                      }
-                                    } else {
-                                      print('⏳ No pending approval record found yet (attempt ${attempt + 1}/5)...');
-                                    }
-                                  } catch (e) {
-                                    print('⚠️ Error checking pending approval (attempt ${attempt + 1}): $e');
-                                  }
-                                }
-                                
-                                // If we still don't have a pending approval record after retries,
-                                // check if user record exists - if not, assume pending (new registration)
-                                if (!hasPendingApproval) {
-                                  try {
-                                    final userRecord = await SupabaseService.client
-                                        .from('users')
-                                        .select('role')
-                                        .eq('id', sessionResponse.session!.user.id)
-                                        .maybeSingle();
-                                    
-                                    if (userRecord == null) {
-                                      // User record doesn't exist yet - trigger might still be running
-                                      // For safety, assume pending approval for new technician registrations
-                                      print('⚠️ User record not found - assuming pending approval for new registration');
-                                      hasPendingApproval = true;
-                                    } else {
-                                      // User record exists - check approval status
-                                      final approvalStatus = await authProvider.checkApprovalStatus();
-                                      if (approvalStatus == false) {
-                                        hasPendingApproval = true;
-                                      }
-                                    }
-                                  } catch (e) {
-                                    print('⚠️ Error checking user record: $e');
-                                    // On error, assume pending approval for safety
-                                    hasPendingApproval = true;
-                                  }
-                                }
-                              }
-                              
                               // Wait a bit more to ensure auth state is fully updated
-                              await Future.delayed(const Duration(milliseconds: 300));
+                              await Future.delayed(const Duration(milliseconds: 500));
                               
                               // Re-initialize auth provider to pick up any role changes
                               await authProvider.initialize();
@@ -720,6 +642,87 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 print('✅ Is admin: ${authProvider.isAdmin}');
                                 print('✅ Is pending approval: ${authProvider.isPendingApproval}');
                                 
+                                // For technicians, ALWAYS check pending approval status before auto-login
+                                // For admins, auto-login is fine
+                                bool isTechnician = !authProvider.isAdmin;
+                                bool hasPendingApproval = false;
+                                
+                                if (isTechnician) {
+                                  print('🔍 User is a technician - checking for pending approval...');
+                                  
+                                  // Retry checking for pending approval (database trigger might need time)
+                                  for (int attempt = 0; attempt < 5; attempt++) {
+                                    await Future.delayed(Duration(milliseconds: 500 + (attempt * 200)));
+                                    
+                                    try {
+                                      // Check pending_user_approvals table directly
+                                      final pendingApproval = await SupabaseService.client
+                                          .from('pending_user_approvals')
+                                          .select('status')
+                                          .eq('user_id', sessionResponse.session!.user.id)
+                                          .order('created_at', ascending: false)
+                                          .limit(1)
+                                          .maybeSingle();
+                                      
+                                      if (pendingApproval != null) {
+                                        final status = pendingApproval['status'] as String?;
+                                        print('🔍 Found pending approval record (attempt ${attempt + 1}): $status');
+                                        
+                                        if (status == 'pending' || status == 'rejected') {
+                                          hasPendingApproval = true;
+                                          print('✅ Technician has pending approval - will redirect to pending approval screen');
+                                          break;
+                                        } else if (status == 'approved') {
+                                          print('✅ Technician is approved - will redirect to technician home');
+                                          hasPendingApproval = false;
+                                          break;
+                                        }
+                                      } else {
+                                        print('⏳ No pending approval record found yet (attempt ${attempt + 1}/5)...');
+                                      }
+                                    } catch (e) {
+                                      print('⚠️ Error checking pending approval (attempt ${attempt + 1}): $e');
+                                    }
+                                  }
+                                  
+                                  // If we still don't have a pending approval record after retries,
+                                  // check if user record exists - if not, assume pending (new registration)
+                                  if (!hasPendingApproval) {
+                                    try {
+                                      final userRecord = await SupabaseService.client
+                                          .from('users')
+                                          .select('role')
+                                          .eq('id', sessionResponse.session!.user.id)
+                                          .maybeSingle();
+                                      
+                                      if (userRecord == null) {
+                                        // User record doesn't exist yet - trigger might still be running
+                                        // For safety, assume pending approval for new technician registrations
+                                        print('⚠️ User record not found - assuming pending approval for new registration');
+                                        hasPendingApproval = true;
+                                      } else {
+                                        // User record exists - check approval status using auth provider
+                                        final approvalStatus = await authProvider.checkApprovalStatus();
+                                        print('🔍 Approval status from checkApprovalStatus: $approvalStatus');
+                                        if (approvalStatus == false || approvalStatus == null) {
+                                          hasPendingApproval = true;
+                                          print('✅ Technician needs approval - will redirect to pending approval screen');
+                                        }
+                                      }
+                                    } catch (e) {
+                                      print('⚠️ Error checking user record: $e');
+                                      // On error, assume pending approval for safety
+                                      hasPendingApproval = true;
+                                    }
+                                  }
+                                  
+                                  // Also check auth provider's pending approval status as a fallback
+                                  if (!hasPendingApproval && (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
+                                    print('✅ Auth provider indicates pending approval - will redirect to pending approval screen');
+                                    hasPendingApproval = true;
+                                  }
+                                }
+                                
                                 // Navigate directly to appropriate screen
                                 final navigator = Navigator.of(context, rootNavigator: true);
                                 
@@ -729,7 +732,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     '/admin',
                                     (route) => false,
                                   );
-                                } else if (isTechnician && (hasPendingApproval || authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
+                                } else if (isTechnician && hasPendingApproval) {
                                   print('✅ Technician is pending approval - redirecting to pending approval screen');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/pending-approval',
@@ -895,10 +898,25 @@ class HvacToolsManagerApp extends StatelessWidget {
       // The native splash (preserved in main()) stays visible until we remove it
       // The removal happens in the Consumer builder above
       if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 Waiting for initialization - native splash should be visible');
-        // Return fully invisible widget so native splash remains visible
-        // No Flutter paint, no Scaffold, no backgroundColor
-        return const SizedBox.shrink();
+        print('🔍 Initialization in progress - showing UI while auth loads');
+        if (authProvider.isAuthenticated) {
+          if (authProvider.isAdmin) {
+            return AdminHomeScreenErrorBoundary(
+              child: AdminHomeScreen(
+                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+              ),
+            );
+          }
+          if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
+            return const PendingApprovalScreen();
+          }
+          return const TechnicianHomeScreen();
+        }
+        return _FirstLaunchWrapper(
+          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+          defaultChild: const RoleSelectionScreen(),
+          shouldShowSplash: initialFirstLaunch,
+        );
       }
       
       // For web, show role selection screen initially (no backend for now)

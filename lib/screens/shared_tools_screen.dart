@@ -232,57 +232,41 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         children: [
-          Container(
-            height: 52,
-            decoration: context.cardDecoration.copyWith(
-              borderRadius: BorderRadius.circular(context.borderRadiusMedium),
-              color: context.cardBackground,
+          TextField(
+            controller: _searchController,
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.textTheme.bodyLarge?.color,
             ),
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(
-                fontSize: 14,
-                color: theme.textTheme.bodyLarge?.color,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            decoration: context.chatGPTInputDecoration.copyWith(
+              hintText: 'Search shared tools...',
+              prefixIcon: Icon(
+                Icons.search,
+                size: 18,
+                color:
+                    theme.colorScheme.onSurface.withValues(alpha: 0.45),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Search shared tools...',
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  size: 18,
-                  color:
-                      theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                ),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          size: 18,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.45),
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        size: 18,
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.45),
+                      ),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
             ),
           ),
           const SizedBox(height: 12),

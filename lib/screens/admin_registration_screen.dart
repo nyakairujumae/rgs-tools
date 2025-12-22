@@ -229,77 +229,110 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                                   ],
                                 ),
                               )
-                            : DropdownButtonFormField<String>(
-                                value: _selectedPositionId,
-                                decoration: context.chatGPTInputDecoration.copyWith(
-                                  labelText: 'Admin Position',
-                                  hintText: 'Select your position',
-                                  prefixIcon: Icon(
-                                    Icons.work_outline,
-                                    size: 22,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                  ),
-                                  prefixIconConstraints: const BoxConstraints(minWidth: 52),
-                                  filled: true,
-                                  fillColor: Colors.transparent,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                ),
-                                items: _positions.map((AdminPosition position) {
-                                  return DropdownMenuItem<String>(
-                                    value: position.id,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
+                            : _positions.isEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: context.cardBackground,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.orange.withOpacity(0.3),
+                                        width: 0.5,
+                                      ),
+                                    ),
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          position.name,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: theme.colorScheme.onSurface,
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: Colors.orange,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'No positions available. Please ensure the database migration has been run.',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                            ),
                                           ),
                                         ),
-                                        if (position.description != null && position.description!.isNotEmpty)
-                                          Text(
-                                            position.description!,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
                                       ],
                                     ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? value) {
-                                  setState(() {
-                                    _selectedPositionId = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select your position';
-                                  }
-                                  return null;
-                                },
-                                dropdownColor: Theme.of(context).colorScheme.surface,
-                                menuMaxHeight: 300,
-                                borderRadius: BorderRadius.circular(20),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                  size: 18,
-                                ),
-                              ),
+                                  )
+                                : DropdownButtonFormField<String>(
+                                    value: _selectedPositionId,
+                                    decoration: context.chatGPTInputDecoration.copyWith(
+                                      labelText: 'Admin Position',
+                                      hintText: 'Select your position',
+                                      prefixIcon: Icon(
+                                        Icons.work_outline,
+                                        size: 22,
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                      ),
+                                      prefixIconConstraints: const BoxConstraints(minWidth: 52),
+                                      filled: true,
+                                      fillColor: Colors.transparent,
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                    ),
+                                    items: _positions.map((AdminPosition position) {
+                                      return DropdownMenuItem<String>(
+                                        value: position.id,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              position.name,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: theme.colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            if (position.description != null && position.description!.isNotEmpty)
+                                              Text(
+                                                position.description!,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: _positions.isNotEmpty
+                                        ? (String? value) {
+                                            setState(() {
+                                              _selectedPositionId = value;
+                                            });
+                                          }
+                                        : null,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please select your position';
+                                      }
+                                      return null;
+                                    },
+                                    dropdownColor: Theme.of(context).colorScheme.surface,
+                                    menuMaxHeight: 300,
+                                    borderRadius: BorderRadius.circular(20),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                    icon: Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                      size: 18,
+                                    ),
+                                  ),
                       ),
 
                       SizedBox(height: context.spacingMedium), // 12px
