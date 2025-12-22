@@ -9,7 +9,7 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- White background matching main splash -->
         <item name="android:windowSplashScreenBackground">@color/launch_background_color</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rgs_scaled</item>
         <!-- White icon background matching main splash -->
         <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_background_color</item>
     </style>
