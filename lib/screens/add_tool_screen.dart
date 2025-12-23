@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
+import '../providers/auth_provider.dart';
 import '../models/tool.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
@@ -14,7 +15,9 @@ import '../widgets/common/themed_button.dart';
 import 'barcode_scanner_screen.dart';
 
 class AddToolScreen extends StatefulWidget {
-  const AddToolScreen({super.key});
+  final bool isFromMyTools;
+  
+  const AddToolScreen({super.key, this.isFromMyTools = false});
 
   @override
   State<AddToolScreen> createState() => _AddToolScreenState();
@@ -1143,6 +1146,10 @@ class _AddToolScreenState extends State<AddToolScreen> {
     });
 
     try {
+      // Get current user ID if adding from My Tools
+      final authProvider = context.read<AuthProvider>();
+      final currentUserId = widget.isFromMyTools ? authProvider.userId : null;
+      
       // First, create the tool without image
       final tool = Tool(
         name: _nameController.text.trim().toUpperCase(),
@@ -1166,6 +1173,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
             : _locationController.text.trim(),
         status: _status,
         toolType: 'inventory', // Explicitly set to inventory for admin tools
+        assignedTo: widget.isFromMyTools ? currentUserId : null, // Assign to current user if from My Tools
         imagePath: null, // Will be set after upload
         notes: _notesController.text.trim().isEmpty
             ? null

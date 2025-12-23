@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 
 import '../utils/logo_assets.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
+import '../providers/auth_provider.dart';
+import '../models/user_role.dart';
+import '../utils/auth_error_handler.dart';
 import 'admin_registration_screen.dart';
 import 'auth/login_screen.dart';
 import 'technician_registration_screen.dart';
 
-class RoleSelectionScreen extends StatelessWidget {
+class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
+
+  @override
+  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
+}
+
+class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
+  bool _isProcessing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,28 +48,47 @@ class RoleSelectionScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _buildBranding(context, isDesktop),
                   const SizedBox(height: 36),
-                  _buildRoleButton(
-                    context: context,
-                    label: 'Register as Admin',
-                    color: AppTheme.secondaryColor,
-                    onTap: () => _navigate(
-                      context,
-                      const AdminRegistrationScreen(),
-                    ),
-                    animationCurve:
-                        const Interval(0.0, 1.0, curve: Curves.easeOut),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRoleButton(
-                    context: context,
-                    label: 'Register as Technician',
-                    color: theme.colorScheme.surface,
-                    onTap: () => _navigate(
-                      context,
-                      const TechnicianRegistrationScreen(),
-                    ),
-                    animationCurve:
-                        const Interval(0.2, 1.0, curve: Curves.easeOut),
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      final isOAuthUser = authProvider.isAuthenticated && 
+                                          authProvider.user?.appMetadata?['provider'] != null &&
+                                          authProvider.user?.appMetadata?['provider'] != 'email' &&
+                                          authProvider.userRole == UserRole.pending;
+                      
+                      return Column(
+                        children: [
+                          _buildRoleButton(
+                            context: context,
+                            label: isOAuthUser ? 'Continue as Admin' : 'Register as Admin',
+                            color: AppTheme.secondaryColor,
+                            onTap: _isProcessing 
+                                ? () {} // Empty function when processing
+                                : () => _handleRoleSelection(
+                                    context,
+                                    UserRole.admin,
+                                    isOAuthUser,
+                                  ),
+                            animationCurve:
+                                const Interval(0.0, 1.0, curve: Curves.easeOut),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildRoleButton(
+                            context: context,
+                            label: isOAuthUser ? 'Continue as Technician' : 'Register as Technician',
+                            color: theme.colorScheme.surface,
+                            onTap: _isProcessing 
+                                ? () {} // Empty function when processing
+                                : () => _handleRoleSelection(
+                                    context,
+                                    UserRole.technician,
+                                    isOAuthUser,
+                                  ),
+                            animationCurve:
+                                const Interval(0.2, 1.0, curve: Curves.easeOut),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildSignInLink(context),
@@ -237,5 +267,58 @@ class RoleSelectionScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => screen),
     );
+  }
+  
+  Future<void> _handleRoleSelection(BuildContext context, UserRole role, bool isOAuthUser) async {
+    if (_isProcessing) return;
+    
+    setState(() {
+      _isProcessing = true;
+    });
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      
+      if (isOAuthUser) {
+        // OAuth user - assign role directly
+        await authProvider.assignRoleToOAuthUser(role);
+        
+        // Re-initialize to pick up the new role
+        await authProvider.initialize();
+        
+        if (!mounted) return;
+        
+        // Navigate based on role
+        if (role == UserRole.admin) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/admin',
+            (route) => false,
+          );
+        } else {
+          // Technician - go to pending approval screen
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/pending-approval',
+            (route) => false,
+          );
+        }
+      } else {
+        // Regular user - navigate to registration screen
+        if (role == UserRole.admin) {
+          _navigate(context, const AdminRegistrationScreen());
+        } else {
+          _navigate(context, const TechnicianRegistrationScreen());
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final errorMessage = AuthErrorHandler.getErrorMessage(e);
+      AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 }

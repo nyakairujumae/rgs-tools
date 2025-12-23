@@ -146,7 +146,9 @@ Future<void> _initializeServicesInBackground() async {
   }
 
   // Initialize Supabase (works on web too)
-  print('🔄 Initializing Supabase in background...');
+  // CRITICAL: Initialize Supabase FIRST before other services
+  // This ensures session persistence works correctly
+  print('🔄 Initializing Supabase in background (priority)...');
   bool supabaseInitialized = false;
   
   try {
@@ -582,11 +584,13 @@ class HvacToolsManagerApp extends StatelessWidget {
                 final uriString = settings.name!;
                 print('🔐 Checking deep link: $uriString');
                 
-                // Check if this is an auth callback URL
+                // Check if this is an auth callback URL (email confirmation, password reset, or OAuth)
                 final isAuthCallback = uriString.contains('auth/callback') || 
                                       uriString.contains('access_token') ||
                                       uriString.contains('type=signup') ||
                                       uriString.contains('type=recovery') ||
+                                      uriString.contains('type=oauth') ||
+                                      uriString.contains('provider=') ||
                                       uriString.contains('email-confirmation');
                 
                 if (isAuthCallback) {
@@ -613,9 +617,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                       ),
                       settings: RouteSettings(name: '/reset-password'),
                     );
-                  } else if (type == 'signup' || hasAccessToken || uriString.contains('email-confirmation')) {
-                    // Email confirmation - get session from URL and auto-login
-                    print('✅ Email confirmation detected, getting session from URL...');
+                  } else if (type == 'signup' || type == 'oauth' || hasAccessToken || uriString.contains('email-confirmation') || uri.queryParameters.containsKey('provider')) {
+                    // Email confirmation or OAuth callback - get session from URL and auto-login
+                    final isOAuth = type == 'oauth' || uri.queryParameters.containsKey('provider');
+                    print('✅ ${isOAuth ? "OAuth" : "Email confirmation"} detected, getting session from URL...');
                     print('🔐 Full URI: $uri');
                     print('🔐 Query parameters: ${uri.queryParameters}');
                     
@@ -628,7 +633,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                             print('🔐 Getting session from URL...');
                             print('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
                             
-                            // Get session from URL (this confirms the email and creates the session)
+                            // Get session from URL (this confirms the email/OAuth and creates the session)
                             final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                             
                             if (sessionResponse.session != null) {
@@ -649,24 +654,70 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Wait for auth provider to fully initialize with the new session
                               await authProvider.initialize();
                               
-                              // Wait a bit more to ensure auth state is fully updated
-                              await Future.delayed(const Duration(milliseconds: 500));
+                              // Wait for database trigger to create user record and set role
+                              // The trigger fires when email_confirmed_at is set
+                              print('⏳ Waiting for database trigger to create user record and set role...');
+                              await Future.delayed(const Duration(milliseconds: 2000));
                               
-                              // Re-initialize auth provider to pick up any role changes
+                              // Re-initialize auth provider to pick up role from database
                               await authProvider.initialize();
+                              
+                              // Wait a bit more to ensure role is loaded
+                              await Future.delayed(const Duration(milliseconds: 1000));
                               
                               // Check authentication status after initialization
                               if (authProvider.isAuthenticated) {
                                 print('✅ User authenticated after email confirmation');
-                                print('✅ User role: ${authProvider.userRole}');
-                                print('✅ Is admin: ${authProvider.isAdmin}');
-                                print('✅ Is pending approval: ${authProvider.isPendingApproval}');
+                                print('✅ User role from AuthProvider: ${authProvider.userRole}');
+                                print('✅ Is admin from AuthProvider: ${authProvider.isAdmin}');
+                                print('✅ Is pending approval from AuthProvider: ${authProvider.isPendingApproval}');
                                 
-                                // For technicians, ALWAYS check pending approval status before auto-login
-                                // For admins, auto-login is fine
-                                bool isTechnician = !authProvider.isAdmin;
+                                // CRITICAL: Check database directly for role if AuthProvider hasn't loaded it yet
+                                // This handles cases where the database trigger hasn't completed yet
+                                String? roleFromDb;
                                 bool hasPendingApproval = false;
                                 
+                                try {
+                                  // Check user record in database directly
+                                  final userRecord = await SupabaseService.client
+                                      .from('users')
+                                      .select('role')
+                                      .eq('id', sessionResponse.session!.user.id)
+                                      .maybeSingle();
+                                  
+                                  if (userRecord != null && userRecord['role'] != null) {
+                                    roleFromDb = userRecord['role'] as String;
+                                    print('✅ Role from database: $roleFromDb');
+                                  } else {
+                                    print('⚠️ User record not found in database yet - trigger may still be running');
+                                    // Wait a bit more and retry
+                                    await Future.delayed(const Duration(milliseconds: 1500));
+                                    final retryUserRecord = await SupabaseService.client
+                                        .from('users')
+                                        .select('role')
+                                        .eq('id', sessionResponse.session!.user.id)
+                                        .maybeSingle();
+                                    if (retryUserRecord != null && retryUserRecord['role'] != null) {
+                                      roleFromDb = retryUserRecord['role'] as String;
+                                      print('✅ Role from database (after retry): $roleFromDb');
+                                    }
+                                  }
+                                } catch (e) {
+                                  print('⚠️ Error checking user record in database: $e');
+                                }
+                                
+                                // Determine if user is admin or technician
+                                // Use database role if available, otherwise use AuthProvider role
+                                final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
+                                final bool isTechnician = roleFromDb == 'technician' || (!isAdmin && authProvider.userRole != UserRole.pending);
+                                
+                                print('🔍 Final role determination:');
+                                print('   - Role from DB: $roleFromDb');
+                                print('   - AuthProvider role: ${authProvider.userRole}');
+                                print('   - Is admin: $isAdmin');
+                                print('   - Is technician: $isTechnician');
+                                
+                                // For technicians, check pending approval status
                                 if (isTechnician) {
                                   print('🔍 User is a technician - checking for pending approval...');
                                   
@@ -706,34 +757,12 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   }
                                   
                                   // If we still don't have a pending approval record after retries,
-                                  // check if user record exists - if not, assume pending (new registration)
+                                  // assume pending for new technician registrations
                                   if (!hasPendingApproval) {
-                                    try {
-                                      final userRecord = await SupabaseService.client
-                                          .from('users')
-                                          .select('role')
-                                          .eq('id', sessionResponse.session!.user.id)
-                                          .maybeSingle();
-                                      
-                                      if (userRecord == null) {
-                                        // User record doesn't exist yet - trigger might still be running
-                                        // For safety, assume pending approval for new technician registrations
-                                        print('⚠️ User record not found - assuming pending approval for new registration');
-                                        hasPendingApproval = true;
-                                      } else {
-                                        // User record exists - check approval status using auth provider
-                                        final approvalStatus = await authProvider.checkApprovalStatus();
-                                        print('🔍 Approval status from checkApprovalStatus: $approvalStatus');
-                                        if (approvalStatus == false || approvalStatus == null) {
-                                          hasPendingApproval = true;
-                                          print('✅ Technician needs approval - will redirect to pending approval screen');
-                                        }
-                                      }
-                                    } catch (e) {
-                                      print('⚠️ Error checking user record: $e');
-                                      // On error, assume pending approval for safety
-                                      hasPendingApproval = true;
-                                    }
+                                    // For new technician registrations, they should have pending approval
+                                    // Check if this is a new registration (user just confirmed email)
+                                    print('⚠️ No pending approval record found - assuming pending for new technician registration');
+                                    hasPendingApproval = true;
                                   }
                                   
                                   // Also check auth provider's pending approval status as a fallback
@@ -746,7 +775,22 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 // Navigate directly to appropriate screen
                                 final navigator = Navigator.of(context, rootNavigator: true);
                                 
-                                if (authProvider.isAdmin) {
+                                // Check if OAuth user needs role selection (only for OAuth, not email confirmation)
+                                final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
+                                    authProvider.user?.appMetadata?['provider'] != 'email';
+                                
+                                if (authProvider.userRole == UserRole.pending && isOAuthUser) {
+                                  // OAuth user without role - redirect to role selection
+                                  print('🔐 OAuth user needs role selection - redirecting to role selection');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/role-selection',
+                                    (route) => false,
+                                  );
+                                  return;
+                                }
+                                
+                                // Navigate based on role
+                                if (isAdmin) {
                                   print('✅ Auto-logging in as admin - redirecting to admin home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/admin',
@@ -766,8 +810,65 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     (route) => false,
                                   );
                                 } else {
-                                  // Fallback - should not reach here
-                                  print('⚠️ Unknown user role - redirecting to role selection');
+                                  // If role is still pending and not OAuth, wait a bit more and check again
+                                  if (authProvider.userRole == UserRole.pending && !isOAuthUser) {
+                                    print('⚠️ Role still pending - waiting for database trigger to complete...');
+                                    await Future.delayed(const Duration(milliseconds: 2000));
+                                    await authProvider.initialize();
+                                    
+                                    // Check database one more time
+                                    try {
+                                      final finalUserRecord = await SupabaseService.client
+                                          .from('users')
+                                          .select('role')
+                                          .eq('id', sessionResponse.session!.user.id)
+                                          .maybeSingle();
+                                      
+                                      if (finalUserRecord != null && finalUserRecord['role'] != null) {
+                                        final finalRole = finalUserRecord['role'] as String;
+                                        print('✅ Final role from database: $finalRole');
+                                        
+                                        if (finalRole == 'admin') {
+                                          navigator.pushNamedAndRemoveUntil(
+                                            '/admin',
+                                            (route) => false,
+                                          );
+                                          return;
+                                        } else if (finalRole == 'technician') {
+                                          // Check pending approval one more time
+                                          final finalPendingApproval = await SupabaseService.client
+                                              .from('pending_user_approvals')
+                                              .select('status')
+                                              .eq('user_id', sessionResponse.session!.user.id)
+                                              .order('created_at', ascending: false)
+                                              .limit(1)
+                                              .maybeSingle();
+                                          
+                                          if (finalPendingApproval != null) {
+                                            final status = finalPendingApproval['status'] as String?;
+                                            if (status == 'pending' || status == 'rejected') {
+                                              navigator.pushNamedAndRemoveUntil(
+                                                '/pending-approval',
+                                                (route) => false,
+                                              );
+                                              return;
+                                            }
+                                          }
+                                          
+                                          navigator.pushNamedAndRemoveUntil(
+                                            '/technician',
+                                            (route) => false,
+                                          );
+                                          return;
+                                        }
+                                      }
+                                    } catch (e) {
+                                      print('⚠️ Error checking final role: $e');
+                                    }
+                                  }
+                                  
+                                  // Fallback - redirect to role selection
+                                  print('⚠️ Unknown user role or role not loaded - redirecting to role selection');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/role-selection',
                                     (route) => false,

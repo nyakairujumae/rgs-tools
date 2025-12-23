@@ -60,7 +60,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => isAdmin 
-            ? const AddToolScreen() 
+            ? const AddToolScreen(isFromMyTools: true) 
             : const TechnicianAddToolScreen(),
       ),
     );

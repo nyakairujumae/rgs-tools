@@ -118,13 +118,24 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('🔍 Getting current session...');
-      // Small delay to ensure Supabase has restored any persisted session
-      // Reduced delay since we're now waiting in the UI layer
-      await Future.delayed(const Duration(milliseconds: 200));
-      
-      // Get current session (this is local, no network call)
+      // CRITICAL: Wait for Supabase to be fully initialized and restore persisted session
+      // This ensures session persistence works correctly
+      // Try multiple times to ensure Supabase has restored the session
       var session = SupabaseService.client.auth.currentSession;
-      print('🔍 Current session: ${session != null ? "Found (user: ${session.user.email})" : "None"}');
+      
+      // If no session found immediately, wait a bit for Supabase to restore it
+      if (session == null) {
+        print('🔍 No session found immediately, waiting for Supabase to restore persisted session...');
+        for (int i = 0; i < 5; i++) {
+          await Future.delayed(const Duration(milliseconds: 300));
+          session = SupabaseService.client.auth.currentSession;
+          if (session != null) {
+            print('✅ Session restored after ${(i + 1) * 300}ms');
+            break;
+          }
+        }
+      }
+      print('🔍 Current session: ${session != null ? "Found (user: ${session.user.email}, expired: ${session.isExpired})" : "None"}');
       
       // If session exists but is expired, try to refresh it (non-blocking for UI)
       if (session != null && session.isExpired) {
@@ -147,8 +158,14 @@ class AuthProvider with ChangeNotifier {
           }
         } catch (e) {
           print('❌ Failed to refresh session: $e');
-          // If refresh fails, clear the expired session
-          session = null;
+          // Don't clear session on refresh failure - session might still be valid
+          // Only clear if it's definitely expired and refresh failed
+          // This prevents losing valid sessions due to temporary network issues
+          if (session != null && session.isExpired) {
+            print('⚠️ Session is expired and refresh failed - keeping session for now');
+            // Don't set session to null - let it try to use the expired session
+            // The app will handle expired sessions gracefully
+          }
         }
       }
       
@@ -185,11 +202,55 @@ class AuthProvider with ChangeNotifier {
               }
             } catch (e) {
               print('⚠️ Could not refresh session for existing user: $e');
-              // Continue with the user anyway - they might still be authenticated
+              // Try to use the currentUser even without a fresh session
+              // The session might still be valid, just couldn't refresh
+              // This prevents losing valid sessions due to temporary network issues
             }
           }
         } catch (e) {
           print('⚠️ Error checking currentUser: $e');
+        }
+      }
+      
+      // CRITICAL: If we still don't have a user, try one more time after a longer delay
+      // This handles cases where Supabase is still initializing in the background
+      // Supabase needs time to restore the persisted session from storage
+      if (_user == null) {
+        print('🔍 Still no user found, waiting for Supabase to fully initialize and restore session...');
+        // Wait longer to ensure Supabase has restored persisted session
+        await Future.delayed(const Duration(milliseconds: 1500));
+        
+        // Try again after Supabase has had time to restore session
+        try {
+          final delayedSession = SupabaseService.client.auth.currentSession;
+          if (delayedSession != null) {
+            _user = delayedSession.user;
+            print('✅ Session restored after delay: ${_user?.email}');
+            session = delayedSession; // Update session variable too
+          } else {
+            // Try currentUser as fallback
+            final delayedUser = SupabaseService.client.auth.currentUser;
+            if (delayedUser != null) {
+              _user = delayedUser;
+              print('✅ User found after delay (no session): ${_user?.email}');
+              // Try to refresh session for this user
+              try {
+                final refreshResponse = await SupabaseService.client.auth
+                    .refreshSession()
+                    .timeout(const Duration(seconds: 3));
+                if (refreshResponse?.session != null) {
+                  _user = refreshResponse!.session!.user;
+                  session = refreshResponse.session;
+                  print('✅ Session refreshed for restored user: ${_user?.email}');
+                }
+              } catch (e) {
+                print('⚠️ Could not refresh session for restored user: $e');
+                // Continue with user anyway - they might still be authenticated
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ Error checking session after delay: $e');
         }
       }
       
@@ -1016,10 +1077,27 @@ class AuthProvider with ChangeNotifier {
                 .maybeSingle();
             
             if (userRecord == null || userRecord['role'] == null) {
-              // User doesn't have a registered account - sign them out and show error
-              debugPrint('❌ User logged in but account is not registered (no role found)');
-              await signOut();
-              throw Exception('Your account is not available. Please register first by creating a new account.');
+              // Check if this is an OAuth user (first-time OAuth login)
+              final isOAuthUser = _user!.appMetadata?['provider'] != null && 
+                                  _user!.appMetadata?['provider'] != 'email';
+              
+              if (isOAuthUser) {
+                // OAuth users without a role need to select a role
+                debugPrint('🔐 OAuth user without role - needs role selection');
+                // Don't sign out - let the UI handle role selection
+                // Set role to pending so UI can detect this case
+                _userRole = UserRole.pending;
+                await _saveUserRole(_userRole);
+                notifyListeners();
+                // Return authResponse - UI will handle role selection
+                // The user is authenticated, just needs to select a role
+                return authResponse;
+              } else {
+                // Email/password user without role - must register first
+                debugPrint('❌ User logged in but account is not registered (no role found)');
+                await signOut();
+                throw Exception('Your account is not available. Please register first by creating a new account.');
+              }
             }
           }
         } catch (e) {
@@ -1042,10 +1120,27 @@ class AuthProvider with ChangeNotifier {
                 _userRole = UserRoleExtension.fromString(roleFromMetadata);
                 debugPrint('✅ Using role from metadata: ${_userRole.value}');
               } else {
-                // No role found anywhere - account is not registered
-                debugPrint('❌ No role found in saved role or metadata - account not registered');
-                await signOut();
-                throw Exception('Your account is not available. Please register first by creating a new account.');
+                // Check if this is an OAuth user (first-time OAuth login)
+                final isOAuthUser = _user!.appMetadata?['provider'] != null && 
+                                    _user!.appMetadata?['provider'] != 'email';
+                
+                if (isOAuthUser) {
+                  // OAuth users without a role need to select a role
+                  debugPrint('🔐 OAuth user without role - needs role selection');
+                  // Don't sign out - let the UI handle role selection
+                  // Set role to pending so UI can detect this case
+                  _userRole = UserRole.pending;
+                  await _saveUserRole(_userRole);
+                  notifyListeners();
+                  // Return authResponse - UI will handle role selection
+                  // The user is authenticated, just needs to select a role
+                  return authResponse;
+                } else {
+                  // Email/password user without role - must register first
+                  debugPrint('❌ No role found in saved role or metadata - account not registered');
+                  await signOut();
+                  throw Exception('Your account is not available. Please register first by creating a new account.');
+                }
               }
             }
             notifyListeners();
@@ -1510,6 +1605,70 @@ _isLoading = false;
   Future<void> signInWithApple() async {
     await _signInWithOAuthProvider(OAuthProvider.apple);
   }
+  
+  /// Assign role to OAuth user (called after they select admin or technician)
+  /// This creates/updates the user record in the database with the selected role
+  Future<void> assignRoleToOAuthUser(UserRole role, {String? fullName}) async {
+    if (_user == null) {
+      throw Exception('No user logged in');
+    }
+    
+    try {
+      final client = SupabaseService.client;
+      final userId = _user!.id;
+      final email = _user!.email ?? '';
+      final name = fullName ?? _user!.userMetadata?['full_name'] ?? _user!.userMetadata?['name'] ?? email.split('@')[0];
+      
+      debugPrint('🔐 Assigning role to OAuth user: $role');
+      debugPrint('🔐 User ID: $userId, Email: $email, Name: $name');
+      
+      // Update auth.users metadata with role
+      await client.auth.updateUser(
+        UserAttributes(
+          data: {
+            'role': role.value,
+            'full_name': name.toUpperCase(),
+          },
+        ),
+      );
+      
+      // Create or update user record in public.users table
+      await client.from('users').upsert({
+        'id': userId,
+        'email': email,
+        'full_name': name.toUpperCase(),
+        'role': role.value,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      
+      // If technician, create pending approval record
+      if (role == UserRole.technician) {
+        try {
+          await client.from('pending_user_approvals').insert({
+            'user_id': userId,
+            'email': email,
+            'full_name': name.toUpperCase(),
+            'status': 'pending',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          debugPrint('✅ Created pending approval record for OAuth technician');
+        } catch (e) {
+          debugPrint('⚠️ Could not create pending approval (may already exist): $e');
+        }
+      }
+      
+      // Update local state
+      _userRole = role;
+      await _saveUserRole(role);
+      notifyListeners();
+      
+      debugPrint('✅ Role assigned successfully to OAuth user: $role');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error assigning role to OAuth user: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
 
   Future<void> _signInWithOAuthProvider(OAuthProvider provider) async {
     _isLoading = true;
@@ -1518,19 +1677,26 @@ _isLoading = false;
     try {
       final client = SupabaseService.client;
 
+      // Configure OAuth with proper redirect URL for mobile apps
+      // The redirect URL must match what's configured in Supabase dashboard
       await client.auth.signInWithOAuth(
         provider,
-        // The redirect URL should match the deep link configured in Supabase dashboard
-        // For mobile, we rely on the app scheme; for web, Supabase handles redirects.
+        redirectTo: 'com.rgs.app://auth/callback',
       );
+      
+      // Note: After OAuth sign-in, the user will be redirected back to the app
+      // The deep link handler in main.dart will catch the callback and process the session
+      // We don't need to do anything here - the session will be restored automatically
+      // The loading state will be cleared when the callback is processed
     } catch (e, stackTrace) {
       debugPrint('❌ Error during OAuth sign-in ($provider): $e');
       debugPrint('Stack trace: $stackTrace');
-      rethrow;
-    } finally {
       _isLoading = false;
       notifyListeners();
+      rethrow;
     }
+    // Don't set _isLoading = false here - let the callback handler manage it
+    // The OAuth flow is asynchronous and will complete via deep link callback
   }
   
   /// Simulate login for web ONLY (bypasses Supabase)
