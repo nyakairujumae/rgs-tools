@@ -6,5 +6,6 @@ FlutterAuthClientOptions createPlatformAuthOptions({
   // Web already relies on browser storage, so no special handling required.
   return const FlutterAuthClientOptions(
     authFlowType: AuthFlowType.pkce,
+    autoRefreshToken: true,
   );
 }

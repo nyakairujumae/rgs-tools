@@ -20,6 +20,7 @@ FlutterAuthClientOptions createPlatformAuthOptions({
     authFlowType: AuthFlowType.pkce,
     localStorage: localStorage,
     pkceAsyncStorage: pkceStorage,
+    autoRefreshToken: true,
   );
 }
 
