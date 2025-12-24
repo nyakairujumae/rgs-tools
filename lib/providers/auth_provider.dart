@@ -202,7 +202,7 @@ class AuthProvider with ChangeNotifier {
               }
             } catch (e) {
               print('⚠️ Could not refresh session for existing user: $e');
-              // Try to use the currentUser even without a fresh session
+              // Continue with the user anyway - they might still be authenticated
               // The session might still be valid, just couldn't refresh
               // This prevents losing valid sessions due to temporary network issues
             }
@@ -1759,26 +1759,25 @@ _isLoading = false;
         debugPrint('🔄 Session expired, attempting to refresh...');
         try {
           final refreshResponse = await SupabaseService.client.auth.refreshSession().timeout(
-            const Duration(seconds: 5), // Increased timeout for better reliability
+            const Duration(seconds: 3),
             onTimeout: () {
-              throw TimeoutException('Session refresh timed out', const Duration(seconds: 5));
+              throw TimeoutException('Session refresh timed out', const Duration(seconds: 3));
             },
           );
           if (refreshResponse.session != null) {
             debugPrint('✅ Session refreshed successfully');
             _user = refreshResponse.session!.user;
           } else {
-            debugPrint('⚠️ Session refresh returned null, but maintaining session for persistence');
-            // CRITICAL: Don't clear user - maintain session persistence
-            // Session will be refreshed when user performs an action
-            return;
+            debugPrint('❌ Session refresh failed - no new session');
+            // Don't clear user data immediately, try to maintain session
+            debugPrint('🔄 Attempting to maintain session...');
+            // Continue to load role even if refresh failed - session might still be valid
           }
         } catch (e) {
-          debugPrint('⚠️ Failed to refresh session: $e');
-          debugPrint('⚠️ Maintaining session for persistence - will retry on next action');
-          // CRITICAL: Don't clear user data on refresh failure - maintain persistence
-          // Session will be refreshed automatically when user performs an action
-          return;
+          debugPrint('❌ Failed to refresh session: $e');
+          // Don't clear user data, maintain session
+          debugPrint('🔄 Maintaining session despite refresh failure...');
+          // Continue to load role even if refresh failed - session might still be valid
         }
       }
 

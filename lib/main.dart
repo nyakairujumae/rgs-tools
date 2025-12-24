@@ -707,12 +707,40 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 }
                                 
                                 // Determine if user is admin or technician
-                                // Use database role if available, otherwise use AuthProvider role
+                                // For technicians, check pending approval first (they might not have a users record yet)
+                                // Use database role if available, otherwise check auth metadata or pending approval
                                 final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
-                                final bool isTechnician = roleFromDb == 'technician' || (!isAdmin && authProvider.userRole != UserRole.pending);
+                                
+                                // Check if user is a technician:
+                                // 1. Has technician role in database (approved technician)
+                                // 2. Has technician role in auth metadata (new registration)
+                                // 3. Has pending approval record (new technician registration)
+                                final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                                final bool isTechnicianFromDb = roleFromDb == 'technician';
+                                final bool isTechnicianFromMetadata = roleFromMetadata == 'technician';
+                                
+                                // Check for pending approval to determine if this is a technician
+                                bool hasPendingApprovalForTech = false;
+                                try {
+                                  final pendingCheck = await SupabaseService.client
+                                      .from('pending_user_approvals')
+                                      .select('id')
+                                      .eq('user_id', sessionResponse.session!.user.id)
+                                      .maybeSingle();
+                                  hasPendingApprovalForTech = pendingCheck != null;
+                                } catch (e) {
+                                  print('⚠️ Could not check pending approval: $e');
+                                }
+                                
+                                final bool isTechnician = isTechnicianFromDb || 
+                                    isTechnicianFromMetadata || 
+                                    hasPendingApprovalForTech ||
+                                    (!isAdmin && authProvider.userRole != UserRole.pending && authProvider.userRole != UserRole.admin);
                                 
                                 print('🔍 Final role determination:');
                                 print('   - Role from DB: $roleFromDb');
+                                print('   - Role from metadata: $roleFromMetadata');
+                                print('   - Has pending approval: $hasPendingApprovalForTech');
                                 print('   - AuthProvider role: ${authProvider.userRole}');
                                 print('   - Is admin: $isAdmin');
                                 print('   - Is technician: $isTechnician');
@@ -757,12 +785,28 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   }
                                   
                                   // If we still don't have a pending approval record after retries,
-                                  // assume pending for new technician registrations
+                                  // check if this is a new technician registration (just confirmed email)
                                   if (!hasPendingApproval) {
                                     // For new technician registrations, they should have pending approval
-                                    // Check if this is a new registration (user just confirmed email)
-                                    print('⚠️ No pending approval record found - assuming pending for new technician registration');
-                                    hasPendingApproval = true;
+                                    // Check if user metadata indicates technician role
+                                    final metadataRole = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                                    if (metadataRole == 'technician' || isTechnicianFromMetadata) {
+                                      print('⚠️ No pending approval record found, but user metadata indicates technician');
+                                      print('⚠️ This might be a new registration where trigger hasn\'t created pending approval yet');
+                                      print('⚠️ Assuming pending and will navigate to pending approval screen');
+                                      hasPendingApproval = true;
+                                    } else if (roleFromDb == 'technician') {
+                                      // Has technician role in DB but no pending approval - might be approved
+                                      // But check if they have a users record (approved) or not
+                                      print('✅ User has technician role in DB - checking if approved...');
+                                      if (roleFromDb == 'technician') {
+                                        // Has users record with technician role - likely approved
+                                        hasPendingApproval = false;
+                                      }
+                                    } else {
+                                      // Not a technician or already approved
+                                      print('✅ No pending approval - user might not be a technician or already approved');
+                                    }
                                   }
                                   
                                   // Also check auth provider's pending approval status as a fallback
@@ -802,11 +846,18 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     '/pending-approval',
                                     (route) => false,
                                   );
-                                } else if (isTechnician) {
-                                  // Technician is approved
+                                } else if (isTechnician && !hasPendingApproval) {
+                                  // Technician is approved (no pending approval)
                                   print('✅ Auto-logging in as approved technician - redirecting to technician home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/technician',
+                                    (route) => false,
+                                  );
+                                } else if (isTechnician && hasPendingApproval) {
+                                  // Technician has pending approval - should have been handled above, but double-check
+                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/pending-approval',
                                     (route) => false,
                                   );
                                 } else {
