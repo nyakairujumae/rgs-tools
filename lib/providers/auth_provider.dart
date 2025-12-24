@@ -1288,13 +1288,14 @@ class AuthProvider with ChangeNotifier {
         // For technicians, check if they're approved before allowing access
         if (_userRole != UserRole.admin) {
           final isApproved = await checkApprovalStatus();
-          if (isApproved == false) {
-            // User is not approved - set role to pending to block access
+          if (isApproved == false || isApproved == null) {
+            // User is not approved - block login and sign them out
             _userRole = UserRole.pending;
             await _saveUserRole(_userRole);
-            debugPrint('⚠️ Technician login blocked - not approved yet');
-            notifyListeners();
-            // Don't throw error, just set role to pending so UI can handle it
+            await signOut();
+            debugPrint('❌ Technician login blocked - not approved yet');
+            // Use the standard error message for unregistered accounts
+            throw Exception('Oops, seems you don\'t have an account. Please register first.');
           }
         }
         

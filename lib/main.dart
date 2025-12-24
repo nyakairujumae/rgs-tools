@@ -820,14 +820,28 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 final navigator = Navigator.of(context, rootNavigator: true);
                                 
                                 // Check if OAuth user needs role selection (only for OAuth, not email confirmation)
+                                // IMPORTANT: Don't redirect to role selection if technician has pending approval
                                 final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
                                     authProvider.user?.appMetadata?['provider'] != 'email';
                                 
-                                if (authProvider.userRole == UserRole.pending && isOAuthUser) {
+                                // Only redirect to role selection if:
+                                // 1. It's an OAuth user (not email/password)
+                                // 2. They don't have pending approval (technicians with pending approval go to waiting screen)
+                                if (authProvider.userRole == UserRole.pending && isOAuthUser && !hasPendingApproval) {
                                   // OAuth user without role - redirect to role selection
                                   print('🔐 OAuth user needs role selection - redirecting to role selection');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/role-selection',
+                                    (route) => false,
+                                  );
+                                  return;
+                                }
+                                
+                                // If technician has pending approval, go to pending approval screen (not role selection)
+                                if (isTechnician && hasPendingApproval) {
+                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/pending-approval',
                                     (route) => false,
                                   );
                                   return;
@@ -838,12 +852,6 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   print('✅ Auto-logging in as admin - redirecting to admin home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/admin',
-                                    (route) => false,
-                                  );
-                                } else if (isTechnician && hasPendingApproval) {
-                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
-                                  navigator.pushNamedAndRemoveUntil(
-                                    '/pending-approval',
                                     (route) => false,
                                   );
                                 } else if (isTechnician && !hasPendingApproval) {
@@ -861,9 +869,24 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     (route) => false,
                                   );
                                 } else {
-                                  // If role is still pending and not OAuth, wait a bit more and check again
+                                  // If role is still pending and not OAuth, check metadata FIRST for technician role
+                                  // This handles cases where database trigger hasn't created records yet
                                   if (authProvider.userRole == UserRole.pending && !isOAuthUser) {
-                                    print('⚠️ Role still pending - waiting for database trigger to complete...');
+                                    print('⚠️ Role still pending - checking metadata FIRST for technician role...');
+                                    
+                                    // CRITICAL: Check metadata FIRST - if it says technician, go to pending approval immediately
+                                    final finalMetadataRole = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                                    if (finalMetadataRole == 'technician') {
+                                      print('✅ Found technician role in metadata - redirecting to pending approval screen');
+                                      navigator.pushNamedAndRemoveUntil(
+                                        '/pending-approval',
+                                        (route) => false,
+                                      );
+                                      return;
+                                    }
+                                    
+                                    // Wait a bit more for database trigger to complete
+                                    print('⚠️ Waiting for database trigger to complete...');
                                     await Future.delayed(const Duration(milliseconds: 2000));
                                     await authProvider.initialize();
                                     
@@ -915,6 +938,23 @@ class HvacToolsManagerApp extends StatelessWidget {
                                       }
                                     } catch (e) {
                                       print('⚠️ Error checking final role: $e');
+                                    }
+                                    
+                                    // Check metadata one more time as fallback
+                                    if (finalMetadataRole == 'technician') {
+                                      print('✅ Found technician role in metadata (fallback) - redirecting to pending approval');
+                                      navigator.pushNamedAndRemoveUntil(
+                                        '/pending-approval',
+                                        (route) => false,
+                                      );
+                                      return;
+                                    } else if (finalMetadataRole == 'admin') {
+                                      print('✅ Found admin role in metadata - redirecting to admin home');
+                                      navigator.pushNamedAndRemoveUntil(
+                                        '/admin',
+                                        (route) => false,
+                                      );
+                                      return;
                                     }
                                   }
                                   
