@@ -716,112 +716,37 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
                               print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
                               
-                              final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                              final isOAuth = type == 'oauth' || uri.queryParameters.containsKey('provider');
-                              if (!isOAuth && roleFromMetadata == 'technician') {
-                                // Always send confirmed technicians to pending approval
-                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                await authProvider.initialize();
-                                if (context.mounted) {
-                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                                    '/pending-approval',
-                                    (route) => false,
-                                  );
-                                }
-                                return;
-                              }
-                              
-                              // Wait for database trigger to create user record and pending approval
-                              // The trigger fires when email_confirmed_at is set
-                              // For technicians, this also creates a pending_user_approvals record
-                              print('⏳ Waiting for database trigger to create user record and pending approval...');
-                              
-                              // Get auth provider and re-initialize to pick up new session
+                              // Get auth provider and initialize with the new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                              
-                              // Wait for auth provider to fully initialize with the new session
                               await authProvider.initialize();
                               
-                              // Wait for database trigger to create user record and set role
+                              // Wait for database trigger to create pending approval record (for technicians)
                               // The trigger fires when email_confirmed_at is set
-                              print('⏳ Waiting for database trigger to create user record and set role...');
+                              print('⏳ Waiting for database trigger to create pending approval record...');
                               await Future.delayed(const Duration(milliseconds: 2000));
                               
-                              // Re-initialize auth provider to pick up role from database
+                              // Re-initialize to pick up role and approval status from database
                               await authProvider.initialize();
                               
-                              // Wait a bit more to ensure role is loaded
-                              await Future.delayed(const Duration(milliseconds: 1000));
-                              
                               // Check authentication status after initialization
-                              if (authProvider.isAuthenticated) {
+                              if (authProvider.isAuthenticated && authProvider.user != null) {
                                 print('✅ User authenticated after email confirmation');
                                 print('✅ User role from AuthProvider: ${authProvider.userRole}');
                                 print('✅ Is admin from AuthProvider: ${authProvider.isAdmin}');
-                                print('✅ Is pending approval from AuthProvider: ${authProvider.isPendingApproval}');
                                 
-                                // CRITICAL: Check database directly for role if AuthProvider hasn't loaded it yet
-                                // This handles cases where the database trigger hasn't completed yet
-                                String? roleFromDb;
-                                bool hasPendingApproval = false;
+                                // CRITICAL: Use checkApprovalStatus() as the source of truth
+                                // This is the simplest and most reliable way to determine routing
+                                final isApproved = await authProvider.checkApprovalStatus();
+                                print('✅ Approval status: $isApproved');
                                 
-                                try {
-                                  // Check user record in database directly
-                                  final userRecord = await SupabaseService.client
-                                      .from('users')
-                                      .select('role')
-                                      .eq('id', sessionResponse.session!.user.id)
-                                      .maybeSingle();
-                                  
-                                  if (userRecord != null && userRecord['role'] != null) {
-                                    roleFromDb = userRecord['role'] as String;
-                                    print('✅ Role from database: $roleFromDb');
-                                  } else {
-                                    print('⚠️ User record not found in database yet - trigger may still be running');
-                                    // Wait a bit more and retry
-                                    await Future.delayed(const Duration(milliseconds: 1500));
-                                    final retryUserRecord = await SupabaseService.client
-                                        .from('users')
-                                        .select('role')
-                                        .eq('id', sessionResponse.session!.user.id)
-                                        .maybeSingle();
-                                    if (retryUserRecord != null && retryUserRecord['role'] != null) {
-                                      roleFromDb = retryUserRecord['role'] as String;
-                                      print('✅ Role from database (after retry): $roleFromDb');
-                                    }
-                                  }
-                                } catch (e) {
-                                  print('⚠️ Error checking user record in database: $e');
-                                }
-                                
-                                // Determine if user is admin or technician
-                                // For technicians, check pending approval first (they might not have a users record yet)
-                                // Use database role if available, otherwise check auth metadata or pending approval
-                                final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
-                                final bool isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
+                                final navigator = Navigator.of(context, rootNavigator: true);
+                                final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
                                     authProvider.user?.appMetadata?['provider'] != 'email';
                                 
-                                // CRITICAL: For email confirmation, if user is technician, ALWAYS go to pending approval
-                                // Check metadata FIRST - this is the most reliable indicator
-                                final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                                final bool isTechnicianFromMetadata = roleFromMetadata == 'technician';
-                                final bool isTechnicianFromDb = roleFromDb == 'technician';
-                                
-                                print('🔍 Role determination:');
-                                print('   - Role from metadata: $roleFromMetadata');
-                                print('   - Role from DB: $roleFromDb');
-                                print('   - Is technician from metadata: $isTechnicianFromMetadata');
-                                print('   - Is technician from DB: $isTechnicianFromDb');
-                                
-                                // CRITICAL: If metadata says technician OR no role in DB (new registration),
-                                // immediately navigate to pending approval screen
-                                // This ensures email-confirmed technicians always go to pending approval
-                                if (isTechnicianFromMetadata || (roleFromDb == null && !isAdmin)) {
-                                  print('✅ User is a technician (from metadata or new registration)');
-                                  print('✅ Navigating to pending approval screen immediately');
-                                  
-                                  // Navigate immediately - don't wait for database checks
-                                  final navigator = Navigator.of(context, rootNavigator: true);
+                                // If not approved (pending/rejected), route to pending approval screen
+                                // This "traps" the user at pending approval until admin approves
+                                if (isApproved == false) {
+                                  print('✅ User is NOT approved - routing to pending approval screen');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/pending-approval',
                                     (route) => false,
@@ -829,258 +754,50 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   return;
                                 }
                                 
-                                // Check for pending approval record (for cases where metadata might not be set)
-                                bool hasPendingApprovalForTech = false;
-                                try {
-                                  final pendingCheck = await SupabaseService.client
-                                      .from('pending_user_approvals')
-                                      .select('id, status')
-                                      .eq('user_id', sessionResponse.session!.user.id)
-                                      .order('created_at', ascending: false)
-                                      .limit(1)
-                                      .maybeSingle();
-                                  
-                                  if (pendingCheck != null) {
-                                    hasPendingApprovalForTech = true;
-                                    final status = pendingCheck['status'] as String?;
-                                    if (status == 'pending' || status == 'rejected') {
-                                      hasPendingApproval = true;
-                                      print('✅ Found pending approval record with status: $status');
-                                    } else if (status == 'approved') {
-                                      hasPendingApproval = false;
-                                      print('✅ Technician is approved');
-                                    }
-                                  }
-                                } catch (e) {
-                                  print('⚠️ Could not check pending approval: $e');
-                                }
-                                
-                                final bool isTechnician = isTechnicianFromDb || 
-                                    isTechnicianFromMetadata || 
-                                    hasPendingApprovalForTech ||
-                                    (!isAdmin && authProvider.userRole != UserRole.pending && authProvider.userRole != UserRole.admin);
-                                
-                                print('🔍 Final determination:');
-                                print('   - Is technician: $isTechnician');
-                                print('   - Has pending approval: $hasPendingApproval');
-                                
-                                // For technicians, check pending approval status
-                                if (isTechnician && !hasPendingApproval) {
-                                  print('🔍 User is a technician - checking for pending approval...');
-                                  
-                                  // Retry checking for pending approval (database trigger might need time)
-                                  for (int attempt = 0; attempt < 5; attempt++) {
-                                    await Future.delayed(Duration(milliseconds: 500 + (attempt * 200)));
-                                    
-                                    try {
-                                      // Check pending_user_approvals table directly
-                                      final pendingApproval = await SupabaseService.client
-                                          .from('pending_user_approvals')
-                                          .select('status')
-                                          .eq('user_id', sessionResponse.session!.user.id)
-                                          .order('created_at', ascending: false)
-                                          .limit(1)
-                                          .maybeSingle();
-                                      
-                                      if (pendingApproval != null) {
-                                        final status = pendingApproval['status'] as String?;
-                                        print('🔍 Found pending approval record (attempt ${attempt + 1}): $status');
-                                        
-                                        if (status == 'pending' || status == 'rejected') {
-                                          hasPendingApproval = true;
-                                          print('✅ Technician has pending approval - will redirect to pending approval screen');
-                                          break;
-                                        } else if (status == 'approved') {
-                                          print('✅ Technician is approved - will redirect to technician home');
-                                          hasPendingApproval = false;
-                                          break;
-                                        }
-                                      } else {
-                                        print('⏳ No pending approval record found yet (attempt ${attempt + 1}/5)...');
-                                      }
-                                    } catch (e) {
-                                      print('⚠️ Error checking pending approval (attempt ${attempt + 1}): $e');
-                                    }
-                                  }
-                                  
-                                  // If still no pending approval found but user is technician, assume pending
-                                  if (!hasPendingApproval && isTechnician) {
-                                    print('⚠️ No pending approval record found, but user is a technician');
-                                    print('⚠️ Assuming pending and will navigate to pending approval screen');
-                                    hasPendingApproval = true;
-                                  }
-                                }
-                                
-                                // Also check auth provider's pending approval status as a fallback
-                                if (!hasPendingApproval && (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
-                                  print('✅ Auth provider indicates pending approval - will redirect to pending approval screen');
-                                  hasPendingApproval = true;
-                                }
-                                
-                                // Navigate directly to appropriate screen
-                                final navigator = Navigator.of(context, rootNavigator: true);
-                                
-                                // If this is email confirmation (not OAuth) and not admin, never go to role selection.
-                                if (!isOAuthUser && !isAdmin) {
-                                  // Check approval status; default to pending if unknown.
-                                  bool approved = false;
-                                  try {
-                                    final approval = await SupabaseService.client
-                                        .from('pending_user_approvals')
-                                        .select('status')
-                                        .eq('user_id', sessionResponse.session!.user.id)
-                                        .order('created_at', ascending: false)
-                                        .limit(1)
-                                        .maybeSingle();
-                                    approved = approval != null && approval['status'] == 'approved';
-                                  } catch (e) {
-                                    print('⚠️ Could not read approval status: $e');
-                                  }
-                                  print('✅ Email confirmation routing (non-OAuth): approved=$approved → ${approved ? "/technician" : "/pending-approval"}');
-                                  navigator.pushNamedAndRemoveUntil(
-                                    approved ? '/technician' : '/pending-approval',
-                                    (route) => false,
-                                  );
-                                  return;
-                                }
-                                
-                                // Only redirect to role selection for OAuth users without a role.
-                                if (authProvider.userRole == UserRole.pending && isOAuthUser && !hasPendingApproval) {
-                                  print('🔐 OAuth user needs role selection - redirecting to role selection');
-                                  navigator.pushNamedAndRemoveUntil(
-                                    '/role-selection',
-                                    (route) => false,
-                                  );
-                                  return;
-                                }
-                                
-                                // If technician has pending approval, go to pending approval screen (not role selection)
-                                if (isTechnician && hasPendingApproval) {
-                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
-                                  navigator.pushNamedAndRemoveUntil(
-                                    '/pending-approval',
-                                    (route) => false,
-                                  );
-                                  return;
-                                }
-                                
-                                // Navigate based on role
-                                if (isAdmin) {
-                                  print('✅ Auto-logging in as admin - redirecting to admin home');
+                                // If approved, route based on role
+                                if (authProvider.isAdmin) {
+                                  print('✅ Admin user - routing to admin home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/admin',
                                     (route) => false,
                                   );
-                                } else if (isTechnician && !hasPendingApproval) {
-                                  // Technician is approved (no pending approval)
-                                  print('✅ Auto-logging in as approved technician - redirecting to technician home');
+                                } else if (authProvider.isTechnician) {
+                                  print('✅ Approved technician - routing to technician home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/technician',
                                     (route) => false,
                                   );
-                                } else if (isTechnician && hasPendingApproval) {
-                                  // Technician has pending approval - should have been handled above, but double-check
-                                  print('✅ Technician is pending approval - redirecting to pending approval screen');
-                                  navigator.pushNamedAndRemoveUntil(
-                                    '/pending-approval',
-                                    (route) => false,
-                                  );
-                                } else {
-                                  // If role is still pending and not OAuth, check metadata FIRST for technician role
-                                  // This handles cases where database trigger hasn't created records yet
-                                  if (authProvider.userRole == UserRole.pending && !isOAuthUser) {
-                                    print('⚠️ Role still pending - checking metadata FIRST for technician role...');
-                                    
-                                    // CRITICAL: Check metadata FIRST - if it says technician, go to pending approval immediately
-                                    final finalMetadataRole = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                                    if (finalMetadataRole == 'technician') {
-                                      print('✅ Found technician role in metadata - redirecting to pending approval screen');
-                                      navigator.pushNamedAndRemoveUntil(
-                                        '/pending-approval',
-                                        (route) => false,
-                                      );
-                                      return;
-                                    }
-                                    
-                                    // Wait a bit more for database trigger to complete
-                                    print('⚠️ Waiting for database trigger to complete...');
-                                    await Future.delayed(const Duration(milliseconds: 2000));
-                                    await authProvider.initialize();
-                                    
-                                    // Check database one more time
-                                    try {
-                                      final finalUserRecord = await SupabaseService.client
-                                          .from('users')
-                                          .select('role')
-                                          .eq('id', sessionResponse.session!.user.id)
-                                          .maybeSingle();
-                                      
-                                      if (finalUserRecord != null && finalUserRecord['role'] != null) {
-                                        final finalRole = finalUserRecord['role'] as String;
-                                        print('✅ Final role from database: $finalRole');
-                                        
-                                        if (finalRole == 'admin') {
-                                          navigator.pushNamedAndRemoveUntil(
-                                            '/admin',
-                                            (route) => false,
-                                          );
-                                          return;
-                                        } else if (finalRole == 'technician') {
-                                          // Check pending approval one more time
-                                          final finalPendingApproval = await SupabaseService.client
-                                              .from('pending_user_approvals')
-                                              .select('status')
-                                              .eq('user_id', sessionResponse.session!.user.id)
-                                              .order('created_at', ascending: false)
-                                              .limit(1)
-                                              .maybeSingle();
-                                          
-                                          if (finalPendingApproval != null) {
-                                            final status = finalPendingApproval['status'] as String?;
-                                            if (status == 'pending' || status == 'rejected') {
-                                              navigator.pushNamedAndRemoveUntil(
-                                                '/pending-approval',
-                                                (route) => false,
-                                              );
-                                              return;
-                                            }
-                                          }
-                                          
-                                          navigator.pushNamedAndRemoveUntil(
-                                            '/technician',
-                                            (route) => false,
-                                          );
-                                          return;
-                                        }
-                                      }
-                                    } catch (e) {
-                                      print('⚠️ Error checking final role: $e');
-                                    }
-                                    
-                                    // Check metadata one more time as fallback
-                                    if (finalMetadataRole == 'technician') {
-                                      print('✅ Found technician role in metadata (fallback) - redirecting to pending approval');
-                                      navigator.pushNamedAndRemoveUntil(
-                                        '/pending-approval',
-                                        (route) => false,
-                                      );
-                                      return;
-                                    } else if (finalMetadataRole == 'admin') {
-                                      print('✅ Found admin role in metadata - redirecting to admin home');
-                                      navigator.pushNamedAndRemoveUntil(
-                                        '/admin',
-                                        (route) => false,
-                                      );
-                                      return;
-                                    }
-                                  }
-                                  
-                                  // Fallback - redirect to role selection
-                                  print('⚠️ Unknown user role or role not loaded - redirecting to role selection');
+                                } else if (authProvider.userRole == UserRole.pending && isOAuthUser) {
+                                  // OAuth user without role - needs role selection
+                                  print('🔐 OAuth user needs role selection');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/role-selection',
                                     (route) => false,
                                   );
+                                } else {
+                                  // Fallback: Check metadata for role
+                                  final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                                  print('⚠️ Role not loaded - checking metadata: $roleFromMetadata');
+                                  
+                                  if (roleFromMetadata == 'admin') {
+                                    navigator.pushNamedAndRemoveUntil(
+                                      '/admin',
+                                      (route) => false,
+                                    );
+                                  } else if (roleFromMetadata == 'technician') {
+                                    // If metadata says technician but no approval status, assume pending
+                                    navigator.pushNamedAndRemoveUntil(
+                                      '/pending-approval',
+                                      (route) => false,
+                                    );
+                                  } else {
+                                    // Unknown role - redirect to role selection
+                                    print('⚠️ Unknown role - redirecting to role selection');
+                                    navigator.pushNamedAndRemoveUntil(
+                                      '/role-selection',
+                                      (route) => false,
+                                    );
+                                  }
                                 }
                               } else {
                                 // If still not authenticated after initialization, there's an issue
