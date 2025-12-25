@@ -531,6 +531,48 @@ class HvacToolsManagerApp extends StatelessWidget {
             });
           }
           
+          // CRITICAL: Check session ONCE and cache the initial route
+          // This prevents the flash of role selection screen during Consumer rebuilds
+          final hasSession = SupabaseService.client.auth.currentSession != null;
+          final currentUser = SupabaseService.client.auth.currentUser;
+          final Widget initialRoute;
+          
+          // If we have a session, check if user needs pending approval first
+          if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
+            // Check if user is a technician with pending approval
+            // This must be checked even before routing to home screen
+            final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+            final email = currentUser.email ?? '';
+            final isAdmin = roleFromMetadata == 'admin' || 
+                email.endsWith('@royalgulf.ae') || 
+                email.endsWith('@mekar.ae') || 
+                email.endsWith('@gmail.com');
+            
+            // If not admin, check if they have pending approval
+            if (!isAdmin && authProvider.isInitialized) {
+              // Provider is initialized, check approval status
+              if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
+                initialRoute = const PendingApprovalScreen();
+              } else {
+                // Check approval status directly if provider hasn't loaded it yet
+                initialRoute = const TechnicianHomeScreen();
+              }
+            } else if (isAdmin) {
+              initialRoute = AdminHomeScreenErrorBoundary(
+                child: AdminHomeScreen(
+                  key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+                ),
+              );
+            } else {
+              // Not admin and provider not initialized - route to technician home
+              // The provider will check approval status and update UI
+              initialRoute = const TechnicianHomeScreen();
+            }
+          } else {
+            // No session - show role selection
+            initialRoute = _getInitialRoute(authProvider);
+          }
+          
           // Always render MaterialApp immediately
           // Show UI right away - initialization happens in background
           // The Consumer will rebuild when auth state changes
@@ -539,7 +581,7 @@ class HvacToolsManagerApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            home: _getInitialRoute(authProvider),
+            home: initialRoute,
             builder: (context, child) {
               return ResponsiveBreakpoints.builder(
                 breakpoints: [
@@ -711,8 +753,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 // Use database role if available, otherwise check auth metadata or pending approval
                                 final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
                                 
-                                // CRITICAL: Check metadata FIRST to determine if this is a technician
-                                // This is the most reliable indicator for new registrations
+                                // CRITICAL: For email confirmation, if user is technician, ALWAYS go to pending approval
+                                // Check metadata FIRST - this is the most reliable indicator
                                 final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
                                 final bool isTechnicianFromMetadata = roleFromMetadata == 'technician';
                                 final bool isTechnicianFromDb = roleFromDb == 'technician';
@@ -723,12 +765,12 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 print('   - Is technician from metadata: $isTechnicianFromMetadata');
                                 print('   - Is technician from DB: $isTechnicianFromDb');
                                 
-                                // If metadata says technician, assume they need pending approval (new registration)
-                                // This is the most reliable check for email-confirmed technicians
-                                if (isTechnicianFromMetadata) {
-                                  print('✅ User metadata indicates technician role - this is a new registration');
-                                  print('✅ Assuming pending approval and navigating to pending approval screen');
-                                  hasPendingApproval = true;
+                                // CRITICAL: If metadata says technician OR no role in DB (new registration),
+                                // immediately navigate to pending approval screen
+                                // This ensures email-confirmed technicians always go to pending approval
+                                if (isTechnicianFromMetadata || (roleFromDb == null && !isAdmin)) {
+                                  print('✅ User is a technician (from metadata or new registration)');
+                                  print('✅ Navigating to pending approval screen immediately');
                                   
                                   // Navigate immediately - don't wait for database checks
                                   final navigator = Navigator.of(context, rootNavigator: true);
@@ -1117,44 +1159,54 @@ class HvacToolsManagerApp extends StatelessWidget {
         return const SplashTransition(child: RoleSelectionScreen());
       }
       
-      // Check if we have a persisted session immediately (synchronous check)
-      // This allows us to route to home screen even during initialization
+      // CRITICAL: Check persisted session FIRST (synchronous, no waiting)
+      // This prevents any flash of role selection screen
       final hasSession = SupabaseService.client.auth.currentSession != null;
       final currentUser = SupabaseService.client.auth.currentUser;
       
-      // If we have a session but provider isn't initialized yet, route based on session
-      // This prevents showing role selection screen briefly
-      if ((!authProvider.isInitialized || authProvider.isLoading) && hasSession && currentUser != null) {
-        print('🔍 Has persisted session but provider not initialized yet - routing based on session');
-        // Try to determine role from user metadata or saved role
+      // If we have a session, route directly to home screen - don't wait for provider initialization
+      // This prevents the flash of role selection screen
+      if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
+        print('🔍 Has persisted session - routing directly to home screen (no role selection flash)');
+        // Try to determine role from user metadata
         final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+        final email = currentUser.email ?? '';
         
         // Check if admin (from metadata or email domain)
-        final email = currentUser.email ?? '';
-        final isAdminFromMetadata = roleFromMetadata == 'admin' || 
+        final isAdmin = roleFromMetadata == 'admin' || 
             email.endsWith('@royalgulf.ae') || 
             email.endsWith('@mekar.ae') || 
             email.endsWith('@gmail.com');
         
-        if (isAdminFromMetadata) {
-          print('🔍 Routing to AdminHomeScreen (from session)');
+        if (isAdmin) {
+          print('🔍 Routing directly to AdminHomeScreen (from session)');
           return AdminHomeScreenErrorBoundary(
             child: AdminHomeScreen(
               key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
             ),
           );
-        } else if (roleFromMetadata == 'technician' || roleFromMetadata == null) {
-          // Technician or unknown - check if email is confirmed
-          if (currentUser.emailConfirmedAt != null) {
-            print('🔍 Routing to TechnicianHomeScreen (from session)');
-            return const TechnicianHomeScreen();
-          }
+        } else {
+          // Technician or unknown - route to technician home
+          // The provider will update the UI when it finishes initializing
+          print('🔍 Routing directly to TechnicianHomeScreen (from session)');
+          return const TechnicianHomeScreen();
         }
       }
       
-      // If no session or can't determine route, show role selection only if truly not initialized
-      if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 No session found - showing role selection during initialization');
+      // Only show role selection if there's truly no session
+      // This should only happen on first launch or after logout
+      if (!hasSession || currentUser == null) {
+        print('🔍 No session found - showing role selection');
+        return _FirstLaunchWrapper(
+          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
+          defaultChild: const RoleSelectionScreen(),
+          shouldShowSplash: initialFirstLaunch,
+        );
+      }
+      
+      // If session exists but email not confirmed, show role selection
+      if (currentUser.emailConfirmedAt == null) {
+        print('🔍 Session exists but email not confirmed - showing role selection');
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),
@@ -1204,11 +1256,13 @@ class HvacToolsManagerApp extends StatelessWidget {
             print('❌ Email not confirmed - showing role selection');
             return const SplashTransition(child: RoleSelectionScreen());
           } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-            // Check approval status for technicians
-            print('🔍 Technician user detected, checking approval status...');
+            // CRITICAL: Technician with pending approval - always show pending approval screen
+            print('🔍 Technician user detected with pending approval - showing pending approval screen');
             return const PendingApprovalScreen();
           } else {
             // Technician is approved - send to home screen
+            // The provider should have already checked approval status during initialization
+            // If role is not pending, they're approved
             print('🔍 Routing to TechnicianHomeScreen');
             return const TechnicianHomeScreen();
           }

@@ -48,8 +48,8 @@ class AuthProvider with ChangeNotifier {
     if (_user == null) return null;
     
     try {
-      // First check pending approvals table - this is the source of truth for technicians
-      // Get the most recent approval record (in case of duplicates)
+      // CRITICAL: Always check pending approvals table FIRST - this is the source of truth
+      // A pending approval record takes precedence over user record
       final approval = await SupabaseService.client
           .from('pending_user_approvals')
           .select('status')
@@ -60,22 +60,27 @@ class AuthProvider with ChangeNotifier {
       
       if (approval != null) {
         final status = approval['status'] as String?;
+        debugPrint('🔍 Found pending approval record with status: $status');
+        
         if (status == 'approved') {
-          // If approved, also check if user record exists (should exist after approval)
+          // If approved, check if user record exists (should exist after approval)
           final userRecord = await SupabaseService.client
               .from('users')
               .select('role')
               .eq('id', _user!.id)
               .maybeSingle();
-          return userRecord != null; // Approved and user record exists
-        } else {
-          // Status is pending or rejected
+          final isApproved = userRecord != null;
+          debugPrint('🔍 Approval status: approved, user record exists: $isApproved');
+          return isApproved;
+        } else if (status == 'pending' || status == 'rejected') {
+          // Status is pending or rejected - NOT approved
+          debugPrint('🔍 Approval status: $status - user is NOT approved');
           return false;
         }
       }
       
       // No pending approval record found - check if user exists in users table
-      // If user exists but no pending approval record, they might be an existing approved user
+      // This handles existing approved users who don't have pending approval records
       final userRecord = await SupabaseService.client
           .from('users')
           .select('role')
@@ -83,16 +88,18 @@ class AuthProvider with ChangeNotifier {
           .maybeSingle();
       
       if (userRecord != null && userRecord['role'] != null) {
-        // User exists in users table - check if they're admin or approved technician
         final role = userRecord['role'] as String;
         if (role == 'admin') {
+          debugPrint('🔍 User is admin - always approved');
           return true; // Admins are always approved
         }
-        // For technicians, if they have a user record, they were approved
+        // For technicians, if they have a user record and NO pending approval, they're approved
+        debugPrint('🔍 Technician with user record and no pending approval - approved');
         return true;
       }
       
       // No record found anywhere - treat as not approved (pending registration)
+      debugPrint('🔍 No user record or pending approval found - NOT approved');
       return false;
     } catch (e) {
       debugPrint('❌ Error checking approval status: $e');
@@ -1285,17 +1292,25 @@ class AuthProvider with ChangeNotifier {
           }
         }
         
-        // For technicians, check if they're approved before allowing access
+        // CRITICAL: For technicians, check if they're approved before allowing access
+        // This must happen BEFORE setting the user role to prevent auto-login
         if (_userRole != UserRole.admin) {
+          debugPrint('🔍 Checking approval status for technician...');
           final isApproved = await checkApprovalStatus();
+          debugPrint('🔍 Approval status result: $isApproved');
+          
           if (isApproved == false || isApproved == null) {
-            // User is not approved - block login and sign them out
+            // User is not approved - set role to pending and navigate to pending approval screen
+            // Don't sign out - keep session but set role to pending so UI can redirect
             _userRole = UserRole.pending;
             await _saveUserRole(_userRole);
-            await signOut();
-            debugPrint('❌ Technician login blocked - not approved yet');
-            // Use the standard error message for unregistered accounts
-            throw Exception('Oops, seems you don\'t have an account. Please register first.');
+            notifyListeners();
+            debugPrint('❌ Technician login blocked - not approved yet, role set to pending');
+            // Don't throw error - let the UI handle navigation to pending approval screen
+            // The _getInitialRoute will check isPendingApproval and route accordingly
+            return authResponse;
+          } else {
+            debugPrint('✅ Technician is approved - allowing login');
           }
         }
         
