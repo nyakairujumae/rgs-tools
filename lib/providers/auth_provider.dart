@@ -268,8 +268,19 @@ class AuthProvider with ChangeNotifier {
       print('🔍 Setting up auth state listener...');
       SupabaseService.client.auth.onAuthStateChange.listen((data) {
         print('🔍 Auth state changed: ${data.session?.user?.email ?? "None"}');
+        // CRITICAL: Don't process auth state changes during logout
+        if (_isLoggingOut) {
+          print('🔍 Ignoring auth state change during logout');
+          return;
+        }
         _user = data.session?.user;
-        _loadUserRole();
+        // Only load role if we have a user - don't create default accounts
+        if (_user != null) {
+          _loadUserRole();
+        } else {
+          // No user - clear role, don't create anything
+          _userRole = UserRole.pending;
+        }
         notifyListeners();
       });
 
@@ -1997,13 +2008,18 @@ _isLoading = false;
                 }
               }
               
-              // Only create user record if role is explicitly set
-              // No automatic role assignment - role must be provided during registration
-              if (role == null || role.isEmpty) {
-                debugPrint('⚠️ No role in user metadata - cannot create user record');
-                debugPrint('⚠️ User must register with explicit role (admin or technician)');
-                return; // Don't create user record without explicit role
-              }
+            // CRITICAL: Only create user record if role is explicitly set AND not pending
+            // No automatic role assignment - role must be provided during registration
+            // Never create accounts with "pending" role - that's not a valid database role
+            if (role == null || role.isEmpty || role == 'pending') {
+              debugPrint('⚠️ No valid role in user metadata - cannot create user record');
+              debugPrint('⚠️ User must register with explicit role (admin or technician)');
+              debugPrint('⚠️ Role "pending" is not a valid database role - do not create account');
+              _userRole = UserRole.pending;
+              await _saveUserRole(_userRole);
+              notifyListeners();
+              return; // Don't create user record without explicit valid role
+            }
               
               debugPrint('🔍 Creating user record with explicit role: $role');
               

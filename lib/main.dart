@@ -717,7 +717,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
                               
                               final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                              if (roleFromMetadata == 'technician') {
+                              final isOAuth = type == 'oauth' || uri.queryParameters.containsKey('provider');
+                              if (!isOAuth && roleFromMetadata == 'technician') {
                                 // Always send confirmed technicians to pending approval
                                 final authProvider = Provider.of<AuthProvider>(context, listen: false);
                                 await authProvider.initialize();
@@ -797,6 +798,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 // For technicians, check pending approval first (they might not have a users record yet)
                                 // Use database role if available, otherwise check auth metadata or pending approval
                                 final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
+                                final bool isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
+                                    authProvider.user?.appMetadata?['provider'] != 'email';
                                 
                                 // CRITICAL: For email confirmation, if user is technician, ALWAYS go to pending approval
                                 // Check metadata FIRST - this is the most reliable indicator
@@ -917,16 +920,32 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 // Navigate directly to appropriate screen
                                 final navigator = Navigator.of(context, rootNavigator: true);
                                 
-                                // Check if OAuth user needs role selection (only for OAuth, not email confirmation)
-                                // IMPORTANT: Don't redirect to role selection if technician has pending approval
-                                final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
-                                    authProvider.user?.appMetadata?['provider'] != 'email';
+                                // If this is email confirmation (not OAuth) and not admin, never go to role selection.
+                                if (!isOAuthUser && !isAdmin) {
+                                  // Check approval status; default to pending if unknown.
+                                  bool approved = false;
+                                  try {
+                                    final approval = await SupabaseService.client
+                                        .from('pending_user_approvals')
+                                        .select('status')
+                                        .eq('user_id', sessionResponse.session!.user.id)
+                                        .order('created_at', ascending: false)
+                                        .limit(1)
+                                        .maybeSingle();
+                                    approved = approval != null && approval['status'] == 'approved';
+                                  } catch (e) {
+                                    print('⚠️ Could not read approval status: $e');
+                                  }
+                                  print('✅ Email confirmation routing (non-OAuth): approved=$approved → ${approved ? "/technician" : "/pending-approval"}');
+                                  navigator.pushNamedAndRemoveUntil(
+                                    approved ? '/technician' : '/pending-approval',
+                                    (route) => false,
+                                  );
+                                  return;
+                                }
                                 
-                                // Only redirect to role selection if:
-                                // 1. It's an OAuth user (not email/password)
-                                // 2. They don't have pending approval (technicians with pending approval go to waiting screen)
+                                // Only redirect to role selection for OAuth users without a role.
                                 if (authProvider.userRole == UserRole.pending && isOAuthUser && !hasPendingApproval) {
-                                  // OAuth user without role - redirect to role selection
                                   print('🔐 OAuth user needs role selection - redirecting to role selection');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/role-selection',
