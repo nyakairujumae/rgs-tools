@@ -531,46 +531,60 @@ class HvacToolsManagerApp extends StatelessWidget {
             });
           }
           
-          // CRITICAL: Check session ONCE and cache the initial route
-          // This prevents the flash of role selection screen during Consumer rebuilds
+          // CRITICAL: Check session FIRST - if logged in, go directly to home screen
+          // No intermediate screens, no waiting, no flashes
           final hasSession = SupabaseService.client.auth.currentSession != null;
           final currentUser = SupabaseService.client.auth.currentUser;
-          final Widget initialRoute;
           
-          // If we have a session, check if user needs pending approval first
+          Widget initialRoute;
+          
+          // If user is logged in, route directly to home screen based on role
           if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
-            // Check if user is a technician with pending approval
-            // This must be checked even before routing to home screen
-            final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
-            final email = currentUser.email ?? '';
-            final isAdmin = roleFromMetadata == 'admin' || 
-                email.endsWith('@royalgulf.ae') || 
-                email.endsWith('@mekar.ae') || 
-                email.endsWith('@gmail.com');
+            // Determine role from provider (if initialized) or metadata (if not)
+            bool isAdmin = false;
+            bool isPending = false;
             
-            // If not admin, check if they have pending approval
-            if (!isAdmin && authProvider.isInitialized) {
-              // Provider is initialized, check approval status
-              if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-                initialRoute = const PendingApprovalScreen();
-              } else {
-                // Check approval status directly if provider hasn't loaded it yet
-                initialRoute = const TechnicianHomeScreen();
+            if (authProvider.isInitialized) {
+              // Provider initialized - use its role (most reliable)
+              isAdmin = authProvider.isAdmin;
+              isPending = authProvider.isPendingApproval || authProvider.userRole == UserRole.pending;
+            } else {
+              // Provider not initialized - check metadata and pending approval table
+              final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+              final email = currentUser.email ?? '';
+              isAdmin = roleFromMetadata == 'admin' || 
+                  email.endsWith('@royalgulf.ae') || 
+                  email.endsWith('@mekar.ae') || 
+                  email.endsWith('@gmail.com');
+              
+              // Check pending approval synchronously if possible
+              if (!isAdmin) {
+                // Assume pending for technicians until provider confirms
+                isPending = true;
               }
+            }
+            
+            // Route directly to appropriate screen - NO intermediate screens
+            if (isPending) {
+              initialRoute = const PendingApprovalScreen();
             } else if (isAdmin) {
               initialRoute = AdminHomeScreenErrorBoundary(
                 child: AdminHomeScreen(
-                  key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+                  key: ValueKey('admin_home'),
                 ),
               );
             } else {
-              // Not admin and provider not initialized - route to technician home
-              // The provider will check approval status and update UI
               initialRoute = const TechnicianHomeScreen();
             }
+          } else if (authProvider.isLoggingOut) {
+            // During logout, go straight to role selection
+            initialRoute = const RoleSelectionScreen();
+          } else if (!authProvider.isInitialized || authProvider.isLoading) {
+            // Auth is still restoring session - avoid flashing role selection/login
+            initialRoute = const SplashScreen();
           } else {
-            // No session - show role selection
-            initialRoute = _getInitialRoute(authProvider);
+            // No session - show role selection (only for logged out users)
+            initialRoute = const RoleSelectionScreen();
           }
           
           // Always render MaterialApp immediately
@@ -684,6 +698,20 @@ class HvacToolsManagerApp extends StatelessWidget {
                               print('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
                               print('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
                               print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
+                              
+                              final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
+                              if (roleFromMetadata == 'technician') {
+                                // Always send confirmed technicians to pending approval
+                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                await authProvider.initialize();
+                                if (context.mounted) {
+                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                    '/pending-approval',
+                                    (route) => false,
+                                  );
+                                }
+                                return;
+                              }
                               
                               // Wait for database trigger to create user record and pending approval
                               // The trigger fires when email_confirmed_at is set
@@ -1144,200 +1172,6 @@ class HvacToolsManagerApp extends StatelessWidget {
     );
   }
 
-  Widget _getInitialRoute(AuthProvider authProvider) {
-    print('🔍 _getInitialRoute called');
-    print('🔍 isInitialized: ${authProvider.isInitialized}');
-    print('🔍 isLoading: ${authProvider.isLoading}');
-    print('🔍 isAuthenticated: ${authProvider.isAuthenticated}');
-    print('🔍 Current user: ${authProvider.user?.email ?? "None"}');
-    
-    try {
-      // If we're in the middle of logging out, immediately show role selection.
-      // This prevents a temporary blank screen caused by returning an empty widget while isLoading is true.
-      if (authProvider.isLoggingOut) {
-        print('🔍 isLoggingOut=true → Showing RoleSelectionScreen immediately');
-        return const SplashTransition(child: RoleSelectionScreen());
-      }
-      
-      // CRITICAL: Check persisted session FIRST (synchronous, no waiting)
-      // This prevents any flash of role selection screen
-      final hasSession = SupabaseService.client.auth.currentSession != null;
-      final currentUser = SupabaseService.client.auth.currentUser;
-      
-      // If we have a session, route directly to home screen - don't wait for provider initialization
-      // This prevents the flash of role selection screen
-      if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
-        print('🔍 Has persisted session - routing directly to home screen (no role selection flash)');
-        // Try to determine role from user metadata
-        final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
-        final email = currentUser.email ?? '';
-        
-        // Check if admin (from metadata or email domain)
-        final isAdmin = roleFromMetadata == 'admin' || 
-            email.endsWith('@royalgulf.ae') || 
-            email.endsWith('@mekar.ae') || 
-            email.endsWith('@gmail.com');
-        
-        if (isAdmin) {
-          print('🔍 Routing directly to AdminHomeScreen (from session)');
-          return AdminHomeScreenErrorBoundary(
-            child: AdminHomeScreen(
-              key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-            ),
-          );
-        } else {
-          // Technician or unknown - route to technician home
-          // The provider will update the UI when it finishes initializing
-          print('🔍 Routing directly to TechnicianHomeScreen (from session)');
-          return const TechnicianHomeScreen();
-        }
-      }
-      
-      // Only show role selection if there's truly no session
-      // This should only happen on first launch or after logout
-      if (!hasSession || currentUser == null) {
-        print('🔍 No session found - showing role selection');
-        return _FirstLaunchWrapper(
-          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-          defaultChild: const RoleSelectionScreen(),
-          shouldShowSplash: initialFirstLaunch,
-        );
-      }
-      
-      // If session exists but email not confirmed, show role selection
-      if (currentUser.emailConfirmedAt == null) {
-        print('🔍 Session exists but email not confirmed - showing role selection');
-        return _FirstLaunchWrapper(
-          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-          defaultChild: const RoleSelectionScreen(),
-          shouldShowSplash: initialFirstLaunch,
-        );
-      }
-      
-      // For web, show role selection screen initially (no backend for now)
-      // Desktop (Windows, macOS, Linux) uses real authentication like mobile
-      if (kIsWeb) {
-        print('🔍 Web platform detected, showing RoleSelectionScreen');
-        return _FirstLaunchWrapper(
-          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-          defaultChild: const RoleSelectionScreen(),
-          shouldShowSplash: initialFirstLaunch,
-        );
-      }
-      
-      // Desktop platforms use real Supabase authentication
-      final isDesktopPlatform = defaultTargetPlatform == TargetPlatform.macOS ||
-          defaultTargetPlatform == TargetPlatform.windows ||
-          defaultTargetPlatform == TargetPlatform.linux;
-      if (isDesktopPlatform) {
-        print('🔍 Desktop platform detected, using real Supabase authentication');
-      }
-
-      // Check authentication status and route accordingly
-      // CRITICAL: Only access auth properties if provider is initialized to prevent crashes
-      try {
-        if (authProvider.isAuthenticated) {
-          print('🔍 User is authenticated, routing to appropriate screen');
-          print('🔍 User role: ${authProvider.userRole}');
-          print('🔍 Is admin: ${authProvider.isAdmin}');
-          print('🔍 Is pending: ${authProvider.isPendingApproval}');
-          
-          // Route based on user role
-          if (authProvider.isAdmin) {
-            print('🔍 Routing to AdminHomeScreen');
-            return AdminHomeScreenErrorBoundary(
-              child: AdminHomeScreen(
-                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-              ),
-            );
-          } else if (!authProvider.isEmailConfirmed) {
-            // Email not confirmed - show role selection (user needs to confirm email first)
-            // After confirmation, they'll be auto-logged in via deep link
-            print('❌ Email not confirmed - showing role selection');
-            return const SplashTransition(child: RoleSelectionScreen());
-          } else if (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending) {
-            // CRITICAL: Technician with pending approval - always show pending approval screen
-            print('🔍 Technician user detected with pending approval - showing pending approval screen');
-            return const PendingApprovalScreen();
-          } else {
-            // Technician is approved - send to home screen
-            // The provider should have already checked approval status during initialization
-            // If role is not pending, they're approved
-            print('🔍 Routing to TechnicianHomeScreen');
-            return const TechnicianHomeScreen();
-          }
-        } else {
-          print('🔍 User not authenticated, showing role selection');
-          // Show role selection screen - safe default
-          return _FirstLaunchWrapper(
-            firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-            defaultChild: const RoleSelectionScreen(),
-            shouldShowSplash: initialFirstLaunch,
-          );
-        }
-      } catch (e) {
-        // If any error accessing auth properties, check session directly
-        print('⚠️ Error accessing auth properties: $e - checking session directly');
-        final hasSession = SupabaseService.client.auth.currentSession != null;
-        final currentUser = SupabaseService.client.auth.currentUser;
-        
-        if (hasSession && currentUser != null) {
-          final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
-          final email = currentUser.email ?? '';
-          final isAdmin = roleFromMetadata == 'admin' || 
-              email.endsWith('@royalgulf.ae') || 
-              email.endsWith('@mekar.ae') || 
-              email.endsWith('@gmail.com');
-          
-          if (isAdmin) {
-            return AdminHomeScreenErrorBoundary(
-              child: AdminHomeScreen(
-                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-              ),
-            );
-          } else if (currentUser.emailConfirmedAt != null) {
-            return const TechnicianHomeScreen();
-          }
-        }
-        
-        // Fallback to role selection
-        return const SplashTransition(child: RoleSelectionScreen());
-      }
-    } catch (e, stackTrace) {
-      // If error occurs, check session directly as fallback
-      print('❌ Error in _getInitialRoute: $e');
-      print('❌ Stack trace: $stackTrace');
-      
-      final hasSession = SupabaseService.client.auth.currentSession != null;
-      final currentUser = SupabaseService.client.auth.currentUser;
-      
-      if (hasSession && currentUser != null) {
-        final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
-        final email = currentUser.email ?? '';
-        final isAdmin = roleFromMetadata == 'admin' || 
-            email.endsWith('@royalgulf.ae') || 
-            email.endsWith('@mekar.ae') || 
-            email.endsWith('@gmail.com');
-        
-        if (isAdmin) {
-          return AdminHomeScreenErrorBoundary(
-            child: AdminHomeScreen(
-              key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
-            ),
-          );
-        } else if (currentUser.emailConfirmedAt != null) {
-          return const TechnicianHomeScreen();
-        }
-      }
-      
-      // Final fallback to role selection
-      return _FirstLaunchWrapper(
-        firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-        defaultChild: const RoleSelectionScreen(),
-        shouldShowSplash: initialFirstLaunch,
-      );
-    }
-  }
 }
 
 // Background message handler is defined in firebase_messaging_service.dart

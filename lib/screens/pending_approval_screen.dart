@@ -26,7 +26,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   @override
   void initState() {
     super.initState();
-    _loadApprovalStatus();
+    _bootstrapApprovalStatus();
     // Start polling for approval status every 5 seconds
     _startPolling();
   }
@@ -48,13 +48,64 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     });
   }
   
+  Future<void> _bootstrapApprovalStatus() async {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.user == null) {
+      await authProvider.initialize();
+    }
+    if (mounted) {
+      await _redirectIfNotTechnicianOrApproved(authProvider);
+    }
+    await _loadApprovalStatus();
+  }
+
+  Future<void> _redirectIfNotTechnicianOrApproved(AuthProvider authProvider) async {
+    final user = authProvider.user ?? SupabaseService.client.auth.currentUser;
+    if (user == null) return;
+
+    // Prefer provider role if available, otherwise fall back to metadata.
+    final roleFromProvider = authProvider.userRole;
+    final roleFromMetadata = user.userMetadata?['role'] as String?;
+    final isAdmin = roleFromProvider == UserRole.admin || roleFromMetadata == 'admin';
+    final isTechnician = roleFromProvider == UserRole.technician || roleFromMetadata == 'technician';
+
+    if (isAdmin && mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/admin', (route) => false);
+      return;
+    }
+
+    if (isTechnician && authProvider.user != null) {
+      final isApproved = await authProvider.checkApprovalStatus();
+      if (isApproved == true && mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/technician', (route) => false);
+      }
+    }
+  }
+
   Future<void> _checkApprovalAndNavigate() async {
     final authProvider = context.read<AuthProvider>();
-    if (authProvider.user == null) return;
+    final userId = authProvider.user?.id ??
+        SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) return;
     
     try {
       // Check approval status
-      final isApproved = await authProvider.checkApprovalStatus();
+      bool? isApproved;
+      if (authProvider.user != null) {
+        isApproved = await authProvider.checkApprovalStatus();
+      } else {
+        final approval = await SupabaseService.client
+            .from('pending_user_approvals')
+            .select('status')
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        if (approval != null) {
+          final status = approval['status'] as String?;
+          isApproved = status == 'approved';
+        }
+      }
       
       if (isApproved == true && mounted) {
         // User is approved! Reload their role and navigate to technician home
@@ -91,7 +142,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   
   Future<void> _loadApprovalStatus() async {
     final authProvider = context.read<AuthProvider>();
-    if (authProvider.user == null) {
+    final userId = authProvider.user?.id ??
+        SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
       setState(() => _isLoading = false);
       return;
     }
@@ -101,7 +154,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       final approval = await SupabaseService.client
           .from('pending_user_approvals')
           .select('status, rejection_reason, rejection_count, reviewed_at')
-          .eq('user_id', authProvider.user!.id)
+          .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();

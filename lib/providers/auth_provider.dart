@@ -1293,22 +1293,19 @@ class AuthProvider with ChangeNotifier {
         }
         
         // CRITICAL: For technicians, check if they're approved before allowing access
-        // This must happen BEFORE setting the user role to prevent auto-login
+        // Block login completely if not approved
         if (_userRole != UserRole.admin) {
           debugPrint('🔍 Checking approval status for technician...');
           final isApproved = await checkApprovalStatus();
           debugPrint('🔍 Approval status result: $isApproved');
           
           if (isApproved == false || isApproved == null) {
-            // User is not approved - set role to pending and navigate to pending approval screen
-            // Don't sign out - keep session but set role to pending so UI can redirect
+            // User is not approved - BLOCK login completely
             _userRole = UserRole.pending;
             await _saveUserRole(_userRole);
-            notifyListeners();
-            debugPrint('❌ Technician login blocked - not approved yet, role set to pending');
-            // Don't throw error - let the UI handle navigation to pending approval screen
-            // The _getInitialRoute will check isPendingApproval and route accordingly
-            return authResponse;
+            await signOut();
+            debugPrint('❌ Technician login blocked - not approved yet');
+            throw Exception('Your account is pending admin approval. You will be notified once your account is approved.');
           } else {
             debugPrint('✅ Technician is approved - allowing login');
           }
