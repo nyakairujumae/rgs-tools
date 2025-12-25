@@ -1764,8 +1764,22 @@ _isLoading = false;
   }
 
   Future<void> _loadUserRole() async {
+    // CRITICAL: Don't load role or create accounts during logout
+    if (_isLoggingOut) {
+      debugPrint('🔍 Ignoring _loadUserRole during logout');
+      return;
+    }
+    
     if (_user == null) {
       _userRole = UserRole.pending; // No user - role is unknown (pending)
+      return;
+    }
+    
+    // CRITICAL: Don't create accounts if there's no valid session
+    final session = SupabaseService.client.auth.currentSession;
+    if (session == null) {
+      debugPrint('🔍 No session found - cannot load role or create accounts');
+      _userRole = UserRole.pending;
       return;
     }
 
@@ -1921,11 +1935,15 @@ _isLoading = false;
             return; // Don't retry on connection errors
           }
           
-          // If user record doesn't exist, check if this is a new registration
+          // CRITICAL: If user record doesn't exist, DO NOT create it automatically
+          // User records should only be created during explicit registration, not during role loading
+          // This prevents creating default accounts on logout or session restoration
           if (e.toString().contains('0 rows') || e.toString().contains('not found')) {
-            debugPrint('🔄 User record not found, checking if this is a new registration...');
+            debugPrint('⚠️ User record not found in database');
+            debugPrint('⚠️ NOT creating user record - _loadUserRole() only loads roles, never creates accounts');
+            debugPrint('⚠️ Accounts must be created during explicit registration only');
             
-            // Check if user has pending approval (new technician registration)
+            // Check if user has pending approval (for technicians)
             try {
               final pendingApproval = await SupabaseService.client
                   .from('pending_user_approvals')
@@ -1956,114 +1974,26 @@ _isLoading = false;
                 notifyListeners();
                 return;
                 } else if (status == 'approved') {
-                  // User is approved, role should be set in users table
-                  // Continue to check users table
-                  debugPrint('✅ User approval was approved - checking users table');
-                }
-              }
-            } catch (pendingError) {
-              debugPrint('🔍 No pending approval found: $pendingError');
-            }
-            
-            // Check if user has pending approval - if so, don't create user record yet
-            final pendingApproval = await SupabaseService.client
-                .from('pending_user_approvals')
-                .select('status')
-                .eq('user_id', _user!.id)
-                .maybeSingle()
-                .timeout(
-                  const Duration(seconds: 3),
-                  onTimeout: () {
-                    throw TimeoutException('Pending approval query timed out', const Duration(seconds: 3));
-                  },
-                );
-            
-            if (pendingApproval != null) {
-              final status = pendingApproval['status'] as String?;
-              if (status == 'pending' || status == 'rejected') {
-                debugPrint('⚠️ User has pending/rejected approval - not creating user record');
-                _userRole = UserRole.pending;
-                await _saveUserRole(_userRole);
-                notifyListeners();
-                return;
-              }
-            }
-            
-            // Only create admin users for specific domains, technicians must be approved first
-            try {
-              // Get role from metadata - must be explicitly set, no default
-              String? role = _user!.userMetadata?['role'] as String?;
-              
-              // If no role in metadata, try to get from database
-              if (role == null || role.isEmpty) {
-                try {
-                  final userRecord = await SupabaseService.client
-                      .from('users')
-                      .select('role')
-                      .eq('id', _user!.id)
-                      .maybeSingle();
-                  role = userRecord?['role'] as String?;
-                } catch (e) {
-                  debugPrint('⚠️ Could not get role from database: $e');
-                }
-              }
-              
-            // CRITICAL: Only create user record if role is explicitly set AND not pending
-            // No automatic role assignment - role must be provided during registration
-            // Never create accounts with "pending" role - that's not a valid database role
-            if (role == null || role.isEmpty || role == 'pending') {
-              debugPrint('⚠️ No valid role in user metadata - cannot create user record');
-              debugPrint('⚠️ User must register with explicit role (admin or technician)');
-              debugPrint('⚠️ Role "pending" is not a valid database role - do not create account');
-              _userRole = UserRole.pending;
-              await _saveUserRole(_userRole);
-              notifyListeners();
-              return; // Don't create user record without explicit valid role
-            }
-              
-              debugPrint('🔍 Creating user record with explicit role: $role');
-              
-              // Determine if admin based on email domain (only if role is already admin)
-              // Don't auto-assign admin based on domain - role must be explicit
-              if (role == 'admin' && _user!.email != null &&
-                  (_user!.email!.endsWith('@royalgulf.ae') ||
-                   _user!.email!.endsWith('@mekar.ae') ||
-                   _user!.email!.endsWith('@gmail.com'))) {
-                debugPrint('🔍 Admin domain detected, creating admin user');
-              
-                // Create user record for admins immediately
-                await SupabaseService.client
-                    .from('users')
-                    .insert({
-                      'id': _user!.id,
-                      'email': _user!.email ?? 'user@example.com',
-                      'full_name': _user!.userMetadata?['full_name'] ?? 'User',
-                      'role': role, // Use explicit role from metadata - no default
-                      'created_at': DateTime.now().toIso8601String(),
-                    });
-              
-                _userRole = UserRoleExtension.fromString(role);
-                await _saveUserRole(_userRole);
-                debugPrint('✅ Created admin user with role: $role');
-                notifyListeners();
-                return;
-              } else if (role == 'technician') {
-                // For technicians, check if they're approved
-                if (pendingApproval != null && pendingApproval['status'] == 'approved') {
-                  // Technician was approved, user record should exist from approval function
-                  debugPrint('🔍 Technician approved, checking for user record');
-                } else {
-                  // Technician not approved yet - don't create user record
-                  debugPrint('⚠️ Technician not approved - setting role to pending');
+                  // User is approved, but user record doesn't exist - this shouldn't happen
+                  // Don't create it here - it should have been created during approval
+                  debugPrint('⚠️ User approved but no user record - should have been created during approval');
                   _userRole = UserRole.pending;
                   await _saveUserRole(_userRole);
                   notifyListeners();
                   return;
                 }
               }
-            } catch (insertError) {
-              debugPrint('❌ Failed to create user record: $insertError');
+            } catch (pendingError) {
+              debugPrint('🔍 No pending approval found: $pendingError');
             }
+            
+            // No user record and no pending approval - set role to pending
+            // CRITICAL: Do NOT create user record here - accounts must be created during explicit registration only
+            // _loadUserRole() only loads roles, never creates accounts
+            _userRole = UserRole.pending;
+            await _saveUserRole(_userRole);
+            notifyListeners();
+            return;
           }
           retryCount++;
           debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
