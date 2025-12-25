@@ -45,6 +45,7 @@ import 'services/firebase_messaging_service.dart' as fcm_service
 // Import background handler (top-level function)
 import 'services/firebase_messaging_service.dart' show firebaseMessagingBackgroundHandler
     if (dart.library.html) 'services/firebase_messaging_service_stub.dart' show firebaseMessagingBackgroundHandler;
+import 'services/push_notification_service.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
@@ -691,12 +692,84 @@ class HvacToolsManagerApp extends StatelessWidget {
                           try {
                             print('🔐 Processing signup email confirmation...');
                             // Confirm the email (this creates the session but we don't use it for auto-login)
-                            await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                             print('✅ Email confirmed - session created');
-                            print('✅ User will see pending approval screen');
                             
-                            // Wait a moment for database trigger to create pending approval record
-                            await Future.delayed(const Duration(milliseconds: 1500));
+                            if (sessionResponse.session != null && sessionResponse.session!.user != null) {
+                              final user = sessionResponse.session!.user;
+                              final email = user.email ?? '';
+                              final fullName = user.userMetadata?['full_name'] as String? ?? 
+                                              user.userMetadata?['name'] as String? ?? 
+                                              email.split('@')[0];
+                              final userId = user.id;
+                              
+                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId');
+                              
+                              // Wait for database trigger to create pending approval record
+                              print('⏳ Waiting for database trigger to create pending approval record...');
+                              await Future.delayed(const Duration(milliseconds: 1500));
+                              
+                              // Create admin notification and send push notification after email confirmation
+                              try {
+                                print('📧 Creating admin notification for new registration...');
+                                await SupabaseService.client.rpc(
+                                  'create_admin_notification',
+                                  params: {
+                                    'p_title': 'New User Registration',
+                                    'p_message': '$fullName has registered and is waiting for approval',
+                                    'p_technician_name': fullName.toUpperCase(),
+                                    'p_technician_email': email,
+                                    'p_type': 'new_registration',
+                                    'p_data': {
+                                      'user_id': userId,
+                                      'email': email,
+                                    },
+                                  },
+                                );
+                                print('✅ Admin notification created in notification center');
+                              } catch (notifError) {
+                                print('⚠️ Could not create admin notification: $notifError');
+                                // Fallback: Try direct push notification
+                                try {
+                                  await SupabaseService.client
+                                      .from('admin_notifications')
+                                      .insert({
+                                        'title': 'New User Registration',
+                                        'message': '$fullName has registered and is waiting for approval',
+                                        'technician_name': fullName.toUpperCase(),
+                                        'technician_email': email,
+                                        'type': 'new_registration',
+                                        'is_read': false,
+                                        'timestamp': DateTime.now().toIso8601String(),
+                                        'data': {
+                                          'user_id': userId,
+                                          'email': email,
+                                        },
+                                      });
+                                  print('✅ Admin notification created via direct insert');
+                                } catch (insertError) {
+                                  print('⚠️ Could not create admin notification via direct insert: $insertError');
+                                }
+                              }
+                              
+                              // Send push notification to admins
+                              try {
+                                await PushNotificationService.sendToAdmins(
+                                  title: 'New User Registration',
+                                  body: '$fullName has registered and is waiting for approval',
+                                  data: {
+                                    'type': 'new_registration',
+                                    'user_id': userId,
+                                    'email': email,
+                                  },
+                                );
+                                print('✅ Push notification sent to admins for new registration');
+                              } catch (pushError) {
+                                print('⚠️ Could not send push notification: $pushError');
+                              }
+                            }
+                            
+                            print('✅ User will see pending approval screen');
                             
                             // Navigate to pending approval screen (in case we're not already there)
                             if (context.mounted) {
