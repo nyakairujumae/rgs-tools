@@ -696,36 +696,18 @@ class _TechnicianRegistrationScreenState
           'isPendingApproval: ${authProvider.isPendingApproval}',
         );
 
-        // Check if user is authenticated (has a session)
-        if (hasSession && userCreated) {
-          // Show email confirmation dialog for all new technicians (even if email confirmation is disabled)
-          // This ensures users know to check their email if it gets enabled later
+        // NEW FLOW: Always navigate to pending approval screen immediately after registration
+        // Email confirmation will bring them back to this screen
+        if (userCreated) {
+          // Show email confirmation dialog
           await _showEmailConfirmationDialog(context);
           
-          // User has a session - navigate to pending approval screen
-          AuthErrorHandler.showInfoSnackBar(
-            context,
-            '📋 Your account is pending admin approval. '
-            'You will be notified once approved.',
-          );
-
-          debugPrint('🔍 Navigating to pending approval screen');
+          // Navigate directly to pending approval screen (regardless of session status)
+          debugPrint('🔍 Navigating to pending approval screen immediately after registration');
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/pending-approval',
             (route) => false,
-          );
-        } else if (userCreated) {
-          // User created but no session (email confirmation required) - this is expected
-          // Show email confirmation dialog
-          await _showEmailConfirmationDialog(context);
-          
-          // Navigate to login screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const LoginScreen(),
-            ),
           );
         } else {
           // User was not created - this is an actual error
