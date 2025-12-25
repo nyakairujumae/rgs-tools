@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_role.dart';
 import '../services/supabase_service.dart';
+import '../services/last_route_service.dart';
 import 'auth/login_screen.dart';
 import 'technician_home_screen.dart';
 import '../theme/app_theme.dart';
@@ -26,6 +27,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      LastRouteService.saveLastRoute('/pending-approval');
+    });
     _bootstrapApprovalStatus();
     // Start polling for approval status every 5 seconds
     _startPolling();

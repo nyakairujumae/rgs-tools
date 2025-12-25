@@ -39,6 +39,7 @@ import 'config/supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'services/supabase_auth_storage.dart';
 import 'services/image_upload_service.dart';
+import 'services/last_route_service.dart';
 import 'services/firebase_messaging_service.dart' as fcm_service
     if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
 // Import background handler (top-level function)
@@ -50,6 +51,7 @@ import 'package:firebase_messaging/firebase_messaging.dart'
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
 bool _splashRemoved = false;
+String? _cachedLastRoute;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,6 +64,7 @@ void main() async {
   try {
     final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
     shouldShowSplash = isFirstLaunch;
+    _cachedLastRoute = await LastRouteService.getLastRoute();
     
     if (isFirstLaunch) {
       print('🚀 App starting (FIRST INSTALL) - will show splash screen');
@@ -109,7 +112,10 @@ void main() async {
   print('🚀 Starting app immediately - initialization will happen in background...');
   
   // Run the app IMMEDIATELY - don't wait for initialization
-  runApp(HvacToolsManagerApp(initialFirstLaunch: shouldShowSplash));
+  runApp(HvacToolsManagerApp(
+    initialFirstLaunch: shouldShowSplash,
+    cachedLastRoute: _cachedLastRoute,
+  ));
   
   // Initialize everything in background AFTER UI is shown
   // This allows the app to open quickly while services load
@@ -476,10 +482,12 @@ class _SplashTransitionState extends State<SplashTransition>
 
 class HvacToolsManagerApp extends StatelessWidget {
   final bool initialFirstLaunch;
+  final String? cachedLastRoute;
 
   const HvacToolsManagerApp({
     super.key,
     required this.initialFirstLaunch,
+    required this.cachedLastRoute,
   });
 
   @override
@@ -576,12 +584,21 @@ class HvacToolsManagerApp extends StatelessWidget {
             } else {
               initialRoute = const TechnicianHomeScreen();
             }
-          } else if (authProvider.isLoggingOut) {
-            // During logout, go straight to role selection
-            initialRoute = const RoleSelectionScreen();
-          } else if (!authProvider.isInitialized || authProvider.isLoading) {
-            // Auth is still restoring session - avoid flashing role selection/login
-            initialRoute = const SplashScreen();
+          } else if (!hasSession && cachedLastRoute != null && !authProvider.isLoggingOut) {
+            // Session may still be restoring - reuse last known route to avoid flashes.
+            if (cachedLastRoute == '/admin') {
+              initialRoute = AdminHomeScreenErrorBoundary(
+                child: AdminHomeScreen(
+                  key: ValueKey('admin_home'),
+                ),
+              );
+            } else if (cachedLastRoute == '/technician') {
+              initialRoute = const TechnicianHomeScreen();
+            } else if (cachedLastRoute == '/pending-approval') {
+              initialRoute = const PendingApprovalScreen();
+            } else {
+              initialRoute = const RoleSelectionScreen();
+            }
           } else {
             // No session - show role selection (only for logged out users)
             initialRoute = const RoleSelectionScreen();

@@ -8,6 +8,7 @@ import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/first_launch_service.dart';
+import '../services/last_route_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
 
@@ -1360,6 +1361,7 @@ class AuthProvider with ChangeNotifier {
       
       // Clear saved user role from local storage
       await _clearSavedUserRole();
+      await LastRouteService.clearLastRoute();
       
       // Clear user data first to prevent widget tree issues
       _user = null;

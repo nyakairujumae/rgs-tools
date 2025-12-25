@@ -25,6 +25,7 @@ import 'reports_screen.dart';
 import 'report_detail_screen.dart';
 import 'permanent_assignment_screen.dart';
 import '../services/report_service.dart';
+import '../services/last_route_service.dart';
 import 'maintenance_screen.dart';
 import 'cost_analytics_screen.dart';
 import 'settings_screen.dart';
@@ -148,6 +149,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       const TechniciansScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      LastRouteService.saveLastRoute('/admin');
       _loadData();
       // Refresh notifications every 30 seconds to update badges in real-time
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {

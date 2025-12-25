@@ -22,6 +22,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/themed_card.dart';
 import '../services/badge_service.dart';
+import '../services/last_route_service.dart';
 import '../providers/admin_notification_provider.dart';
 import '../providers/technician_notification_provider.dart';
 import '../models/admin_notification.dart';
@@ -71,6 +72,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       ),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      LastRouteService.saveLastRoute('/technician');
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
       // Load notifications from provider (will set up realtime subscription)
