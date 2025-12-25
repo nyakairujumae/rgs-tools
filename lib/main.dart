@@ -676,7 +676,54 @@ class HvacToolsManagerApp extends StatelessWidget {
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
                   
-                  if (type == 'recovery' || uriString.contains('reset-password')) {
+                  // CRITICAL: Handle signup email confirmation FIRST - route directly to pending approval
+                  // This must happen BEFORE auto-login to ensure technicians see waiting screen
+                  if (type == 'signup') {
+                    print('✅ Signup email confirmation detected - routing directly to pending approval screen');
+                    print('✅ This ensures technicians see waiting screen without auto-login');
+                    
+                    // Process the email confirmation synchronously to create session
+                    // But don't auto-login - just confirm email and route to pending approval
+                    return MaterialPageRoute(
+                      builder: (context) {
+                        // Process email confirmation when route is built, then show pending approval
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          try {
+                            print('🔐 Processing signup email confirmation...');
+                            // Confirm the email (this creates the session but we don't use it for auto-login)
+                            await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            print('✅ Email confirmed - session created');
+                            print('✅ User will see pending approval screen');
+                            
+                            // Wait a moment for database trigger to create pending approval record
+                            await Future.delayed(const Duration(milliseconds: 1500));
+                            
+                            // Navigate to pending approval screen (in case we're not already there)
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                '/pending-approval',
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            print('⚠️ Email confirmation error: $e');
+                            // Even if confirmation fails, show pending approval screen
+                            // User can try again or wait
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                                '/pending-approval',
+                                (route) => false,
+                              );
+                            }
+                          }
+                        });
+                        
+                        // Return pending approval screen immediately
+                        return const PendingApprovalScreen();
+                      },
+                      settings: RouteSettings(name: '/pending-approval'),
+                    );
+                  } else if (type == 'recovery' || uriString.contains('reset-password')) {
                     // Password reset
                     print('🔐 Password reset route detected');
                     final accessToken = uri.queryParameters['access_token'];
@@ -690,7 +737,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                       ),
                       settings: RouteSettings(name: '/reset-password'),
                     );
-                  } else if (type == 'signup' || type == 'oauth' || hasAccessToken || uriString.contains('email-confirmation') || uri.queryParameters.containsKey('provider')) {
+                  } else if (type == 'oauth' || hasAccessToken || uriString.contains('email-confirmation') || uri.queryParameters.containsKey('provider')) {
                     // Email confirmation or OAuth callback - get session from URL and auto-login
                     final isOAuth = type == 'oauth' || uri.queryParameters.containsKey('provider');
                     print('✅ ${isOAuth ? "OAuth" : "Email confirmation"} detected, getting session from URL...');
