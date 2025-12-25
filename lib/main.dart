@@ -711,23 +711,56 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 // Use database role if available, otherwise check auth metadata or pending approval
                                 final bool isAdmin = roleFromDb == 'admin' || authProvider.isAdmin;
                                 
-                                // Check if user is a technician:
-                                // 1. Has technician role in database (approved technician)
-                                // 2. Has technician role in auth metadata (new registration)
-                                // 3. Has pending approval record (new technician registration)
+                                // CRITICAL: Check metadata FIRST to determine if this is a technician
+                                // This is the most reliable indicator for new registrations
                                 final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                                final bool isTechnicianFromDb = roleFromDb == 'technician';
                                 final bool isTechnicianFromMetadata = roleFromMetadata == 'technician';
+                                final bool isTechnicianFromDb = roleFromDb == 'technician';
                                 
-                                // Check for pending approval to determine if this is a technician
+                                print('🔍 Role determination:');
+                                print('   - Role from metadata: $roleFromMetadata');
+                                print('   - Role from DB: $roleFromDb');
+                                print('   - Is technician from metadata: $isTechnicianFromMetadata');
+                                print('   - Is technician from DB: $isTechnicianFromDb');
+                                
+                                // If metadata says technician, assume they need pending approval (new registration)
+                                // This is the most reliable check for email-confirmed technicians
+                                if (isTechnicianFromMetadata) {
+                                  print('✅ User metadata indicates technician role - this is a new registration');
+                                  print('✅ Assuming pending approval and navigating to pending approval screen');
+                                  hasPendingApproval = true;
+                                  
+                                  // Navigate immediately - don't wait for database checks
+                                  final navigator = Navigator.of(context, rootNavigator: true);
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/pending-approval',
+                                    (route) => false,
+                                  );
+                                  return;
+                                }
+                                
+                                // Check for pending approval record (for cases where metadata might not be set)
                                 bool hasPendingApprovalForTech = false;
                                 try {
                                   final pendingCheck = await SupabaseService.client
                                       .from('pending_user_approvals')
-                                      .select('id')
+                                      .select('id, status')
                                       .eq('user_id', sessionResponse.session!.user.id)
+                                      .order('created_at', ascending: false)
+                                      .limit(1)
                                       .maybeSingle();
-                                  hasPendingApprovalForTech = pendingCheck != null;
+                                  
+                                  if (pendingCheck != null) {
+                                    hasPendingApprovalForTech = true;
+                                    final status = pendingCheck['status'] as String?;
+                                    if (status == 'pending' || status == 'rejected') {
+                                      hasPendingApproval = true;
+                                      print('✅ Found pending approval record with status: $status');
+                                    } else if (status == 'approved') {
+                                      hasPendingApproval = false;
+                                      print('✅ Technician is approved');
+                                    }
+                                  }
                                 } catch (e) {
                                   print('⚠️ Could not check pending approval: $e');
                                 }
@@ -737,16 +770,12 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     hasPendingApprovalForTech ||
                                     (!isAdmin && authProvider.userRole != UserRole.pending && authProvider.userRole != UserRole.admin);
                                 
-                                print('🔍 Final role determination:');
-                                print('   - Role from DB: $roleFromDb');
-                                print('   - Role from metadata: $roleFromMetadata');
-                                print('   - Has pending approval: $hasPendingApprovalForTech');
-                                print('   - AuthProvider role: ${authProvider.userRole}');
-                                print('   - Is admin: $isAdmin');
+                                print('🔍 Final determination:');
                                 print('   - Is technician: $isTechnician');
+                                print('   - Has pending approval: $hasPendingApproval');
                                 
                                 // For technicians, check pending approval status
-                                if (isTechnician) {
+                                if (isTechnician && !hasPendingApproval) {
                                   print('🔍 User is a technician - checking for pending approval...');
                                   
                                   // Retry checking for pending approval (database trigger might need time)
@@ -784,36 +813,18 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     }
                                   }
                                   
-                                  // If we still don't have a pending approval record after retries,
-                                  // check if this is a new technician registration (just confirmed email)
-                                  if (!hasPendingApproval) {
-                                    // For new technician registrations, they should have pending approval
-                                    // Check if user metadata indicates technician role
-                                    final metadataRole = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                                    if (metadataRole == 'technician' || isTechnicianFromMetadata) {
-                                      print('⚠️ No pending approval record found, but user metadata indicates technician');
-                                      print('⚠️ This might be a new registration where trigger hasn\'t created pending approval yet');
-                                      print('⚠️ Assuming pending and will navigate to pending approval screen');
-                                      hasPendingApproval = true;
-                                    } else if (roleFromDb == 'technician') {
-                                      // Has technician role in DB but no pending approval - might be approved
-                                      // But check if they have a users record (approved) or not
-                                      print('✅ User has technician role in DB - checking if approved...');
-                                      if (roleFromDb == 'technician') {
-                                        // Has users record with technician role - likely approved
-                                        hasPendingApproval = false;
-                                      }
-                                    } else {
-                                      // Not a technician or already approved
-                                      print('✅ No pending approval - user might not be a technician or already approved');
-                                    }
-                                  }
-                                  
-                                  // Also check auth provider's pending approval status as a fallback
-                                  if (!hasPendingApproval && (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
-                                    print('✅ Auth provider indicates pending approval - will redirect to pending approval screen');
+                                  // If still no pending approval found but user is technician, assume pending
+                                  if (!hasPendingApproval && isTechnician) {
+                                    print('⚠️ No pending approval record found, but user is a technician');
+                                    print('⚠️ Assuming pending and will navigate to pending approval screen');
                                     hasPendingApproval = true;
                                   }
+                                }
+                                
+                                // Also check auth provider's pending approval status as a fallback
+                                if (!hasPendingApproval && (authProvider.isPendingApproval || authProvider.userRole == UserRole.pending)) {
+                                  print('✅ Auth provider indicates pending approval - will redirect to pending approval screen');
+                                  hasPendingApproval = true;
                                 }
                                 
                                 // Navigate directly to appropriate screen
@@ -1106,12 +1117,44 @@ class HvacToolsManagerApp extends StatelessWidget {
         return const SplashTransition(child: RoleSelectionScreen());
       }
       
-      // Show UI immediately - initialization happens in background
-      // Don't block on initialization - show safe default screen
+      // Check if we have a persisted session immediately (synchronous check)
+      // This allows us to route to home screen even during initialization
+      final hasSession = SupabaseService.client.auth.currentSession != null;
+      final currentUser = SupabaseService.client.auth.currentUser;
+      
+      // If we have a session but provider isn't initialized yet, route based on session
+      // This prevents showing role selection screen briefly
+      if ((!authProvider.isInitialized || authProvider.isLoading) && hasSession && currentUser != null) {
+        print('🔍 Has persisted session but provider not initialized yet - routing based on session');
+        // Try to determine role from user metadata or saved role
+        final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+        
+        // Check if admin (from metadata or email domain)
+        final email = currentUser.email ?? '';
+        final isAdminFromMetadata = roleFromMetadata == 'admin' || 
+            email.endsWith('@royalgulf.ae') || 
+            email.endsWith('@mekar.ae') || 
+            email.endsWith('@gmail.com');
+        
+        if (isAdminFromMetadata) {
+          print('🔍 Routing to AdminHomeScreen (from session)');
+          return AdminHomeScreenErrorBoundary(
+            child: AdminHomeScreen(
+              key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+            ),
+          );
+        } else if (roleFromMetadata == 'technician' || roleFromMetadata == null) {
+          // Technician or unknown - check if email is confirmed
+          if (currentUser.emailConfirmedAt != null) {
+            print('🔍 Routing to TechnicianHomeScreen (from session)');
+            return const TechnicianHomeScreen();
+          }
+        }
+      }
+      
+      // If no session or can't determine route, show role selection only if truly not initialized
       if (!authProvider.isInitialized || authProvider.isLoading) {
-        print('🔍 Initialization in progress - showing safe default screen');
-        // Show role selection screen while loading - it's safe and won't crash
-        // Auth will update UI when ready via notifyListeners()
+        print('🔍 No session found - showing role selection during initialization');
         return _FirstLaunchWrapper(
           firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
           defaultChild: const RoleSelectionScreen(),
@@ -1179,18 +1222,61 @@ class HvacToolsManagerApp extends StatelessWidget {
           );
         }
       } catch (e) {
-        // If any error accessing auth properties, show safe default screen
-        print('⚠️ Error accessing auth properties: $e - showing safe default');
-        return _FirstLaunchWrapper(
-          firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
-          defaultChild: const RoleSelectionScreen(),
-          shouldShowSplash: initialFirstLaunch,
-        );
+        // If any error accessing auth properties, check session directly
+        print('⚠️ Error accessing auth properties: $e - checking session directly');
+        final hasSession = SupabaseService.client.auth.currentSession != null;
+        final currentUser = SupabaseService.client.auth.currentUser;
+        
+        if (hasSession && currentUser != null) {
+          final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+          final email = currentUser.email ?? '';
+          final isAdmin = roleFromMetadata == 'admin' || 
+              email.endsWith('@royalgulf.ae') || 
+              email.endsWith('@mekar.ae') || 
+              email.endsWith('@gmail.com');
+          
+          if (isAdmin) {
+            return AdminHomeScreenErrorBoundary(
+              child: AdminHomeScreen(
+                key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+              ),
+            );
+          } else if (currentUser.emailConfirmedAt != null) {
+            return const TechnicianHomeScreen();
+          }
+        }
+        
+        // Fallback to role selection
+        return const SplashTransition(child: RoleSelectionScreen());
       }
     } catch (e, stackTrace) {
-      // Always fallback to role selection screen on any error (for new installs)
+      // If error occurs, check session directly as fallback
       print('❌ Error in _getInitialRoute: $e');
       print('❌ Stack trace: $stackTrace');
+      
+      final hasSession = SupabaseService.client.auth.currentSession != null;
+      final currentUser = SupabaseService.client.auth.currentUser;
+      
+      if (hasSession && currentUser != null) {
+        final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+        final email = currentUser.email ?? '';
+        final isAdmin = roleFromMetadata == 'admin' || 
+            email.endsWith('@royalgulf.ae') || 
+            email.endsWith('@mekar.ae') || 
+            email.endsWith('@gmail.com');
+        
+        if (isAdmin) {
+          return AdminHomeScreenErrorBoundary(
+            child: AdminHomeScreen(
+              key: ValueKey('admin_home_${DateTime.now().millisecondsSinceEpoch}'),
+            ),
+          );
+        } else if (currentUser.emailConfirmedAt != null) {
+          return const TechnicianHomeScreen();
+        }
+      }
+      
+      // Final fallback to role selection
       return _FirstLaunchWrapper(
         firstLaunchChild: const SplashTransition(child: RoleSelectionScreen()),
         defaultChild: const RoleSelectionScreen(),
