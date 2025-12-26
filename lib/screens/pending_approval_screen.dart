@@ -183,6 +183,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final status = _approvalStatus?['status'] as String?;
     final isRejected = status == 'rejected';
     final isPending = status == 'pending' || status == null;
