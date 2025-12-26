@@ -45,16 +45,22 @@ class ReportService {
     DateTime? endDate,
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
   }) async {
-    // All reports now use PDF format with table-based sheets
-    return _generatePdfReport(
-      reportType: reportType,
-      tools: tools,
-      technicians: technicians,
-      issues: issues,
-      workflows: workflows,
-      startDate: startDate,
-      endDate: endDate,
-    );
+    try {
+      // All reports now use PDF format with table-based sheets
+      return await _generatePdfReport(
+        reportType: reportType,
+        tools: tools,
+        technicians: technicians,
+        issues: issues,
+        workflows: workflows,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error generating report: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   /// Generate and save an Excel report
@@ -255,17 +261,19 @@ class ReportService {
       }
     }
 
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape, // Use landscape for wider columns
-        margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        build: (context) {
-          final widgets = <pw.Widget>[
-            _buildPdfHeader(reportTitle, dateRangeText),
-            pw.SizedBox(height: 8), // Reduced gap after header
-          ];
+    try {
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4.landscape, // Use landscape for wider columns
+          margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          build: (context) {
+            try {
+              final widgets = <pw.Widget>[
+                _buildPdfHeader(reportTitle, dateRangeText),
+                pw.SizedBox(height: 8), // Reduced gap after header
+              ];
 
-          switch (reportType) {
+              switch (reportType) {
             case ReportType.toolIssues:
               widgets.add(_buildToolIssuesPdfSection(toolIssues));
               break;
@@ -568,12 +576,36 @@ class ReportService {
               }
               widgets.add(_buildToolHistoryTable(tools, startDate, endDate));
               break;
-          }
+              }
 
-          return widgets;
-        },
-      ),
-    );
+              return widgets;
+            } catch (e) {
+              debugPrint('❌ Error building PDF widgets: $e');
+              // Return a minimal error widget
+              return [
+                pw.Text(
+                  'Error generating report content. Please try again.',
+                  style: pw.TextStyle(color: PdfColors.red, fontSize: 12),
+                ),
+              ];
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Error adding PDF page: $e');
+      // Add a simple error page
+      pdf.addPage(
+        pw.Page(
+          build: (context) => pw.Center(
+            child: pw.Text(
+              'Error generating report. Please try again.',
+              style: pw.TextStyle(color: PdfColors.red, fontSize: 14),
+            ),
+          ),
+        ),
+      );
+    }
 
     try {
       final directory = await _getDownloadsDirectory();
@@ -1525,11 +1557,36 @@ class ReportService {
 
   static String _getTechnicianName(String? technicianId, List<dynamic> technicians) {
     if (technicianId == null || technicianId.isEmpty) return 'Unassigned';
-    for (final tech in technicians) {
-      if (tech.id?.toString() == technicianId) {
-        return tech.name ?? 'Unknown';
+    if (technicians.isEmpty) return 'Unknown';
+    
+    try {
+      for (final tech in technicians) {
+        // Handle both object format (tech.id) and map format (tech['id'])
+        String? techId;
+        String? techName;
+        
+        if (tech is Map) {
+          techId = tech['id']?.toString();
+          techName = tech['name']?.toString() ?? tech['full_name']?.toString();
+        } else {
+          // Try to access as object property
+          try {
+            techId = tech.id?.toString();
+            techName = tech.name?.toString() ?? tech.fullName?.toString();
+          } catch (e) {
+            // If property access fails, try to convert to map
+            continue;
+          }
+        }
+        
+        if (techId == technicianId) {
+          return techName ?? 'Unknown';
+        }
       }
+    } catch (e) {
+      debugPrint('Error getting technician name: $e');
     }
+    
     return 'Unknown';
   }
 
@@ -2000,28 +2057,50 @@ class ReportService {
     for (int i = 0; i < batches.length; i++) {
       final batch = batches[i];
       final tableData = batch.map<List<String>>((tool) {
-        // Ensure purchasePrice is a valid number (not infinity or NaN)
-        String priceStr = '';
-        if (tool.purchasePrice != null) {
-          final price = tool.purchasePrice!;
-          if (price.isFinite && !price.isNaN) {
-            priceStr = _currencyFormat.format(price);
+        try {
+          // Ensure purchasePrice is a valid number (not infinity or NaN)
+          String priceStr = '';
+          if (tool.purchasePrice != null) {
+            final price = tool.purchasePrice!;
+            if (price.isFinite && !price.isNaN) {
+              try {
+                priceStr = _currencyFormat.format(price);
+              } catch (e) {
+                priceStr = price.toString();
+              }
+            }
           }
+          
+          return [
+            tool.name ?? '',
+            tool.category ?? '',
+            tool.brand ?? '',
+            tool.model ?? '',
+            tool.serialNumber ?? '',
+            tool.status ?? '',
+            tool.condition ?? '',
+            tool.location ?? '',
+            _getTechnicianName(tool.assignedTo, technicians),
+            _formatDate(tool.purchaseDate),
+            priceStr,
+          ];
+        } catch (e) {
+          debugPrint('Error processing tool in export: $e');
+          // Return a safe default row if tool processing fails
+          return [
+            tool.name ?? 'Unknown',
+            tool.category ?? '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            'Unknown',
+            '',
+            '',
+          ];
         }
-        
-        return [
-          tool.name,
-          tool.category,
-          tool.brand ?? '',
-          tool.model ?? '',
-          tool.serialNumber ?? '',
-          tool.status,
-          tool.condition,
-          tool.location ?? '',
-          _getTechnicianName(tool.assignedTo, technicians),
-          _formatDate(tool.purchaseDate),
-          priceStr,
-        ];
       }).toList();
 
       // Add batch header if multiple batches

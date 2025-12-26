@@ -201,7 +201,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
     }
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -240,7 +240,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                         isRejected ? 'Account Approval Rejected' : 'Account Pending Approval',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A1A1A),
+                          color: theme.colorScheme.onSurface,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -253,7 +253,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                           ? 'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.'
                           : 'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.',
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
@@ -315,7 +315,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                             if (isRejected && rejectionReason != null) ...[
                               SizedBox(height: context.spacingLarge),
                               Divider(
-                                color: const Color(0xFFE5E5E5),
+                                color: theme.dividerColor,
                                 height: 1,
                               ),
                               SizedBox(height: context.spacingMedium),
@@ -336,7 +336,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                                           'Rejection Reason:',
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF1A1A1A),
+                                            color: theme.colorScheme.onSurface,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -424,7 +424,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   Text(
                     'Status is checked automatically every 5 seconds',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontStyle: FontStyle.italic,
                       fontSize: 12,
                     ),
@@ -439,9 +439,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                   child: OutlinedButton(
                     onPressed: () => _signOut(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1A1A1A),
+                      foregroundColor: theme.colorScheme.onSurface,
                       side: BorderSide(
-                        color: const Color(0xFFE5E5E5),
+                        color: AppTheme.getCardBorder(context),
                         width: 1,
                       ),
                       shape: RoundedRectangleBorder(
@@ -465,7 +465,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 Text(
                   'Questions? Contact your administrator',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
