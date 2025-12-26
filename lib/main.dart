@@ -613,7 +613,8 @@ class HvacToolsManagerApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            home: initialRoute,
+            // Don't use home - let onGenerateRoute handle everything including deep links
+            initialRoute: '/',
             builder: (context, child) {
               return ResponsiveBreakpoints.builder(
                 breakpoints: [
@@ -652,6 +653,14 @@ class HvacToolsManagerApp extends StatelessWidget {
               },
             },
             onGenerateRoute: (settings) {
+              // Handle root route - use the initial route we determined
+              if (settings.name == '/' || settings.name == null) {
+                return MaterialPageRoute(
+                  builder: (context) => initialRoute,
+                  settings: settings,
+                );
+              }
+              
               // Handle email confirmation deep links (auth/callback)
               // Check for various URL formats that Supabase might send
               if (settings.name != null) {
