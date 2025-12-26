@@ -697,12 +697,9 @@ class _TechnicianRegistrationScreenState
         );
 
         // NEW FLOW: Always navigate to pending approval screen immediately after registration
-        // Email confirmation will bring them back to this screen
+        // No email confirmation needed for technicians - clean flow
         if (userCreated) {
-          // Show email confirmation dialog
-          await _showEmailConfirmationDialog(context);
-          
-          // Navigate directly to pending approval screen (regardless of session status)
+          // Navigate directly to pending approval screen
           debugPrint('🔍 Navigating to pending approval screen immediately after registration');
           Navigator.pushNamedAndRemoveUntil(
             context,

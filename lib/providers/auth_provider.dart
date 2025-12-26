@@ -188,11 +188,19 @@ class AuthProvider with ChangeNotifier {
             print('🔍 Found user from currentUser (session was null)');
             _user = currentUser;
             
-            // CRITICAL: Check if email is confirmed before allowing access
-            if (_user!.emailConfirmedAt == null) {
-              print('❌ Email not confirmed - cannot restore session');
+            // CRITICAL: Check if email is confirmed - but skip for technicians (they bypass email confirmation)
+            final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
+            final isTechnician = roleFromMetadata == 'technician';
+            
+            if (_user!.emailConfirmedAt == null && !isTechnician) {
+              print('❌ Email not confirmed - cannot restore session (admin requires email confirmation)');
               _user = null;
-              return; // Don't proceed if email is not confirmed
+              return; // Don't proceed if email is not confirmed (for admins only)
+            }
+            
+            // Technicians can proceed without email confirmation
+            if (isTechnician) {
+              print('✅ Technician - bypassing email confirmation check');
             }
             
             // Try to get a fresh session for this user (non-blocking)
@@ -1185,11 +1193,19 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ Could not save FCM token from local storage: $e');
         }
         
-        // CRITICAL: Check if email is confirmed before allowing access
-        if (_user!.emailConfirmedAt == null) {
-          debugPrint('❌ Email not confirmed - blocking access');
+        // CRITICAL: Check if email is confirmed - but skip for technicians (they bypass email confirmation)
+        final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+        final isTechnician = roleFromMetadata == 'technician';
+        
+        if (_user!.emailConfirmedAt == null && !isTechnician) {
+          debugPrint('❌ Email not confirmed - blocking access (admin requires email confirmation)');
           await signOut();
           throw Exception('Please confirm your email address before signing in. Check your inbox for the confirmation email.');
+        }
+        
+        // Technicians can proceed without email confirmation
+        if (isTechnician) {
+          debugPrint('✅ Technician - bypassing email confirmation check');
         }
         
         // Ensure user record exists in public.users table
