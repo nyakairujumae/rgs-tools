@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Logo sized to match iOS (60dp = iOS 60 points) - sits directly on black background -->
+    <!-- Using direct drawable reference for immediate availability on first install -->
     <item
         android:width="60dp"
         android:height="60dp"
         android:gravity="center">
         <bitmap
             android:gravity="center"
-            android:src="@drawable/splash_android"/>
+            android:src="@drawable/splash_android"
+            android:tileMode="disabled"/>
     </item>
 </layer-list>
