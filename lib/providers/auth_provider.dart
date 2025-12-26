@@ -813,6 +813,27 @@ class AuthProvider with ChangeNotifier {
       
       debugPrint('✅ signUp completed for: $email, user ID: ${response.user!.id}');
 
+      // Send push notification immediately after user creation (technicians bypass email confirmation)
+      // This should happen regardless of session status since technicians are auto-confirmed
+      if (_user != null) {
+        try {
+          debugPrint('📧 Sending push notification for new technician registration...');
+          await PushNotificationService.sendToAdmins(
+            title: 'New User Registration',
+            body: '$name has registered and is waiting for approval',
+            data: {
+              'type': 'new_registration',
+              'user_id': _user!.id,
+              'email': email,
+            },
+          );
+          debugPrint('✅ Push notification sent to admins for new technician registration');
+        } catch (pushError) {
+          debugPrint('⚠️ Could not send push notification for new technician registration: $pushError');
+          // Don't throw - notification failure shouldn't block registration
+        }
+      }
+
       if (profileImage != null) {
         debugPrint('🔍 Uploading profile image...');
         profilePictureUrl = await _uploadTechnicianProfileImage(profileImage);
@@ -901,8 +922,9 @@ class AuthProvider with ChangeNotifier {
             debugPrint('✅ Created pending approval for technician: $email');
           }
           
-          // Create admin notification and send push notification for new registration
+          // Create admin notification for new registration
           // This should happen whether we created a new approval or updated an existing one
+          // Note: Push notification is already sent above, immediately after user creation
           try {
             debugPrint('📧 Creating admin notification for new registration...');
             await SupabaseService.client.rpc(
@@ -943,22 +965,6 @@ class AuthProvider with ChangeNotifier {
             } catch (insertError) {
               debugPrint('⚠️ Could not create admin notification via direct insert: $insertError');
             }
-          }
-          
-          // Send push notification to admins
-          try {
-            await PushNotificationService.sendToAdmins(
-              title: 'New User Registration',
-              body: '$name has registered and is waiting for approval',
-              data: {
-                'type': 'new_registration',
-                'user_id': _user!.id,
-                'email': email,
-              },
-            );
-            debugPrint('✅ Push notification sent to admins for new registration');
-          } catch (pushError) {
-            debugPrint('⚠️ Could not send push notification for new registration: $pushError');
           }
           
           // IMPORTANT: Delete any user record that might have been created by the trigger
