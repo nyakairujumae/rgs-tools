@@ -262,11 +262,13 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       
                       SizedBox(height: context.spacingLarge * 2),
                       
-                      // Status Card
+                      // Status Card - use a slightly different background for contrast
                       Container(
                         padding: EdgeInsets.all(context.spacingLarge),
                         decoration: BoxDecoration(
-                          color: context.cardBackground,
+                          color: isDark 
+                              ? theme.colorScheme.surface 
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                           border: Border.all(
                             color: (isRejected ? Colors.red : Colors.orange)
