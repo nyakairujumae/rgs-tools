@@ -4,10 +4,10 @@
     <item>
         <color android:color="@color/launch_background_color"/>
     </item>
-    <!-- Centered logo with proper scaling -->
+    <!-- Centered logo sized to match iOS (60dp = iOS 60 points) -->
     <item
-        android:width="200dp"
-        android:height="200dp"
+        android:width="60dp"
+        android:height="60dp"
         android:gravity="center">
         <bitmap 
             android:gravity="center" 

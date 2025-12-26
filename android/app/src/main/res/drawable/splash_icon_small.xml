@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Logo without any background circle - sits directly on black background -->
+    <!-- Logo sized to match iOS (60dp = iOS 60 points) - sits directly on black background -->
     <item
-        android:width="200dp"
-        android:height="200dp"
+        android:width="60dp"
+        android:height="60dp"
         android:gravity="center">
         <bitmap
             android:gravity="center"
