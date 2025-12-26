@@ -215,7 +215,14 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                 // Main Card Container
                 Container(
                   padding: EdgeInsets.all(context.spacingLarge * 1.5),
-                  decoration: context.cardDecoration,
+                  decoration: BoxDecoration(
+                    color: context.cardBackground,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppTheme.getCardBorderSubtle(context),
+                      width: 0.5,
+                    ),
+                  ),
                   child: Column(
                     children: [
                       // Icon
@@ -262,13 +269,11 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       
                       SizedBox(height: context.spacingLarge * 2),
                       
-                      // Status Card - use a slightly different background for contrast
+                      // Status Card - use theme-aware background like other screens
                       Container(
                         padding: EdgeInsets.all(context.spacingLarge),
                         decoration: BoxDecoration(
-                          color: isDark 
-                              ? theme.colorScheme.surface 
-                              : Colors.white,
+                          color: context.cardBackground,
                           borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                           border: Border.all(
                             color: (isRejected ? Colors.red : Colors.orange)
