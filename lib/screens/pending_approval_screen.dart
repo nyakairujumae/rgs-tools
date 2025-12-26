@@ -422,6 +422,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onPrimary,
                             ),
                           ),
                         ],

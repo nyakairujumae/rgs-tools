@@ -686,21 +686,16 @@ class HvacToolsManagerApp extends StatelessWidget {
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
                   
-                  // CRITICAL: Handle signup email confirmation FIRST - route directly to pending approval
-                  // This must happen BEFORE auto-login to ensure technicians see waiting screen
+                  // CRITICAL: Handle signup email confirmation
+                  // Technicians go to pending approval, Admins auto-login
                   if (type == 'signup') {
-                    print('✅ Signup email confirmation detected - routing directly to pending approval screen');
-                    print('✅ This ensures technicians see waiting screen without auto-login');
+                    print('✅ Signup email confirmation detected');
                     
-                    // Process the email confirmation synchronously to create session
-                    // But don't auto-login - just confirm email and route to pending approval
                     return MaterialPageRoute(
                       builder: (context) {
-                        // Process email confirmation when route is built, then show pending approval
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Processing signup email confirmation...');
-                            // Confirm the email (this creates the session but we don't use it for auto-login)
                             final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                             print('✅ Email confirmed - session created');
                             
@@ -711,99 +706,124 @@ class HvacToolsManagerApp extends StatelessWidget {
                                               user.userMetadata?['name'] as String? ?? 
                                               email.split('@')[0];
                               final userId = user.id;
+                              final role = user.userMetadata?['role'] as String?;
                               
-                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId');
+                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId, Role: $role');
                               
-                              // Wait for database trigger to create pending approval record
-                              print('⏳ Waiting for database trigger to create pending approval record...');
-                              await Future.delayed(const Duration(milliseconds: 1500));
+                              // Check if user is admin - admins should auto-login
+                              final isAdmin = role == 'admin';
                               
-                              // Create admin notification and send push notification after email confirmation
-                              try {
-                                print('📧 Creating admin notification for new registration...');
-                                await SupabaseService.client.rpc(
-                                  'create_admin_notification',
-                                  params: {
-                                    'p_title': 'New User Registration',
-                                    'p_message': '$fullName has registered and is waiting for approval',
-                                    'p_technician_name': fullName.toUpperCase(),
-                                    'p_technician_email': email,
-                                    'p_type': 'new_registration',
-                                    'p_data': {
+                              if (isAdmin) {
+                                print('✅ Admin email confirmation - auto-logging in...');
+                                // Initialize auth provider with the session
+                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                await authProvider.initialize();
+                                
+                                // Wait a bit for role to be loaded
+                                await Future.delayed(const Duration(milliseconds: 1000));
+                                await authProvider.initialize();
+                                
+                                if (authProvider.isAuthenticated && authProvider.isAdmin) {
+                                  print('✅ Admin authenticated - routing to admin home');
+                                  if (context.mounted) {
+                                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
+                                  }
+                                  return;
+                                }
+                              } else {
+                                // Technician - route to pending approval
+                                print('✅ Technician email confirmation - routing to pending approval screen');
+                                
+                                // Wait for database trigger to create pending approval record
+                                print('⏳ Waiting for database trigger to create pending approval record...');
+                                await Future.delayed(const Duration(milliseconds: 1500));
+                                
+                                // Create admin notification and send push notification after email confirmation
+                                try {
+                                  print('📧 Creating admin notification for new registration...');
+                                  await SupabaseService.client.rpc(
+                                    'create_admin_notification',
+                                    params: {
+                                      'p_title': 'New User Registration',
+                                      'p_message': '$fullName has registered and is waiting for approval',
+                                      'p_technician_name': fullName.toUpperCase(),
+                                      'p_technician_email': email,
+                                      'p_type': 'new_registration',
+                                      'p_data': {
+                                        'user_id': userId,
+                                        'email': email,
+                                      },
+                                    },
+                                  );
+                                  print('✅ Admin notification created in notification center');
+                                } catch (notifError) {
+                                  print('⚠️ Could not create admin notification: $notifError');
+                                  // Fallback: Try direct push notification
+                                  try {
+                                    await SupabaseService.client
+                                        .from('admin_notifications')
+                                        .insert({
+                                          'title': 'New User Registration',
+                                          'message': '$fullName has registered and is waiting for approval',
+                                          'technician_name': fullName.toUpperCase(),
+                                          'technician_email': email,
+                                          'type': 'new_registration',
+                                          'is_read': false,
+                                          'timestamp': DateTime.now().toIso8601String(),
+                                          'data': {
+                                            'user_id': userId,
+                                            'email': email,
+                                          },
+                                        });
+                                    print('✅ Admin notification created via direct insert');
+                                  } catch (insertError) {
+                                    print('⚠️ Could not create admin notification via direct insert: $insertError');
+                                  }
+                                }
+                                
+                                // Send push notification to admins
+                                try {
+                                  await PushNotificationService.sendToAdmins(
+                                    title: 'New User Registration',
+                                    body: '$fullName has registered and is waiting for approval',
+                                    data: {
+                                      'type': 'new_registration',
                                       'user_id': userId,
                                       'email': email,
                                     },
-                                  },
-                                );
-                                print('✅ Admin notification created in notification center');
-                              } catch (notifError) {
-                                print('⚠️ Could not create admin notification: $notifError');
-                                // Fallback: Try direct push notification
-                                try {
-                                  await SupabaseService.client
-                                      .from('admin_notifications')
-                                      .insert({
-                                        'title': 'New User Registration',
-                                        'message': '$fullName has registered and is waiting for approval',
-                                        'technician_name': fullName.toUpperCase(),
-                                        'technician_email': email,
-                                        'type': 'new_registration',
-                                        'is_read': false,
-                                        'timestamp': DateTime.now().toIso8601String(),
-                                        'data': {
-                                          'user_id': userId,
-                                          'email': email,
-                                        },
-                                      });
-                                  print('✅ Admin notification created via direct insert');
-                                } catch (insertError) {
-                                  print('⚠️ Could not create admin notification via direct insert: $insertError');
+                                  );
+                                  print('✅ Push notification sent to admins for new registration');
+                                } catch (pushError) {
+                                  print('⚠️ Could not send push notification: $pushError');
+                                }
+                                
+                                // Route to pending approval for technicians
+                                if (context.mounted) {
+                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/pending-approval', (route) => false);
                                 }
                               }
-                              
-                              // Send push notification to admins
-                              try {
-                                await PushNotificationService.sendToAdmins(
-                                  title: 'New User Registration',
-                                  body: '$fullName has registered and is waiting for approval',
-                                  data: {
-                                    'type': 'new_registration',
-                                    'user_id': userId,
-                                    'email': email,
-                                  },
-                                );
-                                print('✅ Push notification sent to admins for new registration');
-                              } catch (pushError) {
-                                print('⚠️ Could not send push notification: $pushError');
-                              }
-                            }
-                            
-                            print('✅ User will see pending approval screen');
-                            
-                            // Navigate to pending approval screen (in case we're not already there)
-                            if (context.mounted) {
-                              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                                '/pending-approval',
-                                (route) => false,
-                              );
                             }
                           } catch (e) {
                             print('⚠️ Email confirmation error: $e');
-                            // Even if confirmation fails, show pending approval screen
-                            // User can try again or wait
                             if (context.mounted) {
-                              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                                '/pending-approval',
-                                (route) => false,
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Email confirmation failed: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
+                              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/role-selection', (route) => false);
                             }
                           }
                         });
-                        
-                        // Return pending approval screen immediately
-                        return const PendingApprovalScreen();
+                        // Show loading screen while processing
+                        return Scaffold(
+                          body: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       },
-                      settings: RouteSettings(name: '/pending-approval'),
+                      settings: RouteSettings(name: '/email-confirmation'),
                     );
                   } else if (type == 'recovery' || uriString.contains('reset-password')) {
                     // Password reset
