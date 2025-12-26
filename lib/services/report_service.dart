@@ -241,7 +241,7 @@ class ReportService {
     // Convert approval workflows to Map format for compatibility
     List<dynamic> approvalWorkflows = [];
     if (reportType == ReportType.approvalWorkflowsSummary || reportType == ReportType.comprehensive) {
-      if (workflows != null) {
+      if (workflows != null && workflows.isNotEmpty) {
         approvalWorkflows = workflows.map((workflow) => workflow.toMap()).toList();
         
         // Filter by date range if provided
@@ -275,38 +275,31 @@ class ReportService {
 
               switch (reportType) {
             case ReportType.toolIssues:
-              widgets.add(_buildToolIssuesPdfSection(toolIssues));
+              widgets.add(_buildToolIssuesPdfSection(toolIssues, showTitle: false));
               break;
             case ReportType.toolIssuesSummary:
-              widgets.add(_buildToolIssuesSummaryPdfSection(toolIssues));
+              widgets.add(_buildToolIssuesSummaryPdfSection(toolIssues, showTitle: false));
               break;
             case ReportType.approvalWorkflowsSummary:
-              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows));
+              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows, showTitle: false));
               break;
             case ReportType.toolsInventory:
-              widgets.add(_buildToolsInventoryPdfSection(tools, technicians));
+              widgets.add(_buildToolsInventoryPdfSection(tools, technicians, showTitle: false));
               break;
             case ReportType.toolAssignments:
-              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
+              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate, showTitle: false));
               break;
             case ReportType.technicianSummary:
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
+              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians, showTitle: false));
               break;
             case ReportType.financialSummary:
-              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
+              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues, showTitle: false));
               break;
             case ReportType.toolHistory:
-              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
+              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate, showTitle: false));
               break;
             case ReportType.comprehensive:
               // Add comprehensive report sections - break down Columns to allow natural page breaks
-              widgets.add(pw.Text(
-                'Comprehensive Report',
-                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 12));
-              
-              // Tools Inventory Section - add title and table separately
               widgets.add(pw.Text(
                 'Tools Inventory',
                 style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
@@ -319,264 +312,36 @@ class ReportService {
                 ));
                 widgets.add(pw.SizedBox(height: 8));
               }
-              widgets.add(_buildToolsInventoryTable(tools, technicians));
+              widgets.addAll(_buildToolsInventoryTableWidgets(tools, technicians));
               widgets.add(pw.SizedBox(height: 16));
               
               // Tool Assignments Section
-              widgets.add(pw.Text(
-                'Tool Assignments',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              widgets.add(_buildToolAssignmentsTable(tools, technicians, startDate, endDate));
+              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
               widgets.add(pw.SizedBox(height: 16));
               
               // Technician Summary Section
-              widgets.add(pw.Text(
-                'Technician Summary',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              widgets.add(_buildTechnicianSummaryTable(tools, technicians));
+              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
               widgets.add(pw.SizedBox(height: 16));
               
               // Financial Summary Section
-              widgets.add(pw.Text(
-                'Financial Summary',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              widgets.add(_buildFinancialSummaryTable(tools, toolIssues));
+              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
               widgets.add(pw.SizedBox(height: 12));
-              final statusCounts = <String, int>{};
-              for (final tool in tools) {
-                statusCounts[tool.status] = (statusCounts[tool.status] ?? 0) + 1;
-              }
-              widgets.add(pw.Text(
-                'Status Distribution',
-                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              widgets.add(pw.Table.fromTextArray(
-                headers: const ['Status', 'Count'],
-                data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
-                headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
-                border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-                cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(2.0),
-                  1: pw.FlexColumnWidth(1.0),
-                },
-              ));
               
               // Tool Issues Section (if any) - break down Column to allow page breaks
               if (toolIssues.isNotEmpty) {
                 widgets.add(pw.SizedBox(height: 16));
-                widgets.add(pw.Text(
-                  'Tool Issues Overview',
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blueGrey900,
-                  ),
-                ));
-                widgets.add(pw.SizedBox(height: 12));
-                
-                // Calculate metrics
-                final statusCounts = <String, int>{};
-                final priorityCounts = <String, int>{};
-                double totalCost = 0.0;
-                for (final item in toolIssues) {
-                  final issue = item as Map<String, dynamic>;
-                  final status = (issue['status'] ?? 'Unknown').toString();
-                  final priority = (issue['priority'] ?? 'Unspecified').toString();
-                  statusCounts[status] = (statusCounts[status] ?? 0) + 1;
-                  priorityCounts[priority] = (priorityCounts[priority] ?? 0) + 1;
-                  final cost = issue['estimated_cost'];
-                  if (cost is num) {
-                    totalCost += cost.toDouble();
-                  }
-                }
-                final openIssues = toolIssues.where((item) {
-                  final status = (item['status'] ?? '').toString().toLowerCase();
-                  return status != 'resolved' && status != 'closed';
-                }).length;
-                
-                // Add metric cards
-                widgets.add(pw.Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildMetricCard('Total Issues', toolIssues.length.toString(), PdfColors.indigo),
-                    _buildMetricCard('Open Issues', openIssues.toString(), PdfColors.deepOrange),
-                    _buildMetricCard('Estimated Cost', _currencyFormat.format(totalCost), PdfColors.teal),
-                  ],
-                ));
-                widgets.add(pw.SizedBox(height: 18));
-                
-                // Add summary tables
-                widgets.add(pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Expanded(child: _buildSummaryTable('By Status', statusCounts)),
-                    pw.SizedBox(width: 12),
-                    pw.Expanded(child: _buildSummaryTable('By Priority', priorityCounts)),
-                  ],
-                ));
-                widgets.add(pw.SizedBox(height: 18));
-                
-                // Add main issues table
-                final tableHeaders = [
-                  'Tool',
-                  'Type',
-                  'Priority',
-                  'Status',
-                  'Reported',
-                  'Reporter',
-                  'Cost',
-                  'Summary',
-                ];
-                final tableData = toolIssues.map<List<String>>((item) {
-                  final issue = item as Map<String, dynamic>;
-                  final cost = issue['estimated_cost'];
-                  return [
-                    issue['tool_name']?.toString() ?? '',
-                    issue['issue_type']?.toString() ?? '',
-                    issue['priority']?.toString() ?? '',
-                    issue['status']?.toString() ?? '',
-                    _formatFriendlyDateTime(issue['reported_at']),
-                    issue['reported_by']?.toString() ?? '',
-                    cost is num ? _currencyFormat.format(cost.toDouble()) : '-',
-                    _composeIssueSummary(issue),
-                  ];
-                }).toList();
-                widgets.add(pw.Table.fromTextArray(
-                  headers: tableHeaders,
-                  data: tableData,
-                  headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-                  headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-                  border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-                  cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
-                  columnWidths: const {
-                    0: pw.FlexColumnWidth(2.5),
-                    1: pw.FlexColumnWidth(1.8),
-                    2: pw.FlexColumnWidth(1.5),
-                    3: pw.FlexColumnWidth(1.8),
-                    4: pw.FlexColumnWidth(2.0),
-                    5: pw.FlexColumnWidth(2.0),
-                    6: pw.FlexColumnWidth(1.8),
-                    7: pw.FlexColumnWidth(4.0),
-                  },
-                ));
+                widgets.add(_buildToolIssuesPdfSection(toolIssues));
               }
               
-              // Approval Workflows Section (if any)
-              if (approvalWorkflows.isNotEmpty) {
-                widgets.add(pw.SizedBox(height: 16));
-                widgets.add(pw.Text(
-                  'Approval Workflows Overview',
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blueGrey900,
-                  ),
-                ));
-                widgets.add(pw.SizedBox(height: 12));
-                
-                // Calculate metrics
-                final workflowStatusCounts = <String, int>{};
-                final workflowTypeCounts = <String, int>{};
-                for (final item in approvalWorkflows) {
-                  final workflow = item as Map<String, dynamic>;
-                  final status = (workflow['status'] ?? 'Unknown').toString();
-                  final type = (workflow['request_type'] ?? 'Unknown').toString();
-                  workflowStatusCounts[status] = (workflowStatusCounts[status] ?? 0) + 1;
-                  workflowTypeCounts[type] = (workflowTypeCounts[type] ?? 0) + 1;
-                }
-                
-                // Add metric cards
-                widgets.add(pw.Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildMetricCard('Total Workflows', approvalWorkflows.length.toString(), PdfColors.purple),
-                    _buildMetricCard('Pending', workflowStatusCounts['Pending']?.toString() ?? '0', PdfColors.orange),
-                    _buildMetricCard('Approved', workflowStatusCounts['Approved']?.toString() ?? '0', PdfColors.green),
-                    _buildMetricCard('Rejected', workflowStatusCounts['Rejected']?.toString() ?? '0', PdfColors.red),
-                  ],
-                ));
-                widgets.add(pw.SizedBox(height: 18));
-                
-                // Add summary tables
-                widgets.add(pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Expanded(child: _buildSummaryTable('By Status', workflowStatusCounts)),
-                    pw.SizedBox(width: 12),
-                    pw.Expanded(child: _buildSummaryTable('By Type', workflowTypeCounts)),
-                  ],
-                ));
-                widgets.add(pw.SizedBox(height: 18));
-                
-                // Add main workflows table
-                final workflowHeaders = [
-                  'Type',
-                  'Title',
-                  'Requester',
-                  'Status',
-                  'Priority',
-                  'Request Date',
-                  'Due Date',
-                ];
-                final workflowData = approvalWorkflows.map<List<String>>((item) {
-                  final workflow = item as Map<String, dynamic>;
-                  return [
-                    workflow['request_type']?.toString() ?? '',
-                    workflow['title']?.toString() ?? '',
-                    workflow['requester_name']?.toString() ?? '',
-                    workflow['status']?.toString() ?? '',
-                    workflow['priority']?.toString() ?? '',
-                    _formatFriendlyDateTime(workflow['request_date']),
-                    _formatFriendlyDateTime(workflow['due_date']) ?? '-',
-                  ];
-                }).toList();
-                widgets.add(pw.Table.fromTextArray(
-                  headers: workflowHeaders,
-                  data: workflowData,
-                  headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-                  headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
-                  border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-                  cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
-                  columnWidths: const {
-                    0: pw.FlexColumnWidth(2.0),
-                    1: pw.FlexColumnWidth(3.0),
-                    2: pw.FlexColumnWidth(2.0),
-                    3: pw.FlexColumnWidth(1.5),
-                    4: pw.FlexColumnWidth(1.5),
-                    5: pw.FlexColumnWidth(2.0),
-                    6: pw.FlexColumnWidth(2.0),
-                  },
-                ));
-              }
+              // Approval Workflows Section
+              widgets.add(pw.SizedBox(height: 16));
+              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows));
               
               // Tool History Section
               widgets.add(pw.SizedBox(height: 16));
-              widgets.add(pw.Text(
-                'Tool History',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              if (tools.isNotEmpty) {
-                widgets.add(pw.Text(
-                  'Total Tools: ${tools.length}',
-                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
-                ));
-                widgets.add(pw.SizedBox(height: 8));
-              }
-              widgets.add(_buildToolHistoryTable(tools, startDate, endDate));
+              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
               break;
-              }
+            }
 
               return widgets;
             } catch (e) {
@@ -1717,7 +1482,7 @@ class ReportService {
         ),
         pw.SizedBox(height: 2), // Reduced spacing
         pw.Text(
-          title,
+          _sanitizePdfText(title),
           style: pw.TextStyle(
             fontSize: 20,
             fontWeight: pw.FontWeight.bold,
@@ -1728,7 +1493,7 @@ class ReportService {
         pw.Row(
           children: [
             pw.Text(
-              'Reporting period: $dateRangeText',
+              _sanitizePdfText('Reporting period: $dateRangeText'),
               style: pw.TextStyle(
                 fontSize: 10,
                 color: PdfColors.blueGrey600,
@@ -1736,7 +1501,7 @@ class ReportService {
             ),
             pw.SizedBox(width: 12),
             pw.Text(
-              'Generated: ${_formatFriendlyDateTime(DateTime.now().toIso8601String())}',
+              _sanitizePdfText('Generated: ${_formatFriendlyDateTime(DateTime.now().toIso8601String())}'),
               style: pw.TextStyle(
                 fontSize: 9,
                 color: PdfColors.blueGrey500,
@@ -1759,7 +1524,7 @@ class ReportService {
         border: pw.Border.all(color: PdfColors.blueGrey100),
       ),
       child: pw.Text(
-        message,
+        _sanitizePdfText(message),
         style: pw.TextStyle(
           fontSize: 12,
           color: PdfColors.blueGrey700,
@@ -1768,7 +1533,7 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildToolIssuesPdfSection(List<dynamic> issues) {
+  static pw.Widget _buildToolIssuesPdfSection(List<dynamic> issues, {bool showTitle = true}) {
     if (issues.isEmpty) {
       return _buildPdfPlaceholder('No tool issues were recorded for the selected period.');
     }
@@ -1810,29 +1575,31 @@ class ReportService {
       final issue = item as Map<String, dynamic>;
       final cost = issue['estimated_cost'];
       return [
-        issue['tool_name']?.toString() ?? '',
-        issue['issue_type']?.toString() ?? '',
-        issue['priority']?.toString() ?? '',
-        issue['status']?.toString() ?? '',
-        _formatFriendlyDateTime(issue['reported_at']),
-        issue['reported_by']?.toString() ?? '',
-        cost is num ? _currencyFormat.format(cost.toDouble()) : '-', // Use ASCII hyphen instead of em dash
-        _composeIssueSummary(issue),
+        _sanitizePdfText(issue['tool_name']?.toString()),
+        _sanitizePdfText(issue['issue_type']?.toString()),
+        _sanitizePdfText(issue['priority']?.toString()),
+        _sanitizePdfText(issue['status']?.toString()),
+        _sanitizePdfText(_formatFriendlyDateTime(issue['reported_at'])),
+        _sanitizePdfText(issue['reported_by']?.toString()),
+        _sanitizePdfText(cost is num ? _currencyFormat.format(cost.toDouble()) : '-'), // Use ASCII hyphen instead of em dash
+        _sanitizePdfText(_composeIssueSummary(issue)),
       ];
     }).toList();
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Tool Issues Overview',
-          style: pw.TextStyle(
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.blueGrey900,
+        if (showTitle) ...[
+          pw.Text(
+            'Tool Issues Overview',
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey900,
+            ),
           ),
-        ),
-        pw.SizedBox(height: 12),
+          pw.SizedBox(height: 12),
+        ],
         pw.Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -1897,7 +1664,7 @@ class ReportService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            label,
+            _sanitizePdfText(label),
             style: pw.TextStyle(
               fontSize: 10,
               color: PdfColors.blueGrey600,
@@ -1905,7 +1672,7 @@ class ReportService {
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            value,
+            _sanitizePdfText(value),
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -1937,7 +1704,7 @@ class ReportService {
     final rows = data.entries
         .map(
           (entry) => [
-            entry.key,
+            _sanitizePdfText(entry.key),
             entry.value.toString(),
             total == 0 ? '0%' : '${((entry.value / total) * 100).toStringAsFixed(1)}%',
           ],
@@ -1948,7 +1715,7 @@ class ReportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          title,
+          _sanitizePdfText(title),
           style: pw.TextStyle(
             fontSize: 12,
             fontWeight: pw.FontWeight.bold,
@@ -1995,7 +1762,7 @@ class ReportService {
       }
     }
 
-    return parts.isEmpty ? '-' : parts.join('\n'); // Use ASCII hyphen instead of em dash
+    return parts.isEmpty ? '-' : _sanitizePdfText(parts.join('\n')); // Use ASCII hyphen instead of em dash
   }
 
   static final DateFormat _friendlyDateFormat = DateFormat('dd MMM yyyy HH:mm');
@@ -2019,15 +1786,26 @@ class ReportService {
   // Helper to build section titles
   static pw.Widget _buildSectionTitle(String title) {
     return pw.Text(
-      title,
+      _sanitizePdfText(title),
       style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
     );
   }
 
+  static String _sanitizePdfText(String? value) {
+    if (value == null || value.isEmpty) return '';
+    return value
+        .replaceAll('\u2019', '\'')
+        .replaceAll('\u2018', '\'')
+        .replaceAll('\u201C', '"')
+        .replaceAll('\u201D', '"')
+        .replaceAll('\u2013', '-')
+        .replaceAll('\u2014', '-');
+  }
+
   // Extract table building methods for comprehensive report
-  static pw.Widget _buildToolsInventoryTable(List<Tool> tools, List<dynamic> technicians) {
+  static List<pw.Widget> _buildToolsInventoryTableWidgets(List<Tool> tools, List<dynamic> technicians) {
     if (tools.isEmpty) {
-      return _buildPdfPlaceholder('No tools found in inventory.');
+      return [_buildPdfPlaceholder('No tools found in inventory.')];
     }
 
     final headers = [
@@ -2072,24 +1850,24 @@ class ReportService {
           }
           
           return [
-            tool.name ?? '',
-            tool.category ?? '',
-            tool.brand ?? '',
-            tool.model ?? '',
-            tool.serialNumber ?? '',
-            tool.status ?? '',
-            tool.condition ?? '',
-            tool.location ?? '',
-            _getTechnicianName(tool.assignedTo, technicians),
-            _formatDate(tool.purchaseDate),
-            priceStr,
+            _sanitizePdfText(tool.name),
+            _sanitizePdfText(tool.category),
+            _sanitizePdfText(tool.brand),
+            _sanitizePdfText(tool.model),
+            _sanitizePdfText(tool.serialNumber),
+            _sanitizePdfText(tool.status),
+            _sanitizePdfText(tool.condition),
+            _sanitizePdfText(tool.location),
+            _sanitizePdfText(_getTechnicianName(tool.assignedTo, technicians)),
+            _sanitizePdfText(_formatDate(tool.purchaseDate)),
+            _sanitizePdfText(priceStr),
           ];
         } catch (e) {
           debugPrint('Error processing tool in export: $e');
           // Return a safe default row if tool processing fails
           return [
-            tool.name ?? 'Unknown',
-            tool.category ?? '',
+            _sanitizePdfText(tool.name ?? 'Unknown'),
+            _sanitizePdfText(tool.category),
             '',
             '',
             '',
@@ -2145,31 +1923,35 @@ class ReportService {
       }
     }
 
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: tableWidgets,
-    );
+    return tableWidgets;
   }
 
-  static pw.Widget _buildToolsInventoryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+  static pw.Widget _buildToolsInventoryPdfSection(
+    List<Tool> tools,
+    List<dynamic> technicians, {
+    bool showTitle = true,
+  }) {
     if (tools.isEmpty) {
       return _buildPdfPlaceholder('No tools found in inventory.');
     }
 
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+    final tableWidgets = _buildToolsInventoryTableWidgets(tools, technicians);
+
+    return pw.ListView(
       children: [
-        pw.Text(
-          'Tools Inventory',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Tools Inventory',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         pw.Text(
           'Total Tools: ${tools.length}',
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        _buildToolsInventoryTable(tools, technicians),
+        ...tableWidgets,
       ],
     );
   }
@@ -2193,13 +1975,13 @@ class ReportService {
 
     final tableData = assignedTools.map<List<String>>((tool) {
       return [
-        tool.name,
-        tool.category,
-        _getTechnicianName(tool.assignedTo, technicians),
-        tool.status,
-        tool.condition,
-        tool.location ?? '',
-        _formatDateTime(tool.updatedAt),
+        _sanitizePdfText(tool.name),
+        _sanitizePdfText(tool.category),
+        _sanitizePdfText(_getTechnicianName(tool.assignedTo, technicians)),
+        _sanitizePdfText(tool.status),
+        _sanitizePdfText(tool.condition),
+        _sanitizePdfText(tool.location),
+        _sanitizePdfText(_formatDateTime(tool.updatedAt)),
       ];
     }).toList();
 
@@ -2222,7 +2004,13 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildToolAssignmentsPdfSection(List<Tool> tools, List<dynamic> technicians, DateTime? startDate, DateTime? endDate) {
+  static pw.Widget _buildToolAssignmentsPdfSection(
+    List<Tool> tools,
+    List<dynamic> technicians,
+    DateTime? startDate,
+    DateTime? endDate, {
+    bool showTitle = true,
+  }) {
     final assignedTools = tools.where((tool) => tool.assignedTo != null && tool.assignedTo!.isNotEmpty).toList();
     
     if (assignedTools.isEmpty) {
@@ -2232,11 +2020,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Tool Assignments',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Tool Assignments',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         pw.Text(
           'Total Assignments: ${assignedTools.length}',
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
@@ -2251,6 +2041,22 @@ class ReportService {
     final techToolCounts = <String, int>{};
     final techToolNames = <String, List<String>>{};
 
+    for (final tech in technicians) {
+      String? techName;
+      if (tech is Map) {
+        techName = tech['name']?.toString() ?? tech['full_name']?.toString();
+      } else {
+        try {
+          techName = tech.name?.toString() ?? tech.fullName?.toString();
+        } catch (e) {
+          techName = null;
+        }
+      }
+      if (techName == null || techName.isEmpty) continue;
+      techToolCounts[techName] = 0;
+      techToolNames[techName] = <String>[];
+    }
+
     for (final tool in tools) {
       if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
         final techName = _getTechnicianName(tool.assignedTo, technicians);
@@ -2264,33 +2070,86 @@ class ReportService {
     }
 
     final headers = ['Technician', 'Tools Assigned', 'Tool Names'];
-    final tableData = techToolCounts.entries.map<List<String>>((entry) {
+    final sortedEntries = techToolCounts.entries.toList()
+      ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()));
+    final rows = sortedEntries.map<pw.TableRow>((entry) {
       final toolNames = techToolNames[entry.key]?.join(', ') ?? '';
-      return [
-        entry.key,
-        entry.value.toString(),
-        toolNames.length > 50 ? '${toolNames.substring(0, 50)}...' : toolNames,
-      ];
+      return pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(
+              _sanitizePdfText(entry.key),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(
+              entry.value.toString(),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(
+              _sanitizePdfText(toolNames),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
+              softWrap: true,
+            ),
+          ),
+        ],
+      );
     }).toList();
 
-    return pw.Table.fromTextArray(
-      headers: headers,
-      data: tableData,
-      headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+    return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-      cellStyle: const pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey800),
       columnWidths: const {
         0: pw.FlexColumnWidth(3.0),
         1: pw.FlexColumnWidth(1.5),
         2: pw.FlexColumnWidth(5.0),
       },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+          children: headers.map((header) {
+            return pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(
+                _sanitizePdfText(header),
+                style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
+              ),
+            );
+          }).toList(),
+        ),
+        ...rows,
+      ],
     );
   }
 
-  static pw.Widget _buildTechnicianSummaryPdfSection(List<Tool> tools, List<dynamic> technicians) {
+  static pw.Widget _buildTechnicianSummaryPdfSection(
+    List<Tool> tools,
+    List<dynamic> technicians, {
+    bool showTitle = true,
+  }) {
     final techToolCounts = <String, int>{};
     final techToolNames = <String, List<String>>{};
+
+    for (final tech in technicians) {
+      String? techName;
+      if (tech is Map) {
+        techName = tech['name']?.toString() ?? tech['full_name']?.toString();
+      } else {
+        try {
+          techName = tech.name?.toString() ?? tech.fullName?.toString();
+        } catch (e) {
+          techName = null;
+        }
+      }
+      if (techName == null || techName.isEmpty) continue;
+      techToolCounts[techName] = 0;
+      techToolNames[techName] = <String>[];
+    }
 
     for (final tool in tools) {
       if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
@@ -2307,11 +2166,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Technician Summary',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Technician Summary',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         pw.Text(
           'Total Technicians: ${techToolCounts.length}',
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
@@ -2353,9 +2214,9 @@ class ReportService {
     final headers = ['Metric', 'Value'];
     final tableData = [
       ['Total Tools', tools.length.toString()],
-      ['Total Purchase Price', _currencyFormat.format(totalPurchasePrice)],
-      ['Total Expenditures', _currencyFormat.format(totalExpenditures)],
-      ['Total Investment', _currencyFormat.format(totalPurchasePrice + totalExpenditures)],
+      ['Total Purchase Price', _sanitizePdfText(_currencyFormat.format(totalPurchasePrice))],
+      ['Total Expenditures', _sanitizePdfText(_currencyFormat.format(totalExpenditures))],
+      ['Total Investment', _sanitizePdfText(_currencyFormat.format(totalPurchasePrice + totalExpenditures))],
     ];
 
     return pw.Table.fromTextArray(
@@ -2372,7 +2233,11 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildFinancialSummaryPdfSection(List<Tool> tools, List<dynamic> toolIssues) {
+  static pw.Widget _buildFinancialSummaryPdfSection(
+    List<Tool> tools,
+    List<dynamic> toolIssues, {
+    bool showTitle = true,
+  }) {
     final statusCounts = <String, int>{};
 
     for (final tool in tools) {
@@ -2382,11 +2247,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Financial Summary',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Financial Summary',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         _buildFinancialSummaryTable(tools, toolIssues),
         pw.SizedBox(height: 18),
         pw.Text(
@@ -2396,7 +2263,7 @@ class ReportService {
         pw.SizedBox(height: 8),
         pw.Table.fromTextArray(
           headers: const ['Status', 'Count'],
-          data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+          data: statusCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2410,7 +2277,7 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildToolIssuesSummaryPdfSection(List<dynamic> toolIssues) {
+  static pw.Widget _buildToolIssuesSummaryPdfSection(List<dynamic> toolIssues, {bool showTitle = true}) {
     if (toolIssues.isEmpty) {
       return _buildPdfPlaceholder('No tool issues found for the selected period.');
     }
@@ -2445,11 +2312,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Tool Issues Summary',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Tool Issues Summary',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         
         // Overview metrics
         pw.Wrap(
@@ -2471,7 +2340,7 @@ class ReportService {
         pw.SizedBox(height: 8),
         pw.Table.fromTextArray(
           headers: const ['Status', 'Count'],
-          data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+          data: statusCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2498,7 +2367,7 @@ class ReportService {
                   pw.SizedBox(height: 8),
                   pw.Table.fromTextArray(
                     headers: const ['Priority', 'Count'],
-                    data: priorityCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    data: priorityCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
                     headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
                     headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
                     border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2523,7 +2392,7 @@ class ReportService {
                   pw.SizedBox(height: 8),
                   pw.Table.fromTextArray(
                     headers: const ['Type', 'Count'],
-                    data: typeCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    data: typeCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
                     headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
                     headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey700),
                     border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2542,7 +2411,10 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildApprovalWorkflowsSummaryPdfSection(List<dynamic> approvalWorkflows) {
+  static pw.Widget _buildApprovalWorkflowsSummaryPdfSection(
+    List<dynamic> approvalWorkflows, {
+    bool showTitle = true,
+  }) {
     if (approvalWorkflows.isEmpty) {
       return _buildPdfPlaceholder('No approval workflows found for the selected period.');
     }
@@ -2570,11 +2442,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Approval Workflows Summary',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Approval Workflows Summary',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         
         // Overview metrics
         pw.Wrap(
@@ -2597,7 +2471,7 @@ class ReportService {
         pw.SizedBox(height: 8),
         pw.Table.fromTextArray(
           headers: const ['Status', 'Count'],
-          data: statusCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+          data: statusCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
           border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2624,7 +2498,7 @@ class ReportService {
                   pw.SizedBox(height: 8),
                   pw.Table.fromTextArray(
                     headers: const ['Type', 'Count'],
-                    data: typeCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    data: typeCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
                     headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
                     headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
                     border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2649,7 +2523,7 @@ class ReportService {
                   pw.SizedBox(height: 8),
                   pw.Table.fromTextArray(
                     headers: const ['Priority', 'Count'],
-                    data: priorityCounts.entries.map((e) => [e.key, e.value.toString()]).toList(),
+                    data: priorityCounts.entries.map((e) => [_sanitizePdfText(e.key), e.value.toString()]).toList(),
                     headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 10),
                     headerDecoration: const pw.BoxDecoration(color: PdfColors.purple700),
                     border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
@@ -2685,13 +2559,13 @@ class ReportService {
 
     final tableData = tools.map<List<String>>((tool) {
       return [
-        tool.name,
-        tool.category,
-        tool.status,
-        tool.condition,
-        _formatDateTime(tool.createdAt),
-        _formatDateTime(tool.updatedAt),
-        tool.location ?? '',
+        _sanitizePdfText(tool.name),
+        _sanitizePdfText(tool.category),
+        _sanitizePdfText(tool.status),
+        _sanitizePdfText(tool.condition),
+        _sanitizePdfText(_formatDateTime(tool.createdAt)),
+        _sanitizePdfText(_formatDateTime(tool.updatedAt)),
+        _sanitizePdfText(tool.location),
       ];
     }).toList();
 
@@ -2714,7 +2588,12 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildToolHistoryPdfSection(List<Tool> tools, DateTime? startDate, DateTime? endDate) {
+  static pw.Widget _buildToolHistoryPdfSection(
+    List<Tool> tools,
+    DateTime? startDate,
+    DateTime? endDate, {
+    bool showTitle = true,
+  }) {
     if (tools.isEmpty) {
       return _buildPdfPlaceholder('No tool history found for the selected period.');
     }
@@ -2722,11 +2601,13 @@ class ReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'Tool History',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-        ),
-        pw.SizedBox(height: 12),
+        if (showTitle) ...[
+          pw.Text(
+            'Tool History',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
+          ),
+          pw.SizedBox(height: 12),
+        ],
         pw.Text(
           'Total Tools: ${tools.length}',
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),

@@ -488,6 +488,7 @@ class AuthProvider with ChangeNotifier {
             data: {
               'full_name': fullName,
               'role': role.value, // Role must be explicitly set - no default
+              if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
             },
             emailRedirectTo: 'com.rgs.app://auth/callback',
           ).timeout(
@@ -666,10 +667,13 @@ class AuthProvider with ChangeNotifier {
     String positionId, // Changed from position name to position_id
   ) async {
     // Validate email domain
-    if (!email.endsWith('@royalgulf.ae') && 
-        !email.endsWith('@mekar.ae') && 
-        !email.endsWith('@gmail.com')) {
+    if (!_isAdminEmailAllowed(email)) {
       throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
+    }
+
+    final bootstrapAllowed = await canBootstrapAdmin();
+    if (!bootstrapAllowed) {
+      throw Exception('Admin registration is closed. Please request an admin invite.');
     }
 
     debugPrint('🔍 Starting admin registration for: $email with position_id: $positionId');
@@ -761,6 +765,20 @@ class AuthProvider with ChangeNotifier {
     }
     
     return response;
+  }
+
+  Future<bool> canBootstrapAdmin() async {
+    try {
+      final response = await SupabaseService.client.rpc('can_bootstrap_admin');
+      if (response is bool) return response;
+      if (response is Map && response['can_bootstrap_admin'] is bool) {
+        return response['can_bootstrap_admin'] as bool;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking admin bootstrap status: $e');
+      return false;
+    }
   }
 
   // Technician registration method
@@ -1653,6 +1671,142 @@ _isLoading = false;
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<String?> createAdminAuthAccount({
+    required String email,
+    required String name,
+    required String positionId,
+  }) async {
+    if (!_isAdminEmailAllowed(email)) {
+      throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
+    }
+
+    if (_userRole != UserRole.admin) {
+      throw Exception('Only admins can invite other admins.');
+    }
+
+    final currentAdminUser = _user;
+    final currentAdminSession = SupabaseService.client.auth.currentSession;
+    final currentAdminRole = _userRole;
+
+    try {
+      debugPrint('🔍 Creating auth account for invited admin: $email');
+      debugPrint('🔍 Current admin user: ${currentAdminUser?.id ?? "null"}');
+
+      final emailAvailable = await isEmailAvailable(email);
+      if (!emailAvailable) {
+        throw Exception('This email is already registered. The admin can log in with their existing account.');
+      }
+
+      final randomPassword = _generateSecurePassword();
+
+      final response = await signUp(
+        email: email,
+        password: randomPassword,
+        fullName: name,
+        role: UserRole.admin,
+        positionId: positionId,
+      );
+
+      if (response.user == null) {
+        throw Exception('Failed to create auth account for admin');
+      }
+
+      final userId = response.user!.id;
+
+      _user = currentAdminUser;
+      _userRole = currentAdminRole;
+
+      if (currentAdminSession != null) {
+        try {
+          await SupabaseService.client.auth.setSession(
+            currentAdminSession.accessToken,
+          );
+          debugPrint('✅ Admin session restored successfully');
+        } catch (e) {
+          debugPrint('⚠️ Could not restore session: $e');
+          try {
+            await SupabaseService.client.auth.refreshSession();
+            debugPrint('✅ Session refreshed instead');
+          } catch (refreshError) {
+            debugPrint('❌ Could not refresh session: $refreshError');
+          }
+        }
+      }
+
+      notifyListeners();
+
+      if (response.session != null) {
+        try {
+          await Future.delayed(const Duration(milliseconds: 500));
+          final userRecord = await SupabaseService.client
+              .from('users')
+              .select('id, position_id')
+              .eq('id', userId)
+              .maybeSingle();
+
+          if (userRecord == null) {
+            await SupabaseService.client.from('users').insert({
+              'id': userId,
+              'email': email,
+              'full_name': name,
+              'role': 'admin',
+              'position_id': positionId,
+            });
+            debugPrint('✅ Admin user record created manually');
+          } else if (userRecord['position_id'] == null && positionId.isNotEmpty) {
+            await SupabaseService.client
+                .from('users')
+                .update({'position_id': positionId})
+                .eq('id', userId);
+            debugPrint('✅ Updated admin user position_id');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error verifying/creating admin user record: $e');
+        }
+      }
+
+      try {
+        await resetPassword(email);
+        debugPrint('✅ Password reset email sent to invited admin: $email');
+      } catch (e) {
+        debugPrint('⚠️ Error sending password reset email: $e');
+      }
+
+      return userId;
+    } catch (e) {
+      debugPrint('❌ Error creating admin auth account: $e');
+
+      _user = currentAdminUser;
+      _userRole = currentAdminRole;
+
+      if (currentAdminSession != null) {
+        try {
+          await SupabaseService.client.auth.setSession(
+            currentAdminSession.accessToken,
+          );
+          debugPrint('✅ Admin session restored after error');
+        } catch (restoreError) {
+          debugPrint('⚠️ Could not restore session after error: $restoreError');
+          try {
+            await SupabaseService.client.auth.refreshSession();
+            debugPrint('✅ Session refreshed after error');
+          } catch (refreshError) {
+            debugPrint('❌ Could not refresh session after error: $refreshError');
+          }
+        }
+      }
+
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  bool _isAdminEmailAllowed(String email) {
+    return email.endsWith('@royalgulf.ae') ||
+        email.endsWith('@mekar.ae') ||
+        email.endsWith('@gmail.com');
   }
 
 

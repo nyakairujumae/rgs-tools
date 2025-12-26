@@ -5,6 +5,8 @@ import '../models/user_role.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
+import '../models/admin_position.dart';
+import '../services/admin_position_service.dart';
 
 class AdminRoleManagementScreen extends StatefulWidget {
   const AdminRoleManagementScreen({super.key});
@@ -18,17 +20,83 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
   bool _isLoading = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _inviteNameController = TextEditingController();
+  final TextEditingController _inviteEmailController = TextEditingController();
+  List<AdminPosition> _positions = [];
+  bool _isLoadingPositions = false;
+  String? _selectedPositionId;
+  bool _canManageAdmins = false;
+  bool _isCheckingPermissions = false;
 
   @override
   void initState() {
     super.initState();
     _loadUsers();
+    _loadPositions();
+    _loadAdminPermissions();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _inviteNameController.dispose();
+    _inviteEmailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAdminPermissions() async {
+    setState(() {
+      _isCheckingPermissions = true;
+    });
+
+    try {
+      final userId = context.read<AuthProvider>().userId;
+      if (userId == null) {
+        setState(() {
+          _canManageAdmins = false;
+        });
+        return;
+      }
+
+      final canManageAdmins = await AdminPositionService.userHasPermission(
+        userId,
+        'can_manage_admins',
+      );
+      if (!mounted) return;
+      setState(() {
+        _canManageAdmins = canManageAdmins;
+      });
+    } catch (e) {
+      debugPrint('❌ Error checking admin permissions: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingPermissions = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadPositions() async {
+    setState(() {
+      _isLoadingPositions = true;
+    });
+
+    try {
+      final positions = await AdminPositionService.getAllPositions();
+      setState(() {
+        _positions = positions;
+        if (_positions.isNotEmpty && _selectedPositionId == null) {
+          _selectedPositionId = _positions.first.id;
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ Error loading positions: $e');
+    } finally {
+      setState(() {
+        _isLoadingPositions = false;
+      });
+    }
   }
 
   Future<void> _loadUsers() async {
@@ -119,6 +187,11 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
         actions: [
+          if (_canManageAdmins)
+            IconButton(
+              icon: Icon(Icons.person_add_alt_1),
+              onPressed: _showInviteAdminDialog,
+            ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadUsers,
@@ -376,6 +449,141 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
         ],
       ),
     );
+  }
+
+  void _showInviteAdminDialog() {
+    if (!_canManageAdmins) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You do not have permission to invite admins.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _inviteNameController.clear();
+    _inviteEmailController.clear();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: theme.cardTheme.color,
+          title: Text(
+            'Invite Admin',
+            style: AppTheme.heading3.copyWith(color: theme.textTheme.bodyLarge?.color),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _inviteNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _inviteEmailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _isLoadingPositions
+                    ? const CircularProgressIndicator()
+                    : DropdownButtonFormField<String>(
+                        value: _selectedPositionId,
+                        items: _positions
+                            .map(
+                              (position) => DropdownMenuItem(
+                                value: position.id,
+                                child: Text(position.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPositionId = value;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Position',
+                        ),
+                      ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _inviteAdmin,
+              child: const Text('Send Invite'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _inviteAdmin() async {
+    if (!_canManageAdmins) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You do not have permission to invite admins.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final name = _inviteNameController.text.trim();
+    final email = _inviteEmailController.text.trim();
+    final positionId = _selectedPositionId;
+
+    if (name.isEmpty || email.isEmpty || positionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter name, email, and position'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.createAdminAuthAccount(
+        email: email,
+        name: name,
+        positionId: positionId,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Invite sent to $email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending invite: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showRoleChangeDialog(

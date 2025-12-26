@@ -279,6 +279,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     try {
       final authProvider = context.read<AuthProvider>();
       
+      if (role == UserRole.admin) {
+        final bootstrapAllowed = await authProvider.canBootstrapAdmin();
+        if (!bootstrapAllowed) {
+          if (!mounted) return;
+          AuthErrorHandler.showErrorSnackBar(
+            context,
+            'Admin registration is closed. Please request an admin invite.',
+          );
+          return;
+        }
+      }
+
       if (isOAuthUser) {
         // OAuth user - assign role directly
         await authProvider.assignRoleToOAuthUser(role);
