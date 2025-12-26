@@ -881,22 +881,66 @@ class AuthProvider with ChangeNotifier {
                 );
           
             debugPrint('✅ Created pending approval for technician: $email');
-            
-            // Send push notification to admins about new registration
-            try {
-              await PushNotificationService.sendToAdmins(
-                title: 'New User Registration',
-                body: '$name has registered and is waiting for approval',
-                data: {
-                  'type': 'new_registration',
+          }
+          
+          // Create admin notification and send push notification for new registration
+          // This should happen whether we created a new approval or updated an existing one
+          try {
+            debugPrint('📧 Creating admin notification for new registration...');
+            await SupabaseService.client.rpc(
+              'create_admin_notification',
+              params: {
+                'p_title': 'New User Registration',
+                'p_message': '$name has registered and is waiting for approval',
+                'p_technician_name': name.toUpperCase(),
+                'p_technician_email': email,
+                'p_type': 'new_registration',
+                'p_data': {
                   'user_id': _user!.id,
                   'email': email,
                 },
-              );
-              debugPrint('✅ Push notification sent to admins for new registration');
-            } catch (pushError) {
-              debugPrint('⚠️ Could not send push notification for new registration: $pushError');
+              },
+            );
+            debugPrint('✅ Admin notification created in notification center');
+          } catch (notifError) {
+            debugPrint('⚠️ Could not create admin notification: $notifError');
+            // Fallback: Try direct insert
+            try {
+              await SupabaseService.client
+                  .from('admin_notifications')
+                  .insert({
+                    'title': 'New User Registration',
+                    'message': '$name has registered and is waiting for approval',
+                    'technician_name': name.toUpperCase(),
+                    'technician_email': email,
+                    'type': 'new_registration',
+                    'is_read': false,
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'data': {
+                      'user_id': _user!.id,
+                      'email': email,
+                    },
+                  });
+              debugPrint('✅ Admin notification created via direct insert');
+            } catch (insertError) {
+              debugPrint('⚠️ Could not create admin notification via direct insert: $insertError');
             }
+          }
+          
+          // Send push notification to admins
+          try {
+            await PushNotificationService.sendToAdmins(
+              title: 'New User Registration',
+              body: '$name has registered and is waiting for approval',
+              data: {
+                'type': 'new_registration',
+                'user_id': _user!.id,
+                'email': email,
+              },
+            );
+            debugPrint('✅ Push notification sent to admins for new registration');
+          } catch (pushError) {
+            debugPrint('⚠️ Could not send push notification for new registration: $pushError');
           }
           
           // IMPORTANT: Delete any user record that might have been created by the trigger
