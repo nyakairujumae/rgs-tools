@@ -265,7 +265,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       Container(
                         padding: EdgeInsets.all(context.spacingLarge),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.cardBackground,
                           borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                           border: Border.all(
                             color: (isRejected ? Colors.red : Colors.orange)
@@ -287,7 +287,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                                   'Current Status',
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF1A1A1A),
+                                    color: theme.colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -454,6 +454,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ),
