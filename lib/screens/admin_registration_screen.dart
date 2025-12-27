@@ -7,7 +7,6 @@ import '../theme/theme_extensions.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import '../utils/responsive_helper.dart';
-import '../models/admin_position.dart';
 import '../services/admin_position_service.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
@@ -27,10 +26,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _selectedPositionId;
-  
-  List<AdminPosition> _positions = [];
-  bool _isLoadingPositions = false;
+  String? _superAdminPositionId;
+  bool _isLoadingPosition = false;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -38,7 +35,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPositions();
+    _loadSuperAdminPosition();
   }
 
   @override
@@ -50,33 +47,33 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     super.dispose();
   }
 
-  Future<void> _loadPositions() async {
+  Future<void> _loadSuperAdminPosition() async {
     setState(() {
-      _isLoadingPositions = true;
+      _isLoadingPosition = true;
     });
 
     try {
-      final positions = await AdminPositionService.getAllPositions();
+      final superAdmin = await AdminPositionService.getPositionByName('Super Admin');
+      final fallbackAdmin = superAdmin ?? await AdminPositionService.getPositionByName('CEO');
       setState(() {
-        _positions = positions;
-        // Set default to first position if available
-        if (_positions.isNotEmpty && _selectedPositionId == null) {
-          _selectedPositionId = _positions.first.id;
-        }
+        _superAdminPositionId = fallbackAdmin?.id;
       });
+      if (_superAdminPositionId == null) {
+        debugPrint('❌ Super Admin position not found');
+      }
     } catch (e) {
-      debugPrint('❌ Error loading positions: $e');
+      debugPrint('❌ Error loading Super Admin position: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading positions: $e'),
+            content: Text('Error loading Super Admin position: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } finally {
       setState(() {
-        _isLoadingPositions = false;
+        _isLoadingPosition = false;
       });
     }
   }
@@ -185,157 +182,63 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
                       SizedBox(height: context.spacingMedium), // 12px
 
-                      // Position Field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: context.cardBackground,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.black.withOpacity(0.04),
-                            width: 0.5,
+                      if (_isLoadingPosition) ...[
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.secondaryColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Loading admin role...',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: context.spacingMedium),
+                      ] else if (_superAdminPositionId == null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: context.cardBackground,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Super Admin position not configured. Please run the admin positions migration.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: _isLoadingPositions
-                            ? Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: context.cardBackground,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.black.withOpacity(0.04),
-                                    width: 0.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          AppTheme.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Loading positions...',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : _positions.isEmpty
-                                ? Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: context.cardBackground,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.orange.withOpacity(0.3),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.warning_amber_rounded,
-                                          color: Colors.orange,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            'No positions available. Please ensure the database migration has been run.',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : DropdownButtonFormField<String>(
-                                    value: _selectedPositionId,
-                                    decoration: context.chatGPTInputDecoration.copyWith(
-                                      labelText: 'Admin Position',
-                                      hintText: 'Select your position',
-                                      prefixIcon: Icon(
-                                        Icons.work_outline,
-                                        size: 22,
-                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                      ),
-                                      prefixIconConstraints: const BoxConstraints(minWidth: 52),
-                                      filled: true,
-                                      fillColor: Colors.transparent,
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                    ),
-                                    items: _positions.map((AdminPosition position) {
-                                      return DropdownMenuItem<String>(
-                                        value: position.id,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              position.name,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: theme.colorScheme.onSurface,
-                                              ),
-                                            ),
-                                            if (position.description != null && position.description!.isNotEmpty)
-                                              Text(
-                                                position.description!,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: _positions.isNotEmpty
-                                        ? (String? value) {
-                                            setState(() {
-                                              _selectedPositionId = value;
-                                            });
-                                          }
-                                        : null,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please select your position';
-                                      }
-                                      return null;
-                                    },
-                                    dropdownColor: Theme.of(context).colorScheme.surface,
-                                    menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(20),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                    icon: Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                      size: 18,
-                                    ),
-                                  ),
-                      ),
-
-                      SizedBox(height: context.spacingMedium), // 12px
+                        SizedBox(height: context.spacingMedium),
+                      ],
 
                       // Password Field
                       ThemedTextField(
@@ -481,10 +384,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     try {
       final authProvider = context.read<AuthProvider>();
 
-      if (_selectedPositionId == null) {
+      if (_superAdminPositionId == null) {
         AuthErrorHandler.showErrorSnackBar(
           context,
-          'Please select your admin position',
+          'Super Admin position is not configured yet.',
         );
         setState(() {
           _isLoading = false;
@@ -497,7 +400,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
-        _selectedPositionId!,
+        _superAdminPositionId!,
       );
 
       debugPrint('✅ Admin registration method completed successfully');

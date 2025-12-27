@@ -39,6 +39,23 @@ class AdminPositionService {
     }
   }
 
+  /// Get position by name
+  static Future<AdminPosition?> getPositionByName(String positionName) async {
+    try {
+      final response = await SupabaseService.client
+          .from('admin_positions')
+          .select('*, position_permissions(*)')
+          .eq('name', positionName)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return AdminPosition.fromJson(response);
+    } catch (e) {
+      debugPrint('❌ Error loading position by name: $e');
+      return null;
+    }
+  }
+
   /// Get user's position
   static Future<AdminPosition?> getUserPosition(String userId) async {
     try {
@@ -89,6 +106,5 @@ class AdminPositionService {
     }
   }
 }
-
 
 

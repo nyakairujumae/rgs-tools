@@ -35,6 +35,7 @@ import 'compliance_screen.dart';
 import 'approval_workflows_screen.dart';
 import 'shared_tools_screen.dart';
 import 'admin_role_management_screen.dart';
+import 'admin_management_screen.dart';
 import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
@@ -42,6 +43,8 @@ import 'technician_my_tools_screen.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../models/user_role.dart';
+import '../models/admin_position.dart';
+import '../services/admin_position_service.dart';
 import 'package:intl/intl.dart';
 
 class AdminHomeScreen extends StatefulWidget {
@@ -127,6 +130,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   bool _isDisposed = false;
   late List<Widget> _screens;
   Timer? _notificationRefreshTimer;
+  final TextEditingController _inviteNameController = TextEditingController();
+  final TextEditingController _inviteEmailController = TextEditingController();
+  List<AdminPosition> _positions = [];
+  bool _isLoadingPositions = false;
+  String? _selectedPositionId;
+  bool _canManageAdmins = false;
 
   @override
   void initState() {
@@ -151,6 +160,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LastRouteService.saveLastRoute('/admin');
       _loadData();
+      _loadInviteAdminData();
       // Refresh notifications every 30 seconds to update badges in real-time
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted && !_isDisposed) {
@@ -190,7 +200,61 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     WidgetsBinding.instance.removeObserver(this);
     _notificationRefreshTimer?.cancel();
     _isDisposed = true;
+    _inviteNameController.dispose();
+    _inviteEmailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInviteAdminData() async {
+    try {
+      final userId = context.read<AuthProvider>().userId;
+      if (userId == null) {
+        setState(() {
+          _canManageAdmins = false;
+        });
+        return;
+      }
+
+      final canManageAdmins = await AdminPositionService.userHasPermission(
+        userId,
+        'can_manage_admins',
+      );
+      if (!mounted) return;
+      setState(() {
+        _canManageAdmins = canManageAdmins;
+      });
+
+      if (canManageAdmins) {
+        await _loadPositions();
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading admin invite data: $e');
+    }
+  }
+
+  Future<void> _loadPositions() async {
+    setState(() {
+      _isLoadingPositions = true;
+    });
+
+    try {
+      final positions = await AdminPositionService.getAllPositions();
+      if (!mounted) return;
+      setState(() {
+        _positions = positions;
+        if (_positions.isNotEmpty && _selectedPositionId == null) {
+          _selectedPositionId = _positions.first.id;
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ Error loading admin positions: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPositions = false;
+        });
+      }
+    }
   }
 
   @override
@@ -512,95 +576,133 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: context.cardDecoration,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Clean, minimal avatar
-          Container(
-            width: isDesktop ? 48 : 56,
-            height: isDesktop ? 48 : 56,
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: TextStyle(
-                  fontSize: isDesktop ? 18 : 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.secondaryColor,
-                  letterSpacing: 0.5,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Clean, minimal avatar
+              Container(
+                width: isDesktop ? 48 : 56,
+                height: isDesktop ? 48 : 56,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: isDesktop ? 18 : 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.secondaryColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(width: isDesktop ? 16 : 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Name with subtle edit button
-                Row(
+              SizedBox(width: isDesktop ? 16 : 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        fullName,
-                        style: TextStyle(
-                          fontSize: isDesktop ? 17 : 19,
-                          fontWeight: FontWeight.w600,
-                          color: theme.textTheme.bodyLarge?.color,
-                          letterSpacing: -0.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () =>
-                            _showEditNameDialog(sheetContext, parentContext, authProvider),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Icon(
-                            Icons.edit_outlined,
-                            size: isDesktop ? 16 : 18,
-                            color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    // Name with subtle edit button
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fullName,
+                            style: TextStyle(
+                              fontSize: isDesktop ? 17 : 19,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyLarge?.color,
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () =>
+                                _showEditNameDialog(sheetContext, parentContext, authProvider),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Icon(
+                                Icons.edit_outlined,
+                                size: isDesktop ? 16 : 18,
+                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: isDesktop ? 6 : 8),
+                    // Clean role badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        roleLabel,
+                        style: TextStyle(
+                          fontSize: isDesktop ? 11 : 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.secondaryColor,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: isDesktop ? 6 : 8),
-                // Clean role badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    roleLabel,
-                    style: TextStyle(
-                      fontSize: isDesktop ? 11 : 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.secondaryColor,
-                      letterSpacing: 0.2,
+              ),
+            ],
+          ),
+          if (authProvider.isAdmin && _canManageAdmins) ...[
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  Navigator.push(
+                    parentContext,
+                    MaterialPageRoute(
+                      builder: (_) => const AdminManagementScreen(),
                     ),
+                  );
+                },
+                icon: const Icon(Icons.person_add_alt_1),
+                label: const Text('Add Admin'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.secondaryColor,
+                  side: BorderSide(
+                    color: AppTheme.secondaryColor.withOpacity(0.4),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 14 : 16,
+                    vertical: isDesktop ? 10 : 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
+
 
   void _showEditNameDialog(
       BuildContext sheetContext, BuildContext parentContext, AuthProvider authProvider) {

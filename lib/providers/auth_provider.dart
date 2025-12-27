@@ -319,6 +319,10 @@ class AuthProvider with ChangeNotifier {
             debugPrint('✅ Loaded user role from local storage: ${_userRole.value}');
           }
         }
+
+        if (_userRole == UserRole.admin) {
+          await _ensureAdminPosition();
+        }
         
         // Register FCM token on app start (non-blocking)
         try {
@@ -430,6 +434,47 @@ class AuthProvider with ChangeNotifier {
       // If check fails, assume email is available
       // The signUp will fail with proper error if email actually exists
       return true;
+    }
+  }
+
+  Future<void> _ensureAdminPosition() async {
+    try {
+      if (_user == null) return;
+
+      final userRecord = await SupabaseService.client
+          .from('users')
+          .select('id, position_id, role')
+          .eq('id', _user!.id)
+          .maybeSingle();
+
+      if (userRecord == null) return;
+      if (userRecord['role'] != 'admin') return;
+      if (userRecord['position_id'] != null) return;
+
+      final superAdmin = await SupabaseService.client
+          .from('admin_positions')
+          .select('id')
+          .eq('name', 'Super Admin')
+          .maybeSingle();
+
+      final fallback = superAdmin ??
+          await SupabaseService.client
+              .from('admin_positions')
+              .select('id')
+              .eq('name', 'CEO')
+              .maybeSingle();
+
+      final positionId = fallback?['id']?.toString();
+      if (positionId == null || positionId.isEmpty) return;
+
+      await SupabaseService.client
+          .from('users')
+          .update({'position_id': positionId})
+          .eq('id', _user!.id);
+
+      debugPrint('✅ Auto-assigned admin position_id: $positionId');
+    } catch (e) {
+      debugPrint('⚠️ Could not auto-assign admin position: $e');
     }
   }
 

@@ -182,58 +182,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CircleAvatar(
-            radius: isDesktop ? 30 : 32,
-            backgroundColor: AppTheme.secondaryColor.withOpacity(0.2),
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontSize: isDesktop ? 18 : 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.secondaryColor,
-              ),
-            ),
-          ),
-          SizedBox(width: isDesktop ? 18 : 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fullName,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: isDesktop ? 30 : 32,
+                backgroundColor: AppTheme.secondaryColor.withOpacity(0.2),
+                child: Text(
+                  initials,
                   style: TextStyle(
-                    fontSize: isDesktop ? 16 : 18,
-                    fontWeight: FontWeight.w600,
-                    color: theme.textTheme.bodyLarge?.color,
+                    fontSize: isDesktop ? 18 : 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.secondaryColor,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: isDesktop ? 8 : 10),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 10 : 12,
-                    vertical: isDesktop ? 4 : 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    roleLabel,
-                    style: TextStyle(
-                      fontSize: isDesktop ? 11 : 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.secondaryColor,
+              ),
+              SizedBox(width: isDesktop ? 18 : 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName,
+                      style: TextStyle(
+                        fontSize: isDesktop ? 16 : 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    SizedBox(height: isDesktop ? 8 : 10),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 10 : 12,
+                        vertical: isDesktop ? 4 : 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        roleLabel,
+                        style: TextStyle(
+                          fontSize: isDesktop ? 11 : 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          
         ],
       ),
     );
@@ -277,6 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+
 
   String _formatMemberSince(String? createdAt) {
     if (createdAt == null) return 'Unknown';
