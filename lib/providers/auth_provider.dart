@@ -18,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _isInitialized = false;
   bool _isLoggingOut = false;
+  bool _suppressAuthStateChanges = false;
 
   User? get user => _user;
   UserRole get userRole => _userRole;
@@ -279,6 +280,10 @@ class AuthProvider with ChangeNotifier {
         // CRITICAL: Don't process auth state changes during logout
         if (_isLoggingOut) {
           print('🔍 Ignoring auth state change during logout');
+          return;
+        }
+        if (_suppressAuthStateChanges) {
+          debugPrint('🔍 Suppressing auth state change during account creation');
           return;
         }
         _user = data.session?.user;
@@ -1562,6 +1567,7 @@ _isLoading = false;
     final currentAdminSession = SupabaseService.client.auth.currentSession;
     final currentAdminRole = _userRole;
     
+    _suppressAuthStateChanges = true;
     try {
       debugPrint('🔍 Creating auth account for admin-added technician: $email');
       debugPrint('🔍 Current admin user: ${currentAdminUser?.id ?? "null"}');
@@ -1721,6 +1727,8 @@ _isLoading = false;
       
       notifyListeners();
       rethrow;
+    } finally {
+      _suppressAuthStateChanges = false;
     }
   }
 
@@ -1737,119 +1745,35 @@ _isLoading = false;
       throw Exception('Only admins can invite other admins.');
     }
 
-    final currentAdminUser = _user;
-    final currentAdminSession = SupabaseService.client.auth.currentSession;
-    final currentAdminRole = _userRole;
-
     try {
-      debugPrint('🔍 Creating auth account for invited admin: $email');
-      debugPrint('🔍 Current admin user: ${currentAdminUser?.id ?? "null"}');
-
-      final emailAvailable = await isEmailAvailable(email);
-      if (!emailAvailable) {
-        throw Exception('This email is already registered. The admin can log in with their existing account.');
-      }
-
-      final randomPassword = _generateSecurePassword();
-
-      final response = await signUp(
-        email: email,
-        password: randomPassword,
-        fullName: name,
-        role: UserRole.admin,
-        positionId: positionId,
+      debugPrint('🔍 Inviting admin via edge function: $email');
+      final response = await SupabaseService.client.functions.invoke(
+        'invite-admin',
+        body: {
+          'email': email,
+          'full_name': name,
+          'position_id': positionId,
+        },
       );
 
-      if (response.user == null) {
-        throw Exception('Failed to create auth account for admin');
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? (errorData['error']?.toString() ??
+                errorData['message']?.toString() ??
+                'Invite failed')
+            : (errorData?.toString() ?? 'Invite failed');
+        throw Exception(errorMessage);
       }
 
-      final userId = response.user!.id;
-
-      _user = currentAdminUser;
-      _userRole = currentAdminRole;
-
-      if (currentAdminSession != null) {
-        try {
-          await SupabaseService.client.auth.setSession(
-            currentAdminSession.accessToken,
-          );
-          debugPrint('✅ Admin session restored successfully');
-        } catch (e) {
-          debugPrint('⚠️ Could not restore session: $e');
-          try {
-            await SupabaseService.client.auth.refreshSession();
-            debugPrint('✅ Session refreshed instead');
-          } catch (refreshError) {
-            debugPrint('❌ Could not refresh session: $refreshError');
-          }
-        }
+      final data = response.data;
+      if (data is Map && data['user_id'] != null) {
+        return data['user_id'].toString();
       }
 
-      notifyListeners();
-
-      if (response.session != null) {
-        try {
-          await Future.delayed(const Duration(milliseconds: 500));
-          final userRecord = await SupabaseService.client
-              .from('users')
-              .select('id, position_id')
-              .eq('id', userId)
-              .maybeSingle();
-
-          if (userRecord == null) {
-            await SupabaseService.client.from('users').insert({
-              'id': userId,
-              'email': email,
-              'full_name': name,
-              'role': 'admin',
-              'position_id': positionId,
-            });
-            debugPrint('✅ Admin user record created manually');
-          } else if (userRecord['position_id'] == null && positionId.isNotEmpty) {
-            await SupabaseService.client
-                .from('users')
-                .update({'position_id': positionId})
-                .eq('id', userId);
-            debugPrint('✅ Updated admin user position_id');
-          }
-        } catch (e) {
-          debugPrint('⚠️ Error verifying/creating admin user record: $e');
-        }
-      }
-
-      try {
-        await resetPassword(email);
-        debugPrint('✅ Password reset email sent to invited admin: $email');
-      } catch (e) {
-        debugPrint('⚠️ Error sending password reset email: $e');
-      }
-
-      return userId;
+      throw Exception('Invite failed - no user id returned');
     } catch (e) {
-      debugPrint('❌ Error creating admin auth account: $e');
-
-      _user = currentAdminUser;
-      _userRole = currentAdminRole;
-
-      if (currentAdminSession != null) {
-        try {
-          await SupabaseService.client.auth.setSession(
-            currentAdminSession.accessToken,
-          );
-          debugPrint('✅ Admin session restored after error');
-        } catch (restoreError) {
-          debugPrint('⚠️ Could not restore session after error: $restoreError');
-          try {
-            await SupabaseService.client.auth.refreshSession();
-            debugPrint('✅ Session refreshed after error');
-          } catch (refreshError) {
-            debugPrint('❌ Could not refresh session after error: $refreshError');
-          }
-        }
-      }
-
-      notifyListeners();
+      debugPrint('❌ Error inviting admin: $e');
       rethrow;
     }
   }

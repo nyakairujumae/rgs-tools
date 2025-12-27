@@ -71,10 +71,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
 
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
-        _isSuccess = true;
+        if (widget.type != 'invite') {
+          _isSuccess = true;
+        }
       });
 
       // Show success message
@@ -106,21 +108,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
       );
 
-      // Wait a moment then navigate to login
+      // Wait a moment then navigate
       await Future.delayed(const Duration(seconds: 2));
       
       if (!mounted) return;
       
-      // Sign out to clear the reset session
-      await authProvider.signOut();
-      
-      if (!mounted) return;
-      
-      // Navigate to login
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/login',
-        (route) => false,
-      );
+      if (widget.type == 'invite') {
+        // Keep the session and route directly to the right home screen.
+        await authProvider.initialize();
+        if (!mounted) return;
+
+        final navigator = Navigator.of(context);
+        final isApproved = await authProvider.checkApprovalStatus();
+
+        if (authProvider.isAdmin) {
+          navigator.pushNamedAndRemoveUntil('/admin', (route) => false);
+        } else if (authProvider.isTechnician && isApproved == true) {
+          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+        } else {
+          navigator.pushNamedAndRemoveUntil('/pending-approval', (route) => false);
+        }
+      } else {
+        // Sign out to clear the reset session
+        await authProvider.signOut();
+        
+        if (!mounted) return;
+        
+        // Navigate to login
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -138,45 +157,49 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final isInviteFlow = widget.type == 'invite';
 
     if (_isSuccess) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 24,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 80,
-                    color: Colors.green,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                  Text(
-                    'Password Reset Successful!',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+      return WillPopScope(
+        onWillPop: () async => !isInviteFlow,
+        child: Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: ResponsiveHelper.getResponsivePadding(
+                  context,
+                  horizontal: 24,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 80,
+                      color: Colors.green,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Text(
-                    'Your password has been reset successfully. You can now sign in with your new password.',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    Text(
+                      'Password Reset Successful!',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    Text(
+                      'Your password has been reset successfully. You can now sign in with your new password.',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -184,72 +207,75 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: 24,
-            vertical: 40,
-          ),
-          child: Column(
-            children: [
-              // Back Button
-              Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.chevron_left,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
-
-              // Branding Section
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.lock_reset,
-                    size: 64,
-                    color: AppTheme.secondaryColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Text(
-                    'Reset Password',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+    return WillPopScope(
+      onWillPop: () async => !isInviteFlow,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: ResponsiveHelper.getResponsivePadding(
+              context,
+              horizontal: 24,
+              vertical: 40,
+            ),
+            child: Column(
+              children: [
+                // Back Button
+                if (!isInviteFlow)
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.chevron_left,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                  Text(
-                    'Enter your new password below',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
 
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
 
-              // Reset Password Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                // Branding Section
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(
+                      Icons.lock_reset,
+                      size: 64,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                    Text(
+                      'Reset Password',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                    Text(
+                      'Enter your new password below',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 40)),
+
+                // Reset Password Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     // New Password Field
                     TextFormField(
                       controller: _passwordController,
@@ -449,36 +475,37 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
 
                     // Back to Login
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/login',
-                          (route) => false,
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: ResponsiveHelper.getResponsivePadding(
-                          context,
-                          vertical: 8,
+                    if (!isInviteFlow)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            '/login',
+                            (route) => false,
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: ResponsiveHelper.getResponsivePadding(
+                            context,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: Text(
+                          '← Back to Login',
+                          style: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        '← Back to Login',
-                        style: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-

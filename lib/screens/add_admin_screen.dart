@@ -99,15 +99,12 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
         final adminId = widget.existingAdmin?['id']?.toString();
         if (adminId == null) throw Exception('Admin not found');
 
-        await SupabaseService.client
-            .from('users')
-            .update({
-              'full_name': name,
-              'status': _status,
-              'position_id': positionId,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', adminId);
+        await SupabaseService.client.rpc('update_admin_user', params: {
+          'p_user_id': adminId,
+          'p_full_name': name,
+          'p_status': _status,
+          'p_position_id': positionId,
+        });
       } else {
         final userId = await authProvider.createAdminAuthAccount(
           email: email,
@@ -116,15 +113,12 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
         );
 
         if (userId != null) {
-          await SupabaseService.client
-              .from('users')
-              .update({
-                'full_name': name,
-                'status': _status,
-                'position_id': positionId,
-                'updated_at': DateTime.now().toIso8601String(),
-              })
-              .eq('id', userId);
+          await SupabaseService.client.rpc('update_admin_user', params: {
+            'p_user_id': userId,
+            'p_full_name': name,
+            'p_status': _status,
+            'p_position_id': positionId,
+          });
         }
       }
 

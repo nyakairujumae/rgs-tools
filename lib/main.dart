@@ -666,12 +666,31 @@ class HvacToolsManagerApp extends StatelessWidget {
               if (settings.name != null) {
                 final uriString = settings.name!;
                 print('🔐 Checking deep link: $uriString');
+
+                Map<String, String> extractParams(Uri uri) {
+                  final params = <String, String>{};
+                  params.addAll(uri.queryParameters);
+
+                  if (uri.fragment.isNotEmpty) {
+                    final fragment = uri.fragment.startsWith('?')
+                        ? uri.fragment.substring(1)
+                        : uri.fragment;
+                    try {
+                      params.addAll(Uri.splitQueryString(fragment));
+                    } catch (e) {
+                      print('⚠️ Could not parse fragment params: $e');
+                    }
+                  }
+
+                  return params;
+                }
                 
                 // Check if this is an auth callback URL (email confirmation, password reset, or OAuth)
                 final isAuthCallback = uriString.contains('auth/callback') || 
                                       uriString.contains('access_token') ||
                                       uriString.contains('type=signup') ||
                                       uriString.contains('type=recovery') ||
+                                      uriString.contains('type=invite') ||
                                       uriString.contains('type=oauth') ||
                                       uriString.contains('provider=') ||
                                       uriString.contains('email-confirmation');
@@ -679,10 +698,11 @@ class HvacToolsManagerApp extends StatelessWidget {
                 if (isAuthCallback) {
                   print('🔐 Auth deep link detected: $uriString');
                   final uri = Uri.parse(uriString);
+                  final params = extractParams(uri);
                 
                 // Handle email confirmation callback
-                  final type = uri.queryParameters['type'];
-                  final hasAccessToken = uri.queryParameters.containsKey('access_token');
+                  final type = params['type'];
+                  final hasAccessToken = params.containsKey('access_token');
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
                   
@@ -825,11 +845,11 @@ class HvacToolsManagerApp extends StatelessWidget {
                       },
                       settings: RouteSettings(name: '/email-confirmation'),
                     );
-                  } else if (type == 'recovery' || uriString.contains('reset-password')) {
+                  } else if (type == 'recovery' || type == 'invite' || uriString.contains('reset-password')) {
                     // Password reset
                     print('🔐 Password reset route detected');
-                    final accessToken = uri.queryParameters['access_token'];
-                    final refreshToken = uri.queryParameters['refresh_token'];
+                    final accessToken = params['access_token'];
+                    final refreshToken = params['refresh_token'];
                     
                     return MaterialPageRoute(
                       builder: (context) => ResetPasswordScreen(
@@ -1036,9 +1056,20 @@ class HvacToolsManagerApp extends StatelessWidget {
               if (settings.name != null && settings.name!.contains('reset-password')) {
                 print('🔐 Password reset route detected: ${settings.name}');
                 final uri = Uri.parse(settings.name!);
-                final accessToken = uri.queryParameters['access_token'];
-                final refreshToken = uri.queryParameters['refresh_token'];
-                final type = uri.queryParameters['type'];
+                final params = <String, String>{}
+                  ..addAll(uri.queryParameters)
+                  ..addAll(
+                    uri.fragment.isNotEmpty
+                        ? Uri.splitQueryString(
+                            uri.fragment.startsWith('?')
+                                ? uri.fragment.substring(1)
+                                : uri.fragment,
+                          )
+                        : <String, String>{},
+                  );
+                final accessToken = params['access_token'];
+                final refreshToken = params['refresh_token'];
+                final type = params['type'];
                 
                 return MaterialPageRoute(
                   builder: (context) => ResetPasswordScreen(
