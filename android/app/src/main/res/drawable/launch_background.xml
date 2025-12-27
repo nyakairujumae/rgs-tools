@@ -2,14 +2,10 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Black background - must be first item -->
     <item android:drawable="@color/launch_background_color"/>
-    <!-- Centered logo sized to match iOS (60dp = iOS 60 points) - 120x120 image scaled down for sharpness -->
+    <!-- Centered logo sized to 60dp (scales 120x120px image down) - sits directly on black background -->
     <item
         android:width="60dp"
         android:height="60dp"
-        android:gravity="center">
-        <bitmap 
-            android:gravity="center" 
-            android:src="@drawable/splash_android"
-            android:tileMode="disabled"/>
-    </item>
+        android:gravity="center"
+        android:drawable="@drawable/splash_android"/>
 </layer-list>
