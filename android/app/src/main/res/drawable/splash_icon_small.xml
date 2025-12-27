@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Logo sized to 60dp (scales 120x120px image down) - sits directly on black background -->
-    <item
-        android:width="60dp"
-        android:height="60dp"
-        android:gravity="center"
-        android:drawable="@drawable/splash_android"/>
-</layer-list>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_android"
+    android:insetLeft="30dp"
+    android:insetTop="30dp"
+    android:insetRight="30dp"
+    android:insetBottom="30dp"/>
