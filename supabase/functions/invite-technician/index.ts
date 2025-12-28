@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const INVITE_REDIRECT_URL = Deno.env.get("INVITE_REDIRECT_URL");
+const DEFAULT_REDIRECT_URL = "com.rgs.app://auth/callback";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -102,6 +103,7 @@ Deno.serve(async (req) => {
     );
   }
 
+  const redirectTo = INVITE_REDIRECT_URL?.trim() || DEFAULT_REDIRECT_URL;
   const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
     email,
     {
@@ -110,7 +112,7 @@ Deno.serve(async (req) => {
         role: "technician",
         department: department ?? null,
       },
-      redirectTo: INVITE_REDIRECT_URL ?? undefined,
+      redirectTo,
     },
   );
 
