@@ -33,12 +33,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   bool _isSuccess = false;
-  late final Future<void> _sessionReady;
 
   @override
   void initState() {
     super.initState();
-    _sessionReady = _ensureSessionFromTokens();
   }
 
   @override
@@ -48,7 +46,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _ensureSessionFromTokens() async {
+  Future<void> _ensureSessionFromTokens({bool showErrors = false}) async {
     final refreshToken = widget.refreshToken;
     final accessToken = widget.accessToken;
     final token = refreshToken ?? accessToken;
@@ -70,6 +68,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           );
         final tokenHash = params['token'];
         final type = params['type'];
+        debugPrint('🔐 Reset deep link params: type=$type hasToken=${tokenHash != null}');
         if (tokenHash != null && (type == 'invite' || type == 'recovery')) {
           debugPrint('🔐 Verifying OTP from deep link type=$type');
           await Supabase.instance.client.auth.verifyOTP(
@@ -85,7 +84,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         return;
       } catch (e) {
         debugPrint('❌ Failed to set session from deep link: $e');
-        if (mounted) {
+        if (showErrors && mounted) {
           final errorMessage = AuthErrorHandler.getErrorMessage(e);
           AuthErrorHandler.showErrorSnackBar(context, errorMessage);
         }
@@ -98,7 +97,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       await Supabase.instance.client.auth.setSession(token);
     } catch (e) {
       debugPrint('❌ Failed to set session for password reset: $e');
-      if (mounted) {
+      if (showErrors && mounted) {
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
@@ -123,7 +122,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      await _sessionReady;
+      await _ensureSessionFromTokens(showErrors: true);
       if (Supabase.instance.client.auth.currentSession == null) {
         throw const AuthException('Session expired. Please open the invite link again.');
       }
