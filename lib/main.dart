@@ -608,13 +608,14 @@ class HvacToolsManagerApp extends StatelessWidget {
           // Always render MaterialApp immediately
           // Show UI right away - initialization happens in background
           // The Consumer will rebuild when auth state changes
+          final defaultRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             // Don't use home - let onGenerateRoute handle everything including deep links
-            initialRoute: '/',
+            initialRoute: defaultRoute,
             builder: (context, child) {
               return ResponsiveBreakpoints.builder(
                 breakpoints: [
