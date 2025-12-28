@@ -30,11 +30,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   bool _isSuccess = false;
+  late final Future<void> _sessionReady;
 
   @override
   void initState() {
     super.initState();
-    _ensureSessionFromTokens();
+    _sessionReady = _ensureSessionFromTokens();
   }
 
   @override
@@ -80,6 +81,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
+      await _sessionReady;
+      if (Supabase.instance.client.auth.currentSession == null) {
+        throw const AuthException('Session expired. Please open the invite link again.');
+      }
+
       final authProvider = context.read<AuthProvider>();
       
       // Update password using Supabase
