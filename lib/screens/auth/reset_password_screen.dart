@@ -10,12 +10,14 @@ class ResetPasswordScreen extends StatefulWidget {
   final String? accessToken;
   final String? refreshToken;
   final String? type;
+  final String? deepLink;
 
   const ResetPasswordScreen({
     super.key,
     this.accessToken,
     this.refreshToken,
     this.type,
+    this.deepLink,
   });
 
   @override
@@ -49,7 +51,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final refreshToken = widget.refreshToken;
     final accessToken = widget.accessToken;
     final token = refreshToken ?? accessToken;
-    if (token == null) return;
+    if (token == null) {
+      final deepLink = widget.deepLink;
+      if (deepLink == null || deepLink.isEmpty) return;
+      try {
+        final uri = Uri.parse(deepLink);
+        final sessionResponse = await Supabase.instance.client.auth.getSessionFromUrl(uri);
+        if (sessionResponse.session == null) {
+          throw const AuthException('Session expired. Please open the invite link again.');
+        }
+        return;
+      } catch (e) {
+        debugPrint('❌ Failed to set session from deep link: $e');
+        if (mounted) {
+          final errorMessage = AuthErrorHandler.getErrorMessage(e);
+          AuthErrorHandler.showErrorSnackBar(context, errorMessage);
+        }
+        return;
+      }
+    }
 
     try {
       // Supabase setSession now takes a single refresh token argument

@@ -857,6 +857,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                         accessToken: accessToken,
                         refreshToken: refreshToken,
                         type: type ?? 'recovery',
+                        deepLink: uriString,
                       ),
                       settings: RouteSettings(name: '/reset-password'),
                     );
@@ -1077,6 +1078,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                     accessToken: accessToken,
                     refreshToken: refreshToken,
                     type: type,
+                    deepLink: settings.name,
                   ),
                   settings: RouteSettings(name: '/reset-password'),
                 );
