@@ -126,7 +126,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_isEdit ? 'Admin updated' : 'Admin invited'),
+          content: Text(_isEdit ? 'Admin updated' : 'Admin added'),
           backgroundColor: Colors.green,
         ),
       );
@@ -177,7 +177,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _isEdit ? 'Update admin access' : 'Invite a new admin',
+                      _isEdit ? 'Update admin access' : 'Add a new admin',
                       style: TextStyle(
                         fontSize: 16,
                         color: context.secondaryTextColor,
@@ -272,7 +272,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
-                            child: Text(_isEdit ? 'Save Changes' : 'Send Invite'),
+                            child: Text(_isEdit ? 'Save Changes' : 'Add Admin'),
                           ),
                         ],
                       ),
