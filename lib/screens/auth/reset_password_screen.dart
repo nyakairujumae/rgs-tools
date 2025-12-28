@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../utils/responsive_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:gotrue/gotrue.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? accessToken;
@@ -56,6 +57,27 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (deepLink == null || deepLink.isEmpty) return;
       try {
         final uri = Uri.parse(deepLink);
+        final params = <String, String>{}
+          ..addAll(uri.queryParameters)
+          ..addAll(
+            uri.fragment.isNotEmpty
+                ? Uri.splitQueryString(
+                    uri.fragment.startsWith('?')
+                        ? uri.fragment.substring(1)
+                        : uri.fragment,
+                  )
+                : <String, String>{},
+          );
+        final tokenHash = params['token'];
+        final type = params['type'];
+        if (tokenHash != null && (type == 'invite' || type == 'recovery')) {
+          debugPrint('🔐 Verifying OTP from deep link type=$type');
+          await Supabase.instance.client.auth.verifyOTP(
+            tokenHash: tokenHash,
+            type: type == 'invite' ? OtpType.invite : OtpType.recovery,
+          );
+          return;
+        }
         final sessionResponse = await Supabase.instance.client.auth.getSessionFromUrl(uri);
         if (sessionResponse.session == null) {
           throw const AuthException('Session expired. Please open the invite link again.');
