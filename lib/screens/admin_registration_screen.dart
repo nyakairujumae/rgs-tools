@@ -36,6 +36,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   void initState() {
     super.initState();
     _loadSuperAdminPosition();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBootstrapAccess();
+    });
   }
 
   @override
@@ -75,6 +78,22 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       setState(() {
         _isLoadingPosition = false;
       });
+    }
+  }
+
+  Future<void> _checkBootstrapAccess() async {
+    final authProvider = context.read<AuthProvider>();
+    final allowed = await authProvider.canBootstrapAdmin();
+    if (!mounted) return;
+    if (!allowed) {
+      AuthErrorHandler.showErrorSnackBar(
+        context,
+        'Admin registration is closed. Please request an admin invite.',
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/role-selection',
+        (route) => false,
+      );
     }
   }
 

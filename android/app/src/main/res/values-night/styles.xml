@@ -2,7 +2,8 @@
 <resources>
     <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
     <!-- Simplified to match iOS: black background with centered logo (even in dark mode) -->
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Use black theme parent to prevent any white flash -->
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
@@ -11,7 +12,7 @@
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <!-- Prevent white screen flash by setting background color immediately -->
+        <!-- Set background color immediately to prevent blank screen -->
         <item name="android:colorBackground">@color/launch_background_color</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.

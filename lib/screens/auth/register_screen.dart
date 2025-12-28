@@ -26,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   UserRole _selectedRole = UserRole.technician;
+  bool _bootstrapAllowed = true;
 
   @override
   void dispose() {
@@ -38,6 +39,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadBootstrapStatus();
+    });
+  }
+
+  Future<void> _loadBootstrapStatus() async {
+    final authProvider = context.read<AuthProvider>();
+    final allowed = await authProvider.canBootstrapAdmin();
+    if (!mounted) return;
+    setState(() {
+      _bootstrapAllowed = allowed;
+      if (!allowed && _selectedRole == UserRole.admin) {
+        _selectedRole = UserRole.technician;
+      }
+    });
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -47,6 +68,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (_selectedRole == UserRole.technician) {
         await _registerTechnician(authProvider);
       } else {
+        if (!_bootstrapAllowed) {
+          throw Exception('Admin registration is closed. Please request an admin invite.');
+        }
         await _registerAdmin(authProvider);
       }
     } catch (e) {
@@ -86,66 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _registerAdmin(AuthProvider authProvider) async {
-    final response = await authProvider.signUp(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      fullName: _nameController.text.trim(),
-      role: _selectedRole,
-    );
-
-    if (!mounted || response.user == null) {
-      throw Exception('Registration failed');
-    }
-
-    // Check if we have a session - if not, email confirmation is required
-    final hasSession = response.session != null;
-    debugPrint('🔍 Admin registration - hasSession: $hasSession, emailConfirmed: ${response.user?.emailConfirmedAt != null}');
-    
-    if (!hasSession) {
-      // Email confirmation is enabled - show dialog and navigate to login
-      debugPrint('⚠️ No session - email confirmation required for admin');
-      await _showEmailConfirmationDialog();
-      Navigator.of(context).pop();
-      return;
-    }
-
-    await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint(
-      '🔍 Registration complete - Role: ${authProvider.userRole.value}, '
-      'isPendingApproval: ${authProvider.isPendingApproval}',
-    );
-
-    if (authProvider.isAdmin) {
-      AuthErrorHandler.showSuccessSnackBar(
-        context,
-        '🎉 Account created successfully! Welcome to RGS HVAC Services.',
-      );
-      Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
-      return;
-    }
-
-    final isApproved = await authProvider.checkApprovalStatus();
-    debugPrint(
-      '🔍 Approval status check: isApproved=$isApproved, '
-      'isPendingApproval=${authProvider.isPendingApproval}, '
-      'userRole=${authProvider.userRole.value}',
-    );
-
-    final shouldShowPending = _selectedRole == UserRole.technician ||
-        authProvider.isPendingApproval ||
-        authProvider.userRole == UserRole.pending ||
-        isApproved == null ||
-        isApproved == false;
-
-    if (shouldShowPending) {
-      _showPendingApprovalMessage();
-    } else {
-      AuthErrorHandler.showSuccessSnackBar(
-        context,
-        '🎉 Account created successfully! Welcome to RGS HVAC Services.',
-      );
-      Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
-    }
+    throw Exception('Admin registration is closed. Please request an admin invite.');
   }
 
   Future<void> _showEmailConfirmationDialog() async {
@@ -622,7 +587,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         dropdownColor: isDarkMode ? colorScheme.surface : Colors.white,
-                        items: UserRole.values.map((role) {
+                        items: (_bootstrapAllowed
+                                ? UserRole.values
+                                : [UserRole.technician])
+                            .map((role) {
                           return DropdownMenuItem<UserRole>(
                             value: role,
                             child: Row(
@@ -646,6 +614,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }).toList(),
                         onChanged: (UserRole? newValue) {
                           if (newValue != null) {
+                            if (!_bootstrapAllowed && newValue == UserRole.admin) {
+                              AuthErrorHandler.showErrorSnackBar(
+                                context,
+                                'Admin registration is closed. Please request an admin invite.',
+                              );
+                              return;
+                            }
                             setState(() {
                               _selectedRole = newValue;
                             });

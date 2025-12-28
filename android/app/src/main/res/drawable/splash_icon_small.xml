@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified drawable for Android 12+ splash screen (background is handled separately via windowSplashScreenBackground) -->
+<!-- Logo sized to 60dp (scales 120x120px image down to 60x60) - sits directly on black background -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Logo sized to 60dp (scales 120x120px image down to 60x60) - sits directly on black background -->
     <item
         android:width="60dp"
         android:height="60dp"
