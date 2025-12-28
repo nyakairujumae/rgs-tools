@@ -104,26 +104,55 @@ Deno.serve(async (req) => {
   }
 
   const redirectTo = INVITE_REDIRECT_URL?.trim() || DEFAULT_REDIRECT_URL;
-  const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+  let userId: string | null = null;
+
+  const { data: created, error: createError } = await supabase.auth.admin.createUser({
     email,
-    {
-      data: {
-        full_name: fullName,
-        role: "technician",
-        department: department ?? null,
-      },
-      redirectTo,
+    email_confirm: true,
+    user_metadata: {
+      full_name: fullName,
+      role: "technician",
+      department: department ?? null,
     },
+  });
+
+  if (createError) {
+    const message = createError.message ?? '';
+    if (message.toLowerCase().includes('already')) {
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+      userId = existingUser?.id ?? null;
+    } else {
+      return new Response(
+        JSON.stringify({ error: createError.message ?? "User creation failed" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  } else {
+    userId = created.user?.id ?? null;
+  }
+
+  const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+    email,
+    { redirectTo },
   );
 
-  if (inviteError || !inviteData?.user) {
+  if (resetError) {
     return new Response(
-      JSON.stringify({ error: inviteError?.message ?? "Invite failed" }),
+      JSON.stringify({ error: resetError.message ?? "Failed to send reset email" }),
       { status: 400, headers: { "Content-Type": "application/json" } },
     );
   }
 
-  const userId = inviteData.user.id;
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ error: "User created but no user id returned" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   const { error: upsertError } = await supabase
     .from("users")
