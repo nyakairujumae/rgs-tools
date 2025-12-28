@@ -136,9 +136,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (!mounted) return;
 
+      final isInviteFlow = widget.type == 'invite' ||
+          (widget.deepLink?.contains('mode=invite') ?? false);
+
       setState(() {
         _isLoading = false;
-        if (widget.type != 'invite') {
+        if (!isInviteFlow) {
           _isSuccess = true;
         }
       });
@@ -156,7 +159,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Password reset successfully! Redirecting to login...',
+                  isInviteFlow
+                      ? 'Password set successfully! Redirecting...'
+                      : 'Password reset successfully! Redirecting to login...',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -177,7 +182,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       
       if (!mounted) return;
       
-      if (widget.type == 'invite') {
+      if (isInviteFlow) {
         // Keep the session and route directly to the right home screen.
         await authProvider.initialize();
         if (!mounted) return;

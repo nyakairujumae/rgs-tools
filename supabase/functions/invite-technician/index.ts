@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const INVITE_REDIRECT_URL = Deno.env.get("INVITE_REDIRECT_URL");
-const DEFAULT_REDIRECT_URL = "com.rgs.app://auth/callback";
+const DEFAULT_REDIRECT_URL = "com.rgs.app://reset-password?mode=invite";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -70,7 +70,18 @@ Deno.serve(async (req) => {
     .eq("is_granted", true)
     .maybeSingle();
 
+  let isSuperAdmin = false;
   if (!permission) {
+    const { data: position } = await supabase
+      .from("admin_positions")
+      .select("name")
+      .eq("id", requesterProfile.position_id)
+      .maybeSingle();
+    const positionName = position?.name?.toString().toLowerCase();
+    isSuperAdmin = positionName == "super admin" || positionName == "ceo";
+  }
+
+  if (!permission && !isSuperAdmin) {
     return new Response(
       JSON.stringify({ error: "Missing technician management permission" }),
       { status: 403, headers: { "Content-Type": "application/json" } },
