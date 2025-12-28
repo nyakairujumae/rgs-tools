@@ -45,15 +45,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _ensureSessionFromTokens() async {
-    final accessToken = widget.accessToken;
     final refreshToken = widget.refreshToken;
-    if (accessToken == null || refreshToken == null) return;
+    final accessToken = widget.accessToken;
+    final token = refreshToken ?? accessToken;
+    if (token == null) return;
 
     try {
-      await Supabase.instance.client.auth.setSession(
-        accessToken,
-        refreshToken,
-      );
+      // Supabase setSession now takes a single refresh token argument
+      await Supabase.instance.client.auth.setSession(token);
     } catch (e) {
       debugPrint('❌ Failed to set session for password reset: $e');
       if (mounted) {

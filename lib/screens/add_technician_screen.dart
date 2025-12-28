@@ -507,6 +507,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
             userId = await authProvider.createTechnicianAuthAccount(
               email: technician.email!,
               name: technician.name,
+              department: technician.department,
             );
             debugPrint('✅ Auth account created with user_id: $userId');
           } catch (e) {
@@ -553,7 +554,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                   if (technician.email != null && technician.email!.isNotEmpty) ...[
                     SizedBox(height: 4),
                     Text(
-                      'Password reset email sent to ${technician.email}\nTechnician should use the password reset email to set their password.',
+                      'Invite email sent to ${technician.email}\nTechnician should use the invite email to set their password.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],

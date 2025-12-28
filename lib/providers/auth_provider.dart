@@ -1561,174 +1561,38 @@ _isLoading = false;
   Future<String?> createTechnicianAuthAccount({
     required String email,
     required String name,
+    String? department,
   }) async {
-    // CRITICAL: Save current admin's user and session to restore after creating technician
-    final currentAdminUser = _user;
-    final currentAdminSession = SupabaseService.client.auth.currentSession;
-    final currentAdminRole = _userRole;
-    
-    _suppressAuthStateChanges = true;
     try {
-      debugPrint('🔍 Creating auth account for admin-added technician: $email');
-      debugPrint('🔍 Current admin user: ${currentAdminUser?.id ?? "null"}');
-      debugPrint('🔍 Current admin role: ${currentAdminRole.value}');
-      
-      // Check if email already has an auth account
-      final emailAvailable = await isEmailAvailable(email);
-      if (!emailAvailable) {
-        debugPrint('⚠️ Email already has auth account: $email');
-        // Return existing user ID if account exists
-        try {
-          // Try to get user by email (this requires admin API or checking users table)
-          final userRecord = await SupabaseService.client
-              .from('users')
-              .select('id')
-              .eq('email', email)
-              .maybeSingle();
-          
-          if (userRecord != null) {
-            return userRecord['id'] as String;
-          }
-        } catch (e) {
-          debugPrint('⚠️ Could not check existing user: $e');
-        }
-        throw Exception('This email is already registered. The technician can log in with their existing account.');
-      }
-      
-      // Generate secure random password (technician will set their own via email)
-      final randomPassword = _generateSecurePassword();
-      
-      debugPrint('🔍 Creating auth account with auto-confirmed email...');
-      
-      // Create auth account with technician role
-      // CRITICAL: Temporarily set a flag to prevent signUp from updating _user
-      // We'll manually restore the admin's session immediately after
-      final response = await signUp(
-        email: email,
-        password: randomPassword,
-        fullName: name.toUpperCase(),
-        role: UserRole.technician,
+      debugPrint('🔍 Inviting technician via edge function: $email');
+      final response = await SupabaseService.client.functions.invoke(
+        'invite-technician',
+        body: {
+          'email': email,
+          'full_name': name,
+          'department': department,
+        },
       );
-      
-      if (response.user == null) {
-        throw Exception('Failed to create auth account for technician');
+
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? (errorData['error']?.toString() ??
+                errorData['message']?.toString() ??
+                'Invite failed')
+            : (errorData?.toString() ?? 'Invite failed');
+        throw Exception(errorMessage);
       }
-      
-      final userId = response.user!.id;
-      debugPrint('✅ Auth account created: $userId');
-      
-      // CRITICAL: Immediately restore admin's session and user
-      // signUp may have updated _user and created a new session - we need to restore
-      debugPrint('🔍 Restoring admin session and user state...');
-      
-      // Restore admin's user object
-      _user = currentAdminUser;
-      _userRole = currentAdminRole;
-      
-      // Restore admin's session if it exists
-      if (currentAdminSession != null) {
-        try {
-          // Set the session back to admin's session using access token
-          await SupabaseService.client.auth.setSession(
-            currentAdminSession.accessToken,
-          );
-          debugPrint('✅ Admin session restored successfully');
-          debugPrint('✅ Admin user ID: ${currentAdminUser?.id}');
-          debugPrint('✅ Admin role: ${currentAdminRole.value}');
-        } catch (e) {
-          debugPrint('⚠️ Could not restore session: $e');
-          // Try to refresh the session
-          try {
-            await SupabaseService.client.auth.refreshSession();
-            debugPrint('✅ Session refreshed instead');
-          } catch (refreshError) {
-            debugPrint('❌ Could not refresh session: $refreshError');
-          }
-        }
-      } else {
-        debugPrint('⚠️ No admin session to restore');
+
+      final data = response.data;
+      if (data is Map && data['user_id'] != null) {
+        return data['user_id'].toString();
       }
-      
-      notifyListeners(); // Update UI with restored admin state
-      
-      // Wait for database trigger to auto-confirm email
-      // The trigger should run immediately after user creation
-      debugPrint('⏳ Waiting for auto-confirm trigger to run...');
-      await Future.delayed(const Duration(milliseconds: 1500));
-      
-      // Verify email was auto-confirmed by checking if user record exists
-      // (user record is created by trigger after email confirmation)
-      bool emailConfirmed = false;
-      for (int attempt = 0; attempt < 3; attempt++) {
-        try {
-          final userRecord = await SupabaseService.client
-              .from('users')
-              .select('id')
-              .eq('id', userId)
-              .maybeSingle();
-          
-          if (userRecord != null) {
-            emailConfirmed = true;
-            debugPrint('✅ Email auto-confirmed (user record exists)');
-            break;
-          } else {
-            debugPrint('⏳ Waiting for email confirmation (attempt ${attempt + 1}/3)...');
-            await Future.delayed(const Duration(milliseconds: 1000));
-          }
-        } catch (e) {
-          debugPrint('⚠️ Error checking user record: $e');
-          await Future.delayed(const Duration(milliseconds: 1000));
-        }
-      }
-      
-      if (!emailConfirmed) {
-        debugPrint('⚠️ Email may not be auto-confirmed yet, but proceeding with password reset...');
-      }
-      
-      // Send password reset email so technician can set their password
-      // Note: Technician may receive confirmation email first, but they should use password reset email
-      debugPrint('🔍 Sending password reset email to technician...');
-      try {
-        await resetPassword(email);
-        debugPrint('✅ Password reset email sent to: $email');
-        debugPrint('📧 Note: Technician may also receive confirmation email, but should use password reset email to set password');
-      } catch (e) {
-        debugPrint('⚠️ Error sending password reset email: $e');
-        // Don't throw - account is created, email can be resent later
-      }
-      
-      return userId;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error creating technician auth account: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
-      
-      // CRITICAL: Always restore admin session even on error
-      debugPrint('🔍 Restoring admin session after error...');
-      _user = currentAdminUser;
-      _userRole = currentAdminRole;
-      
-      if (currentAdminSession != null) {
-        try {
-          await SupabaseService.client.auth.setSession(
-            currentAdminSession.accessToken,
-          );
-          debugPrint('✅ Admin session restored after error');
-        } catch (restoreError) {
-          debugPrint('⚠️ Could not restore session after error: $restoreError');
-          // Try to refresh instead
-          try {
-            await SupabaseService.client.auth.refreshSession();
-            debugPrint('✅ Session refreshed after error');
-          } catch (refreshError) {
-            debugPrint('❌ Could not refresh session after error: $refreshError');
-          }
-        }
-      }
-      
-      notifyListeners();
+
+      throw Exception('Invite failed - no user id returned');
+    } catch (e) {
+      debugPrint('❌ Error inviting technician: $e');
       rethrow;
-    } finally {
-      _suppressAuthStateChanges = false;
     }
   }
 
