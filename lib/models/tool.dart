@@ -64,10 +64,8 @@ class Tool {
       map['id'] = id;
     }
     
-    // Only include assigned_to if it's not null
-    if (assignedTo != null) {
-      map['assigned_to'] = assignedTo;
-    }
+    // Always include assigned_to to allow clearing it (setting to null)
+    map['assigned_to'] = assignedTo;
     
     return map;
   }

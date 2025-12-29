@@ -90,18 +90,32 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<void> updateTool(Tool tool) async {
     try {
+      final updateMap = tool.toMap();
+      debugPrint('🔧 [UpdateTool] Updating tool ${tool.id} with data: $updateMap');
+      debugPrint('   - assignedTo: ${tool.assignedTo}');
+      
       await SupabaseService.client
           .from('tools')
-          .update(tool.toMap())
+          .update(updateMap)
           .eq('id', tool.id!);
+
+      // Reload the tool from database to ensure we have the actual saved value
+      final updatedResponse = await SupabaseService.client
+          .from('tools')
+          .select()
+          .eq('id', tool.id!)
+          .single();
+      
+      final updatedTool = Tool.fromMap(updatedResponse);
+      debugPrint('✅ [UpdateTool] Tool updated. Database assignedTo: ${updatedTool.assignedTo}');
 
       final index = _tools.indexWhere((t) => t.id == tool.id);
       if (index != -1) {
-        _tools[index] = tool;
+        _tools[index] = updatedTool;
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error updating tool: $e');
+      debugPrint('❌ [UpdateTool] Error updating tool: $e');
       rethrow;
     }
   }

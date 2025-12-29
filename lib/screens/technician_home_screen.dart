@@ -81,12 +81,17 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       await BadgeService.syncBadgeWithDatabase(context);
       _refreshUnreadCount();
       // Refresh unread count and sync badge every 30 seconds (like admin section)
+      // Also refresh tools periodically to catch updates from other users
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted && !_isDisposed) {
           _refreshUnreadCount();
           // Also sync badge periodically to ensure it stays updated
           BadgeService.syncBadgeWithDatabase(context).catchError((e) {
             debugPrint('⚠️ Error syncing badge: $e');
+          });
+          // Refresh tools to catch updates from other users (e.g., badging)
+          context.read<SupabaseToolProvider>().loadTools().catchError((e) {
+            debugPrint('⚠️ Error refreshing tools: $e');
           });
         }
       });
@@ -906,7 +911,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.keyboard_return, color: Colors.green),
-            label: 'Check In',
+            label: 'Return',
             activeIcon: Icon(Icons.keyboard_return, color: Colors.green),
           ),
         ],
@@ -1046,6 +1051,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                               onRefresh: () async {
                                 // Reload notifications from provider
                                 await notificationProvider.loadNotifications();
+                                // Reload tools to catch updates from other users (e.g., badging)
+                                await context.read<SupabaseToolProvider>().loadTools();
+                                // Clear name cache to ensure fresh data
+                                UserNameService.clearCache();
                                 await BadgeService.syncBadgeWithDatabase(context);
                                 _refreshUnreadCount();
                                 // Trigger rebuild by incrementing key and calling setState
@@ -1226,7 +1235,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            // Mark as read
+            // Mark as read first
             if (!isRead) {
               try {
                 final notificationId = notification['id']?.toString();
@@ -1274,6 +1283,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 debugPrint('Error marking notification as read: $e');
               }
             }
+            
+            // Show notification details
+            _showNotificationDetails(context, notification);
           },
           borderRadius: BorderRadius.circular(18),
           child: Padding(
@@ -1405,6 +1417,187 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     } else {
       return '${difference.inDays}d ago';
     }
+  }
+
+  void _showNotificationDetails(BuildContext context, Map<String, dynamic> notification) {
+    final theme = Theme.of(context);
+    final title = notification['title'] as String? ?? 'Notification';
+    final message = notification['message'] as String? ?? '';
+    final timestamp = notification['timestamp'] != null
+        ? DateTime.parse(notification['timestamp'].toString())
+        : DateTime.now();
+    final type = notification['type'] as String? ?? 'general';
+    final data = notification['data'] as Map<String, dynamic>?;
+    final notificationColor = _getNotificationColor(type);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surface
+            : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
+              decoration: BoxDecoration(
+                color: notificationColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                _getNotificationIcon(type),
+                color: notificationColor,
+                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+              ),
+            ),
+            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  height: 1.5,
+                ),
+              ),
+              if (data != null && data.isNotEmpty) ...[
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                Divider(color: Colors.grey.withValues(alpha: 0.2)),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                Text(
+                  'Details:',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                if (data['tool_name'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Tool',
+                    data['tool_name'].toString(),
+                    Icons.build,
+                  ),
+                if (data['requester_name'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Requested by',
+                    data['requester_name'].toString(),
+                    Icons.person,
+                  ),
+                if (data['requester_email'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Email',
+                    data['requester_email'].toString(),
+                    Icons.email,
+                  ),
+              ],
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+              Divider(color: Colors.grey.withValues(alpha: 0.2)),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: ResponsiveHelper.getResponsiveIconSize(context, 14),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                  Text(
+                    _formatTimestamp(timestamp),
+                    style: TextStyle(
+                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: ResponsiveHelper.getResponsiveIconSize(context, 14),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -2010,10 +2203,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         tool.name,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                           color: theme.colorScheme.onSurface,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -2024,8 +2217,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: ResponsiveHelper.getResponsiveSpacing(context, 6),
-                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 2),
+                            horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 3),
                           ),
                           decoration: BoxDecoration(
                             color: AppTheme.secondaryColor.withValues(alpha: 0.12),
@@ -2034,7 +2227,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           child: Text(
                             tool.toolType.toUpperCase(),
                             style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 9),
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
                               fontWeight: FontWeight.w700,
                               color: AppTheme.secondaryColor,
                             ),
@@ -2045,10 +2238,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ),
                   ],
                 ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                     Wrap(
-                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 2),
+                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 6),
+                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
                       children: [
                         _buildPillChip(
                           _getStatusIcon(tool.status),
@@ -2062,7 +2255,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2070,15 +2263,15 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           children: [
                             Icon(
                               Icons.category,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                             Expanded(
                               child: Text(
                                 tool.category.toUpperCase(),
                                 style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                                   color: AppTheme.secondaryColor,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -2088,19 +2281,18 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                         if (tool.brand != null && tool.brand!.isNotEmpty)
                           Padding(
                             padding: EdgeInsets.only(
-                              top: ResponsiveHelper.getResponsiveSpacing(context, 2),
-                              left: ResponsiveHelper.getResponsiveIconSize(context, 16) + 
-                                    ResponsiveHelper.getResponsiveSpacing(context, 6),
+                              left: ResponsiveHelper.getResponsiveIconSize(context, 18) + 
+                                    ResponsiveHelper.getResponsiveSpacing(context, 8),
                             ),
                             child: Text(
                               tool.brand!,
                               style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -2109,7 +2301,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                     // Only show holder line and request button for shared tools (not for My Tools)
                     if (tool.toolType == 'shared')
                       Row(
@@ -2123,7 +2315,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               (currentUserId == null ||
                                   currentUserId != tool.assignedTo))
                             Padding(
-                              padding: EdgeInsets.only(left: 8),
+                              padding: EdgeInsets.only(left: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppTheme.secondaryColor.withValues(alpha: 0.12),
@@ -2148,8 +2340,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                                   child: Text(
                                     'Request',
                                     style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
@@ -2207,34 +2399,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         debugPrint('Could not fetch owner email: $e');
       }
       
-      // Note: Approval workflows are automatically created by the database function
-      // when create_admin_notification is called with type 'tool_request'
-      
-      // Create notification in admin_notifications table (for admin visibility)
-      try {
-        await SupabaseService.client.rpc(
-          'create_admin_notification',
-          params: {
-            'p_title': 'Tool Request: ${tool.name}',
-            'p_message': '$requesterName requested the tool "${tool.name}"',
-            'p_technician_name': requesterName,
-            'p_technician_email': requesterEmail,
-            'p_type': 'tool_request',
-            'p_data': {
-              'tool_id': tool.id,
-              'tool_name': tool.name,
-              'requester_id': requesterId,
-              'requester_name': requesterName,
-              'requester_email': requesterEmail,
-              'owner_id': ownerId,
-            },
-          },
-        );
-        debugPrint('✅ Created admin notification for tool request');
-      } catch (e) {
-        debugPrint('⚠️ Failed to create admin notification: $e');
-      }
-      
+      // Tool requests from holders (badged tools) only go to the tool holder, not admins
       // Create notification in technician_notifications table for the tool owner
       // This will appear in the technician's notification center
       try {
@@ -2378,10 +2543,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         tool.name,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                           color: theme.colorScheme.onSurface,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -2392,8 +2557,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                         ),
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: ResponsiveHelper.getResponsiveSpacing(context, 6),
-                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 2),
+                            horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 3),
                           ),
                           decoration: BoxDecoration(
                             color: AppTheme.secondaryColor.withValues(alpha: 0.12),
@@ -2402,7 +2567,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           child: Text(
                             tool.toolType.toUpperCase(),
                             style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 9),
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
                               fontWeight: FontWeight.w700,
                               color: AppTheme.secondaryColor,
                             ),
@@ -2413,7 +2578,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ),
                   ],
                 ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                     Wrap(
                       spacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
                       runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 2),
@@ -2549,7 +2714,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
+        vertical: ResponsiveHelper.getResponsiveSpacing(context, 6),
+      ),
       decoration: BoxDecoration(
         color: tintedBackground,
         borderRadius: BorderRadius.circular(999),
@@ -2557,13 +2725,17 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(
+            icon,
+            size: ResponsiveHelper.getResponsiveIconSize(context, 14),
+            color: color,
+          ),
+          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
           Flexible(
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
@@ -2584,10 +2756,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       return Text(
         'No current holder',
         style: TextStyle(
-          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
           color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          );
+        ),
+      );
         }
     
     // Fetch user name from users table (not technicians table)
@@ -2615,9 +2787,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         return Text(
           '$name has this tool',
           style: TextStyle(
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withOpacity(0.8),
           ),
         );
       },

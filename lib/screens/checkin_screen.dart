@@ -86,7 +86,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Check In Tool',
+              'Return Tool',
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                 fontWeight: FontWeight.w600,
@@ -250,7 +250,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             ),
             SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
             Text(
-              'No tools to check in',
+              'No tools to return',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
@@ -657,7 +657,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               ),
               SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
               Text(
-                'Check-In Details',
+                'Return Details',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
@@ -690,7 +690,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     child: Text(
                       _checkinDate != null
                           ? '${_checkinDate!.day}/${_checkinDate!.month}/${_checkinDate!.year}'
-                          : 'Select check-in date',
+                          : 'Select return date',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: _checkinDate != null
@@ -789,7 +789,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 10)),
                   const Text(
-                    'Check In Tool',
+                    'Return Tool',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -894,7 +894,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
       await context.read<SupabaseToolProvider>().loadTools();
 
       if (!mounted) return;
-        AuthErrorHandler.showSuccessSnackBar(context, '${_selectedTool!.name} checked in successfully');
+        AuthErrorHandler.showSuccessSnackBar(context, '${_selectedTool!.name} returned successfully');
         NavigationHelper.safePop(context);
     } catch (e) {
       handleError(e);

@@ -1441,41 +1441,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         debugPrint('Could not fetch owner email: $e');
       }
       
-      // Note: Approval workflows are automatically created by the database function
-      // when create_admin_notification is called with type 'tool_request'
-      
-      // Create notification in admin_notifications table (for admin visibility)
-      try {
-        await SupabaseService.client.rpc(
-          'create_admin_notification',
-          params: {
-            'p_title': 'Tool Request: ${_currentTool.name}',
-            'p_message': '$requesterName requested the tool "${_currentTool.name}"',
-            'p_technician_name': requesterName,
-            'p_technician_email': requesterEmail,
-            'p_type': 'tool_request',
-            'p_data': {
-              'tool_id': _currentTool.id,
-              'tool_name': _currentTool.name,
-              'requester_id': requesterId,
-              'requester_name': requesterName,
-              'requester_email': requesterEmail,
-              'owner_id': ownerId,
-            },
-          },
-        );
-        debugPrint('✅ Created admin notification for tool request');
-      } catch (e) {
-        debugPrint('⚠️ Failed to create admin notification: $e');
-      }
-      
+      // Tool requests from holders (badged tools) only go to the tool holder, not admins
       // Create notification in technician_notifications table for the tool owner
       // This will appear in the technician's notification center
       try {
+        // Get requester's first name for better message format
+        final requesterFirstName = requesterName.split(' ').first;
+        
         await SupabaseService.client.from('technician_notifications').insert({
           'user_id': ownerId, // The technician who has the tool
           'title': 'Tool Request: ${_currentTool.name}',
-          'message': '$requesterName needs the tool "${_currentTool.name}" that you currently have',
+          'message': '$requesterFirstName has requested the ${_currentTool.name}',
           'type': 'tool_request',
           'is_read': false,
           'timestamp': DateTime.now().toIso8601String(),
@@ -1496,7 +1472,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           await PushNotificationService.sendToUser(
             userId: ownerId,
             title: 'Tool Request: ${_currentTool.name}',
-            body: '$requesterName needs the tool "${_currentTool.name}" that you currently have',
+            body: '$requesterFirstName has requested the ${_currentTool.name}',
             data: {
               'type': 'tool_request',
               'tool_id': _currentTool.id,
