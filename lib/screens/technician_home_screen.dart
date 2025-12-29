@@ -922,6 +922,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     FirebaseMessagingService.clearBadge();
     // Refresh unread count
     _refreshUnreadCount();
+    // Explicitly reload notifications to ensure they're up to date
+    try {
+      final notificationProvider = context.read<TechnicianNotificationProvider>();
+      await notificationProvider.loadNotifications(skipIfLoading: false);
+      debugPrint('✅ Reloaded notifications when opening notification center');
+    } catch (e) {
+      debugPrint('⚠️ Could not reload notifications: $e');
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1619,10 +1627,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               .toList();
         }
 
-        // Featured tools (shared and available)
+        // Featured tools (all shared tools, regardless of status or assignment)
         final featuredTools = toolProvider.tools
-            .where((tool) =>
-                tool.toolType == 'shared' && tool.status == 'Available')
+            .where((tool) => tool.toolType == 'shared')
             .take(10)
             .toList();
 
@@ -2056,63 +2063,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ],
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                    if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 3),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.qr_code,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Expanded(
-                              child: Text(
-                                'SN: ${tool.serialNumber!}',
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (tool.location != null && tool.location!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 3),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Expanded(
-                              child: Text(
-                                tool.location!,
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2139,50 +2089,22 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           ],
                         ),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                        if (tool.brand != null && tool.brand!.isNotEmpty || 
-                            tool.model != null && tool.model!.isNotEmpty)
+                        if (tool.brand != null && tool.brand!.isNotEmpty)
                           Padding(
                             padding: EdgeInsets.only(
                               top: ResponsiveHelper.getResponsiveSpacing(context, 2),
                               left: ResponsiveHelper.getResponsiveIconSize(context, 16) + 
                                     ResponsiveHelper.getResponsiveSpacing(context, 6),
                             ),
-                            child: Row(
-                              children: [
-                                if (tool.brand != null && tool.brand!.isNotEmpty)
-                                  Expanded(
-                                    child: Text(
-                                      tool.brand!,
-                                      style: TextStyle(
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                if (tool.model != null && tool.model!.isNotEmpty)
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: tool.brand != null && tool.brand!.isNotEmpty
-                                            ? ResponsiveHelper.getResponsiveSpacing(context, 8)
-                                            : 0,
-                                      ),
-                                      child: Text(
-                                        tool.model!,
-                                        style: TextStyle(
-                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                            child: Text(
+                              tool.brand!,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                       ],
@@ -2316,10 +2238,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       // Create notification in technician_notifications table for the tool owner
       // This will appear in the technician's notification center
       try {
+        // Get requester's first name for better message format
+        final requesterFirstName = requesterName.split(' ').first;
+        
         await SupabaseService.client.from('technician_notifications').insert({
           'user_id': ownerId, // The technician who has the tool
           'title': 'Tool Request: ${tool.name}',
-          'message': '$requesterName needs the tool "${tool.name}" that you currently have',
+          'message': '$requesterFirstName has requested the ${tool.name}',
           'type': 'tool_request',
           'is_read': false,
           'timestamp': DateTime.now().toIso8601String(),
@@ -2340,7 +2265,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           await PushNotificationService.sendToUser(
             userId: ownerId,
             title: 'Tool Request: ${tool.name}',
-            body: '$requesterName needs the tool "${tool.name}" that you currently have',
+            body: '$requesterFirstName has requested the ${tool.name}',
             data: {
               'type': 'tool_request',
               'tool_id': tool.id,
@@ -2350,7 +2275,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           debugPrint('✅ Push notification sent to tool holder');
         } catch (pushError) {
           debugPrint('⚠️ Could not send push notification to tool holder: $pushError');
+          // Don't fail the whole operation if push fails
         }
+        
+        // Note: The realtime subscription should automatically pick up the new notification
+        // But we can't refresh the provider here because we don't have access to the tool holder's context
+        // The realtime subscription in TechnicianNotificationProvider will handle this
+        debugPrint('✅ Notification created - realtime subscription should update the UI');
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');
         debugPrint('❌ Error details: ${e.toString()}');
@@ -2500,63 +2431,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ],
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                    if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 3),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.qr_code,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Expanded(
-                              child: Text(
-                                'SN: ${tool.serialNumber!}',
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (tool.location != null && tool.location!.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: ResponsiveHelper.getResponsiveSpacing(context, 3),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Expanded(
-                              child: Text(
-                                tool.location!,
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2583,50 +2457,22 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           ],
                         ),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                        if (tool.brand != null && tool.brand!.isNotEmpty || 
-                            tool.model != null && tool.model!.isNotEmpty)
+                        if (tool.brand != null && tool.brand!.isNotEmpty)
                           Padding(
                             padding: EdgeInsets.only(
                               top: ResponsiveHelper.getResponsiveSpacing(context, 2),
                               left: ResponsiveHelper.getResponsiveIconSize(context, 16) + 
                                     ResponsiveHelper.getResponsiveSpacing(context, 6),
                             ),
-                            child: Row(
-                              children: [
-                                if (tool.brand != null && tool.brand!.isNotEmpty)
-                                  Expanded(
-                                    child: Text(
-                                      tool.brand!,
-                                      style: TextStyle(
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                if (tool.model != null && tool.model!.isNotEmpty)
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        left: tool.brand != null && tool.brand!.isNotEmpty
-                                            ? ResponsiveHelper.getResponsiveSpacing(context, 8)
-                                            : 0,
-                                      ),
-                                      child: Text(
-                                        tool.model!,
-                                        style: TextStyle(
-                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                            child: Text(
+                              tool.brand!,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                       ],
@@ -2744,17 +2590,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
           );
         }
     
-    // Don't show "has this tool" if it's assigned to the current user
-    if (currentUserId != null && tool.assignedTo == currentUserId) {
-      return const SizedBox.shrink();
-    }
-    
     // Fetch user name from users table (not technicians table)
     // tool.assignedTo contains user ID from users table
+    // Show holder even if it's the current user (for shared tools that are badged)
     return FutureBuilder<String>(
       future: UserNameService.getUserName(tool.assignedTo!),
       builder: (context, snapshot) {
-        String name = 'Technician';
+        String name = 'Unknown';
         
         if (snapshot.hasData) {
           name = UserNameService.getFirstName(snapshot.data!);
