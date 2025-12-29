@@ -292,27 +292,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       }
 
       if (isOAuthUser) {
-        // OAuth user - assign role directly
-        await authProvider.assignRoleToOAuthUser(role);
-        
-        // Re-initialize to pick up the new role
-        await authProvider.initialize();
-        
-        if (!mounted) return;
-        
-        // Navigate based on role
-        if (role == UserRole.admin) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/admin',
-            (route) => false,
-          );
-        } else {
-          // Technician - go to pending approval screen
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/pending-approval',
-            (route) => false,
-          );
-        }
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'No account found for this email. Please register or request an invite.',
+        );
+        await authProvider.signOut();
+        return;
       } else {
         // Regular user - navigate to registration screen
         if (role == UserRole.admin) {

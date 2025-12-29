@@ -177,10 +177,6 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
               icon: const Icon(Icons.person_add_alt_1),
               onPressed: _openAddAdmin,
             ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadAdmins,
-          ),
         ],
       ),
       body: _isLoading

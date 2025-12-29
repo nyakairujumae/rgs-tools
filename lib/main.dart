@@ -939,8 +939,16 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     (route) => false,
                                   );
                                 } else if (authProvider.userRole == UserRole.pending && isOAuthUser) {
-                                  // OAuth user without role - needs role selection
-                                  print('🔐 OAuth user needs role selection');
+                                  // OAuth sign-in without an existing account
+                                  print('🔐 OAuth user without account - signing out');
+                                  await authProvider.signOut();
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('No account found for this email. Please register or request an invite.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
                                   navigator.pushNamedAndRemoveUntil(
                                     '/role-selection',
                                     (route) => false,

@@ -680,8 +680,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                     ),
                   );
                 },
-                icon: const Icon(Icons.person_add_alt_1),
-                label: const Text('Add Admin'),
+                icon: const Icon(Icons.admin_panel_settings),
+                label: const Text('Manage Admins'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.secondaryColor,
                   side: BorderSide(
