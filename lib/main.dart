@@ -75,7 +75,7 @@ void main() async {
       print('✅ Splash flag saved - will never show again');
       
       // Only preserve native splash screen on first install
-      FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
       print('🚀 Native splash preserved (first install only)');
     } else {
       // Not first install - remove splash immediately
@@ -127,7 +127,7 @@ void main() async {
 /// This prevents blocking the splash screen and allows app to open quickly
 Future<void> _initializeServicesInBackground() async {
   print('🔄 Starting background initialization...');
-  
+
   // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
@@ -140,9 +140,9 @@ Future<void> _initializeServicesInBackground() async {
         print('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
       } else {
         // Initialize Firebase in background
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
         print('✅ Firebase initialized successfully (background)');
         print('✅ Firebase project: ${Firebase.app().options.projectId}');
       }
@@ -331,7 +331,7 @@ Future<void> _initializeServicesInBackground() async {
         print('⚠️ Session management initialization failed (non-critical): $e');
       }
     }
-  
+
   print('✅ Background initialization complete');
 }
 
@@ -535,7 +535,7 @@ class HvacToolsManagerApp extends StatelessWidget {
             _splashRemoved = true;
             // Remove splash immediately - initialization happens in background
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              FlutterNativeSplash.remove();
+            FlutterNativeSplash.remove();
               print('✅ Native splash removed immediately');
             });
           }
@@ -667,7 +667,7 @@ class HvacToolsManagerApp extends StatelessWidget {
               if (settings.name != null) {
                 final uriString = settings.name!;
                 print('🔐 Checking deep link: $uriString');
-
+                
                 Map<String, String> extractParams(Uri uri) {
                   final params = <String, String>{};
                   params.addAll(uri.queryParameters);
@@ -910,7 +910,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 final isApproved = await authProvider.checkApprovalStatus();
                                 print('✅ Approval status: $isApproved');
                                 
-                                final navigator = Navigator.of(context, rootNavigator: true);
+                              final navigator = Navigator.of(context, rootNavigator: true);
                                 final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
                                     authProvider.user?.appMetadata?['provider'] != 'email';
                                 
@@ -965,17 +965,17 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     );
                                   } else if (roleFromMetadata == 'technician') {
                                     // If metadata says technician but no approval status, assume pending
-                                    navigator.pushNamedAndRemoveUntil(
-                                      '/pending-approval',
-                                      (route) => false,
-                                    );
-                                  } else {
+                                  navigator.pushNamedAndRemoveUntil(
+                                    '/pending-approval',
+                                    (route) => false,
+                                  );
+                                } else {
                                     // Unknown role - redirect to role selection
                                     print('⚠️ Unknown role - redirecting to role selection');
-                                    navigator.pushNamedAndRemoveUntil(
+                                  navigator.pushNamedAndRemoveUntil(
                                       '/role-selection',
-                                      (route) => false,
-                                    );
+                                    (route) => false,
+                                  );
                                   }
                                 }
                               } else {
@@ -995,9 +995,9 @@ class HvacToolsManagerApp extends StatelessWidget {
                                   Future.delayed(const Duration(seconds: 2), () {
                                     if (context.mounted) {
                                       Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                                        '/role-selection',
-                                        (route) => false,
-                                      );
+                                  '/role-selection',
+                                  (route) => false,
+                                );
                                     }
                                   });
                                 }
