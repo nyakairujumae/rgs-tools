@@ -513,17 +513,6 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
           } catch (e) {
             debugPrint('⚠️ Error creating auth account: $e');
             final errorMessage = e.toString();
-            if (errorMessage.contains('Missing technician management permission')) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('You do not have permission to add technicians.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-              rethrow;
-            }
             // If email already exists, try to get existing user_id
             if (errorMessage.contains('already registered')) {
               // Try to find existing user

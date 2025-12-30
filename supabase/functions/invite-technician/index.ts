@@ -62,31 +62,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { data: permission } = await supabase
-    .from("position_permissions")
-    .select("permission_name")
-    .eq("position_id", requesterProfile.position_id)
-    .in("permission_name", ["can_manage_technicians", "can_manage_admins"])
-    .eq("is_granted", true)
-    .maybeSingle();
-
-  let isSuperAdmin = false;
-  if (!permission) {
-    const { data: position } = await supabase
-      .from("admin_positions")
-      .select("name")
-      .eq("id", requesterProfile.position_id)
-      .maybeSingle();
-    const positionName = position?.name?.toString().toLowerCase();
-    isSuperAdmin = positionName == "super admin" || positionName == "ceo";
-  }
-
-  if (!permission && !isSuperAdmin) {
-    return new Response(
-      JSON.stringify({ error: "Missing technician management permission" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
-  }
+  // All admins can manage technicians.
 
   let payload: {
     email?: string;

@@ -215,10 +215,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         return;
       }
 
-      final canManageAdmins = await AdminPositionService.userHasPermission(
-        userId,
-        'can_manage_admins',
-      );
+      final position = await AdminPositionService.getUserPosition(userId);
+      final positionName = position?.name.toLowerCase();
+      final isSuperAdmin = positionName == 'super admin' || positionName == 'ceo';
+      final canManageAdmins = isSuperAdmin ||
+          await AdminPositionService.userHasPermission(
+            userId,
+            'can_manage_admins',
+          );
       if (!mounted) return;
       setState(() {
         _canManageAdmins = canManageAdmins;

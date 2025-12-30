@@ -10,8 +10,9 @@
         <!-- Black background for splash screen -->
         <item name="android:windowSplashScreenBackground">@color/launch_background_color</item>
         <!-- Fallback windowBackground for compatibility (contains logo for older devices/first install) -->
+        <!-- CRITICAL: windowBackground must be set for first install compatibility -->
         <item name="android:windowBackground">@drawable/launch_background</item>
-        <!-- Use properly sized XML drawable (60dp) for Android 12+ splash icon - logo sits directly on black bg -->
+        <!-- Use properly sized XML drawable (50dp) for Android 12+ splash icon - logo sits directly on black bg -->
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_small</item>
         <!-- Transparent icon background to remove white circle -->
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
