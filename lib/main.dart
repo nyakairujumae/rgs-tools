@@ -708,8 +708,9 @@ class HvacToolsManagerApp extends StatelessWidget {
                   final type = params['type'];
                   final hasAccessToken = params.containsKey('access_token');
                   final code = params['code'];
+                  final token = params['token'];
                   
-                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
+                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, hasCode: ${code != null}, hasToken: ${token != null}');
                   
                   // CRITICAL: Handle signup email confirmation
                   // Technicians go to pending approval, Admins auto-login
@@ -721,13 +722,32 @@ class HvacToolsManagerApp extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Processing signup email confirmation...');
-                            final sessionResponse = code != null && !hasAccessToken
-                                ? await SupabaseService.client.auth.exchangeCodeForSession(code)
-                                : await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            
+                            // For PKCE flows, use exchangeCodeForSession if code is present
+                            // Otherwise, use getSessionFromUrl which handles both token and access_token flows
+                            SessionResponse? sessionResponse;
+                            if (code != null && !hasAccessToken) {
+                              print('🔐 Using PKCE code exchange...');
+                              sessionResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
+                            } else {
+                              print('🔐 Using getSessionFromUrl (handles token and access_token)...');
+                              sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            }
+                            
+                            if (sessionResponse == null || sessionResponse.session == null) {
+                              print('❌ Failed to create session from URL');
+                              print('❌ URI: $uri');
+                              print('❌ Params: $params');
+                              throw Exception('Failed to create session from email confirmation link');
+                            }
+                            
                             print('✅ Email confirmed - session created');
                             
-                            if (sessionResponse.session != null && sessionResponse.session!.user != null) {
-                              final user = sessionResponse.session!.user;
+                            final user = sessionResponse.session!.user;
+                            if (user == null) {
+                              print('❌ User is null in session');
+                              throw Exception('User not found in session');
+                            }
                               final email = user.email ?? '';
                               final fullName = user.userMetadata?['full_name'] as String? ?? 
                                               user.userMetadata?['name'] as String? ?? 
@@ -750,12 +770,31 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 await Future.delayed(const Duration(milliseconds: 1000));
                                 await authProvider.initialize();
                                 
+                                // Check authentication status
+                                print('🔐 Auth status - isAuthenticated: ${authProvider.isAuthenticated}, isAdmin: ${authProvider.isAdmin}, userRole: ${authProvider.userRole}');
+                                
                                 if (authProvider.isAuthenticated && authProvider.isAdmin) {
                                   print('✅ Admin authenticated - routing to admin home');
                                   if (context.mounted) {
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
                                   }
                                   return;
+                                } else {
+                                  print('⚠️ Admin not authenticated or role not loaded yet');
+                                  print('⚠️ Retrying authentication...');
+                                  // Retry once more
+                                  await Future.delayed(const Duration(milliseconds: 500));
+                                  await authProvider.initialize();
+                                  if (authProvider.isAuthenticated && authProvider.isAdmin) {
+                                    print('✅ Admin authenticated after retry - routing to admin home');
+                                    if (context.mounted) {
+                                      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
+                                    }
+                                    return;
+                                  } else {
+                                    print('❌ Still not authenticated after retry');
+                                    throw Exception('Failed to authenticate admin user. Please try logging in manually.');
+                                  }
                                 }
                               } else {
                                 // Technician - route to pending approval
