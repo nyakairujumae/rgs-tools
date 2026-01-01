@@ -67,8 +67,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 : <String, String>{},
           );
         final tokenHash = params['token'];
+        final code = params['code'];
         final type = params['type'];
         debugPrint('🔐 Reset deep link params: type=$type hasToken=${tokenHash != null}');
+        if (code != null) {
+          debugPrint('🔐 Exchanging code for session');
+          await Supabase.instance.client.auth.exchangeCodeForSession(code);
+          return;
+        }
         if (tokenHash != null && (type == 'invite' || type == 'recovery')) {
           debugPrint('🔐 Verifying OTP from deep link type=$type');
           await Supabase.instance.client.auth.verifyOTP(

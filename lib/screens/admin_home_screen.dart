@@ -208,7 +208,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 
   Future<void> _loadInviteAdminData() async {
     try {
-      final userId = context.read<AuthProvider>().userId;
+      final authProvider = context.read<AuthProvider>();
+      final userId = authProvider.userId;
       if (userId == null) {
         setState(() {
           _canManageAdmins = false;
@@ -216,7 +217,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         return;
       }
 
-      final position = await AdminPositionService.getUserPosition(userId);
+      AdminPosition? position = await AdminPositionService.getUserPosition(userId);
+      if (position == null) {
+        final metadataPositionId =
+            authProvider.user?.userMetadata?['position_id'] as String?;
+        if (metadataPositionId != null && metadataPositionId.isNotEmpty) {
+          await AdminPositionService.updateUserPosition(userId, metadataPositionId);
+          position = await AdminPositionService.getPositionById(metadataPositionId);
+        } else {
+          final fallback = await AdminPositionService.getPositionByName('Super Admin') ??
+              await AdminPositionService.getPositionByName('CEO');
+          if (fallback != null) {
+            await AdminPositionService.updateUserPosition(userId, fallback.id);
+            position = fallback;
+          }
+        }
+      }
+
       final positionName = position?.name.toLowerCase();
       final isSuperAdmin = positionName == 'super admin' || positionName == 'ceo';
       final canManageAdmins = isSuperAdmin ||

@@ -691,6 +691,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                 // Check if this is an auth callback URL (email confirmation, password reset, or OAuth)
                 final isAuthCallback = uriString.contains('auth/callback') || 
                                       uriString.contains('access_token') ||
+                                      uriString.contains('code=') ||
                                       uriString.contains('type=signup') ||
                                       uriString.contains('type=recovery') ||
                                       uriString.contains('type=invite') ||
@@ -706,6 +707,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                 // Handle email confirmation callback
                   final type = params['type'];
                   final hasAccessToken = params.containsKey('access_token');
+                  final code = params['code'];
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
                   
@@ -719,7 +721,9 @@ class HvacToolsManagerApp extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Processing signup email confirmation...');
-                            final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            final sessionResponse = code != null && !hasAccessToken
+                                ? await SupabaseService.client.auth.exchangeCodeForSession(code)
+                                : await SupabaseService.client.auth.getSessionFromUrl(uri);
                             print('✅ Email confirmed - session created');
                             
                             if (sessionResponse.session != null && sessionResponse.session!.user != null) {
