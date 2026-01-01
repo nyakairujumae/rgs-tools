@@ -1011,7 +1011,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         
         // Send push notification to the tool owner
         try {
-          await PushNotificationService.sendToUser(
+          final pushSuccess = await PushNotificationService.sendToUser(
             userId: ownerId,
             title: 'Tool Request: ${tool.name}',
             body: '$requesterFirstName has requested the ${tool.name}',
@@ -1021,9 +1021,14 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               'requester_id': requesterId,
             },
           );
-          debugPrint('✅ Push notification sent to tool owner');
-        } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification to tool owner: $pushError');
+          if (pushSuccess) {
+            debugPrint('✅ Push notification sent successfully to tool owner: $ownerId');
+          } else {
+            debugPrint('⚠️ Push notification returned false for tool owner: $ownerId');
+          }
+        } catch (pushError, stackTrace) {
+          debugPrint('❌ Exception sending push notification to tool owner: $pushError');
+          debugPrint('❌ Stack trace: $stackTrace');
         }
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');

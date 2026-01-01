@@ -877,21 +877,26 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
     setState(() => _isSaving = true);
 
     try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      
       String newStatus = 'Available';
       if (_returnCondition == 'Poor' || _returnCondition == 'Needs Repair') {
         newStatus = 'Maintenance';
       }
 
+      // For shared tools, ensure assignedTo is cleared when returning
       final updatedTool = _selectedTool!.copyWith(
         status: newStatus,
         condition: _returnCondition,
-        assignedTo: null,
+        assignedTo: null, // Always clear assignedTo when returning, especially for shared tools
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         updatedAt: DateTime.now().toIso8601String(),
       );
 
-      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-      await context.read<SupabaseToolProvider>().loadTools();
+      await toolProvider.updateTool(updatedTool);
+      
+      // Reload tools to ensure fresh data from database
+      await toolProvider.loadTools();
 
       if (!mounted) return;
         AuthErrorHandler.showSuccessSnackBar(context, '${_selectedTool!.name} returned successfully');

@@ -105,7 +105,7 @@ class Tool {
     double? currentValue,
     String? condition,
     String? location,
-    String? assignedTo,
+    Object? assignedTo = _undefined, // Use Object? with sentinel to distinguish null from undefined
     String? status,
     String? toolType,
     String? imagePath,
@@ -125,7 +125,7 @@ class Tool {
       currentValue: currentValue ?? this.currentValue,
       condition: condition ?? this.condition,
       location: location ?? this.location,
-      assignedTo: assignedTo ?? this.assignedTo,
+      assignedTo: assignedTo == _undefined ? this.assignedTo : assignedTo as String?,
       status: status ?? this.status,
       toolType: toolType ?? this.toolType,
       imagePath: imagePath ?? this.imagePath,
@@ -134,5 +134,7 @@ class Tool {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+  
+  static const Object _undefined = Object();
 }
 

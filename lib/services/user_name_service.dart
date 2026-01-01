@@ -25,6 +25,7 @@ class UserNameService {
     }
 
     try {
+      // First try: Query users table
       final userResponse = await SupabaseService.client
           .from('users')
           .select('full_name, email')
@@ -49,14 +50,37 @@ class UserNameService {
         _nameCache[userId] = name;
         _cacheTimestamps[userId] = DateTime.now();
         debugPrint('✅ [UserName] Fetched and cached name for $userId: $name');
-      } else {
-        debugPrint('⚠️ [UserName] No user found for $userId');
-        // Cache "Unknown" to avoid repeated failed lookups
-        _nameCache[userId] = name;
-        _cacheTimestamps[userId] = DateTime.now();
+        return name;
       }
       
-      return name;
+      // Second try: Query technicians table by user_id (if user_id column exists)
+      debugPrint('⚠️ [UserName] User not found in users table, trying technicians table by user_id...');
+      try {
+        final technicianResponse = await SupabaseService.client
+            .from('technicians')
+            .select('name, email, user_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+        
+        if (technicianResponse != null) {
+          final techName = technicianResponse['name'] as String?;
+          if (techName != null && techName.trim().isNotEmpty) {
+            name = techName;
+            _nameCache[userId] = name;
+            _cacheTimestamps[userId] = DateTime.now();
+            debugPrint('✅ [UserName] Found name in technicians table for $userId: $name');
+            return name;
+          }
+        }
+      } catch (techError) {
+        debugPrint('⚠️ [UserName] Error querying technicians table: $techError');
+        // If user_id column doesn't exist, that's okay - continue
+      }
+      
+      // If all lookups failed
+      debugPrint('⚠️ [UserName] No user found for $userId in users or technicians table');
+      // Don't cache "Unknown" - allow retries in case user is added later
+      return 'Unknown';
     } catch (e) {
       debugPrint('❌ [UserName] Error fetching user name for $userId: $e');
       return 'Unknown';

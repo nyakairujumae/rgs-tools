@@ -136,6 +136,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   bool _isLoadingPositions = false;
   String? _selectedPositionId;
   bool _canManageAdmins = false;
+  String? _lastUserId;
 
   @override
   void initState() {
@@ -269,6 +270,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final authProvider = context.watch<AuthProvider>();
+
+    if (authProvider.userId != _lastUserId) {
+      _lastUserId = authProvider.userId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _canManageAdmins = false;
+        });
+        if (authProvider.userId != null) {
+          _loadInviteAdminData();
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
@@ -502,6 +517,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 );
                               },
                             ),
+                            if (authProvider.isAdmin && _canManageAdmins) ...[
+                              const SizedBox(height: 12),
+                              _buildProfileOption(
+                                context: parentContext,
+                                icon: Icons.admin_panel_settings,
+                                label: 'Manage Admins',
+                                iconColor: AppTheme.secondaryColor,
+                                backgroundColor:
+                                    AppTheme.secondaryColor.withOpacity(0.12),
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  Navigator.push(
+                                    parentContext,
+                                    MaterialPageRoute(
+                                      builder: (_) => const AdminManagementScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                             const SizedBox(height: 12),
                             _buildProfileOption(
                               context: parentContext,
@@ -670,38 +705,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               ),
             ],
           ),
-          if (authProvider.isAdmin && _canManageAdmins) ...[
-            const SizedBox(height: 14),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  Navigator.push(
-                    parentContext,
-                    MaterialPageRoute(
-                      builder: (_) => const AdminManagementScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.admin_panel_settings),
-                label: const Text('Manage Admins'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryColor,
-                  side: BorderSide(
-                    color: AppTheme.secondaryColor.withOpacity(0.4),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 14 : 16,
-                    vertical: isDesktop ? 10 : 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

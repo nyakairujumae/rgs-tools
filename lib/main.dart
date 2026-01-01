@@ -633,10 +633,12 @@ class HvacToolsManagerApp extends StatelessWidget {
               '/register': (context) => const RegisterScreen(),
               '/reset-password': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                final routeName = ModalRoute.of(context)?.settings.name;
                 return ResetPasswordScreen(
                   accessToken: args?['access_token'] as String?,
                   refreshToken: args?['refresh_token'] as String?,
                   type: args?['type'] as String?,
+                  deepLink: routeName,
                 );
               },
               '/pending-approval': (context) => const PendingApprovalScreen(),

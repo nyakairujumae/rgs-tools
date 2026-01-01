@@ -81,7 +81,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       await BadgeService.syncBadgeWithDatabase(context);
       _refreshUnreadCount();
       // Refresh unread count and sync badge every 30 seconds (like admin section)
-      // Also refresh tools periodically to catch updates from other users
+      // Note: Tools are refreshed via pull-to-refresh or when user returns to screen
+      // No automatic tools refresh to avoid unnecessary page refreshes
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted && !_isDisposed) {
           _refreshUnreadCount();
@@ -89,10 +90,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           BadgeService.syncBadgeWithDatabase(context).catchError((e) {
             debugPrint('⚠️ Error syncing badge: $e');
           });
-          // Refresh tools to catch updates from other users (e.g., badging)
-          context.read<SupabaseToolProvider>().loadTools().catchError((e) {
-            debugPrint('⚠️ Error refreshing tools: $e');
-          });
+          // Removed automatic tools refresh - causes unnecessary page refreshes
+          // Tools can be refreshed manually via pull-to-refresh or when screen becomes visible
         }
       });
     });
@@ -106,6 +105,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         debugPrint('⚠️ Error syncing badge on resume: $e');
       });
       _refreshUnreadCount();
+      // Refresh tools only when app resumes (user returns to app)
+      // This is less frequent than every 30 seconds and only when needed
+      context.read<SupabaseToolProvider>().loadTools().catchError((e) {
+        debugPrint('⚠️ Error refreshing tools on resume: $e');
+      });
     }
   }
 
@@ -2427,7 +2431,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         
         // Send push notification to the tool holder
         try {
-          await PushNotificationService.sendToUser(
+          final pushSuccess = await PushNotificationService.sendToUser(
             userId: ownerId,
             title: 'Tool Request: ${tool.name}',
             body: '$requesterFirstName has requested the ${tool.name}',
@@ -2437,9 +2441,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               'requester_id': requesterId,
             },
           );
-          debugPrint('✅ Push notification sent to tool holder');
-        } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification to tool holder: $pushError');
+          if (pushSuccess) {
+            debugPrint('✅ Push notification sent successfully to tool holder: $ownerId');
+          } else {
+            debugPrint('⚠️ Push notification returned false for tool holder: $ownerId');
+          }
+        } catch (pushError, stackTrace) {
+          debugPrint('❌ Exception sending push notification to tool holder: $pushError');
+          debugPrint('❌ Stack trace: $stackTrace');
           // Don't fail the whole operation if push fails
         }
         
@@ -2763,25 +2772,38 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         }
     
     // Fetch user name from users table (not technicians table)
-    // tool.assignedTo contains user ID from users table
+    // tool.assignedTo contains user ID from auth.users
     // Show holder even if it's the current user (for shared tools that are badged)
     return FutureBuilder<String>(
       future: UserNameService.getUserName(tool.assignedTo!),
       builder: (context, snapshot) {
         String name = 'Unknown';
+        bool foundName = false;
         
-        if (snapshot.hasData) {
-          name = UserNameService.getFirstName(snapshot.data!);
-        } else if (snapshot.hasError) {
-          debugPrint('⚠️ Error fetching user name for ${tool.assignedTo}: ${snapshot.error}');
-          // Fallback: try to find in technicians list as backup
-          for (final t in technicians) {
-            if (t.id == tool.assignedTo) {
-              final parts = (t.name).trim().split(RegExp(r"\s+"));
-              name = parts.isNotEmpty ? parts.first : t.name;
-              break;
-            }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text(
+            'Loading...',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          );
+        }
+        
+        if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
+          final fullName = snapshot.data!;
+          if (fullName != 'Unknown') {
+            name = UserNameService.getFirstName(fullName);
+            foundName = true;
           }
+        }
+        
+        // Note: The UserNameService already tries technicians table as fallback,
+        // so if we get here with "Unknown", it means the user wasn't found anywhere
+        // No additional fallback needed here as UserNameService handles it
+        
+        if (!foundName) {
+          debugPrint('❌ [HolderLine] Could not find name for user ID: ${tool.assignedTo}');
         }
         
         return Text(

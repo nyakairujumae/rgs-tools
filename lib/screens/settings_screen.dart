@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:open_file/open_file.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../providers/auth_provider.dart';
+import '../providers/supabase_tool_provider.dart';
+import '../providers/supabase_technician_provider.dart';
+import '../services/csv_export_service.dart';
+import '../utils/auth_error_handler.dart';
+import 'terms_of_service_screen.dart';
 import 'package:intl/intl.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -883,9 +892,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _exportData() => _showComingSoon('Export feature coming soon!');
+  Future<void> _exportData() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
 
-  void _importData() => _showComingSoon('Import feature coming soon!');
+      // Get providers
+      final toolProvider = context.read<SupabaseToolProvider>();
+      final technicianProvider = context.read<SupabaseTechnicianProvider>();
+      final authProvider = context.read<AuthProvider>();
+
+      // Refresh data to ensure we have latest
+      await toolProvider.loadTools();
+      await technicianProvider.loadTechnicians();
+
+      // Export data
+      final files = await CsvExportService.exportUserData(
+        tools: toolProvider.tools,
+        technicians: technicianProvider.technicians,
+        userId: authProvider.user?.id,
+      );
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      // Show success message
+      if (context.mounted) {
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Data exported successfully! ${files.length} file(s) created.',
+        );
+
+        // Open the first file
+        if (files.isNotEmpty) {
+          try {
+            await OpenFile.open(files.first.path);
+          } catch (e) {
+            debugPrint('Could not open file: $e');
+          }
+        }
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Error exporting data: $e',
+        );
+      }
+    }
+  }
+
+  void _importData() {
+    // Show information dialog about import
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Data'),
+        content: const Text(
+          'To import data, please contact support at support@rgstools.app. '
+          'We will help you restore your data from a backup file.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showVersionInfo() {
     showDialog(
@@ -933,13 +1021,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showHelp() => _showComingSoon('Help & Support coming soon!');
+  Future<void> _showHelp() async {
+    final url = Uri.parse('https://rgstools.app/support');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open support page'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening support page: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
-  void _showPrivacyPolicy() =>
-      _showComingSoon('Privacy Policy coming soon!');
+  Future<void> _showPrivacyPolicy() async {
+    final url = Uri.parse('https://rgstools.app/privacy');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open privacy policy page'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening privacy policy page: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
-  void _showTermsOfService() =>
-      _showComingSoon('Terms of Service coming soon!');
+  void _showTermsOfService() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TermsOfServiceScreen(),
+      ),
+    );
+  }
 
   void _showComingSoon(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

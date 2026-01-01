@@ -1316,6 +1316,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
       await toolProvider.updateTool(updatedTool);
       
+      // Clear name cache for this user so fresh data is fetched
+      UserNameService.clearCacheForUser(authProvider.userId!);
+      
       // Reload tools to ensure other technicians see the update
       await toolProvider.loadTools();
       
@@ -1367,7 +1370,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       );
 
       await toolProvider.updateTool(updatedTool);
+      
+      // Reload tools to ensure fresh data from database
       await toolProvider.loadTools();
+      
+      // Get the fresh tool data from the provider to ensure UI reflects database state
+      final reloadedTool = toolProvider.getToolById(_currentTool.id!);
+      final finalTool = reloadedTool ?? updatedTool;
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1379,7 +1388,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         );
 
         setState(() {
-          _currentTool = updatedTool;
+          _currentTool = finalTool;
         });
       }
     } catch (e) {
@@ -1469,7 +1478,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         
         // Send push notification to the tool holder
         try {
-          await PushNotificationService.sendToUser(
+          final pushSuccess = await PushNotificationService.sendToUser(
             userId: ownerId,
             title: 'Tool Request: ${_currentTool.name}',
             body: '$requesterFirstName has requested the ${_currentTool.name}',
@@ -1479,9 +1488,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               'requester_id': requesterId,
             },
           );
-          debugPrint('✅ Push notification sent to tool holder');
-        } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification to tool holder: $pushError');
+          if (pushSuccess) {
+            debugPrint('✅ Push notification sent successfully to tool holder: $ownerId');
+          } else {
+            debugPrint('⚠️ Push notification returned false for tool holder: $ownerId');
+          }
+        } catch (pushError, stackTrace) {
+          debugPrint('❌ Exception sending push notification to tool holder: $pushError');
+          debugPrint('❌ Stack trace: $stackTrace');
         }
       } catch (e) {
         debugPrint('❌ Failed to create technician notification: $e');

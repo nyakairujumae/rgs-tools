@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
     const message = createError.message ?? '';
     if (message.toLowerCase().includes('already')) {
       const { data: existingUser } = await supabase
-        .from("users")
+        .from("auth.users")
         .select("id")
         .eq("email", email)
         .maybeSingle();
@@ -135,6 +135,15 @@ Deno.serve(async (req) => {
     }
   } else {
     userId = created.user?.id ?? null;
+  }
+
+  if (!userId) {
+    const { data: fallbackUser } = await supabase
+      .from("auth.users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    userId = fallbackUser?.id ?? null;
   }
 
   const { error: resetError } = await supabase.auth.resetPasswordForEmail(

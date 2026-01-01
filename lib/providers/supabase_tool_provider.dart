@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/user_name_service.dart';
 
 class SupabaseToolProvider with ChangeNotifier {
   List<Tool> _tools = [];
@@ -108,6 +109,11 @@ class SupabaseToolProvider with ChangeNotifier {
       
       final updatedTool = Tool.fromMap(updatedResponse);
       debugPrint('✅ [UpdateTool] Tool updated. Database assignedTo: ${updatedTool.assignedTo}');
+      
+      // Clear name cache for the assigned user so fresh data is fetched when other users view the tool
+      if (updatedTool.assignedTo != null) {
+        UserNameService.clearCacheForUser(updatedTool.assignedTo!);
+      }
 
       final index = _tools.indexWhere((t) => t.id == tool.id);
       if (index != -1) {
