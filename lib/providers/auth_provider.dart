@@ -289,7 +289,7 @@ class AuthProvider with ChangeNotifier {
         _user = data.session?.user;
         // Only load role if we have a user - don't create default accounts
         if (_user != null) {
-          _loadUserRole();
+        _loadUserRole();
         } else {
           // No user - clear role, don't create anything
           _userRole = UserRole.pending;
@@ -324,7 +324,7 @@ class AuthProvider with ChangeNotifier {
             debugPrint('✅ Loaded user role from local storage: ${_userRole.value}');
           }
         }
-
+        
         if (_userRole == UserRole.admin) {
           await _ensureAdminPosition();
         }
@@ -594,7 +594,7 @@ class AuthProvider with ChangeNotifier {
         // Only update _user if we're not already logged in (self-registration)
         // If we're already logged in (admin creating technician), preserve current user
         if (!wasAlreadyLoggedIn) {
-          _user = response.user;
+        _user = response.user;
           debugPrint('🔍 Updated _user to new user: ${_user!.id} (self-registration)');
         } else {
           debugPrint('🔍 Preserving current logged-in user (ID: $previousUserId) - admin creating technician');
@@ -779,10 +779,10 @@ class AuthProvider with ChangeNotifier {
           debugPrint('⚠️ User record not found in users table, creating manually...');
           // Create user record manually if trigger didn't fire
           final userData = {
-            'id': response.user!.id,
-            'email': email,
-            'full_name': name,
-            'role': 'admin',
+                'id': response.user!.id,
+                'email': email,
+                'full_name': name,
+                'role': 'admin',
           };
           
           // Add position_id if provided
@@ -1380,12 +1380,12 @@ class AuthProvider with ChangeNotifier {
               debugPrint('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
               // Create user record from auth user data - role must be explicitly set
               try {
-                await client.from('users').insert({
-                  'id': _user!.id,
-                  'email': _user!.email ?? email,
-                  'full_name': _user!.userMetadata?['full_name'] ?? 
-                              _user!.userMetadata?['name'] ?? 
-                              _user!.email?.split('@')[0] ?? 'User',
+            await client.from('users').insert({
+              'id': _user!.id,
+              'email': _user!.email ?? email,
+              'full_name': _user!.userMetadata?['full_name'] ?? 
+                          _user!.userMetadata?['name'] ?? 
+                          _user!.email?.split('@')[0] ?? 'User',
                   'role': roleFromMetadata, // Role must be explicitly set, no default
                 });
                 debugPrint('✅ Created user record in public.users with role: $roleFromMetadata');
@@ -1941,7 +1941,7 @@ _isLoading = false;
                   } else if (status == 'approved') {
                     // Technician is approved - use technician role
                     debugPrint('✅ Technician is approved - using technician role');
-                    _userRole = newRole;
+            _userRole = newRole;
                     await _saveUserRole(newRole);
                     notifyListeners();
                     return;
@@ -1965,13 +1965,13 @@ _isLoading = false;
             } else {
               // Not a technician (admin or other) - use role from database
               _userRole = newRole;
-              await _saveUserRole(newRole);
-              debugPrint('✅ User role loaded from database: ${_userRole.value}');
-              notifyListeners();
+            await _saveUserRole(newRole);
+            debugPrint('✅ User role loaded from database: ${_userRole.value}');
+            notifyListeners();
               if (roleFromDb == 'admin' && (positionId == null || positionId.isEmpty)) {
                 await _ensureAdminPosition();
               }
-              return;
+            return;
             }
           } else {
             debugPrint('⚠️ No role found in database, keeping current role: ${_userRole.value}');
@@ -2045,11 +2045,11 @@ _isLoading = false;
                   // User is approved, but user record doesn't exist - this shouldn't happen
                   // Don't create it here - it should have been created during approval
                   debugPrint('⚠️ User approved but no user record - should have been created during approval');
-                  _userRole = UserRole.pending;
-                  await _saveUserRole(_userRole);
-                  notifyListeners();
-                  return;
-                }
+                _userRole = UserRole.pending;
+                await _saveUserRole(_userRole);
+                notifyListeners();
+                return;
+              }
               }
             } catch (pendingError) {
               debugPrint('🔍 No pending approval found: $pendingError');
@@ -2058,10 +2058,10 @@ _isLoading = false;
             // No user record and no pending approval - set role to pending
             // CRITICAL: Do NOT create user record here - accounts must be created during explicit registration only
             // _loadUserRole() only loads roles, never creates accounts
-            _userRole = UserRole.pending;
-            await _saveUserRole(_userRole);
-            notifyListeners();
-            return;
+                  _userRole = UserRole.pending;
+                  await _saveUserRole(_userRole);
+              notifyListeners();
+              return;
           }
           retryCount++;
           debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
@@ -2360,7 +2360,7 @@ _isLoading = false;
       try {
         await FirebaseMessagingService.registerCurrentToken();
         debugPrint('✅ [FCM] Token registration attempted on retry (2s)');
-        return;
+          return;
       } catch (e) {
         debugPrint('⚠️ [FCM] Token retry (2s) failed: $e');
       }

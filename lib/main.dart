@@ -733,21 +733,42 @@ class HvacToolsManagerApp extends StatelessWidget {
                                               user.userMetadata?['name'] as String? ?? 
                                               email.split('@')[0];
                               final userId = user.id;
-                              final role = user.userMetadata?['role'] as String?;
                               
-                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId, Role: $role');
+                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId');
+                              
+                              // CRITICAL: Check role from database, not just metadata
+                              // Metadata might not be set for admin invites
+                              String? role;
+                              try {
+                                final userRecord = await SupabaseService.client
+                                    .from('users')
+                                    .select('role')
+                                    .eq('id', userId)
+                                    .maybeSingle();
+                                role = userRecord?['role'] as String?;
+                                print('✅ Role from database: $role');
+                              } catch (e) {
+                                print('⚠️ Could not fetch role from database: $e');
+                                // Fallback to metadata
+                                role = user.userMetadata?['role'] as String?;
+                                print('✅ Using role from metadata: $role');
+                              }
                               
                               // Check if user is admin - admins should auto-login
                               final isAdmin = role == 'admin';
                               
                               if (isAdmin) {
                                 print('✅ Admin email confirmation - auto-logging in...');
+                                
                                 // Initialize auth provider with the session
+                                // The session is already set by exchangeCodeForSession/getSessionFromUrl
                                 final authProvider = Provider.of<AuthProvider>(context, listen: false);
                                 await authProvider.initialize();
                                 
-                                // Wait a bit for role to be loaded
-                                await Future.delayed(const Duration(milliseconds: 1000));
+                                // Wait a bit for role to be loaded from database
+                                await Future.delayed(const Duration(milliseconds: 1500));
+                                
+                                // Re-initialize to ensure role is loaded
                                 await authProvider.initialize();
                                 
                                 if (authProvider.isAuthenticated && authProvider.isAdmin) {
@@ -756,6 +777,13 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
                                   }
                                   return;
+                                } else {
+                                  print('⚠️ Admin not authenticated after initialization. isAuthenticated: ${authProvider.isAuthenticated}, isAdmin: ${authProvider.isAdmin}, userRole: ${authProvider.userRole}');
+                                  // Fallback: try routing anyway if we have a session and confirmed role
+                                  if (isAdmin && sessionResponse.session != null && context.mounted) {
+                                    print('⚠️ Attempting fallback routing to admin home');
+                                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
+                                  }
                                 }
                               } else {
                                 // Technician - route to pending approval

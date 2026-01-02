@@ -835,9 +835,12 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       backgroundColor: Colors.transparent,
       isDismissible: true,
       enableDrag: true,
-      builder: (context) => Container(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(24),
           ),
@@ -852,14 +855,14 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: colorScheme.onSurface.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Text(
               tool.name,
               style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+                color: theme.textTheme.bodyLarge?.color,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -872,7 +875,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 title: Text(
                   'Assign to Technician',
                   style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                      color: theme.textTheme.bodyLarge?.color),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -887,7 +890,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   title: Text(
                     'Reassign Tool',
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color),
+                        color: theme.textTheme.bodyLarge?.color),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -895,16 +898,16 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                         arguments: tool);
                   },
                 ),
-              ListTile(
-                leading: const Icon(Icons.keyboard_return, color: Colors.green),
-                title: Text(
-                  'Return Tool',
-                  style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/checkin');
+                ListTile(
+                  leading: const Icon(Icons.keyboard_return, color: Colors.green),
+                  title: Text(
+                    'Return Tool',
+                    style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/checkin');
                 },
               ),
             ],
@@ -915,7 +918,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 title: Text(
                   'Edit Tool',
                   style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color),
+                      color: theme.textTheme.bodyLarge?.color),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -927,7 +930,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               title: Text(
                 'View Details',
                 style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color),
+                    color: theme.textTheme.bodyLarge?.color),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -937,6 +940,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 

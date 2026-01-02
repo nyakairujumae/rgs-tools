@@ -1059,83 +1059,86 @@ class _ToolsScreenState extends State<ToolsScreen> {
       backgroundColor: Colors.transparent,
       isDismissible: true,
       enableDrag: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(24),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              width: 48,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text(
-              'Tool Actions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            SizedBox(height: 20),
-            ListTile(
-              leading: Icon(Icons.share, color: AppTheme.secondaryColor),
-              title: Text(
-                tool.toolType == 'inventory'
-                    ? 'Make Shared Tool'
-                    : 'Already ${tool.toolType}',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                width: 48,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              subtitle: Text(
-                tool.toolType == 'inventory'
-                    ? 'Make this tool available for checkout'
-                    : 'Tool type: ${tool.toolType}',
+              Text(
+                'Tool Actions',
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
-              onTap: tool.toolType == 'inventory'
-                  ? () => _convertToSharedTool(context, tool)
-                  : null,
-            ),
-            if (tool.toolType == 'shared')
+              SizedBox(height: 20),
               ListTile(
-                leading: Icon(
-                  Icons.inventory,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-                ),
+                leading: Icon(Icons.share, color: AppTheme.secondaryColor),
                 title: Text(
-                  'Move to Inventory',
+                  tool.toolType == 'inventory'
+                      ? 'Make Shared Tool'
+                      : 'Already ${tool.toolType}',
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 subtitle: Text(
-                  'Remove from shared tools',
+                  tool.toolType == 'inventory'
+                      ? 'Make this tool available for checkout'
+                      : 'Tool type: ${tool.toolType}',
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
-                onTap: () => _convertToInventoryTool(context, tool),
+                onTap: tool.toolType == 'inventory'
+                    ? () => _convertToSharedTool(context, tool)
+                    : null,
               ),
-            SizedBox(height: 20),
-          ],
-        ),
-      ),
+              if (tool.toolType == 'shared')
+                ListTile(
+                  leading: Icon(
+                    Icons.inventory,
+                    color: colorScheme.onSurface.withOpacity(0.55),
+                  ),
+                  title: Text(
+                    'Move to Inventory',
+                    style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Remove from shared tools',
+                    style: TextStyle(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  onTap: () => _convertToInventoryTool(context, tool),
+                ),
+              SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
     );
   }
 

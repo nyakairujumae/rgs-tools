@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/tool.dart';
 import "../providers/supabase_tool_provider.dart";
@@ -24,12 +27,15 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
   final _currentValueController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
   String _category = '';
   String _condition = 'Good';
   String _status = 'Available';
   DateTime? _purchaseDate;
   bool _isLoading = false;
+  String? _imagePath;
+  File? _selectedImageFile;
 
   final List<String> _categories = [
     'Hand Tools',
@@ -73,6 +79,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
     if (widget.tool.purchaseDate != null) {
       _purchaseDate = DateTime.tryParse(widget.tool.purchaseDate!);
     }
+    _imagePath = widget.tool.imagePath;
   }
 
   @override
@@ -328,6 +335,141 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                     ),
                     maxLines: 3,
                   ),
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Tool Image',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      try {
+                        final source = await showModalBottomSheet<ImageSource>(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                          ),
+                          builder: (context) {
+                            return SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.camera_alt_outlined),
+                                    title: const Text('Camera'),
+                                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.photo_library_outlined),
+                                    title: const Text('Gallery'),
+                                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                        if (source == null) {
+                          return;
+                        }
+                        final XFile? image = await _picker.pickImage(
+                          source: source,
+                          imageQuality: 85,
+                          maxWidth: 1024,
+                          maxHeight: 1024,
+                        );
+                        if (image != null) {
+                          setState(() {
+                            _selectedImageFile = File(image.path);
+                            _imagePath = image.path;
+                          });
+                        }
+                      } catch (e) {
+                        handleError(e);
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.dividerColor),
+                      ),
+                      child: _selectedImageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                _selectedImageFile!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : (_imagePath != null && _imagePath!.isNotEmpty)
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: _imagePath!.startsWith('http')
+                                      ? Image.network(
+                                          _imagePath!,
+                                          height: 180,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              height: 180,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.surface,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.image_outlined, size: 40, color: theme.hintColor),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    'Tap to add or change image',
+                                                    style: TextStyle(color: theme.hintColor),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : Image.file(
+                                          File(_imagePath!),
+                                          height: 180,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
+                                )
+                              : Container(
+                                  height: 180,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.image_outlined, size: 40, color: theme.hintColor),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Tap to add or change image',
+                                        style: TextStyle(color: theme.hintColor),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -376,6 +518,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         status: _status,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        imagePath: (_imagePath == null || _imagePath!.isEmpty) ? widget.tool.imagePath : _imagePath,
         updatedAt: DateTime.now().toIso8601String(),
       );
 
