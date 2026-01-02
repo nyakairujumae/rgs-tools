@@ -273,10 +273,10 @@ BEGIN
   SELECT role INTO user_role FROM users WHERE id = user_id_param;
   
   -- If not admin, return false
-  IF user_role != 'admin' THEN
+    IF user_role != 'admin' THEN
     RETURN false;
-  END IF;
-  
+    END IF;
+    
   -- Get user's position_id
   SELECT position_id INTO user_position_id FROM users WHERE id = user_id_param;
   

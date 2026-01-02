@@ -769,7 +769,11 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              minimumSize: const Size(120, 48),
+            ),
             child: Text('Authorize'),
           ),
         ],

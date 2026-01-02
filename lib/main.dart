@@ -884,7 +884,9 @@ class HvacToolsManagerApp extends StatelessWidget {
                             print('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
                             
                             // Get session from URL (this confirms the email/OAuth and creates the session)
-                            final sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            final sessionResponse = code != null && !hasAccessToken
+                                ? await SupabaseService.client.auth.exchangeCodeForSession(code)
+                                : await SupabaseService.client.auth.getSessionFromUrl(uri);
                             
                             if (sessionResponse.session != null) {
                               print('✅ Session created from email confirmation');

@@ -456,6 +456,17 @@ class AuthProvider with ChangeNotifier {
       if (userRecord['role'] != 'admin') return;
       if (userRecord['position_id'] != null) return;
 
+      final adminCountResponse = await SupabaseService.client
+          .from('users')
+          .select('id')
+          .eq('role', 'admin');
+
+      final adminCount = (adminCountResponse as List).length;
+      if (adminCount > 1) {
+        debugPrint('⚠️ Multiple admins found; skipping auto-assign of Super Admin position');
+        return;
+      }
+
       final superAdmin = await SupabaseService.client
           .from('admin_positions')
           .select('id')
@@ -1882,7 +1893,7 @@ _isLoading = false;
         try {
           final response = await SupabaseService.client
               .from('users')
-              .select('role')
+              .select('role, position_id')
               .eq('id', _user!.id)
               .maybeSingle() // Use maybeSingle instead of single to avoid errors if user doesn't exist
               .timeout(
@@ -1895,6 +1906,7 @@ _isLoading = false;
           if (response != null && response['role'] != null) {
             final roleFromDb = response['role'] as String;
             final newRole = UserRoleExtension.fromString(roleFromDb);
+            final positionId = response['position_id'] as String?;
             
             // CRITICAL: If role is 'technician', check pending approvals FIRST
             // Technicians with pending approval should have UserRole.pending, not UserRole.technician
@@ -1956,6 +1968,9 @@ _isLoading = false;
               await _saveUserRole(newRole);
               debugPrint('✅ User role loaded from database: ${_userRole.value}');
               notifyListeners();
+              if (roleFromDb == 'admin' && (positionId == null || positionId.isEmpty)) {
+                await _ensureAdminPosition();
+              }
               return;
             }
           } else {

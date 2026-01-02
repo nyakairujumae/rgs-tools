@@ -157,6 +157,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = theme.colorScheme;
     final logoAsset = getThemeLogoAsset(theme.brightness);
     final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
+    final initialRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    final showDeepLinkBanner = initialRoute.contains('auth/callback') ||
+        initialRoute.contains('reset-password') ||
+        initialRoute.contains('code=');
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -193,6 +197,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     : null,
                 child: Column(
                   children: [
+                    if (showDeepLinkBanner) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Text(
+                          'Deep link: $initialRoute',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: context.spacingLarge),
+                    ],
                     // Top whitespace 80-100px
                     SizedBox(height: context.spacingLarge * 5.625), // ~90px
                     

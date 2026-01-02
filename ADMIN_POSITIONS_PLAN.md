@@ -164,14 +164,14 @@ class AdminPositionService {
   // Get all positions
   static Future<List<AdminPosition>> getAllPositions() async {
     final positionsResponse = await SupabaseService.client
-        .from('admin_positions')
+          .from('admin_positions')
         .select('*, position_permissions(*)')
-        .eq('is_active', true)
+          .eq('is_active', true)
         .order('name');
 
     return (positionsResponse as List)
-        .map((json) => AdminPosition.fromJson(json))
-        .toList();
+          .map((json) => AdminPosition.fromJson(json))
+          .toList();
   }
 
   // Get position by ID
@@ -188,11 +188,11 @@ class AdminPositionService {
 
   // Get user's position
   static Future<AdminPosition?> getUserPosition(String userId) async {
-    final userResponse = await SupabaseService.client
-        .from('users')
+      final userResponse = await SupabaseService.client
+          .from('users')
         .select('position_id')
-        .eq('id', userId)
-        .maybeSingle();
+          .eq('id', userId)
+          .maybeSingle();
 
     if (userResponse == null || userResponse['position_id'] == null) {
       return null;

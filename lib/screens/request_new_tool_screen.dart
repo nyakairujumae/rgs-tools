@@ -36,7 +36,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
   // Tool Purchase fields
   final TextEditingController _nameCtrl = TextEditingController();
-  final TextEditingController _categoryCtrl = TextEditingController();
+  String _selectedCategory = '';
   final TextEditingController _brandCtrl = TextEditingController();
   final TextEditingController _modelCtrl = TextEditingController();
   final TextEditingController _quantityCtrl = TextEditingController(text: '1');
@@ -70,6 +70,39 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> _selectedImages = [];
 
+  // Categories (same as admin side)
+  final List<String> _categories = [
+    'Hand Tools',
+    'Power Tools',
+    'Testing Equipment',
+    'Safety Equipment',
+    'Measuring Tools',
+    'Cutting Tools',
+    'Fastening Tools',
+    'Electrical Tools',
+    'Plumbing Tools',
+    'Carpentry Tools',
+    'Automotive Tools',
+    'Garden Tools',
+    'Other',
+  ];
+
+  final Map<String, IconData> _categoryIcons = {
+    'Hand Tools': Icons.build_outlined,
+    'Power Tools': Icons.power_outlined,
+    'Testing Equipment': Icons.science_outlined,
+    'Safety Equipment': Icons.shield_outlined,
+    'Measuring Tools': Icons.straighten_outlined,
+    'Cutting Tools': Icons.cut_outlined,
+    'Fastening Tools': Icons.construction_outlined,
+    'Electrical Tools': Icons.electrical_services_outlined,
+    'Plumbing Tools': Icons.plumbing_outlined,
+    'Carpentry Tools': Icons.hardware_outlined,
+    'Automotive Tools': Icons.car_repair_outlined,
+    'Garden Tools': Icons.yard_outlined,
+    'Other': Icons.category_outlined,
+  };
+
   @override
   void dispose() {
     _titleCtrl.dispose();
@@ -77,7 +110,6 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     _siteCtrl.dispose();
     _reasonCtrl.dispose();
     _nameCtrl.dispose();
-    _categoryCtrl.dispose();
     _brandCtrl.dispose();
     _modelCtrl.dispose();
     _quantityCtrl.dispose();
@@ -335,6 +367,105 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           )
           .toList(),
       onChanged: onChanged,
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    final theme = Theme.of(context);
+    return DropdownButtonFormField<String>(
+      value: _selectedCategory.isEmpty ? null : _selectedCategory,
+      isExpanded: true,
+      style: TextStyle(
+        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+        fontWeight: FontWeight.w500,
+        color: theme.colorScheme.onSurface,
+      ),
+      decoration: context.chatGPTInputDecoration.copyWith(
+        labelText: 'Category',
+        hintText: 'Select a category',
+        prefixIcon: Icon(
+          _categoryIcons[_selectedCategory.isEmpty ? 'Other' : _selectedCategory] ?? Icons.category_outlined,
+          size: 22,
+          color: theme.colorScheme.onSurface.withOpacity(0.7),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 52),
+      ),
+      items: _categories.map((category) {
+        return DropdownMenuItem<String>(
+          value: category,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _categoryIcons[category] ?? Icons.category_outlined,
+                  size: 18,
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    category,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+      selectedItemBuilder: (context) {
+        return _categories
+            .map(
+              (category) => Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _categoryIcons[category] ?? Icons.category_outlined,
+                      size: 18,
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList();
+      },
+      onChanged: (value) {
+        setState(() {
+          _selectedCategory = value ?? '';
+        });
+      },
+      validator: (value) {
+        if (_selectedCategory.isEmpty) {
+          return 'Required';
+        }
+        return null;
+      },
+      dropdownColor: Theme.of(context).colorScheme.surface,
+      menuMaxHeight: 300,
+      borderRadius: BorderRadius.circular(20),
+      icon: const Icon(Icons.keyboard_arrow_down),
     );
   }
 
@@ -646,7 +777,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         children: [
           _textField(_nameCtrl, label: 'Tool name', hint: 'e.g., Cordless Drill', validator: _req),
           const SizedBox(height: 16),
-          _textField(_categoryCtrl, label: 'Category', hint: 'e.g., Electrical Tools', validator: _req),
+          _buildCategoryDropdown(),
           const SizedBox(height: 16),
           Row(children: [
             Expanded(child: _textField(_brandCtrl, label: 'Brand', hint: 'e.g., Makita')),
@@ -892,7 +1023,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       case RequestTypes.toolPurchase:
         data.addAll({
           'tool_name': _nameCtrl.text.trim(),
-          'category': _categoryCtrl.text.trim(),
+          'category': _selectedCategory,
           'brand': _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
           'model': _modelCtrl.text.trim().isEmpty ? null : _modelCtrl.text.trim(),
           'quantity': _quantityCtrl.text.trim(),
@@ -980,7 +1111,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
     _siteCtrl.clear();
     _reasonCtrl.clear();
     _nameCtrl.clear();
-    _categoryCtrl.clear();
+    _selectedCategory = '';
     _brandCtrl.clear();
     _modelCtrl.clear();
     _quantityCtrl.text = '1';

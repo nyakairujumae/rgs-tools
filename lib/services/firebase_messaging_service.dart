@@ -389,7 +389,7 @@ class FirebaseMessagingService {
         final user = SupabaseService.client.auth.currentUser;
         if (user != null) {
           debugPrint('✅ [FCM] User is logged in, saving to server...');
-          await _sendTokenToServer(_fcmToken!);
+        await _sendTokenToServer(_fcmToken!);
         } else {
           debugPrint('⚠️ [FCM] User not logged in yet, token saved locally');
           debugPrint('⚠️ [FCM] Token will be synced to server after login');
@@ -607,7 +607,7 @@ class FirebaseMessagingService {
       // This prevents duplicate notifications
       if (message.notification == null) {
         debugPrint('📱 [FCM] Data-only message, showing local notification');
-        await _showLocalNotification(message);
+      await _showLocalNotification(message);
       } else {
         debugPrint('📱 [FCM] Notification field present, FCM will show it automatically (skipping local notification to avoid duplicates)');
       }
@@ -814,7 +814,7 @@ class FirebaseMessagingService {
       }
       
       debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
-
+      
       try {
         await SupabaseService.client
             .from('user_fcm_tokens')
@@ -951,37 +951,37 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
                    message.data['message'] as String?;
       
       if (title != null && body != null) {
-        final androidDetails = AndroidNotificationDetails(
+      final androidDetails = AndroidNotificationDetails(
           _backgroundChannelId,
           _backgroundChannelName,
           channelDescription: _backgroundChannelDesc,
-          importance: Importance.high,
-          priority: Priority.high,
-          showWhen: true,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
           enableVibration: true,
           playSound: true,
           number: null,
-        );
-        
-        final iosDetails = DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
+      );
+      
+      final iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
           badgeNumber: badgeCount > 0 ? badgeCount : null,
-        );
-        
-        final details = NotificationDetails(
-          android: androidDetails,
-          iOS: iosDetails,
-        );
+      );
+      
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
         
         final notificationId = message.messageId?.hashCode ?? message.hashCode;
-        
-        await localNotifications.show(
+      
+      await localNotifications.show(
           notificationId,
           title,
           body,
-          details,
+        details,
           payload: message.data.toString(),
         );
         
