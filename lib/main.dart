@@ -736,6 +736,18 @@ class HvacToolsManagerApp extends StatelessWidget {
                               
                               print('✅ User details - Email: $email, Name: $fullName, ID: $userId');
                               
+                              // CRITICAL: The session is already set by exchangeCodeForSession/getSessionFromUrl
+                              // Verify it's set in Supabase
+                              final currentSession = SupabaseService.client.auth.currentSession;
+                              print('✅ Current session: ${currentSession != null ? "Set (user: ${currentSession.user.email})" : "Not set"}');
+                              
+                              // Initialize auth provider first to ensure session is loaded
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              await authProvider.initialize();
+                              
+                              // Wait a bit for role to be loaded
+                              await Future.delayed(const Duration(milliseconds: 500));
+                              
                               // CRITICAL: Check role from database, not just metadata
                               // Metadata might not be set for admin invites
                               String? role;
@@ -749,26 +761,19 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 print('✅ Role from database: $role');
                               } catch (e) {
                                 print('⚠️ Could not fetch role from database: $e');
-                                // Fallback to metadata
-                                role = user.userMetadata?['role'] as String?;
-                                print('✅ Using role from metadata: $role');
+                                // Fallback to auth provider's role (which checks both database and metadata)
+                                role = authProvider.userRole?.value;
+                                print('✅ Using role from auth provider: $role');
                               }
                               
                               // Check if user is admin - admins should auto-login
-                              final isAdmin = role == 'admin';
+                              // Use both direct role check and auth provider's isAdmin
+                              final isAdmin = role == 'admin' || authProvider.isAdmin;
                               
                               if (isAdmin) {
                                 print('✅ Admin email confirmation - auto-logging in...');
                                 
-                                // Initialize auth provider with the session
-                                // The session is already set by exchangeCodeForSession/getSessionFromUrl
-                                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                                await authProvider.initialize();
-                                
-                                // Wait a bit for role to be loaded from database
-                                await Future.delayed(const Duration(milliseconds: 1500));
-                                
-                                // Re-initialize to ensure role is loaded
+                                // Re-initialize to ensure everything is loaded
                                 await authProvider.initialize();
                                 
                                 if (authProvider.isAuthenticated && authProvider.isAdmin) {

@@ -839,65 +839,65 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         final theme = Theme.of(context);
         final colorScheme = theme.colorScheme;
         return Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(24),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              width: 48,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurface.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text(
-              tool.name,
-              style: TextStyle(
-                color: theme.textTheme.bodyLarge?.color,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            if (tool.status == 'Available')
-              ListTile(
-                leading: Icon(Icons.person_add, color: AppTheme.primaryColor),
-                title: Text(
-                  'Assign to Technician',
-                  style: TextStyle(
-                      color: theme.textTheme.bodyLarge?.color),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                width: 48,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/assign-tool', arguments: tool);
-                },
               ),
-            if (tool.status == 'In Use') ...[
-              // Hide Reassign Tool for technicians
-              if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+              Text(
+                tool.name,
+                style: TextStyle(
+                  color: theme.textTheme.bodyLarge?.color,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              if (tool.status == 'Available')
                 ListTile(
-                  leading: Icon(Icons.swap_horiz, color: AppTheme.accentColor),
+                  leading: Icon(Icons.person_add, color: AppTheme.primaryColor),
                   title: Text(
-                    'Reassign Tool',
+                    'Assign to Technician',
                     style: TextStyle(
                         color: theme.textTheme.bodyLarge?.color),
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/reassign-tool',
-                        arguments: tool);
+                    Navigator.pushNamed(context, '/assign-tool', arguments: tool);
                   },
                 ),
+              if (tool.status == 'In Use') ...[
+                // Hide Reassign Tool for technicians
+                if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+                  ListTile(
+                    leading: Icon(Icons.swap_horiz, color: AppTheme.accentColor),
+                    title: Text(
+                      'Reassign Tool',
+                      style: TextStyle(
+                          color: theme.textTheme.bodyLarge?.color),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/reassign-tool',
+                          arguments: tool);
+                    },
+                  ),
                 ListTile(
                   leading: const Icon(Icons.keyboard_return, color: Colors.green),
                   title: Text(
@@ -908,38 +908,37 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/checkin');
-                },
-              ),
-            ],
-            // Hide Edit Tool for technicians
-            if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+                  },
+                ),
+              ],
+              // Hide Edit Tool for technicians
+              if (Provider.of<AuthProvider>(context, listen: false).userRole?.name != 'technician')
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Colors.orange),
+                  title: Text(
+                    'Edit Tool',
+                    style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/edit-tool', arguments: tool);
+                  },
+                ),
               ListTile(
-                leading: const Icon(Icons.edit, color: Colors.orange),
+                leading: const Icon(Icons.info_outline, color: Colors.blue),
                 title: Text(
-                  'Edit Tool',
+                  'View Details',
                   style: TextStyle(
                       color: theme.textTheme.bodyLarge?.color),
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/edit-tool', arguments: tool);
+                  Navigator.pushNamed(context, '/tool-detail', arguments: tool);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.info_outline, color: Colors.blue),
-              title: Text(
-                'View Details',
-                style: TextStyle(
-                    color: theme.textTheme.bodyLarge?.color),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/tool-detail', arguments: tool);
-              },
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
         );
       },
     );
