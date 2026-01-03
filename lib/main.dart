@@ -336,6 +336,44 @@ Future<void> _initializeServicesInBackground() async {
   print('✅ Background initialization complete');
 }
 
+bool _isSessionValid(Session? session) {
+  if (session == null) {
+    return false;
+  }
+  final expiresAt = session.expiresAt;
+  if (expiresAt == null) {
+    return true;
+  }
+  final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+  return expiry.isAfter(DateTime.now().add(const Duration(seconds: 30)));
+}
+
+Future<void> _recoverSupabaseSession() async {
+  try {
+    final persistedSession =
+        await SupabaseAuthStorageFactory.readPersistedSession();
+    if (persistedSession == null || persistedSession.isEmpty) {
+      print('ℹ️ No persisted Supabase session found');
+      return;
+    }
+
+    final response =
+        await SupabaseService.client.auth.recoverSession(persistedSession);
+    final recoveredSession = response.session;
+    if (_isSessionValid(recoveredSession)) {
+      print('✅ Supabase session recovered');
+    } else {
+      print('⚠️ Recovered session is invalid or expired');
+      await SupabaseAuthStorageFactory.clearPersistedSession();
+    }
+  } on AuthException catch (e) {
+    print('⚠️ Supabase session recovery failed: ${e.message}');
+    await SupabaseAuthStorageFactory.clearPersistedSession();
+  } catch (e) {
+    print('⚠️ Supabase session recovery error: $e');
+  }
+}
+
 
 class ErrorBoundary extends StatelessWidget {
   final Widget child;
@@ -726,48 +764,69 @@ class HvacToolsManagerApp extends StatelessWidget {
                             print('🔐 Processing signup email confirmation...');
                             print('🔐 Full URI: $uri');
                             
+                            final existingSession = SupabaseService.client.auth.currentSession;
+                            if (_isSessionValid(existingSession)) {
+                              print('✅ Existing session is valid - skipping confirmation exchange');
+                              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                              await authProvider.initialize();
+                              if (authProvider.isAdmin && context.mounted) {
+                                Navigator.of(context, rootNavigator: true)
+                                    .pushNamedAndRemoveUntil('/admin', (route) => false);
+                              } else if (context.mounted) {
+                                Navigator.of(context, rootNavigator: true)
+                                    .pushNamedAndRemoveUntil('/pending-approval', (route) => false);
+                              }
+                              return;
+                            }
+
                             // Handle PKCE flow: if we have a code, use exchangeCodeForSession
                             // If we have a token parameter, we need to verify it first
                             // Otherwise, use getSessionFromUrl which handles various URL formats
-                            SessionResponse? sessionResponse;
-                            if (code != null && !hasAccessToken) {
+                            Session? confirmedSession;
+                            final accessToken = params['access_token'];
+                            final refreshToken = params['refresh_token'];
+                            if (accessToken != null && refreshToken != null) {
+                              print('🔐 Tokens detected in URL - setting session from refresh token');
+                              final setResponse = await SupabaseService.client.auth.setSession(
+                                refreshToken,
+                              );
+                              confirmedSession = setResponse.session;
+                            } else if (code != null && !hasAccessToken) {
                               print('🔐 Using exchangeCodeForSession with code parameter');
-                              sessionResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
-                            } else if (token != null && token.startsWith('pkce_')) {
-                              print('🔐 PKCE token detected in verification URL');
-                              print('⚠️ App received verification URL directly (should redirect to app with code)');
-                              print('🔄 Attempting to verify PKCE token directly via verifyOTP...');
-                              // For PKCE tokens, use verifyOTP to verify and get session
+                              final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
+                              confirmedSession = urlResponse.session;
+                            } else if (token != null && !hasAccessToken) {
+                              print('🔐 Token detected in verification URL');
+                              print('🔄 Attempting to verify token via verifyOTP...');
                               try {
                                 final verifyResponse = await SupabaseService.client.auth.verifyOTP(
                                   type: OtpType.signup,
                                   token: token,
                                 );
-                                if (verifyResponse.session != null) {
-                                  print('✅ PKCE token verified successfully via verifyOTP');
-                                  sessionResponse = verifyResponse;
-                                } else {
+                                confirmedSession = verifyResponse.session;
+                                if (confirmedSession == null) {
                                   print('⚠️ verifyOTP returned null session');
-                                  // Fallback: try getSessionFromUrl
                                   print('🔄 Fallback: trying getSessionFromUrl...');
-                                  sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                  final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                  confirmedSession = urlResponse.session;
                                 }
                               } catch (verifyError) {
                                 print('❌ Token verification via verifyOTP failed: $verifyError');
-                                // Fallback: try getSessionFromUrl
                                 print('🔄 Fallback: trying getSessionFromUrl...');
                                 try {
-                                  sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                  final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                  confirmedSession = urlResponse.session;
                                 } catch (e) {
                                   print('❌ getSessionFromUrl also failed: $e');
                                 }
                               }
                             } else {
                               print('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
-                              sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                              final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                              confirmedSession = urlResponse.session;
                             }
                             
-                            if (sessionResponse?.session == null) {
+                            if (confirmedSession == null) {
                               print('❌ No session created from email confirmation');
                               print('❌ URI: $uri');
                               print('❌ Params: code=$code, token=$token, type=$type');
@@ -785,10 +844,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                               return;
                             }
                             
-                            print('✅ Email confirmed - session created: ${sessionResponse.session != null}');
+                            print('✅ Email confirmed - session created: ${confirmedSession != null}');
                             
-                            if (sessionResponse.session != null && sessionResponse.session!.user != null) {
-                              final user = sessionResponse.session!.user;
+                            if (confirmedSession.user != null) {
+                              final user = confirmedSession.user;
                               final email = user.email ?? '';
                               final fullName = user.userMetadata?['full_name'] as String? ?? 
                                               user.userMetadata?['name'] as String? ?? 
@@ -846,7 +905,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 } else {
                                   print('⚠️ Admin not authenticated after initialization. isAuthenticated: ${authProvider.isAuthenticated}, isAdmin: ${authProvider.isAdmin}, userRole: ${authProvider.userRole}');
                                   // Fallback: try routing anyway if we have a session and confirmed role
-                                  if (isAdmin && sessionResponse.session != null && context.mounted) {
+                                  if (isAdmin && confirmedSession != null && context.mounted) {
                                     print('⚠️ Attempting fallback routing to admin home');
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
                                   }
