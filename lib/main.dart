@@ -12,6 +12,7 @@ import 'theme/app_theme.dart';
 
 // Import all the actual classes
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:gotrue/gotrue.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
@@ -692,6 +693,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                 final isAuthCallback = uriString.contains('auth/callback') || 
                                       uriString.contains('access_token') ||
                                       uriString.contains('code=') ||
+                                      uriString.contains('token=') ||
                                       uriString.contains('type=signup') ||
                                       uriString.contains('type=recovery') ||
                                       uriString.contains('type=invite') ||
@@ -708,8 +710,9 @@ class HvacToolsManagerApp extends StatelessWidget {
                   final type = params['type'];
                   final hasAccessToken = params.containsKey('access_token');
                   final code = params['code'];
+                  final token = params['token'];
                   
-                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken');
+                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, code: ${code != null ? "present" : "null"}, token: ${token != null ? "present" : "null"}');
                   
                   // CRITICAL: Handle signup email confirmation
                   // Technicians go to pending approval, Admins auto-login
@@ -721,10 +724,68 @@ class HvacToolsManagerApp extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
                             print('🔐 Processing signup email confirmation...');
-                            final sessionResponse = code != null && !hasAccessToken
-                                ? await SupabaseService.client.auth.exchangeCodeForSession(code)
-                                : await SupabaseService.client.auth.getSessionFromUrl(uri);
-                            print('✅ Email confirmed - session created');
+                            print('🔐 Full URI: $uri');
+                            
+                            // Handle PKCE flow: if we have a code, use exchangeCodeForSession
+                            // If we have a token parameter, we need to verify it first
+                            // Otherwise, use getSessionFromUrl which handles various URL formats
+                            SessionResponse? sessionResponse;
+                            if (code != null && !hasAccessToken) {
+                              print('🔐 Using exchangeCodeForSession with code parameter');
+                              sessionResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
+                            } else if (token != null && token.startsWith('pkce_')) {
+                              print('🔐 PKCE token detected in verification URL');
+                              print('⚠️ App received verification URL directly (should redirect to app with code)');
+                              print('🔄 Attempting to verify PKCE token directly via verifyOTP...');
+                              // For PKCE tokens, use verifyOTP to verify and get session
+                              try {
+                                final verifyResponse = await SupabaseService.client.auth.verifyOTP(
+                                  type: OtpType.signup,
+                                  token: token,
+                                );
+                                if (verifyResponse.session != null) {
+                                  print('✅ PKCE token verified successfully via verifyOTP');
+                                  sessionResponse = verifyResponse;
+                                } else {
+                                  print('⚠️ verifyOTP returned null session');
+                                  // Fallback: try getSessionFromUrl
+                                  print('🔄 Fallback: trying getSessionFromUrl...');
+                                  sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                }
+                              } catch (verifyError) {
+                                print('❌ Token verification via verifyOTP failed: $verifyError');
+                                // Fallback: try getSessionFromUrl
+                                print('🔄 Fallback: trying getSessionFromUrl...');
+                                try {
+                                  sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                } catch (e) {
+                                  print('❌ getSessionFromUrl also failed: $e');
+                                }
+                              }
+                            } else {
+                              print('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
+                              sessionResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                            }
+                            
+                            if (sessionResponse?.session == null) {
+                              print('❌ No session created from email confirmation');
+                              print('❌ URI: $uri');
+                              print('❌ Params: code=$code, token=$token, type=$type');
+                              // If we have a token but no session, the redirect might not have happened
+                              // Show error and route to login
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Email confirmation failed. Please try logging in.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/login', (route) => false);
+                              }
+                              return;
+                            }
+                            
+                            print('✅ Email confirmed - session created: ${sessionResponse.session != null}');
                             
                             if (sessionResponse.session != null && sessionResponse.session!.user != null) {
                               final user = sessionResponse.session!.user;
