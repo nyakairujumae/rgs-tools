@@ -20,6 +20,38 @@ class SupabaseAuthStorageFactory {
     return createPlatformAuthOptions(persistSessionKey: persistSessionKey);
   }
 
+  static Future<String?> readPersistedSession() async {
+    if (kIsWeb) {
+      return null;
+    }
+
+    final options = createPlatformAuthOptions(
+      persistSessionKey: _buildPersistSessionKey(),
+    );
+    final storage = options.localStorage;
+    if (storage == null) {
+      return null;
+    }
+    await storage.initialize();
+    return storage.accessToken();
+  }
+
+  static Future<void> clearPersistedSession() async {
+    if (kIsWeb) {
+      return;
+    }
+
+    final options = createPlatformAuthOptions(
+      persistSessionKey: _buildPersistSessionKey(),
+    );
+    final storage = options.localStorage;
+    if (storage == null) {
+      return;
+    }
+    await storage.initialize();
+    await storage.removePersistedSession();
+  }
+
   static String _buildPersistSessionKey() {
     try {
       final uri = Uri.parse(SupabaseConfig.url);
