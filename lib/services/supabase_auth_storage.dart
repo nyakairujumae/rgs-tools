@@ -11,7 +11,7 @@ class SupabaseAuthStorageFactory {
   static FlutterAuthClientOptions createAuthOptions() {
     if (kIsWeb) {
       return const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
+        authFlowType: AuthFlowType.implicit,
         autoRefreshToken: true,
       );
     }

@@ -18,7 +18,7 @@ FlutterAuthClientOptions createPlatformAuthOptions({
   final pkceStorage = FileGotrueAsyncStorage();
 
   return FlutterAuthClientOptions(
-    authFlowType: AuthFlowType.pkce,
+    authFlowType: AuthFlowType.implicit,
     localStorage: localStorage,
     pkceAsyncStorage: pkceStorage,
     autoRefreshToken: true,
