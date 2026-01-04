@@ -865,6 +865,18 @@ class HvacToolsManagerApp extends StatelessWidget {
                             }
 
                             if (confirmedSession == null) {
+                              try {
+                                final authStream = SupabaseService.client.auth.onAuthStateChange;
+                                final authEvent = await authStream.firstWhere(
+                                  (event) => event.event == AuthChangeEvent.signedIn,
+                                ).timeout(const Duration(seconds: 2));
+                                confirmedSession = authEvent.session;
+                              } catch (_) {
+                                confirmedSession = await tryUseCurrentSession();
+                              }
+                            }
+
+                            if (confirmedSession == null) {
                               print('❌ No session created from email confirmation');
                               print('❌ URI: $uri');
                               print('❌ Params: code=$code, token=$token, type=$type');
