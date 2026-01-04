@@ -11,6 +11,7 @@ const _documentsChannelName = 'com.rgs.app/documents_path';
 
 FlutterAuthClientOptions createPlatformAuthOptions({
   required String persistSessionKey,
+  bool detectSessionInUri = true,
 }) {
   final localStorage =
       FileLocalStorage(persistSessionKey: persistSessionKey);
@@ -21,6 +22,7 @@ FlutterAuthClientOptions createPlatformAuthOptions({
     localStorage: localStorage,
     pkceAsyncStorage: pkceStorage,
     autoRefreshToken: true,
+    detectSessionInUri: detectSessionInUri,
   );
 }
 

@@ -17,7 +17,10 @@ class SupabaseAuthStorageFactory {
     }
 
     final persistSessionKey = _buildPersistSessionKey();
-    return createPlatformAuthOptions(persistSessionKey: persistSessionKey);
+    return createPlatformAuthOptions(
+      persistSessionKey: persistSessionKey,
+      detectSessionInUri: false,
+    );
   }
 
   static Future<String?> readPersistedSession() async {

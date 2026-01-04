@@ -772,7 +772,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                           try {
                             print('🔐 Processing signup email confirmation...');
                             print('🔐 Full URI: $uri');
-                            
+
                             final existingSession = SupabaseService.client.auth.currentSession;
                             if (_isSessionValid(existingSession)) {
                               print('✅ Existing session is valid - skipping confirmation exchange');
@@ -786,6 +786,19 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     .pushNamedAndRemoveUntil('/pending-approval', (route) => false);
                               }
                               return;
+                            }
+
+                            Future<Session?> tryUseCurrentSession() async {
+                              final current = SupabaseService.client.auth.currentSession;
+                              if (_isSessionValid(current)) {
+                                return current;
+                              }
+                              await Future.delayed(const Duration(milliseconds: 400));
+                              final retry = SupabaseService.client.auth.currentSession;
+                              if (_isSessionValid(retry)) {
+                                return retry;
+                              }
+                              return null;
                             }
 
                             // Handle PKCE flow: if we have a code, use exchangeCodeForSession
@@ -802,8 +815,13 @@ class HvacToolsManagerApp extends StatelessWidget {
                               confirmedSession = setResponse.session;
                             } else if (code != null && !hasAccessToken) {
                               print('🔐 Using exchangeCodeForSession with code parameter');
-                              final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
-                              confirmedSession = urlResponse.session;
+                              try {
+                                final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
+                                confirmedSession = urlResponse.session;
+                              } on AuthException catch (e) {
+                                print('⚠️ exchangeCodeForSession failed: ${e.message}');
+                                confirmedSession = await tryUseCurrentSession();
+                              }
                             } else if (token != null && !hasAccessToken) {
                               print('🔐 Token detected in verification URL');
                               print('🔄 Attempting to verify token via verifyOTP...');
@@ -831,10 +849,19 @@ class HvacToolsManagerApp extends StatelessWidget {
                               }
                             } else {
                               print('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
-                              final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
-                              confirmedSession = urlResponse.session;
+                              try {
+                                final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                                confirmedSession = urlResponse.session;
+                              } on AuthException catch (e) {
+                                print('⚠️ getSessionFromUrl failed: ${e.message}');
+                                confirmedSession = await tryUseCurrentSession();
+                              }
                             }
                             
+                            if (confirmedSession == null) {
+                              confirmedSession = await tryUseCurrentSession();
+                            }
+
                             if (confirmedSession == null) {
                               print('❌ No session created from email confirmation');
                               print('❌ URI: $uri');
