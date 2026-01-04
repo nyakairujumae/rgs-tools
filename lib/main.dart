@@ -749,12 +749,21 @@ class HvacToolsManagerApp extends StatelessWidget {
                   final hasAccessToken = params.containsKey('access_token');
                   final code = params['code'];
                   final token = params['token'];
+                  final hasRefreshToken = params.containsKey('refresh_token');
+                  final isOAuthLike = type == 'oauth' || uri.queryParameters.containsKey('provider');
+                  final isRecoveryLike = type == 'recovery' || type == 'invite';
+                  final isSignupLike = !isOAuthLike && !isRecoveryLike && (
+                      type == 'signup' ||
+                      (code != null && !hasAccessToken) ||
+                      (token != null && !hasAccessToken) ||
+                      (hasAccessToken && hasRefreshToken)
+                    );
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, code: ${code != null ? "present" : "null"}, token: ${token != null ? "present" : "null"}');
                   
                   // CRITICAL: Handle signup email confirmation
                   // Technicians go to pending approval, Admins auto-login
-                  if (type == 'signup') {
+                  if (isSignupLike) {
                     print('✅ Signup email confirmation detected');
                     
                     return MaterialPageRoute(
