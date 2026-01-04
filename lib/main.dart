@@ -823,12 +823,14 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 confirmedSession = await tryUseCurrentSession();
                               }
                             } else if (token != null && !hasAccessToken) {
-                              print('🔐 Token detected in verification URL');
+                              final isTokenHash = token.startsWith('pkce_');
+                              print('🔐 Token detected in verification URL (hash: $isTokenHash)');
                               print('🔄 Attempting to verify token via verifyOTP...');
                               try {
                                 final verifyResponse = await SupabaseService.client.auth.verifyOTP(
                                   type: OtpType.signup,
-                                  token: token,
+                                  token: isTokenHash ? null : token,
+                                  tokenHash: isTokenHash ? token : null,
                                 );
                                 confirmedSession = verifyResponse.session;
                                 if (confirmedSession == null) {
