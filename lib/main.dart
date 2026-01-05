@@ -239,7 +239,7 @@ Future<void> _initializeServicesInBackground() async {
             authClient = SupabaseService.client;
           }
           
-          authClient.auth.onAuthStateChange.listen((data) {
+          authClient.auth.onAuthStateChange.listen((data) async {
               final event = data.event;
               final session = data.session;
               
@@ -247,6 +247,8 @@ Future<void> _initializeServicesInBackground() async {
               
               if (session != null) {
                 print('✅ User logged in: ${session.user.email}');
+                print('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
+                print('✅ Role in metadata: ${session.user.userMetadata?['role']}');
               }
 
               // Handle password recovery - the deep link will navigate to reset screen
@@ -255,10 +257,47 @@ Future<void> _initializeServicesInBackground() async {
                 // The reset password screen will handle the session via deep link
               }
               
-              // Handle email confirmation
-              if (event == AuthChangeEvent.signedIn && session != null) {
-                print('🔐 User signed in - email may have been confirmed');
-                // User is now signed in after email confirmation, app will handle navigation
+              // CRITICAL: Handle email confirmation - navigate to appropriate screen
+              // This fires when user confirms email via deep link
+              if (event == AuthChangeEvent.signedIn && session != null && session.user.emailConfirmedAt != null) {
+                print('🔐 User signed in with confirmed email - checking role for navigation');
+                
+                final user = session.user;
+                final roleFromMetadata = user.userMetadata?['role'] as String?;
+                print('🔐 Role from metadata: $roleFromMetadata');
+                
+                // Check if this is an admin
+                if (roleFromMetadata == 'admin') {
+                  print('✅ Admin detected from auth state change - ensuring user record exists');
+                  
+                  // Ensure user record exists in users table
+                  try {
+                    final existingRecord = await SupabaseService.client
+                        .from('users')
+                        .select('id')
+                        .eq('id', user.id)
+                        .maybeSingle();
+                    
+                    if (existingRecord == null) {
+                      print('⚠️ Creating admin user record from auth state change...');
+                      final positionId = user.userMetadata?['position_id'] as String?;
+                      final fullName = user.userMetadata?['full_name'] as String? ?? 
+                                      user.userMetadata?['name'] as String? ?? 
+                                      user.email?.split('@')[0] ?? 'Admin';
+                      
+                      await SupabaseService.client.from('users').insert({
+                        'id': user.id,
+                        'email': user.email,
+                        'full_name': fullName,
+                        'role': 'admin',
+                        if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
+                      });
+                      print('✅ Admin user record created from auth state change');
+                    }
+                  } catch (e) {
+                    print('⚠️ Error ensuring admin user record: $e');
+                  }
+                }
               }
             });
         } catch (e) {
