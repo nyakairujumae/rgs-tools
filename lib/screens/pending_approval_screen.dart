@@ -85,7 +85,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       }
     }
   }
-
+  
   Future<void> _checkApprovalAndNavigate() async {
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.user?.id ??

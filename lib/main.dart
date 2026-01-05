@@ -749,21 +749,12 @@ class HvacToolsManagerApp extends StatelessWidget {
                   final hasAccessToken = params.containsKey('access_token');
                   final code = params['code'];
                   final token = params['token'];
-                  final hasRefreshToken = params.containsKey('refresh_token');
-                  final isOAuthLike = type == 'oauth' || uri.queryParameters.containsKey('provider');
-                  final isRecoveryLike = type == 'recovery' || type == 'invite';
-                  final isSignupLike = !isOAuthLike && !isRecoveryLike && (
-                      type == 'signup' ||
-                      (code != null && !hasAccessToken) ||
-                      (token != null && !hasAccessToken) ||
-                      (hasAccessToken && hasRefreshToken)
-                    );
                   
                   print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, code: ${code != null ? "present" : "null"}, token: ${token != null ? "present" : "null"}');
                   
                   // CRITICAL: Handle signup email confirmation
                   // Technicians go to pending approval, Admins auto-login
-                  if (isSignupLike) {
+                  if (type == 'signup') {
                     print('✅ Signup email confirmation detected');
                     
                     return MaterialPageRoute(
@@ -772,7 +763,7 @@ class HvacToolsManagerApp extends StatelessWidget {
                           try {
                             print('🔐 Processing signup email confirmation...');
                             print('🔐 Full URI: $uri');
-
+                            
                             final existingSession = SupabaseService.client.auth.currentSession;
                             if (_isSessionValid(existingSession)) {
                               print('✅ Existing session is valid - skipping confirmation exchange');
@@ -786,19 +777,6 @@ class HvacToolsManagerApp extends StatelessWidget {
                                     .pushNamedAndRemoveUntil('/pending-approval', (route) => false);
                               }
                               return;
-                            }
-
-                            Future<Session?> tryUseCurrentSession() async {
-                              final current = SupabaseService.client.auth.currentSession;
-                              if (_isSessionValid(current)) {
-                                return current;
-                              }
-                              await Future.delayed(const Duration(milliseconds: 400));
-                              final retry = SupabaseService.client.auth.currentSession;
-                              if (_isSessionValid(retry)) {
-                                return retry;
-                              }
-                              return null;
                             }
 
                             // Handle PKCE flow: if we have a code, use exchangeCodeForSession
@@ -815,22 +793,15 @@ class HvacToolsManagerApp extends StatelessWidget {
                               confirmedSession = setResponse.session;
                             } else if (code != null && !hasAccessToken) {
                               print('🔐 Using exchangeCodeForSession with code parameter');
-                              try {
-                                final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
-                                confirmedSession = urlResponse.session;
-                              } on AuthException catch (e) {
-                                print('⚠️ exchangeCodeForSession failed: ${e.message}');
-                                confirmedSession = await tryUseCurrentSession();
-                              }
+                              final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
+                              confirmedSession = urlResponse.session;
                             } else if (token != null && !hasAccessToken) {
-                              final isTokenHash = token.startsWith('pkce_');
-                              print('🔐 Token detected in verification URL (hash: $isTokenHash)');
+                              print('🔐 Token detected in verification URL');
                               print('🔄 Attempting to verify token via verifyOTP...');
                               try {
                                 final verifyResponse = await SupabaseService.client.auth.verifyOTP(
                                   type: OtpType.signup,
-                                  token: isTokenHash ? null : token,
-                                  tokenHash: isTokenHash ? token : null,
+                                  token: token,
                                 );
                                 confirmedSession = verifyResponse.session;
                                 if (confirmedSession == null) {
@@ -851,31 +822,10 @@ class HvacToolsManagerApp extends StatelessWidget {
                               }
                             } else {
                               print('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
-                              try {
-                                final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
-                                confirmedSession = urlResponse.session;
-                              } on AuthException catch (e) {
-                                print('⚠️ getSessionFromUrl failed: ${e.message}');
-                                confirmedSession = await tryUseCurrentSession();
-                              }
+                              final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
+                              confirmedSession = urlResponse.session;
                             }
                             
-                            if (confirmedSession == null) {
-                              confirmedSession = await tryUseCurrentSession();
-                            }
-
-                            if (confirmedSession == null) {
-                              try {
-                                final authStream = SupabaseService.client.auth.onAuthStateChange;
-                                final authEvent = await authStream.firstWhere(
-                                  (event) => event.event == AuthChangeEvent.signedIn,
-                                ).timeout(const Duration(seconds: 2));
-                                confirmedSession = authEvent.session;
-                              } catch (_) {
-                                confirmedSession = await tryUseCurrentSession();
-                              }
-                            }
-
                             if (confirmedSession == null) {
                               print('❌ No session created from email confirmation');
                               print('❌ URI: $uri');
@@ -1046,12 +996,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                             }
                           }
                         });
-                        // Show loading screen while processing
-                        return Scaffold(
-                          body: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
+                        // Keep the current UI visible while processing.
+                        return initialRoute;
                       },
                       settings: RouteSettings(name: '/email-confirmation'),
                     );
@@ -1263,9 +1209,8 @@ class HvacToolsManagerApp extends StatelessWidget {
                           }
                         });
                         
-                        // Return invisible widget - no loading screen
-                        // The navigation will happen in the postFrameCallback above
-                        return const SizedBox.shrink();
+                        // Keep the current UI visible while processing.
+                        return initialRoute;
                       },
                       settings: RouteSettings(name: '/auth-callback'),
                     );
