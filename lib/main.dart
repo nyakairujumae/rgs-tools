@@ -868,9 +868,17 @@ class HvacToolsManagerApp extends StatelessWidget {
                               // Wait a bit for role to be loaded
                               await Future.delayed(const Duration(milliseconds: 500));
                               
-                              // CRITICAL: Check role from database, not just metadata
-                              // Metadata might not be set for admin invites
+                              // CRITICAL: Check role from METADATA FIRST, then database
+                              // For admin registration with email confirmation, the users table
+                              // record may not exist yet (it's created after email confirmation)
+                              // But the role IS stored in user metadata during registration
                               String? role;
+                              
+                              // Step 1: Check user metadata first (set during registration)
+                              final roleFromMetadata = user.userMetadata?['role'] as String?;
+                              print('✅ Role from user metadata: $roleFromMetadata');
+                              
+                              // Step 2: Check database as secondary source
                               try {
                                 final userRecord = await SupabaseService.client
                                     .from('users')
@@ -881,8 +889,19 @@ class HvacToolsManagerApp extends StatelessWidget {
                                 print('✅ Role from database: $role');
                               } catch (e) {
                                 print('⚠️ Could not fetch role from database: $e');
-                                // Fallback to auth provider's role (which checks both database and metadata)
-                                role = authProvider.userRole?.value;
+                              }
+                              
+                              // Step 3: Use metadata role if database role is null
+                              // This handles the case where admin registered but users table
+                              // record wasn't created (because no session during registration)
+                              if (role == null && roleFromMetadata != null) {
+                                role = roleFromMetadata;
+                                print('✅ Using role from metadata (database had no record): $role');
+                              }
+                              
+                              // Fallback to auth provider's role
+                              if (role == null) {
+                                role = authProvider.userRole.value;
                                 print('✅ Using role from auth provider: $role');
                               }
                               
@@ -892,6 +911,37 @@ class HvacToolsManagerApp extends StatelessWidget {
                               
                               if (isAdmin) {
                                 print('✅ Admin email confirmation - auto-logging in...');
+                                
+                                // CRITICAL: Ensure user record exists in users table
+                                // This may not have been created during registration if email
+                                // confirmation was required (no session = no record created)
+                                try {
+                                  final existingRecord = await SupabaseService.client
+                                      .from('users')
+                                      .select('id')
+                                      .eq('id', userId)
+                                      .maybeSingle();
+                                  
+                                  if (existingRecord == null) {
+                                    print('⚠️ Admin user record not found in users table - creating now...');
+                                    // Get position_id from metadata if available
+                                    final positionId = user.userMetadata?['position_id'] as String?;
+                                    
+                                    await SupabaseService.client.from('users').insert({
+                                      'id': userId,
+                                      'email': email,
+                                      'full_name': fullName,
+                                      'role': 'admin',
+                                      if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
+                                    });
+                                    print('✅ Admin user record created in users table');
+                                  } else {
+                                    print('✅ Admin user record already exists in users table');
+                                  }
+                                } catch (e) {
+                                  print('⚠️ Error ensuring admin user record: $e');
+                                  // Continue anyway - the record might be created by trigger
+                                }
                                 
                                 // Re-initialize to ensure everything is loaded
                                 await authProvider.initialize();
