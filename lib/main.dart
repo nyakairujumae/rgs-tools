@@ -648,6 +648,8 @@ class HvacToolsManagerApp extends StatelessWidget {
           // Show UI right away - initialization happens in background
           // The Consumer will rebuild when auth state changes
           final defaultRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+          print('🔐 DEFAULT ROUTE FROM PLATFORM: "$defaultRoute"');
+          print('🔐 Has session: $hasSession, Current user: ${currentUser?.email}');
           return MaterialApp(
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
@@ -695,6 +697,8 @@ class HvacToolsManagerApp extends StatelessWidget {
               },
             },
             onGenerateRoute: (settings) {
+              print('🔐 onGenerateRoute called with: ${settings.name}');
+              
               // Handle root route - use the initial route we determined
               if (settings.name == '/' || settings.name == null) {
                 return MaterialPageRoute(
@@ -763,6 +767,16 @@ class HvacToolsManagerApp extends StatelessWidget {
                           try {
                             print('🔐 Processing signup email confirmation...');
                             print('🔐 Full URI: $uri');
+                            
+                            // CRITICAL: Wait for Supabase to be fully initialized
+                            // This is necessary when app cold starts from deep link
+                            print('🔐 Waiting for Supabase to be initialized...');
+                            int waitAttempts = 0;
+                            while (!SupabaseService.isInitialized && waitAttempts < 30) {
+                              await Future.delayed(const Duration(milliseconds: 200));
+                              waitAttempts++;
+                            }
+                            print('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 200}ms)');
                             
                             final existingSession = SupabaseService.client.auth.currentSession;
                             if (_isSessionValid(existingSession)) {
