@@ -48,23 +48,18 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
 
   Future<void> _loadAdmins() async {
     try {
-      // Load positions and admins in parallel for speed
-      final results = await Future.wait([
-        AdminPositionService.getAllPositions(),
-        SupabaseService.client
-            .from('users')
-            .select('id, email, full_name, role, position_id, status, created_at')
-            .eq('role', 'admin')
-            .order('created_at', ascending: false),
-      ]);
-
-      final positions = results[0] as List<AdminPosition>;
-      final response = results[1] as List<dynamic>;
-
+      // Load positions and admins
+      final positions = await AdminPositionService.getAllPositions();
       final positionsById = <String, AdminPosition>{};
       for (final position in positions) {
         positionsById[position.id] = position;
       }
+
+      final response = await SupabaseService.client
+          .from('users')
+          .select('id, email, full_name, role, position_id, status, created_at')
+          .eq('role', 'admin')
+          .order('created_at', ascending: false);
 
       if (!mounted) return;
       setState(() {
