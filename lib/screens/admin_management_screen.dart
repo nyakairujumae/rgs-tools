@@ -17,16 +17,22 @@ class AdminManagementScreen extends StatefulWidget {
 }
 
 class _AdminManagementScreenState extends State<AdminManagementScreen> {
-  bool _isLoading = false;
   List<Map<String, dynamic>> _admins = [];
   Map<String, AdminPosition> _positionsById = {};
   bool _canManageAdmins = false;
+  bool _dataLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAdmins();
-    _loadPermissions();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([
+      _loadAdmins(),
+      _loadPermissions(),
+    ]);
   }
 
   Future<void> _loadPermissions() async {
@@ -65,19 +71,13 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       setState(() {
         _positionsById = positionsById;
         _admins = List<Map<String, dynamic>>.from(response);
-        _isLoading = false;
+        _dataLoaded = true;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _isLoading = false;
+        _dataLoaded = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading admins: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -219,6 +219,10 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           if (canManageAdmins)
             IconButton(
