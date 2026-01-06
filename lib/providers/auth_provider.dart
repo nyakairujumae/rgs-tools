@@ -114,9 +114,9 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Set a maximum timeout for initialization (8 seconds)
+    // Set a maximum timeout for initialization (3 seconds) - fast startup is critical
     // After this, we'll proceed even if not fully initialized
-    Timer(const Duration(seconds: 8), () {
+    Timer(const Duration(seconds: 3), () {
       if (_isLoading || !_isInitialized) {
         print('⚠️ Initialization timeout - forcing completion');
         _isLoading = false;
@@ -127,19 +127,17 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('🔍 Getting current session...');
-      // CRITICAL: Wait for Supabase to be fully initialized and restore persisted session
-      // This ensures session persistence works correctly
-      // Try multiple times to ensure Supabase has restored the session
+      // Get session immediately - don't wait, Supabase should have it ready
       var session = SupabaseService.client.auth.currentSession;
       
-      // If no session found immediately, wait a bit for Supabase to restore it
+      // If no session found immediately, wait briefly (max 600ms)
       if (session == null) {
-        print('🔍 No session found immediately, waiting for Supabase to restore persisted session...');
-        for (int i = 0; i < 5; i++) {
-          await Future.delayed(const Duration(milliseconds: 300));
+        print('🔍 No session found immediately, waiting briefly...');
+        for (int i = 0; i < 3; i++) {
+          await Future.delayed(const Duration(milliseconds: 200));
           session = SupabaseService.client.auth.currentSession;
           if (session != null) {
-            print('✅ Session restored after ${(i + 1) * 300}ms');
+            print('✅ Session restored after ${(i + 1) * 200}ms');
             break;
           }
         }

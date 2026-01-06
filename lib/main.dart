@@ -643,13 +643,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       
       print('🔐 Auth callback detected, waiting for Supabase...');
       
-      // Wait for Supabase to be initialized
+      // Wait for Supabase to be initialized - max 2 seconds
       int waitAttempts = 0;
-      while (!SupabaseService.isInitialized && waitAttempts < 50) {
+      while (!SupabaseService.isInitialized && waitAttempts < 20) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitAttempts++;
       }
-      print('🔐 Supabase initialized: ${SupabaseService.isInitialized}');
+      print('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 100}ms)');
       
       // Extract parameters
       final params = <String, String>{};
@@ -825,29 +825,15 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           Widget initialRoute;
           
           // CRITICAL: If we have an initial deep link and haven't processed it yet,
-          // show a loading screen instead of role selection
-          // This prevents the flash of role selection screen before deep link is processed
+          // show a minimal loading indicator - keep it fast and non-intrusive
           if (widget.initialDeepLink != null && !_deepLinkProcessed) {
-            print('🔐 Showing loading screen while processing deep link...');
+            print('🔐 Processing deep link...');
             initialRoute = Scaffold(
               backgroundColor: AppTheme.primaryColor,
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Confirming your email...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+              body: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3,
                 ),
               ),
             );

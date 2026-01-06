@@ -1027,11 +1027,9 @@ class DashboardScreen extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
         );
-        // When offline, always show skeleton loading (no cached dashboard)
-        // Otherwise show skeleton only when actually loading
-        final isLoadingDashboard = isOffline || 
-            toolProvider.isLoading || 
-            technicianProvider.isLoading;
+        // Show skeleton ONLY when offline - for fresh app with no data, show empty states immediately
+        // This prevents long loading screens that frustrate users
+        final isLoadingDashboard = isOffline;
         final horizontalPadding =
             ResponsiveHelper.getResponsiveSpacing(context, 16);
         final topPadding = 0.0;
