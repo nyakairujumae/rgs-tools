@@ -32,7 +32,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
-  bool _isSuccess = false;
 
   @override
   void initState() {
@@ -142,17 +141,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (!mounted) return;
 
-      final isInviteFlow = widget.type == 'invite' ||
-          (widget.deepLink?.contains('mode=invite') ?? false);
+      // Treat both invite and recovery flows the same - auto-login after password set
+      // This is because technicians added by admin receive recovery emails
+      // and should be logged in automatically after setting their password
+      final shouldAutoLogin = widget.type == 'invite' ||
+          widget.type == 'recovery' ||
+          (widget.deepLink?.contains('mode=invite') ?? false) ||
+          (widget.deepLink?.contains('type=recovery') ?? false);
 
       setState(() {
         _isLoading = false;
-        if (!isInviteFlow) {
-          _isSuccess = true;
-        }
       });
 
-      // Show success message
+      // Show brief success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -165,9 +166,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  isInviteFlow
-                      ? 'Password set successfully! Redirecting...'
-                      : 'Password reset successfully! Redirecting to login...',
+                  'Password set successfully! Redirecting...',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -179,17 +178,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.fixed,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ),
       );
 
-      // Wait a moment then navigate
-      await Future.delayed(const Duration(seconds: 2));
+      // Brief delay then auto-login
+      await Future.delayed(const Duration(milliseconds: 500));
       
       if (!mounted) return;
       
-      if (isInviteFlow) {
-        // Keep the session and route directly to the right home screen.
+      if (shouldAutoLogin) {
+        // Keep the session and route directly to the right home screen
         await authProvider.initialize();
         if (!mounted) return;
 
@@ -204,7 +203,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           navigator.pushNamedAndRemoveUntil('/pending-approval', (route) => false);
         }
       } else {
-        // Sign out to clear the reset session
+        // Fallback: Sign out and go to login (shouldn't happen normally)
         await authProvider.signOut();
         
         if (!mounted) return;
@@ -232,51 +231,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
-    if (_isSuccess) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 24,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 80,
-                    color: Colors.green,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                  Text(
-                    'Password Reset Successful!',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                  Text(
-                    'Your password has been reset successfully. You can now sign in with your new password.',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
