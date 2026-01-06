@@ -578,6 +578,177 @@ class _SplashTransitionState extends State<SplashTransition>
   }
 }
 
+/// Beautiful loading screen shown during email confirmation
+/// Uses app branding colors with smooth animations
+class _EmailConfirmationLoadingScreen extends StatefulWidget {
+  const _EmailConfirmationLoadingScreen();
+
+  @override
+  State<_EmailConfirmationLoadingScreen> createState() => _EmailConfirmationLoadingScreenState();
+}
+
+class _EmailConfirmationLoadingScreenState extends State<_EmailConfirmationLoadingScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late AnimationController _fadeController;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Pulse animation for the icon
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    
+    // Fade in animation for text
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..forward();
+    
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF2563EB), // Primary blue
+              Color(0xFF1D4ED8), // Darker blue
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
+              
+              // Animated checkmark icon
+              ScaleTransition(
+                scale: _pulseAnimation,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.mark_email_read_rounded,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 40),
+              
+              // Title
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: const Text(
+                  'Almost there!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Subtitle
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    'Confirming your email...\nYou\'ll be redirected to your dashboard in a moment.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 48),
+              
+              // Loading indicator
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.white.withOpacity(0.9),
+                  ),
+                  strokeWidth: 3,
+                ),
+              ),
+              
+              const Spacer(flex: 3),
+              
+              // Bottom branding
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.build_circle_outlined,
+                        color: Colors.white.withOpacity(0.6),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'RGS Tools',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class HvacToolsManagerApp extends StatefulWidget {
   final bool initialFirstLaunch;
   final String? cachedLastRoute;
@@ -825,18 +996,10 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           Widget initialRoute;
           
           // CRITICAL: If we have an initial deep link and haven't processed it yet,
-          // show a minimal loading indicator - keep it fast and non-intrusive
+          // show a branded loading screen with animation
           if (widget.initialDeepLink != null && !_deepLinkProcessed) {
             print('🔐 Processing deep link...');
-            initialRoute = Scaffold(
-              backgroundColor: AppTheme.primaryColor,
-              body: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 3,
-                ),
-              ),
-            );
+            initialRoute = const _EmailConfirmationLoadingScreen();
           } else if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
             // Determine role from provider (if initialized) or metadata (if not)
             bool isAdmin = false;
