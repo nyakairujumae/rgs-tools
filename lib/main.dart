@@ -833,27 +833,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       
       // IMPORTANT: Handle password reset (recovery) differently - don't auto-login
       // User needs to go to Reset Password screen to set their password first
+      // The Reset Password screen is already rendered as initial route, so just mark as processed
       if (type == 'recovery') {
-        print('🔐 Password reset flow detected - navigating to Reset Password screen');
+        print('🔐 Password reset flow detected - Reset Password screen already shown');
         _deepLinkProcessed = true;
         _isProcessingDeepLink = false;
-        
-        // Navigate to reset password screen with the tokens
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_navigatorKey.currentState != null) {
-            _navigatorKey.currentState!.pushNamedAndRemoveUntil(
-              '/reset-password',
-              (route) => false,
-              arguments: {
-                'access_token': accessToken,
-                'refresh_token': refreshToken,
-                'type': type,
-              },
-            );
-          }
-        });
-        setState(() {});
-        return; // Don't continue to auto-login
+        // Don't navigate - the screen is already rendered as initialRoute
+        return;
       }
       
       // Get session from URL - this is the simplest and most reliable method
