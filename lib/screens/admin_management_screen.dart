@@ -47,41 +47,42 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   }
 
   Future<void> _loadAdmins() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      final positions = await AdminPositionService.getAllPositions();
+      // Load positions and admins in parallel for speed
+      final results = await Future.wait([
+        AdminPositionService.getAllPositions(),
+        SupabaseService.client
+            .from('users')
+            .select('id, email, full_name, role, position_id, status, created_at')
+            .eq('role', 'admin')
+            .order('created_at', ascending: false),
+      ]);
+
+      final positions = results[0] as List<AdminPosition>;
+      final response = results[1] as List<dynamic>;
+
       final positionsById = <String, AdminPosition>{};
       for (final position in positions) {
         positionsById[position.id] = position;
       }
 
-      final response = await SupabaseService.client
-          .from('users')
-          .select('id, email, full_name, role, position_id, status, created_at')
-          .eq('role', 'admin')
-          .order('created_at', ascending: false);
-
+      if (!mounted) return;
       setState(() {
         _positionsById = positionsById;
         _admins = List<Map<String, dynamic>>.from(response);
+        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading admins: $e'),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -231,11 +232,34 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             ),
         ],
       ),
-      body: _admins.isEmpty && !_isLoading
+      body: _admins.isEmpty
               ? Center(
-                  child: Text(
-                    'No admins found',
-                    style: AppTheme.bodyMedium.copyWith(color: Colors.grey[500]),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings_outlined,
+                        size: 64,
+                        color: Colors.grey[300],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No admins yet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add your first admin to get started',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : ListView.separated(
