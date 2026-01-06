@@ -831,6 +831,31 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       
       print('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}, refreshToken: ${refreshToken != null}');
       
+      // IMPORTANT: Handle password reset (recovery) differently - don't auto-login
+      // User needs to go to Reset Password screen to set their password first
+      if (type == 'recovery') {
+        print('🔐 Password reset flow detected - navigating to Reset Password screen');
+        _deepLinkProcessed = true;
+        _isProcessingDeepLink = false;
+        
+        // Navigate to reset password screen with the tokens
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_navigatorKey.currentState != null) {
+            _navigatorKey.currentState!.pushNamedAndRemoveUntil(
+              '/reset-password',
+              (route) => false,
+              arguments: {
+                'access_token': accessToken,
+                'refresh_token': refreshToken,
+                'type': type,
+              },
+            );
+          }
+        });
+        setState(() {});
+        return; // Don't continue to auto-login
+      }
+      
       // Get session from URL - this is the simplest and most reliable method
       // It handles both implicit flow (tokens in fragment) and PKCE flow (code in query)
       Session? session;
