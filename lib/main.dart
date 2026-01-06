@@ -756,6 +756,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
   StreamSubscription<Uri>? _linkSubscription;
   bool _deepLinkProcessed = false;
   bool _isProcessingDeepLink = false;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  bool _sessionEstablished = false; // Track if we got a valid session from deep link
 
   @override
   void initState() {
@@ -866,7 +868,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         
         // Ensure admin user record exists
         final role = session.user.userMetadata?['role'] as String?;
-        if (role == 'admin') {
+        final isAdmin = role == 'admin';
+        
+        if (isAdmin) {
           try {
             final existingRecord = await SupabaseService.client
                 .from('users')
@@ -895,9 +899,21 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           }
         }
         
-        // Mark deep link as processed and trigger rebuild
-        print('✅ Deep link processing complete - triggering rebuild');
+        // Mark session as established and deep link as processed
+        _sessionEstablished = true;
         _deepLinkProcessed = true;
+        
+        // Navigate directly to the appropriate screen
+        print('✅ Navigating directly to home screen...');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_navigatorKey.currentState != null) {
+            _navigatorKey.currentState!.pushNamedAndRemoveUntil(
+              isAdmin ? '/admin' : '/technician',
+              (route) => false,
+            );
+          }
+        });
+        
         setState(() {});
       } else {
         print('❌ Could not obtain session from deep link');
@@ -985,9 +1001,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           // CRITICAL: If we have an initial deep link and haven't processed it yet,
           // show a branded loading screen with animation
           if (widget.initialDeepLink != null && !_deepLinkProcessed) {
-            print('🔐 Processing deep link...');
+            print('🔐 Processing deep link - showing loading screen...');
             initialRoute = const _EmailConfirmationLoadingScreen();
-          } else if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
+          } else if (_sessionEstablished || (hasSession && currentUser != null && currentUser.emailConfirmedAt != null)) {
             // Determine role from provider (if initialized) or metadata (if not)
             bool isAdmin = false;
             bool isPending = false;
@@ -1049,8 +1065,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           // The Consumer will rebuild when auth state changes
           final defaultRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
           print('🔐 DEFAULT ROUTE FROM PLATFORM: "$defaultRoute"');
-          print('🔐 Has session: $hasSession, Current user: ${currentUser?.email}');
+          print('🔐 Has session: $hasSession, Current user: ${currentUser?.email}, Session established: $_sessionEstablished');
           return MaterialApp(
+            navigatorKey: _navigatorKey,
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
