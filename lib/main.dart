@@ -706,9 +706,6 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         print('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
         print('✅ Role: ${session.user.userMetadata?['role']}');
         
-        // Mark deep link as processed
-        _deepLinkProcessed = true;
-        
         // Ensure admin user record exists
         final role = session.user.userMetadata?['role'] as String?;
         if (role == 'admin') {
@@ -740,14 +737,23 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           }
         }
         
-        // Trigger rebuild by notifying - the Consumer will pick up the new session
+        // Mark deep link as processed and trigger rebuild
+        print('✅ Deep link processing complete - triggering rebuild');
+        _deepLinkProcessed = true;
         setState(() {});
       } else {
         print('❌ Could not obtain session from deep link');
+        // Still mark as processed to stop showing loading screen
+        // User will be shown role selection screen
+        _deepLinkProcessed = true;
+        setState(() {});
       }
     } catch (e, stackTrace) {
       print('❌ Error processing deep link: $e');
       print('❌ Stack trace: $stackTrace');
+      // Mark as processed even on error to stop showing loading screen
+      _deepLinkProcessed = true;
+      setState(() {});
     } finally {
       _isProcessingDeepLink = false;
     }
@@ -818,8 +824,34 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           
           Widget initialRoute;
           
-          // If user is logged in, route directly to home screen based on role
-          if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
+          // CRITICAL: If we have an initial deep link and haven't processed it yet,
+          // show a loading screen instead of role selection
+          // This prevents the flash of role selection screen before deep link is processed
+          if (widget.initialDeepLink != null && !_deepLinkProcessed) {
+            print('🔐 Showing loading screen while processing deep link...');
+            initialRoute = Scaffold(
+              backgroundColor: AppTheme.primaryColor,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Confirming your email...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else if (hasSession && currentUser != null && currentUser.emailConfirmedAt != null) {
             // Determine role from provider (if initialized) or metadata (if not)
             bool isAdmin = false;
             bool isPending = false;

@@ -1237,6 +1237,39 @@ class AuthProvider with ChangeNotifier {
               final isOAuthUser = _user!.appMetadata?['provider'] != null && 
                                   _user!.appMetadata?['provider'] != 'email';
               
+              // Check if user has role in metadata (admin registered via email confirmation)
+              final roleFromMetadata = _user!.userMetadata?['role'] as String?;
+              
+              if (roleFromMetadata == 'admin') {
+                // Admin user who registered but user record wasn't created
+                // This happens when deep link doesn't work after email confirmation
+                debugPrint('🔐 Admin user without DB record - creating from metadata');
+                try {
+                  final positionId = _user!.userMetadata?['position_id'] as String?;
+                  final fullName = _user!.userMetadata?['full_name'] as String? ?? 
+                                  _user!.userMetadata?['name'] as String? ?? 
+                                  _user!.email?.split('@')[0] ?? 'Admin';
+                  
+                  await client.from('users').insert({
+                    'id': _user!.id,
+                    'email': _user!.email,
+                    'full_name': fullName,
+                    'role': 'admin',
+                    if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
+                  });
+                  debugPrint('✅ Admin user record created from metadata');
+                  
+                  // Set role and continue
+                  _userRole = UserRole.admin;
+                  await _saveUserRole(_userRole);
+                  notifyListeners();
+                  return authResponse;
+                } catch (insertError) {
+                  debugPrint('⚠️ Could not create admin record: $insertError');
+                  // Continue to OAuth check
+                }
+              }
+              
               if (isOAuthUser) {
                 // OAuth users without a role need to select a role
                 debugPrint('🔐 OAuth user without role - needs role selection');
