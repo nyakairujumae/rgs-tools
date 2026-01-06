@@ -50,10 +50,13 @@ import 'services/push_notification_service.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
+import 'package:app_links/app_links.dart';
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
 bool _splashRemoved = false;
 String? _cachedLastRoute;
+Uri? _initialDeepLink;
+final _appLinks = AppLinks();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,12 +114,28 @@ void main() async {
     }
   }
 
+  // CRITICAL: Capture initial deep link BEFORE running the app
+  // This is essential for email confirmation flow
+  if (!kIsWeb) {
+    try {
+      _initialDeepLink = await _appLinks.getInitialLink();
+      if (_initialDeepLink != null) {
+        print('🔐 INITIAL DEEP LINK CAPTURED: $_initialDeepLink');
+      } else {
+        print('🔐 No initial deep link');
+      }
+    } catch (e) {
+      print('⚠️ Could not get initial deep link: $e');
+    }
+  }
+
   print('🚀 Starting app immediately - initialization will happen in background...');
   
   // Run the app IMMEDIATELY - don't wait for initialization
   runApp(HvacToolsManagerApp(
     initialFirstLaunch: shouldShowSplash,
     cachedLastRoute: _cachedLastRoute,
+    initialDeepLink: _initialDeepLink,
   ));
   
   // Initialize everything in background AFTER UI is shown
@@ -559,15 +578,191 @@ class _SplashTransitionState extends State<SplashTransition>
   }
 }
 
-class HvacToolsManagerApp extends StatelessWidget {
+class HvacToolsManagerApp extends StatefulWidget {
   final bool initialFirstLaunch;
   final String? cachedLastRoute;
+  final Uri? initialDeepLink;
 
   const HvacToolsManagerApp({
     super.key,
     required this.initialFirstLaunch,
     required this.cachedLastRoute,
+    this.initialDeepLink,
   });
+
+  @override
+  State<HvacToolsManagerApp> createState() => _HvacToolsManagerAppState();
+}
+
+class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
+  StreamSubscription<Uri>? _linkSubscription;
+  bool _deepLinkProcessed = false;
+  bool _isProcessingDeepLink = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for incoming deep links while app is running
+    if (!kIsWeb) {
+      _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+        print('🔐 DEEP LINK RECEIVED (while running): $uri');
+        _handleDeepLink(uri);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _handleDeepLink(Uri uri) async {
+    if (_isProcessingDeepLink) {
+      print('🔐 Already processing a deep link, ignoring');
+      return;
+    }
+    
+    _isProcessingDeepLink = true;
+    print('🔐 Processing deep link: $uri');
+    
+    try {
+      // Check if this is an auth callback
+      final uriString = uri.toString();
+      final isAuthCallback = uriString.contains('auth/callback') || 
+                            uriString.contains('code=') ||
+                            uriString.contains('token=') ||
+                            uriString.contains('type=signup') ||
+                            uriString.contains('type=recovery');
+      
+      if (!isAuthCallback) {
+        print('🔐 Not an auth callback, ignoring');
+        _isProcessingDeepLink = false;
+        return;
+      }
+      
+      print('🔐 Auth callback detected, waiting for Supabase...');
+      
+      // Wait for Supabase to be initialized
+      int waitAttempts = 0;
+      while (!SupabaseService.isInitialized && waitAttempts < 50) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitAttempts++;
+      }
+      print('🔐 Supabase initialized: ${SupabaseService.isInitialized}');
+      
+      // Extract parameters
+      final params = <String, String>{};
+      params.addAll(uri.queryParameters);
+      if (uri.fragment.isNotEmpty) {
+        try {
+          final fragment = uri.fragment.startsWith('?') ? uri.fragment.substring(1) : uri.fragment;
+          params.addAll(Uri.splitQueryString(fragment));
+        } catch (e) {
+          print('⚠️ Could not parse fragment: $e');
+        }
+      }
+      
+      final type = params['type'];
+      final code = params['code'];
+      final token = params['token'];
+      final accessToken = params['access_token'];
+      final refreshToken = params['refresh_token'];
+      
+      print('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}');
+      
+      // Exchange code/token for session
+      Session? session;
+      
+      if (accessToken != null && refreshToken != null) {
+        print('🔐 Setting session from tokens...');
+        final response = await SupabaseService.client.auth.setSession(refreshToken);
+        session = response.session;
+      } else if (code != null) {
+        print('🔐 Exchanging code for session...');
+        final response = await SupabaseService.client.auth.exchangeCodeForSession(code);
+        session = response.session;
+      } else if (token != null) {
+        print('🔐 Verifying OTP token...');
+        try {
+          final otpType = type == 'recovery' ? OtpType.recovery : OtpType.signup;
+          final response = await SupabaseService.client.auth.verifyOTP(
+            type: otpType,
+            token: token,
+          );
+          session = response.session;
+        } catch (e) {
+          print('⚠️ OTP verification failed: $e');
+          // Try getSessionFromUrl as fallback
+          try {
+            final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
+            session = response.session;
+          } catch (e2) {
+            print('⚠️ getSessionFromUrl also failed: $e2');
+          }
+        }
+      } else {
+        print('🔐 Using getSessionFromUrl...');
+        try {
+          final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
+          session = response.session;
+        } catch (e) {
+          print('⚠️ getSessionFromUrl failed: $e');
+        }
+      }
+      
+      if (session != null) {
+        print('✅ Session obtained from deep link!');
+        print('✅ User: ${session.user.email}');
+        print('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
+        print('✅ Role: ${session.user.userMetadata?['role']}');
+        
+        // Mark deep link as processed
+        _deepLinkProcessed = true;
+        
+        // Ensure admin user record exists
+        final role = session.user.userMetadata?['role'] as String?;
+        if (role == 'admin') {
+          try {
+            final existingRecord = await SupabaseService.client
+                .from('users')
+                .select('id')
+                .eq('id', session.user.id)
+                .maybeSingle();
+            
+            if (existingRecord == null) {
+              print('🔐 Creating admin user record...');
+              final positionId = session.user.userMetadata?['position_id'] as String?;
+              final fullName = session.user.userMetadata?['full_name'] as String? ?? 
+                              session.user.userMetadata?['name'] as String? ?? 
+                              session.user.email?.split('@')[0] ?? 'Admin';
+              
+              await SupabaseService.client.from('users').insert({
+                'id': session.user.id,
+                'email': session.user.email,
+                'full_name': fullName,
+                'role': 'admin',
+                if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
+              });
+              print('✅ Admin user record created');
+            }
+          } catch (e) {
+            print('⚠️ Error creating admin user record: $e');
+          }
+        }
+        
+        // Trigger rebuild by notifying - the Consumer will pick up the new session
+        setState(() {});
+      } else {
+        print('❌ Could not obtain session from deep link');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error processing deep link: $e');
+      print('❌ Stack trace: $stackTrace');
+    } finally {
+      _isProcessingDeepLink = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -618,6 +813,15 @@ class HvacToolsManagerApp extends StatelessWidget {
             });
           }
           
+          // CRITICAL: Process initial deep link if we have one and haven't processed it yet
+          if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
+            print('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
+            // Process in post frame callback to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _handleDeepLink(widget.initialDeepLink!);
+            });
+          }
+          
           // CRITICAL: Check session FIRST - if logged in, go directly to home screen
           // No intermediate screens, no waiting, no flashes
           final hasSession = SupabaseService.client.auth.currentSession != null;
@@ -663,17 +867,17 @@ class HvacToolsManagerApp extends StatelessWidget {
             } else {
               initialRoute = const TechnicianHomeScreen();
             }
-          } else if (!hasSession && cachedLastRoute != null && !authProvider.isLoggingOut) {
+          } else if (!hasSession && widget.cachedLastRoute != null && !authProvider.isLoggingOut) {
             // Session may still be restoring - reuse last known route to avoid flashes.
-            if (cachedLastRoute == '/admin') {
+            if (widget.cachedLastRoute == '/admin') {
               initialRoute = AdminHomeScreenErrorBoundary(
                 child: AdminHomeScreen(
                   key: ValueKey('admin_home'),
                 ),
               );
-            } else if (cachedLastRoute == '/technician') {
+            } else if (widget.cachedLastRoute == '/technician') {
               initialRoute = const TechnicianHomeScreen();
-            } else if (cachedLastRoute == '/pending-approval') {
+            } else if (widget.cachedLastRoute == '/pending-approval') {
               initialRoute = const PendingApprovalScreen();
             } else {
               initialRoute = const RoleSelectionScreen();
