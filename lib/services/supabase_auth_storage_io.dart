@@ -14,12 +14,13 @@ FlutterAuthClientOptions createPlatformAuthOptions({
 }) {
   final localStorage =
       FileLocalStorage(persistSessionKey: persistSessionKey);
-  final pkceStorage = FileGotrueAsyncStorage();
 
+  // Use IMPLICIT flow for email confirmation
+  // PKCE requires storing code_verifier which is lost if app is killed
+  // Implicit flow returns access_token directly in the URL fragment
   return FlutterAuthClientOptions(
-    authFlowType: AuthFlowType.pkce,
+    authFlowType: AuthFlowType.implicit,
     localStorage: localStorage,
-    pkceAsyncStorage: pkceStorage,
     autoRefreshToken: true,
   );
 }

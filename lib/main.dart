@@ -669,45 +669,34 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       final accessToken = params['access_token'];
       final refreshToken = params['refresh_token'];
       
-      print('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}');
+      print('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}, refreshToken: ${refreshToken != null}');
       
-      // Exchange code/token for session
+      // Get session from URL - this is the simplest and most reliable method
+      // It handles both implicit flow (tokens in fragment) and PKCE flow (code in query)
       Session? session;
       
-      if (accessToken != null && refreshToken != null) {
-        print('🔐 Setting session from tokens...');
-        final response = await SupabaseService.client.auth.setSession(refreshToken);
+      try {
+        print('🔐 Using getSessionFromUrl to extract session...');
+        final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
         session = response.session;
-      } else if (code != null) {
-        print('🔐 Exchanging code for session...');
-        final response = await SupabaseService.client.auth.exchangeCodeForSession(code);
-        session = response.session;
-      } else if (token != null) {
-        print('🔐 Verifying OTP token...');
-        try {
-          final otpType = type == 'recovery' ? OtpType.recovery : OtpType.signup;
-          final response = await SupabaseService.client.auth.verifyOTP(
-            type: otpType,
-            token: token,
-          );
-          session = response.session;
-        } catch (e) {
-          print('⚠️ OTP verification failed: $e');
-          // Try getSessionFromUrl as fallback
+        print('✅ getSessionFromUrl succeeded');
+      } catch (e) {
+        print('⚠️ getSessionFromUrl failed: $e');
+        
+        // Fallback: Try to set session directly if we have tokens
+        if (accessToken != null) {
+          print('🔐 Fallback: Setting session from access token...');
           try {
-            final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
-            session = response.session;
+            // For implicit flow, tokens come in fragment
+            // We can set the session using the refresh token
+            if (refreshToken != null) {
+              final response = await SupabaseService.client.auth.setSession(refreshToken);
+              session = response.session;
+              print('✅ setSession succeeded');
+            }
           } catch (e2) {
-            print('⚠️ getSessionFromUrl also failed: $e2');
+            print('⚠️ setSession failed: $e2');
           }
-        }
-      } else {
-        print('🔐 Using getSessionFromUrl...');
-        try {
-          final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
-          session = response.session;
-        } catch (e) {
-          print('⚠️ getSessionFromUrl failed: $e');
         }
       }
       
