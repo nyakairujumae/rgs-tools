@@ -347,22 +347,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                           // Position Dropdown
                           _buildLabel('Position'),
                           const SizedBox(height: 8),
-                          _isLoadingPositions
-                              ? Container(
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: theme.inputDecorationTheme.fillColor ?? Colors.grey.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  ),
-                                )
-                              : DropdownButtonFormField<String>(
+                          DropdownButtonFormField<String>(
                                   value: _selectedPositionId,
                                   style: TextStyle(
                                     fontSize: 15,

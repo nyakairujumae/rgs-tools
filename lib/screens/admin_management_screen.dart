@@ -231,13 +231,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             ),
         ],
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-              ),
-            )
-          : _admins.isEmpty
+      body: _admins.isEmpty && !_isLoading
               ? Center(
                   child: Text(
                     'No admins found',
