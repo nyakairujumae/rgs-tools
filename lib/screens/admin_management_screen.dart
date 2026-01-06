@@ -227,37 +227,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             ),
         ],
       ),
-      body: _admins.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.admin_panel_settings_outlined,
-                        size: 64,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No admins yet',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Add your first admin to get started',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.separated(
+      body: ListView.separated(
                   padding: ResponsiveHelper.getResponsivePadding(
                     context,
                     horizontal: 16,
