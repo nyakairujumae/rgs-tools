@@ -1024,10 +1024,23 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           Widget initialRoute;
           
           // CRITICAL: If we have an initial deep link and haven't processed it yet,
-          // show a branded loading screen with animation
+          // Check if it's a password reset - if so, go directly to reset screen (no loading)
+          // For email confirmation (signup), show the loading screen
           if (widget.initialDeepLink != null && !_deepLinkProcessed) {
-            print('🔐 Processing deep link - showing loading screen...');
-            initialRoute = const _EmailConfirmationLoadingScreen();
+            final deepLinkString = widget.initialDeepLink.toString();
+            final isPasswordReset = deepLinkString.contains('type=recovery');
+            
+            if (isPasswordReset) {
+              // Password reset - go directly to reset password screen
+              print('🔐 Password reset deep link - going to Reset Password screen');
+              initialRoute = ResetPasswordScreen(
+                deepLink: deepLinkString,
+              );
+            } else {
+              // Email confirmation - show loading screen while processing
+              print('🔐 Email confirmation deep link - showing loading screen...');
+              initialRoute = const _EmailConfirmationLoadingScreen();
+            }
           } else if (_sessionEstablished || (hasSession && currentUser != null && currentUser.emailConfirmedAt != null)) {
             // Determine role from provider (if initialized) or metadata (if not)
             bool isAdmin = false;
