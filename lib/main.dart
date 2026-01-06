@@ -626,123 +626,110 @@ class _EmailConfirmationLoadingScreenState extends State<_EmailConfirmationLoadi
 
   @override
   Widget build(BuildContext context) {
+    const greenColor = Color(0xFF047857); // App's secondary green color
+    
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF2563EB), // Primary blue
-              Color(0xFF1D4ED8), // Darker blue
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(flex: 2),
-              
-              // Animated checkmark icon
-              ScaleTransition(
-                scale: _pulseAnimation,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.mark_email_read_rounded,
-                    size: 50,
-                    color: Colors.white,
-                  ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+            
+            // Animated email icon with green accent
+            ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: greenColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_read_rounded,
+                  size: 50,
+                  color: greenColor,
                 ),
               ),
-              
-              const SizedBox(height: 40),
-              
-              // Title
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: const Text(
-                  'Almost there!',
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Title
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: const Text(
+                'Almost there!',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Subtitle
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Confirming your email...\nYou\'ll be redirected to your dashboard in a moment.',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
+                    color: Colors.black.withOpacity(0.6),
+                    fontSize: 16,
+                    height: 1.5,
                   ),
                 ),
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Subtitle
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    'Confirming your email...\nYou\'ll be redirected to your dashboard in a moment.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 16,
-                      height: 1.5,
+            ),
+            
+            const SizedBox(height: 48),
+            
+            // Green loading indicator
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(greenColor),
+                strokeWidth: 3,
+              ),
+            ),
+            
+            const Spacer(flex: 3),
+            
+            // Bottom branding
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 32),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.build_circle_outlined,
+                      color: Colors.black.withOpacity(0.4),
+                      size: 20,
                     ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Loading indicator
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.white.withOpacity(0.9),
-                  ),
-                  strokeWidth: 3,
-                ),
-              ),
-              
-              const Spacer(flex: 3),
-              
-              // Bottom branding
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.build_circle_outlined,
-                        color: Colors.white.withOpacity(0.6),
-                        size: 20,
+                    const SizedBox(width: 8),
+                    Text(
+                      'RGS Tools',
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.4),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'RGS Tools',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
