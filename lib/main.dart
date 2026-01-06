@@ -1012,10 +1012,10 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               // Provider initialized - use its role (most reliable)
               isAdmin = authProvider.isAdmin;
               isPending = authProvider.isPendingApproval || authProvider.userRole == UserRole.pending;
-            } else {
+            } else if (currentUser != null) {
               // Provider not initialized - check metadata and pending approval table
-              final roleFromMetadata = currentUser.userMetadata?['role'] as String?;
-              final email = currentUser.email ?? '';
+              final roleFromMetadata = currentUser?.userMetadata?['role'] as String?;
+              final email = currentUser?.email ?? '';
               isAdmin = roleFromMetadata == 'admin' || 
                   email.endsWith('@royalgulf.ae') || 
                   email.endsWith('@mekar.ae') || 
