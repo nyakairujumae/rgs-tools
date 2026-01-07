@@ -3,17 +3,14 @@
     <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
     <!-- Simplified to match iOS: black background with centered logo -->
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <!-- Use black theme parent to prevent any white flash -->
-        <!-- Set background color FIRST to show immediately on first install -->
+        <!-- CRITICAL: Use solid color FIRST - this shows immediately even on first install before resources are extracted -->
+        <item name="android:windowBackground">@color/launch_background_color</item>
         <item name="android:colorBackground">@color/launch_background_color</item>
-        <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:forceDarkAllowed">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- Ensure splash shows immediately -->
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:windowDisablePreview">false</item>
@@ -25,6 +22,6 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowBackground">@color/launch_background_color</item>
     </style>
 </resources>

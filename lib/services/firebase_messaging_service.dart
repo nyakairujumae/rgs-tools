@@ -10,6 +10,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../firebase_options.dart';
 import 'supabase_service.dart';
 import 'badge_service.dart';
+import '../main.dart' show globalNavigatorKey;
+import '../screens/admin_notification_screen.dart';
 
 // Background notification channel constants (must be accessible from background handler)
 const String _backgroundChannelId = 'rgs_notifications';
@@ -743,14 +745,8 @@ class FirebaseMessagingService {
     debugPrint('📱 [FCM] Payload: ${response.payload}');
     debugPrint('📱 [FCM] =========================================');
     
-    // Parse payload and handle navigation
-    if (response.payload != null && response.payload!.isNotEmpty) {
-      try {
-        debugPrint('📱 [FCM] Payload data available for navigation');
-      } catch (e) {
-        debugPrint('⚠️ [FCM] Error parsing payload: $e');
-      }
-    }
+    // Navigate to notification center
+    _navigateToNotificationCenter();
   }
 
   /// Handle navigation when app is opened from notification
@@ -761,7 +757,53 @@ class FirebaseMessagingService {
     
     debugPrint('📱 [FCM] Navigation - Type: $type, ID: $id');
     
-    // Navigation logic can be implemented here based on app structure
+    // Navigate to notification center
+    _navigateToNotificationCenter();
+  }
+  
+  /// Navigate to the appropriate notification center based on user role
+  static void _navigateToNotificationCenter() {
+    debugPrint('📱 [FCM] Navigating to notification center...');
+    
+    // Use post-frame callback to ensure we're not in the middle of a build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = globalNavigatorKey.currentState;
+      if (navigator == null) {
+        debugPrint('⚠️ [FCM] Navigator not available, cannot navigate');
+        return;
+      }
+      
+      try {
+        // Check user role from Supabase
+        final currentUser = SupabaseService.client.auth.currentUser;
+        if (currentUser == null) {
+          debugPrint('⚠️ [FCM] No user logged in, cannot navigate to notifications');
+          return;
+        }
+        
+        final userRole = currentUser.userMetadata?['role'] as String?;
+        debugPrint('📱 [FCM] User role: $userRole');
+        
+        if (userRole == 'admin') {
+          // Navigate to admin notification center (separate screen)
+          navigator.push(
+            MaterialPageRoute(
+              builder: (context) => const AdminNotificationScreen(),
+            ),
+          );
+          debugPrint('✅ [FCM] Navigated to Admin Notification Center');
+        } else if (userRole == 'technician') {
+          // For technicians, just go to home - they have a notification bell there
+          // The notification badge will show and they can tap to see notifications
+          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+          debugPrint('✅ [FCM] Navigated to Technician Home');
+        } else {
+          debugPrint('⚠️ [FCM] Unknown user role: $userRole');
+        }
+      } catch (e) {
+        debugPrint('❌ [FCM] Error navigating to notification center: $e');
+      }
+    });
   }
 
   /// Update app badge (increment by 1)

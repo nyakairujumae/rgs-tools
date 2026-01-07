@@ -58,6 +58,9 @@ String? _cachedLastRoute;
 Uri? _initialDeepLink;
 final _appLinks = AppLinks();
 
+/// Global navigator key for push notification navigation
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -756,7 +759,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
   StreamSubscription<Uri>? _linkSubscription;
   bool _deepLinkProcessed = false;
   bool _isProcessingDeepLink = false;
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  // Use the global navigator key for push notification navigation
+  GlobalKey<NavigatorState> get _navigatorKey => globalNavigatorKey;
   bool _sessionEstablished = false; // Track if we got a valid session from deep link
 
   @override

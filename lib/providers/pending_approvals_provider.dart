@@ -328,7 +328,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
     DateTime? hireDate,
   }) async {
     try {
-      await SupabaseService.client
+      final insertResponse = await SupabaseService.client
           .from('pending_user_approvals')
           .insert({
             'user_id': userId,
@@ -339,9 +339,37 @@ class PendingApprovalsProvider extends ChangeNotifier {
             'department': department,
             'hire_date': hireDate?.toIso8601String(),
             'status': 'pending',
-          });
+          })
+          .select()
+          .single();
 
       debugPrint('✅ Pending approval submitted successfully');
+      
+      // Create notification for admins in the main notification center
+      try {
+        final displayName = fullName ?? email;
+        await SupabaseService.client
+            .from('admin_notifications')
+            .insert({
+              'title': 'New Technician Registration',
+              'message': '$displayName has requested access to the app and is awaiting approval.',
+              'technician_name': displayName,
+              'technician_email': email,
+              'type': NotificationType.accessRequest.value,
+              'is_read': false,
+              'timestamp': DateTime.now().toIso8601String(),
+              'data': {
+                'approval_id': insertResponse['id'],
+                'user_id': userId,
+                'submitted_at': DateTime.now().toIso8601String(),
+              },
+            });
+        debugPrint('✅ Created admin notification for new technician approval request');
+      } catch (e) {
+        debugPrint('⚠️ Failed to create admin notification for approval request: $e');
+        // Don't fail the submission if notification creation fails
+      }
+      
       return true;
     } catch (e) {
       _error = e.toString();

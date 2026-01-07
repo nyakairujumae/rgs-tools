@@ -9,6 +9,7 @@ import '../services/firebase_messaging_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/first_launch_service.dart';
 import '../services/last_route_service.dart';
+import '../services/badge_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
 
@@ -612,7 +613,7 @@ class AuthProvider with ChangeNotifier {
             try {
               debugPrint('🔍 Creating pending approval for technician (has session)...');
               // Create pending approval record with timeout
-              await SupabaseService.client
+              final approvalResponse = await SupabaseService.client
                   .from('pending_user_approvals')
                   .insert({
                     'user_id': _user!.id,
@@ -620,6 +621,8 @@ class AuthProvider with ChangeNotifier {
                     'full_name': fullName,
                     'status': 'pending',
                   })
+                  .select()
+                  .single()
                   .timeout(
                     const Duration(seconds: 15),
                     onTimeout: () {
@@ -628,6 +631,31 @@ class AuthProvider with ChangeNotifier {
                   );
               
               debugPrint('✅ Pending approval created for technician: $email');
+              
+              // Create notification for admins in the main notification center
+              try {
+                final displayName = fullName ?? email;
+                await SupabaseService.client
+                    .from('admin_notifications')
+                    .insert({
+                      'title': 'New Technician Registration',
+                      'message': '$displayName has requested access to the app and is awaiting approval.',
+                      'technician_name': displayName,
+                      'technician_email': email,
+                      'type': 'access_request',
+                      'is_read': false,
+                      'timestamp': DateTime.now().toIso8601String(),
+                      'data': {
+                        'approval_id': approvalResponse['id'],
+                        'user_id': _user!.id,
+                        'submitted_at': DateTime.now().toIso8601String(),
+                      },
+                    });
+                debugPrint('✅ Created admin notification for new technician approval request');
+              } catch (notifError) {
+                debugPrint('⚠️ Failed to create admin notification: $notifError');
+                // Don't fail the registration if notification creation fails
+              }
               
               // Delete any user record created by trigger (technicians shouldn't have one until approved)
               try {
@@ -1550,6 +1578,14 @@ class AuthProvider with ChangeNotifier {
       await _clearSavedUserRole();
       await LastRouteService.clearLastRoute();
       
+      // Clear app badge on logout
+      try {
+        await BadgeService.clearBadge();
+        debugPrint('✅ AuthProvider: Badge cleared on logout');
+      } catch (badgeError) {
+        debugPrint('⚠️ AuthProvider: Could not clear badge: $badgeError');
+      }
+      
       // Clear user data first to prevent widget tree issues
       _user = null;
       _userRole = UserRole.pending; // Reset to pending (unknown) after logout
@@ -1565,6 +1601,10 @@ class AuthProvider with ChangeNotifier {
       // Ensure user data is cleared even on error
       _user = null;
       _userRole = UserRole.pending; // Reset to pending on error
+      // Still try to clear badge on error
+      try {
+        await BadgeService.clearBadge();
+      } catch (_) {}
     } finally {
 _isLoading = false;
       _isLoggingOut = false;
@@ -1765,14 +1805,39 @@ _isLoading = false;
       // If technician, create pending approval record
       if (role == UserRole.technician) {
         try {
-          await client.from('pending_user_approvals').insert({
+          final approvalResponse = await client.from('pending_user_approvals').insert({
             'user_id': userId,
             'email': email,
             'full_name': name.toUpperCase(),
             'status': 'pending',
             'created_at': DateTime.now().toIso8601String(),
-          });
+          }).select().single();
           debugPrint('✅ Created pending approval record for OAuth technician');
+          
+          // Create notification for admins in the main notification center
+          try {
+            final displayName = name.toUpperCase();
+            await client
+                .from('admin_notifications')
+                .insert({
+                  'title': 'New Technician Registration',
+                  'message': '$displayName has requested access to the app and is awaiting approval.',
+                  'technician_name': displayName,
+                  'technician_email': email,
+                  'type': 'access_request',
+                  'is_read': false,
+                  'timestamp': DateTime.now().toIso8601String(),
+                  'data': {
+                    'approval_id': approvalResponse['id'],
+                    'user_id': userId,
+                    'submitted_at': DateTime.now().toIso8601String(),
+                  },
+                });
+            debugPrint('✅ Created admin notification for new OAuth technician approval request');
+          } catch (notifError) {
+            debugPrint('⚠️ Failed to create admin notification: $notifError');
+            // Don't fail the registration if notification creation fails
+          }
         } catch (e) {
           debugPrint('⚠️ Could not create pending approval (may already exist): $e');
         }

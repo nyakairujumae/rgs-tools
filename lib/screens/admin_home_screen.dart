@@ -544,13 +544,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 backgroundColor:
                                     AppTheme.secondaryColor.withOpacity(0.12),
                                 onTap: () {
-                                  Navigator.of(sheetContext).pop();
-                                  Navigator.push(
-                                    parentContext,
-                                    MaterialPageRoute(
-                                      builder: (_) => const AdminManagementScreen(),
+                                  // Navigate FIRST, then close bottom sheet - this prevents blank screen flash
+                                  Navigator.of(parentContext).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => const AdminManagementScreen(),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
-                                  );
+                                  ).then((_) {
+                                    // Bottom sheet is already covered, close it silently
+                                    if (Navigator.of(sheetContext).canPop()) {
+                                      Navigator.of(sheetContext).pop();
+                                    }
+                                  });
                                 },
                               ),
                             ],

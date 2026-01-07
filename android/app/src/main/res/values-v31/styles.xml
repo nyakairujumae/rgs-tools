@@ -7,15 +7,12 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <!-- Black background for splash screen -->
+        <!-- CRITICAL: Set windowBackground FIRST - this shows immediately even on first install -->
+        <item name="android:windowBackground">@color/launch_background_color</item>
+        <!-- Android 12+ splash screen API -->
         <item name="android:windowSplashScreenBackground">@color/launch_background_color</item>
-        <!-- Fallback windowBackground for compatibility (contains logo for older devices/first install) -->
-        <!-- CRITICAL: windowBackground must be set for first install compatibility -->
-        <item name="android:windowBackground">@drawable/launch_background</item>
-        <!-- Use properly sized XML drawable (50dp) for Android 12+ splash icon - logo sits directly on black bg -->
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_small</item>
-        <!-- Transparent icon background to remove white circle -->
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/android12splash</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_background_color</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.
          This theme determines the color of the Android Window while your
@@ -24,6 +21,6 @@
          
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowBackground">@color/launch_background_color</item>
     </style>
 </resources>

@@ -114,8 +114,9 @@ class BadgeService {
         debugPrint('⚠️ [Badge] Could not fetch user role: $e');
       }
 
-      // Count admin notifications (for admins)
+      // Count notifications based on user role
       if (userRole == 'admin') {
+        // Admins only see admin_notifications
         try {
           final adminNotifications = await SupabaseService.client
               .from('admin_notifications')
@@ -129,41 +130,42 @@ class BadgeService {
         } catch (e) {
           debugPrint('⚠️ [Badge] Error counting admin notifications: $e');
         }
-      }
-
-      // Count technician notifications (for all users)
-      try {
-        final technicianNotifications = await SupabaseService.client
-            .from('technician_notifications')
-            .select('is_read')
-            .eq('user_id', authUser.id)
-            .eq('is_read', false)
-            .limit(1000); // Reasonable limit
-        
-        unreadCount += (technicianNotifications as List)
-            .where((n) => (n['is_read'] as bool?) != true)
-            .length;
-      } catch (e) {
-        debugPrint('⚠️ [Badge] Error counting technician notifications: $e');
-      }
-
-      // Also count admin_notifications where technician_email matches (for technicians)
-      if (userRole == 'technician' && userEmail != null) {
+      } else if (userRole == 'technician') {
+        // Technicians see technician_notifications for their user_id
         try {
-          final adminNotificationsForTech = await SupabaseService.client
-              .from('admin_notifications')
+          final technicianNotifications = await SupabaseService.client
+              .from('technician_notifications')
               .select('is_read')
-              .eq('technician_email', userEmail)
+              .eq('user_id', authUser.id)
               .eq('is_read', false)
-              .limit(1000);
+              .limit(1000); // Reasonable limit
           
-          unreadCount += (adminNotificationsForTech as List)
+          unreadCount += (technicianNotifications as List)
               .where((n) => (n['is_read'] as bool?) != true)
               .length;
         } catch (e) {
-          debugPrint('⚠️ [Badge] Error counting admin notifications for technician: $e');
+          debugPrint('⚠️ [Badge] Error counting technician notifications: $e');
+        }
+
+        // Also count admin_notifications where technician_email matches (for technicians)
+        if (userEmail != null) {
+          try {
+            final adminNotificationsForTech = await SupabaseService.client
+                .from('admin_notifications')
+                .select('is_read')
+                .eq('technician_email', userEmail)
+                .eq('is_read', false)
+                .limit(1000);
+            
+            unreadCount += (adminNotificationsForTech as List)
+                .where((n) => (n['is_read'] as bool?) != true)
+                .length;
+          } catch (e) {
+            debugPrint('⚠️ [Badge] Error counting admin notifications for technician: $e');
+          }
         }
       }
+      // Note: If userRole is null or pending, badge count will be 0
 
       return unreadCount;
     } catch (e) {

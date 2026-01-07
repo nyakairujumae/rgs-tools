@@ -231,7 +231,61 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             ),
         ],
       ),
-      body: ListView.separated(
+      body: !_dataLoaded && _admins.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading admins...',
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _dataLoaded && _admins.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings_outlined,
+                        size: 64,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No admins yet',
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tap + to add an admin',
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
                   padding: ResponsiveHelper.getResponsivePadding(
                     context,
                     horizontal: 16,
