@@ -108,9 +108,13 @@ void main() async {
   // CRITICAL: Register background message handler BEFORE runApp()
   // Must be top-level function with @pragma('vm:entry-point')
   // Note: This can only be called once, subsequent calls are ignored
+  // Note: On web, FirebaseMessaging uses stub and this is a no-op
   if (!kIsWeb) {
     try {
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      // Use dynamic cast to avoid type mismatch between real and stub RemoteMessage
+      FirebaseMessaging.onBackgroundMessage(
+        (message) => firebaseMessagingBackgroundHandler(message as dynamic),
+      );
       print('✅ Background message handler registered');
     } catch (e) {
       print('⚠️ Could not register background handler: $e');

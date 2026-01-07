@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'firebase_messaging_stub.dart';
 
 /// Stub implementation for web - all methods are no-ops
 class FirebaseMessagingService {
@@ -26,9 +27,9 @@ class FirebaseMessagingService {
   }
 }
 
-/// Stub background handler for web
+/// Stub background handler for web - uses stub RemoteMessage type
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(dynamic message) async {
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // No-op on web
 }
 

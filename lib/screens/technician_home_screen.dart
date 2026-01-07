@@ -2140,38 +2140,25 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     
-    // Exact same layout as latest card, with a Request button for shared tools
     return InkWell(
       onTap: () =>
           Navigator.pushNamed(context, '/tool-detail', arguments: tool),
-      borderRadius: BorderRadius.circular(
-        ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-      ),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        constraints: BoxConstraints(
-          maxHeight: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
-          minHeight: ResponsiveHelper.getResponsiveListItemHeight(context, 180),
-        ),
-        padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 6),
-        ),
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 180),
+        padding: const EdgeInsets.all(12),
         decoration: context.cardDecoration.copyWith(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Left thumbnail (wider like Featured)
+            // Left thumbnail
             Container(
-              width: ResponsiveHelper.getResponsiveIconSize(context, 140),
-              constraints: BoxConstraints(
-                maxHeight: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
-              ),
+              width: 130,
+              height: double.infinity,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-                ),
+                borderRadius: BorderRadius.circular(12),
                 child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
                         ? Image.network(
@@ -2201,184 +2188,146 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     : _buildPlaceholderImage(true),
               ),
             ),
-            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+            const SizedBox(width: 12),
+            // Right content
             Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  tool.name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (tool.toolType == 'shared')
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                                  ),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                                      vertical: ResponsiveHelper.getResponsiveSpacing(context, 3),
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      tool.toolType.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.secondaryColor,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Tool name with shared badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tool.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                          Wrap(
-                            spacing: ResponsiveHelper.getResponsiveSpacing(context, 6),
-                            runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                            children: [
-                              _buildPillChip(
-                                _getStatusIcon(tool.status),
-                                _getStatusLabel(tool.status),
-                                _getStatusColor(tool.status),
-                              ),
-                              _buildPillChip(
-                                _getConditionIcon(tool.condition),
-                                _getConditionLabel(tool.condition),
-                                _getConditionColor(tool.condition),
-                              ),
-                            ],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'SHARED',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.secondaryColor,
                           ),
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.category,
-                                    size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                  ),
-                                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                                  Expanded(
-                                    child: Text(
-                                      tool.category.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                        color: AppTheme.secondaryColor,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                              if (tool.brand != null && tool.brand!.isNotEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: ResponsiveHelper.getResponsiveIconSize(context, 18) + 
-                                          ResponsiveHelper.getResponsiveSpacing(context, 8),
-                                  ),
-                                  child: Text(
-                                    tool.brand!,
-                                    style: TextStyle(
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Status chips
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildPillChip(
+                        _getStatusIcon(tool.status),
+                        _getStatusLabel(tool.status),
+                        _getStatusColor(tool.status),
+                      ),
+                      _buildPillChip(
+                        _getConditionIcon(tool.condition),
+                        _getConditionLabel(tool.condition),
+                        _getConditionColor(tool.condition),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Category row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        size: 14,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          tool.category.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.secondaryColor,
+                            fontWeight: FontWeight.w700,
                           ),
-                          // Only show holder line and request button for shared tools (not for My Tools)
-                          if (tool.toolType == 'shared')
-                            Padding(
-                              padding: EdgeInsets.only(top: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: _holderLine(context, tool, technicians, currentUserId),
-                                  ),
-                                  // Show Request button for shared tools that have a holder (badged to someone else)
-                                  if (tool.assignedTo != null &&
-                                      tool.assignedTo!.isNotEmpty &&
-                                      (currentUserId == null ||
-                                          currentUserId != tool.assignedTo))
-                                    Padding(
-                                      padding: EdgeInsets.only(left: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(999),
-                                        ),
-                                        child: TextButton(
-                                          onPressed: () =>
-                                              _sendToolRequest(context, tool),
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: AppTheme.secondaryColor,
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-                                              vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                                            ),
-                                            minimumSize: const Size(0, 0),
-                                            tapTargetSize:
-                                                MaterialTapTargetSize.shrinkWrap,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(999),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Request',
-                                            style: TextStyle(
-                                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                        ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Brand (if available)
+                  if (tool.brand != null && tool.brand!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20),
+                      child: Text(
+                        tool.brand!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
-                ),
+                  // Holder line and request button
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _holderLine(context, tool, technicians, currentUserId),
+                      ),
+                      // Show Request button for shared tools that have a holder (badged to someone else)
+                      if (tool.assignedTo != null &&
+                          tool.assignedTo!.isNotEmpty &&
+                          (currentUserId == null || currentUserId != tool.assignedTo))
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: TextButton(
+                            onPressed: () => _sendToolRequest(context, tool),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.secondaryColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              minimumSize: const Size(0, 0),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: const Text(
+                              'Request',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -2512,30 +2461,22 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     return InkWell(
       onTap: () =>
           Navigator.pushNamed(context, '/tool-detail', arguments: tool),
-      borderRadius: BorderRadius.circular(
-        ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-      ),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        height: ResponsiveHelper.getResponsiveListItemHeight(context, 172),
-        padding: ResponsiveHelper.getResponsivePadding(
-          context,
-          horizontal: 12,
-          vertical: 6,
-        ),
+        height: ResponsiveHelper.getResponsiveListItemHeight(context, 160),
+        padding: const EdgeInsets.all(12),
         decoration: context.cardDecoration.copyWith(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Left thumbnail (wider like Featured)
+            // Left thumbnail
             Container(
-              width: ResponsiveHelper.getResponsiveIconSize(context, 140),
+              width: 120,
               height: double.infinity,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-                ),
+                borderRadius: BorderRadius.circular(12),
                 child: tool.imagePath != null
                     ? (tool.imagePath!.startsWith('http')
                           ? Image.network(
@@ -2565,131 +2506,113 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     : _buildPlaceholderImage(false),
               ),
             ),
-            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        tool.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (tool.toolType == 'shared')
-                      Padding(
-                        padding: EdgeInsets.only(
-                          left: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                        ),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                            vertical: ResponsiveHelper.getResponsiveSpacing(context, 3),
+            const SizedBox(width: 12),
+            // Right content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Tool name with optional shared badge
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tool.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: theme.colorScheme.onSurface,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (tool.toolType == 'shared')
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(999),
+                            color: AppTheme.secondaryColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            tool.toolType.toUpperCase(),
+                            'SHARED',
                             style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.secondaryColor,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Status chips
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildPillChip(
+                        _getStatusIcon(tool.status),
+                        _getStatusLabel(tool.status),
+                        _getStatusColor(tool.status),
+                      ),
+                      _buildPillChip(
+                        _getConditionIcon(tool.condition),
+                        _getConditionLabel(tool.condition),
+                        _getConditionColor(tool.condition),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Category row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        size: 14,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          tool.category.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.secondaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                  ],
-                ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                    Wrap(
-                      spacing: ResponsiveHelper.getResponsiveSpacing(context, 4),
-                      runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 2),
-                      children: [
-                        _buildPillChip(
-                          _getStatusIcon(tool.status),
-                          _getStatusLabel(tool.status),
-                          _getStatusColor(tool.status),
+                    ],
+                  ),
+                  // Brand (if available)
+                  if (tool.brand != null && tool.brand!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20),
+                      child: Text(
+                        tool.brand!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontWeight: FontWeight.w500,
                         ),
-                        _buildPillChip(
-                          _getConditionIcon(tool.condition),
-                          _getConditionLabel(tool.condition),
-                          _getConditionColor(tool.condition),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.category,
-                              size: ResponsiveHelper.getResponsiveIconSize(context, 16),
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
-                            Expanded(
-                              child: Text(
-                                tool.category.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                                  color: AppTheme.secondaryColor,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                        if (tool.brand != null && tool.brand!.isNotEmpty)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              top: ResponsiveHelper.getResponsiveSpacing(context, 2),
-                              left: ResponsiveHelper.getResponsiveIconSize(context, 16) + 
-                                    ResponsiveHelper.getResponsiveSpacing(context, 6),
-                            ),
-                            child: Text(
-                              tool.brand!,
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
-                ),
+                ],
               ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
