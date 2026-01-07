@@ -32,68 +32,74 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.linux);
     final isDesktop = isDesktopWidth || isDesktopPlatform;
+    // Max width for web/desktop to prevent overly wide layouts
+    const double maxContentWidth = 420;
+    
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-            child: Transform.translate(
-              offset: const Offset(0, -40),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  _buildBranding(context, isDesktop),
-                  const SizedBox(height: 36),
-                  Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      final isOAuthUser = authProvider.isAuthenticated && 
-                                          authProvider.user?.appMetadata?['provider'] != null &&
-                                          authProvider.user?.appMetadata?['provider'] != 'email' &&
-                                          authProvider.userRole == UserRole.pending;
-                      
-                      return Column(
-                        children: [
-                          _buildRoleButton(
-                            context: context,
-                            label: isOAuthUser ? 'Continue as Admin' : 'Register as Admin',
-                            color: AppTheme.secondaryColor,
-                            onTap: _isProcessing 
-                                ? () {} // Empty function when processing
-                                : () => _handleRoleSelection(
-                                    context,
-                                    UserRole.admin,
-                                    isOAuthUser,
-                                  ),
-                            animationCurve:
-                                const Interval(0.0, 1.0, curve: Curves.easeOut),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildRoleButton(
-                            context: context,
-                            label: isOAuthUser ? 'Continue as Technician' : 'Register as Technician',
-                            color: theme.colorScheme.surface,
-                            onTap: _isProcessing 
-                                ? () {} // Empty function when processing
-                                : () => _handleRoleSelection(
-                                    context,
-                                    UserRole.technician,
-                                    isOAuthUser,
-                                  ),
-                            animationCurve:
-                                const Interval(0.2, 1.0, curve: Curves.easeOut),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _buildSignInLink(context),
-                  const SizedBox(height: 24),
-                ],
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: maxContentWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Transform.translate(
+                offset: const Offset(0, -40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildBranding(context, isDesktop),
+                    const SizedBox(height: 36),
+                    Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final isOAuthUser = authProvider.isAuthenticated && 
+                                            authProvider.user?.appMetadata?['provider'] != null &&
+                                            authProvider.user?.appMetadata?['provider'] != 'email' &&
+                                            authProvider.userRole == UserRole.pending;
+                        
+                        return Column(
+                          children: [
+                            _buildRoleButton(
+                              context: context,
+                              label: isOAuthUser ? 'Continue as Admin' : 'Register as Admin',
+                              color: AppTheme.secondaryColor,
+                              onTap: _isProcessing 
+                                  ? () {} // Empty function when processing
+                                  : () => _handleRoleSelection(
+                                      context,
+                                      UserRole.admin,
+                                      isOAuthUser,
+                                    ),
+                              animationCurve:
+                                  const Interval(0.0, 1.0, curve: Curves.easeOut),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildRoleButton(
+                              context: context,
+                              label: isOAuthUser ? 'Continue as Technician' : 'Register as Technician',
+                              color: theme.colorScheme.surface,
+                              onTap: _isProcessing 
+                                  ? () {} // Empty function when processing
+                                  : () => _handleRoleSelection(
+                                      context,
+                                      UserRole.technician,
+                                      isOAuthUser,
+                                    ),
+                              animationCurve:
+                                  const Interval(0.2, 1.0, curve: Curves.easeOut),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    _buildSignInLink(context),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
