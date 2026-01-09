@@ -408,70 +408,21 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      // Check platform type
+      // All platforms (Web, Desktop, Mobile) use real Supabase authentication
       final isDesktopPlatform = !kIsWeb &&
           (defaultTargetPlatform == TargetPlatform.macOS ||
               defaultTargetPlatform == TargetPlatform.windows ||
               defaultTargetPlatform == TargetPlatform.linux);
       
-      // For WEB ONLY: use simulated login (no backend)
-      // Desktop and Mobile: use real Supabase authentication (same database)
       if (kIsWeb) {
-        debugPrint('🌐 Web platform detected - using simulated login');
-        final authProvider = context.read<AuthProvider>();
-        final email = _emailController.text.trim();
-        
-        // Show loading state
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Signing in...'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-        
-        // Simulate a brief loading delay
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Try to determine role from email - check for admin patterns
-        // Default to pending (unknown) instead of assuming technician
-        UserRole role = UserRole.pending;
-        final emailLower = email.toLowerCase();
-        
-        if (emailLower.contains('admin') || emailLower.contains('manager') || 
-            emailLower.contains('@royalgulf.ae') || 
-            emailLower.contains('@mekar.ae') || 
-            emailLower.contains('@gmail.com')) {
-          role = UserRole.admin;
-        } else {
-          // For web simulation, if no admin pattern, still use pending
-          // User should register with explicit role
-          role = UserRole.pending;
-        }
-        
-        // Set the simulated user in AuthProvider
-        authProvider.simulateLogin(email, role);
-        
-        if (mounted) {
-          // Navigate based on role
-          if (role == UserRole.admin) {
-            Navigator.pushReplacementNamed(context, '/admin');
-          } else {
-            Navigator.pushReplacementNamed(context, '/technician');
-          }
-        }
-        return;
-      }
-
-      // Desktop and Mobile login logic - use real Supabase authentication
-      // Both sync with the same database
-      if (isDesktopPlatform) {
+        debugPrint('🌐 Web platform detected - using real Supabase authentication');
+      } else if (isDesktopPlatform) {
         debugPrint('🖥️ Desktop platform detected - using real Supabase authentication');
       } else {
         debugPrint('📱 Mobile platform detected - using real Supabase authentication');
       }
       
       final authProvider = context.read<AuthProvider>();
-      
       final email = _emailController.text.trim();
       
       // Try to sign in - Supabase will handle email confirmation check

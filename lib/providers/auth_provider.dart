@@ -1885,44 +1885,6 @@ _isLoading = false;
     // The OAuth flow is asynchronous and will complete via deep link callback
   }
   
-  /// Simulate login for web ONLY (bypasses Supabase)
-  /// Sets a mock user and role for testing/demo purposes
-  /// NOTE: Desktop uses real Supabase authentication, not this method
-  void simulateLogin(String email, UserRole role) {
-    // Safety check: only allow on web
-    if (!kIsWeb) {
-      debugPrint('❌ ERROR: simulateLogin called on non-web platform!');
-      debugPrint('❌ Desktop and Mobile must use real Supabase authentication');
-      throw Exception('Simulated login is only available on web platform. Desktop and Mobile must use real authentication.');
-    }
-    
-    debugPrint('🔍 Simulating login for WEB ONLY: $email with role: ${role.value}');
-    
-    // Clear any existing real session first to avoid conflicts
-    _user = null;
-    _userRole = UserRole.pending; // Reset to pending before setting explicit role
-    
-    // Create a mock user object with simulated ID
-    _user = User(
-      id: 'simulated-web-${email.hashCode}',
-      appMetadata: {},
-      userMetadata: {
-        'email': email,
-        'full_name': email.split('@').first,
-        'role': role.value,
-        'simulated': true, // Mark as simulated to distinguish from real users
-      },
-      aud: 'authenticated',
-      createdAt: DateTime.now().toIso8601String(),
-    );
-    
-    _userRole = role;
-    _isLoading = false;
-    notifyListeners();
-    
-    debugPrint('✅ Simulated login complete (WEB ONLY): user=${_user!.email}, role=${_userRole.value}');
-  }
-
   Future<void> _loadUserRole() async {
     // CRITICAL: Don't load role or create accounts during logout
     if (_isLoggingOut) {
