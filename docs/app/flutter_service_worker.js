@@ -3,11 +3,11 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "b4beaf4f02d923280c7f5e8e8f8f270c",
+const RESOURCES = {"flutter_bootstrap.js": "317df026ad006ad1f72d279d35712356",
 "version.json": "9459c05564f26b0e9860cac45b0f94b6",
 "index.html": "21b22cc22d172e9823ef1412dbbec4ef",
 "/": "21b22cc22d172e9823ef1412dbbec4ef",
-"main.dart.js": "a5e62a084417abce7fcd1cef811f8234",
+"main.dart.js": "fd081a9357845fc4075ceeab12b6dc53",
 "flutter.js": "24bc71911b75b5f8135c949e27a2984e",
 "favicon.png": "f1a6d34b2544ac9828f4d9c5d5a22eac",
 "icons/Icon-192.png": "0d3ab2e20c48b95ba13f1501ebbb0610",
@@ -23,7 +23,7 @@ const RESOURCES = {"flutter_bootstrap.js": "b4beaf4f02d923280c7f5e8e8f8f270c",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/shaders/stretch_effect.frag": "40d68efbbf360632f614c731219e95f0",
 "assets/AssetManifest.bin": "135481aacfbd77ff1a7169814c37cede",
-"assets/fonts/MaterialIcons-Regular.otf": "d71670c68d764bf61ba6cffc8ba3fd26",
+"assets/fonts/MaterialIcons-Regular.otf": "418ad48e472e8d03aece85b5fd2aa9c5",
 "assets/assets/images/icon.png": "b67a45c396a1c2164475fe3d5fbec77f",
 "assets/assets/images/apple_logo.png": "cf11ebcc0a874e3ad3830431f7b0ab58",
 "assets/assets/images/splash.png": "d632bf8c90ddde832bd1acc923b50d5c",
