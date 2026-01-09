@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive_helper.dart';
 import 'app_theme.dart';
 
 /// Extension methods for easy theme-aware color access throughout the app
@@ -38,10 +39,10 @@ extension ThemeColorExtension on BuildContext {
   Color get cardBorder => AppTheme.getCardBorder(this);
   
   /// Get soft shadow for cards
-  BoxShadow get softShadow => AppTheme.softShadow;
+  BoxShadow get softShadow => AppTheme.getCardShadows(this).first;
   
   /// Get card shadows list
-  List<BoxShadow> get cardShadows => AppTheme.cardShadows;
+  List<BoxShadow> get cardShadows => AppTheme.getCardShadows(this);
   
   /// Get spacing values
   double get spacingMicro => AppTheme.spacingMicro;
@@ -57,19 +58,19 @@ extension ThemeColorExtension on BuildContext {
   
   /// Get ChatGPT-style card decoration
   /// Use this for all cards, containers, list tiles, tool widgets, and form surfaces
-  /// Premium soft-filled style - lifted cards with no shadows, just subtle border
+  /// Premium soft-filled style - subtle border with web-only shadow
   /// Automatically adapts to light/dark theme
   BoxDecoration get cardDecoration {
-    final theme = Theme.of(this);
-    final isDark = theme.brightness == Brightness.dark;
     return BoxDecoration(
       color: cardBackground, // Theme-aware background
-      borderRadius: BorderRadius.circular(18), // Premium rounded corners
-      // Very subtle border for "lifted" effect - no shadows
+      borderRadius: BorderRadius.circular(
+        ResponsiveHelper.getCardBorderRadius(this),
+      ),
       border: Border.all(
         color: AppTheme.getCardBorderSubtle(this), // Theme-aware border
-        width: 0.5,
+        width: ResponsiveHelper.isWeb ? 0.8 : 0.5,
       ),
+      boxShadow: ResponsiveHelper.isWeb ? cardShadows : [],
     );
   }
   
@@ -128,4 +129,3 @@ extension ThemeColorExtension on BuildContext {
   /// Get secondary text color (for subtle text like "Forgot Password")
   Color get secondaryTextColor => AppTheme.getSecondaryTextColor(this);
 }
-

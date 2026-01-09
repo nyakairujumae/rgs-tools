@@ -75,9 +75,9 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
+        setState(() {
         _dataLoaded = true;
-      });
+        });
     }
   }
 
@@ -239,7 +239,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                   SizedBox(
                     width: 28,
                     height: 28,
-                    child: CircularProgressIndicator(
+              child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
                     ),
@@ -316,10 +316,10 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                           borderRadius: BorderRadius.circular(16),
                           onTap: canManageAdmins ? () => _openEditAdmin(admin) : null,
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                        children: [
                                 // Avatar
                                 Container(
                                   width: 48,
@@ -336,32 +336,32 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'A',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  ),
-                                ),
+                            ),
+                          ),
                                 const SizedBox(width: 14),
                                 // Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                       Row(
                                         children: [
                                           Expanded(
                                             child: Text(
-                                              name,
-                                              style: TextStyle(
+                                  name,
+                                  style: TextStyle(
                                                 fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                                              ),
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
@@ -384,16 +384,16 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        email,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  email,
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                                         ),
                                         overflow: TextOverflow.ellipsis,
-                                      ),
+                                ),
                                       const SizedBox(height: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -407,30 +407,30 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                             fontSize: 11,
                                             fontWeight: FontWeight.w500,
                                             color: AppTheme.primaryColor,
-                                          ),
+                                    ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
                                 // Actions
-                                if (canManageAdmins)
-                                  PopupMenuButton<String>(
+                          if (canManageAdmins)
+                            PopupMenuButton<String>(
                                     icon: Icon(
                                       Icons.more_vert,
                                       color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
                                     ),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    onSelected: (value) {
-                                      if (value == 'edit') {
-                                        _openEditAdmin(admin);
-                                      } else if (value == 'delete') {
-                                        _deleteAdmin(admin);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  _openEditAdmin(admin);
+                                } else if (value == 'delete') {
+                                  _deleteAdmin(admin);
+                                }
+                              },
+                              itemBuilder: (context) => [
                                       PopupMenuItem(
-                                        value: 'edit',
+                                  value: 'edit',
                                         child: Row(
                                           children: [
                                             Icon(Icons.edit_outlined, size: 18, color: AppTheme.primaryColor),
@@ -440,7 +440,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                         ),
                                       ),
                                       PopupMenuItem(
-                                        value: 'delete',
+                                  value: 'delete',
                                         child: Row(
                                           children: [
                                             const Icon(Icons.person_remove_outlined, size: 18, color: Colors.red),
@@ -450,7 +450,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                         ),
                                       ),
                                     ],
-                                  ),
+                                ),
                               ],
                             ),
                           ),

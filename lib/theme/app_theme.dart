@@ -1,3 +1,4 @@
+  import 'package:flutter/foundation.dart';
   import 'package:flutter/material.dart';
 
 /// Centralized theme configuration for RGS TOOLS
@@ -22,6 +23,14 @@ class AppTheme {
   static const Color subtleBorder = Color(0xFFE5E5E5); // Very subtle borders
   static const Color cardBorder = Color(0xFFE5E5E5); // Card border color (light mode)
   static const Color darkCardBorder = Color(0xFF21262D); // Card border color (dark mode)
+
+  // Web-specific surfaces for a cleaner dashboard feel
+  static const Color webLightScaffoldBackground = Color(0xFFF6F7FB);
+  static const Color webLightCardBackground = Color(0xFFFFFFFF);
+  static const Color webLightCardBorder = Color(0xFFE5E7EB);
+  static const Color webDarkScaffoldBackground = Color(0xFF0B0F14);
+  static const Color webDarkCardBackground = Color(0xFF111827);
+  static const Color webDarkCardBorder = Color(0xFF1F2937);
   
   // Spacing constants
   static const double spacingMicro = 4.0;
@@ -44,6 +53,22 @@ class AppTheme {
   );
   
   static List<BoxShadow> get cardShadows => [softShadow];
+
+  static List<BoxShadow> getCardShadows(BuildContext context) {
+    if (!kIsWeb) {
+      return [softShadow];
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+        blurRadius: isDark ? 22 : 16,
+        spreadRadius: 0,
+        offset: const Offset(0, 6),
+      ),
+    ];
+  }
 
   // Gradient background colors - Light palette (retained for legacy widgets)
   static const Color gradientStart = Color(0xFFE8F0FE); // Light lavender-blue
@@ -141,8 +166,8 @@ class AppTheme {
   static Color cardSurfaceColor(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? darkCardGradientStart
-        : cardBackground; // Use f5f5f5 for cards in light mode
+        ? (kIsWeb ? webDarkCardBackground : darkCardGradientStart)
+        : (kIsWeb ? webLightCardBackground : cardBackground);
   }
 
   static Color elevatedSurfaceColor(BuildContext context) {
@@ -156,24 +181,24 @@ class AppTheme {
   static Color getScaffoldBackground(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? backgroundColor
-        : scaffoldBackground; // Pure white for light mode
+        ? (kIsWeb ? webDarkScaffoldBackground : backgroundColor)
+        : (kIsWeb ? webLightScaffoldBackground : scaffoldBackground);
   }
 
   /// Get the card background color (respects theme)
   static Color getCardBackground(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? const Color(0xFF161B22) // Dark card color
-        : cardBackground; // f5f5f5 for light mode
+        ? (kIsWeb ? webDarkCardBackground : const Color(0xFF161B22))
+        : (kIsWeb ? webLightCardBackground : cardBackground);
   }
 
   /// Get the app bar background color (respects theme)
   static Color getAppBarBackground(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? const Color(0xFF000000) // Pure black for dark mode
-        : scaffoldBackground; // Pure white for light mode
+        ? (kIsWeb ? webDarkScaffoldBackground : const Color(0xFF000000))
+        : (kIsWeb ? webLightScaffoldBackground : scaffoldBackground);
   }
 
   /// Get input field background color (respects theme)
@@ -204,16 +229,20 @@ class AppTheme {
   static Color getCardBorder(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? darkCardBorder
-        : cardBorder;
+        ? (kIsWeb ? webDarkCardBorder : darkCardBorder)
+        : (kIsWeb ? webLightCardBorder : cardBorder);
   }
 
   /// Get card border color for subtle borders (respects theme)
   static Color getCardBorderSubtle(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.04);
+        ? (kIsWeb
+            ? webDarkCardBorder.withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.1))
+        : (kIsWeb
+            ? webLightCardBorder.withValues(alpha: 0.8)
+            : Colors.black.withValues(alpha: 0.04));
   }
 
   // Text colors - ChatGPT-style light theme
@@ -252,15 +281,17 @@ class AppTheme {
         onSurface: Colors.black,
         onError: Colors.white,
       ),
-      scaffoldBackgroundColor: scaffoldBackground, // Pure white background
+      scaffoldBackgroundColor:
+          kIsWeb ? webLightScaffoldBackground : scaffoldBackground,
       hoverColor: secondaryColor.withValues(alpha: 0.08),
       focusColor: secondaryColor.withValues(alpha: 0.12),
       splashColor: secondaryColor.withValues(alpha: 0.12),
       highlightColor: secondaryColor.withValues(alpha: 0.1),
 
       // AppBar theme - ChatGPT-style
-      appBarTheme: const AppBarTheme(
-        backgroundColor: scaffoldBackground, // Pure white
+      appBarTheme: AppBarTheme(
+        backgroundColor:
+            kIsWeb ? webLightScaffoldBackground : scaffoldBackground,
         foregroundColor: Color(0xFF1A1A1A),
         elevation: 0,
         shadowColor: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0,0,0,0.04)
@@ -276,15 +307,16 @@ class AppTheme {
 
       // Card theme - ChatGPT style (SOFT-FILLED, NO OUTLINES)
       cardTheme: CardThemeData(
-        color: cardBackground, // #F5F5F5 for cards
-        elevation: 0, // No elevation/shadow
-        shadowColor: Colors.transparent,
+        color: kIsWeb ? webLightCardBackground : cardBackground,
+        elevation: kIsWeb ? 1 : 0,
+        shadowColor:
+            kIsWeb ? Colors.black.withValues(alpha: 0.08) : Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18), // Premium rounded corners
+          borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
           // Subtle border for lifted effect
           side: BorderSide(
-            color: Colors.black.withOpacity(0.04),
-            width: 0.5,
+            color: kIsWeb ? webLightCardBorder : Colors.black.withOpacity(0.04),
+            width: kIsWeb ? 0.8 : 0.5,
           ),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -465,11 +497,13 @@ class AppTheme {
       highlightColor: secondaryColor.withValues(alpha: 0.18),
 
       // Scaffold background - Dark background for dark theme
-      scaffoldBackgroundColor: backgroundColor, // Pure black for dark theme
+      scaffoldBackgroundColor:
+          kIsWeb ? webDarkScaffoldBackground : backgroundColor,
 
       // AppBar theme
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF000000), // Pure black
+      appBarTheme: AppBarTheme(
+        backgroundColor:
+            kIsWeb ? webDarkScaffoldBackground : const Color(0xFF000000),
         foregroundColor: Color(0xFFF0F6FC), // Slightly off-white
         elevation: 0,
         centerTitle: true,
@@ -482,13 +516,15 @@ class AppTheme {
 
       // Card theme
       cardTheme: CardThemeData(
-        color: const Color(0xFF161B22), // Darker card background
-        elevation: 8, // Higher elevation for better depth
-        shadowColor: Colors.black.withValues(alpha: 0.5),
+        color: kIsWeb ? webDarkCardBackground : const Color(0xFF161B22),
+        elevation: kIsWeb ? 1 : 8,
+        shadowColor: Colors.black.withValues(alpha: kIsWeb ? 0.35 : 0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(
-              color: Color(0xFF21262D), width: 1), // Subtle border
+          side: BorderSide(
+            color: kIsWeb ? webDarkCardBorder : const Color(0xFF21262D),
+            width: 1,
+          ), // Subtle border
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),

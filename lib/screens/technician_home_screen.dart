@@ -2191,143 +2191,143 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             const SizedBox(width: 12),
             // Right content
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                  children: [
                   // Tool name with shared badge
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          tool.name,
-                          style: TextStyle(
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  tool.name,
+                                  style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                       Container(
                         margin: const EdgeInsets.only(left: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
+                                    decoration: BoxDecoration(
                           color: AppTheme.secondaryColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
+                                    ),
+                                    child: Text(
                           'SHARED',
-                          style: TextStyle(
+                                      style: TextStyle(
                             fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.secondaryColor,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.secondaryColor,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 8),
                   // Status chips
-                  Wrap(
+                          Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: [
-                      _buildPillChip(
-                        _getStatusIcon(tool.status),
-                        _getStatusLabel(tool.status),
-                        _getStatusColor(tool.status),
-                      ),
-                      _buildPillChip(
-                        _getConditionIcon(tool.condition),
-                        _getConditionLabel(tool.condition),
-                        _getConditionColor(tool.condition),
-                      ),
-                    ],
-                  ),
+                            children: [
+                              _buildPillChip(
+                                _getStatusIcon(tool.status),
+                                _getStatusLabel(tool.status),
+                                _getStatusColor(tool.status),
+                              ),
+                              _buildPillChip(
+                                _getConditionIcon(tool.condition),
+                                _getConditionLabel(tool.condition),
+                                _getConditionColor(tool.condition),
+                              ),
+                            ],
+                          ),
                   const SizedBox(height: 8),
                   // Category row
-                  Row(
-                    children: [
-                      Icon(
+                              Row(
+                                children: [
+                                  Icon(
                         Icons.category_outlined,
                         size: 14,
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
+                                  ),
                       const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          tool.category.toUpperCase(),
-                          style: TextStyle(
+                                  Expanded(
+                                    child: Text(
+                                      tool.category.toUpperCase(),
+                                      style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.secondaryColor,
+                                        color: AppTheme.secondaryColor,
                             fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                   // Brand (if available)
                   if (tool.brand != null && tool.brand!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Padding(
+                                Padding(
                       padding: const EdgeInsets.only(left: 20),
-                      child: Text(
-                        tool.brand!,
-                        style: TextStyle(
+                                  child: Text(
+                                    tool.brand!,
+                                    style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                           fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
                   // Holder line and request button
                   const SizedBox(height: 6),
                   Row(
-                    children: [
+                                children: [
                       Expanded(
-                        child: _holderLine(context, tool, technicians, currentUserId),
-                      ),
-                      // Show Request button for shared tools that have a holder (badged to someone else)
-                      if (tool.assignedTo != null &&
-                          tool.assignedTo!.isNotEmpty &&
+                                    child: _holderLine(context, tool, technicians, currentUserId),
+                                  ),
+                                  // Show Request button for shared tools that have a holder (badged to someone else)
+                                  if (tool.assignedTo != null &&
+                                      tool.assignedTo!.isNotEmpty &&
                           (currentUserId == null || currentUserId != tool.assignedTo))
                         Container(
                           margin: const EdgeInsets.only(left: 8),
-                          decoration: BoxDecoration(
+                                        decoration: BoxDecoration(
                             color: AppTheme.secondaryColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: TextButton(
+                                        ),
+                                        child: TextButton(
                             onPressed: () => _sendToolRequest(context, tool),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppTheme.secondaryColor,
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: AppTheme.secondaryColor,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              minimumSize: const Size(0, 0),
+                                            minimumSize: const Size(0, 0),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
+                                            shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
+                                            ),
+                                          ),
                             child: const Text(
-                              'Request',
-                              style: TextStyle(
+                                            'Request',
+                                            style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
+                                              fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                        ],
               ),
             ),
           ],
@@ -2508,28 +2508,28 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             ),
             const SizedBox(width: 12),
             // Right content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              children: [
                   // Tool name with optional shared badge
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          tool.name,
-                          style: TextStyle(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tool.name,
+                        style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          color: theme.colorScheme.onSurface,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (tool.toolType == 'shared')
+                    ),
+                    if (tool.toolType == 'shared')
                         Container(
                           margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -2543,76 +2543,76 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.secondaryColor,
-                            ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
+                ),
                   const SizedBox(height: 8),
                   // Status chips
-                  Wrap(
+                    Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: [
-                      _buildPillChip(
-                        _getStatusIcon(tool.status),
-                        _getStatusLabel(tool.status),
-                        _getStatusColor(tool.status),
-                      ),
-                      _buildPillChip(
-                        _getConditionIcon(tool.condition),
-                        _getConditionLabel(tool.condition),
-                        _getConditionColor(tool.condition),
-                      ),
-                    ],
-                  ),
+                      children: [
+                        _buildPillChip(
+                          _getStatusIcon(tool.status),
+                          _getStatusLabel(tool.status),
+                          _getStatusColor(tool.status),
+                        ),
+                        _buildPillChip(
+                          _getConditionIcon(tool.condition),
+                          _getConditionLabel(tool.condition),
+                          _getConditionColor(tool.condition),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 8),
                   // Category row
-                  Row(
-                    children: [
-                      Icon(
+                        Row(
+                          children: [
+                            Icon(
                         Icons.category_outlined,
                         size: 14,
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
+                            ),
                       const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          tool.category.toUpperCase(),
-                          style: TextStyle(
+                            Expanded(
+                              child: Text(
+                                tool.category.toUpperCase(),
+                                style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.secondaryColor,
+                                  color: AppTheme.secondaryColor,
                             fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                   // Brand (if available)
                   if (tool.brand != null && tool.brand!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Padding(
+                          Padding(
                       padding: const EdgeInsets.only(left: 20),
-                      child: Text(
-                        tool.brand!,
-                        style: TextStyle(
+                            child: Text(
+                              tool.brand!,
+                              style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                           fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                   ],
-                ],
               ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+    ),
     );
   }
 
