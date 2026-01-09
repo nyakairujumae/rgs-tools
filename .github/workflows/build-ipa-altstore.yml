@@ -1,11 +1,7 @@
 name: Build IPA for AltStore Sideloading
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-    tags:
-      - 'v*'
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   build-ipa:

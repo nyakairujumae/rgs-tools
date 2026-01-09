@@ -1,9 +1,7 @@
 name: Build iOS 18+ IPA for AltStore
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   build-ios:
