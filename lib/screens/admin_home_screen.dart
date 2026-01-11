@@ -656,14 +656,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 backgroundColor:
                                     AppTheme.secondaryColor.withOpacity(0.12),
                                 onTap: () {
-                                  Navigator.of(sheetContext).pop();
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (!parentContext.mounted) return;
-                                    Navigator.of(parentContext).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const AdminManagementScreen(),
-                                      ),
-                                    );
+                                  if (!parentContext.mounted) return;
+                                  Navigator.of(parentContext)
+                                      .push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const AdminManagementScreen(),
+                                        ),
+                                      )
+                                      .then((_) {
+                                    if (Navigator.of(sheetContext).canPop()) {
+                                      Navigator.of(sheetContext).pop();
+                                    }
                                   });
                                 },
                               ),
