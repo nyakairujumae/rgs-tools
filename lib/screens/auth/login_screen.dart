@@ -134,18 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
             buildIconButton(
               onPressed: () async {
                 try {
-                  await authProvider
-                      .signInWithApple()
-                      .timeout(
-                        _authTimeout,
-                        onTimeout: () {
-                          authProvider.resetLoadingState(reason: 'apple-timeout');
-                          throw TimeoutException(
-                            'Apple sign-in timed out.',
-                            _authTimeout,
-                          );
-                        },
-                      );
+                  await authProvider.signInWithApple();
                   if (context.mounted) {
                     await _handleOAuthPostLogin(authProvider);
                   }
@@ -568,15 +557,37 @@ class _LoginScreenState extends State<LoginScreen> {
       throw Exception('Login succeeded but no session was established.');
     }
 
-    final provider = authProvider.user?.appMetadata?['provider'] as String?;
-    final isOAuth = provider != null && provider != 'email';
-    final roleFromMetadata = session.user.userMetadata?['role'] as String?;
+    final appMetadata = session.user.appMetadata ?? <String, dynamic>{};
+    final provider = appMetadata['provider']?.toString();
+    final providers = appMetadata['providers'];
+    final isAppleProvider = provider == 'apple' ||
+        (providers is List && providers.map((e) => e.toString()).contains('apple'));
+    final bypassApproval =
+        isAppleProvider && await authProvider.isAppleApprovalBypassEnabled();
 
-    if (isOAuth &&
-        authProvider.userRole == UserRole.pending &&
-        (roleFromMetadata == null || roleFromMetadata.isEmpty)) {
-      Navigator.pushReplacementNamed(context, '/role-selection');
-      return;
+    final roleFromMetadata = session.user.userMetadata?['role'] as String?;
+    String? resolvedRole = roleFromMetadata;
+    if (resolvedRole == null || resolvedRole.isEmpty) {
+      try {
+        final userRecord = await SupabaseService.client
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
+        resolvedRole = userRecord?['role'] as String?;
+      } catch (_) {
+        resolvedRole = null;
+      }
+    }
+
+    if (resolvedRole == null || resolvedRole.isEmpty) {
+      if (isAppleProvider) {
+        await authProvider.assignRoleToOAuthUser(UserRole.technician);
+        resolvedRole = UserRole.technician.value;
+      } else {
+        Navigator.pushReplacementNamed(context, '/role-selection');
+        return;
+      }
     }
 
     final hasProfile = await _ensureProfileLoaded(authProvider);
@@ -585,7 +596,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await Future.delayed(const Duration(milliseconds: 200));
-    if (!authProvider.isAdmin) {
+    if (!authProvider.isAdmin && !bypassApproval) {
       final isApproved = await authProvider.checkApprovalStatus();
       if (isApproved == false) {
         Navigator.pushReplacementNamed(context, '/pending-approval');
@@ -595,7 +606,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (authProvider.isAdmin) {
       Navigator.pushReplacementNamed(context, '/admin');
-    } else if (authProvider.isPendingApproval) {
+    } else if (!bypassApproval && authProvider.isPendingApproval) {
       Navigator.pushReplacementNamed(context, '/pending-approval');
     } else {
       Navigator.pushReplacementNamed(context, '/technician');

@@ -56,10 +56,14 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     const SizedBox(height: 36),
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, child) {
-                        final isOAuthUser = authProvider.isAuthenticated && 
-                                            authProvider.user?.appMetadata?['provider'] != null &&
-                                            authProvider.user?.appMetadata?['provider'] != 'email' &&
-                                            authProvider.userRole == UserRole.pending;
+                        final provider = authProvider.user?.appMetadata?['provider'] as String?;
+                        final roleFromMetadata = authProvider.user?.userMetadata?['role'] as String?;
+                        final isOAuthUser = authProvider.isAuthenticated &&
+                            provider != null &&
+                            provider != 'email' &&
+                            (authProvider.userRole == UserRole.pending ||
+                                roleFromMetadata == null ||
+                                roleFromMetadata.isEmpty);
                         
                         return Column(
                           children: [
@@ -299,19 +303,21 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       }
 
       if (isOAuthUser) {
-        AuthErrorHandler.showErrorSnackBar(
-          context,
-          'No account found for this email. Please register or request an invite.',
-        );
-        await authProvider.signOut();
-        return;
-      } else {
-        // Regular user - navigate to registration screen
+        await authProvider.assignRoleToOAuthUser(role);
+        if (!mounted) return;
         if (role == UserRole.admin) {
-          _navigate(context, const AdminRegistrationScreen());
+          Navigator.pushNamedAndRemoveUntil(context, '/admin', (_) => false);
         } else {
-          _navigate(context, const TechnicianRegistrationScreen());
+          Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (_) => false);
         }
+        return;
+      }
+
+      // Regular user - navigate to registration screen
+      if (role == UserRole.admin) {
+        _navigate(context, const AdminRegistrationScreen());
+      } else {
+        _navigate(context, const TechnicianRegistrationScreen());
       }
     } catch (e) {
       if (!mounted) return;

@@ -26,6 +26,10 @@ class AuthProvider with ChangeNotifier {
   bool _isLoggingOut = false;
   bool _suppressAuthStateChanges = false;
   static const Duration _authOperationTimeout = Duration(seconds: 15);
+  static const Duration _applePromptTimeout = Duration(seconds: 60);
+  static const Duration _approvalBypassCacheDuration = Duration(minutes: 5);
+  bool? _appleApprovalBypassEnabled;
+  DateTime? _appleApprovalBypassFetchedAt;
 
   User? get user => _user;
   UserRole get userRole => _userRole;
@@ -69,6 +73,52 @@ class AuthProvider with ChangeNotifier {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
+
+  bool _isAppleProvider() {
+    final appMetadata = _user?.appMetadata ?? <String, dynamic>{};
+    final provider = appMetadata['provider']?.toString();
+    final providers = appMetadata['providers'];
+    return provider == 'apple' ||
+        (providers is List &&
+            providers.map((e) => e.toString()).contains('apple'));
+  }
+
+  Future<bool> isAppleApprovalBypassEnabled() async {
+    return _isAppleApprovalBypassEnabled();
+  }
+
+  Future<bool> _isAppleApprovalBypassEnabled() async {
+    final now = DateTime.now();
+    if (_appleApprovalBypassEnabled != null &&
+        _appleApprovalBypassFetchedAt != null &&
+        now.difference(_appleApprovalBypassFetchedAt!) <
+            _approvalBypassCacheDuration) {
+      return _appleApprovalBypassEnabled!;
+    }
+
+    try {
+      final response = await SupabaseService.client
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'apple_bypass_approval')
+          .maybeSingle()
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {
+              throw TimeoutException('Feature flag lookup timed out');
+            },
+          );
+      final rawValue = response?['value']?.toString().toLowerCase();
+      final enabled =
+          rawValue == 'true' || rawValue == '1' || rawValue == 'yes';
+      _appleApprovalBypassEnabled = enabled;
+      _appleApprovalBypassFetchedAt = now;
+      return enabled;
+    } catch (e) {
+      debugPrint('⚠️ Could not load apple_bypass_approval flag: $e');
+      return _appleApprovalBypassEnabled ?? false;
+    }
+  }
   
   /// Check if user's email is confirmed
   bool get isEmailConfirmed {
@@ -79,6 +129,11 @@ class AuthProvider with ChangeNotifier {
   /// Returns null if check is in progress, true if approved, false if pending/rejected
   Future<bool?> checkApprovalStatus() async {
     if (_user == null) return null;
+
+    if (_isAppleProvider() && await _isAppleApprovalBypassEnabled()) {
+      debugPrint('✅ Apple sign-in detected - bypassing approval checks');
+      return true;
+    }
     
     try {
       // CRITICAL: Always check pending approvals table FIRST - this is the source of truth
@@ -1830,11 +1885,11 @@ _isLoading = false;
         ],
         nonce: hashedNonce,
       ).timeout(
-        _authOperationTimeout,
+        _applePromptTimeout,
         onTimeout: () {
           throw TimeoutException(
             'Apple sign-in timed out. Please try again.',
-            _authOperationTimeout,
+            _applePromptTimeout,
           );
         },
       );
@@ -1922,8 +1977,12 @@ _isLoading = false;
         'updated_at': DateTime.now().toIso8601String(),
       });
       
-      // If technician, create pending approval record
-      if (role == UserRole.technician) {
+      // If technician, create pending approval record unless Apple bypass is enabled
+      final bypassApproval =
+          role == UserRole.technician && _isAppleProvider()
+              ? await _isAppleApprovalBypassEnabled()
+              : false;
+      if (role == UserRole.technician && !bypassApproval) {
         try {
           final approvalResponse = await client.from('pending_user_approvals').insert({
             'user_id': userId,
@@ -1961,6 +2020,8 @@ _isLoading = false;
         } catch (e) {
           debugPrint('⚠️ Could not create pending approval (may already exist): $e');
         }
+      } else if (role == UserRole.technician && bypassApproval) {
+        debugPrint('✅ Apple bypass enabled - skipping pending approval creation');
       }
       
       // Update local state
@@ -2112,6 +2173,13 @@ _isLoading = false;
             // Technicians with pending approval should have UserRole.pending, not UserRole.technician
             if (roleFromDb == 'technician') {
               debugPrint('🔍 User has technician role, checking pending approval status...');
+              if (_isAppleProvider() && await _isAppleApprovalBypassEnabled()) {
+                debugPrint('✅ Apple sign-in detected - skipping pending approval checks');
+                _userRole = newRole;
+                await _saveUserRole(newRole);
+                notifyListeners();
+                return;
+              }
               try {
                 final pendingApproval = await SupabaseService.client
                     .from('pending_user_approvals')
