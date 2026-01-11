@@ -10,7 +10,9 @@ import 'role_selection_screen.dart';
 import 'checkin_screen.dart';
 import 'shared_tools_screen.dart';
 import 'add_tool_issue_screen.dart';
+import 'add_tool_screen.dart';
 import 'request_new_tool_screen.dart';
+import 'technician_add_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
@@ -1637,6 +1639,24 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     widget.onNavigateToTab(index);
   }
 
+  Future<void> _openAddTool(
+    BuildContext context,
+    AuthProvider authProvider,
+    SupabaseToolProvider toolProvider,
+  ) async {
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => authProvider.isAdmin
+            ? const AddToolScreen(isFromMyTools: true)
+            : const TechnicianAddToolScreen(),
+      ),
+    );
+    if (added == true && mounted) {
+      await toolProvider.loadTools();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1856,12 +1876,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                 SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                Text('Contact your administrator to add tools to the system.',
+                Text('You have no assigned tools. You can add your first tool or request tool assignment.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
                 SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                 ElevatedButton(
-                  onPressed: () => toolProvider.loadTools(),
+                  onPressed: () => _openAddTool(context, authProvider, toolProvider),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: Colors.white,
@@ -1870,7 +1890,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text('Retry'),
+                  child: const Icon(Icons.add),
                 ),
               ],
             ),
