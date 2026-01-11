@@ -103,6 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                     );
+                if (context.mounted) {
+                  await _handleOAuthPostLogin(authProvider);
+                }
               } catch (e) {
                 authProvider.resetLoadingState(reason: 'google-error');
                 if (context.mounted) {
@@ -143,6 +146,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                       );
+                  if (context.mounted) {
+                    await _handleOAuthPostLogin(authProvider);
+                  }
                 } catch (e) {
                   authProvider.resetLoadingState(reason: 'apple-error');
                   if (context.mounted) {
@@ -549,6 +555,50 @@ class _LoginScreenState extends State<LoginScreen> {
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
+    }
+  }
+
+  Future<void> _handleOAuthPostLogin(AuthProvider authProvider) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+
+    final session = SupabaseService.client.auth.currentSession;
+    if (session == null || session.user == null) {
+      authProvider.resetLoadingState(reason: 'oauth-session-missing');
+      throw Exception('Login succeeded but no session was established.');
+    }
+
+    final provider = authProvider.user?.appMetadata?['provider'] as String?;
+    final isOAuth = provider != null && provider != 'email';
+    final roleFromMetadata = session.user.userMetadata?['role'] as String?;
+
+    if (isOAuth &&
+        authProvider.userRole == UserRole.pending &&
+        (roleFromMetadata == null || roleFromMetadata.isEmpty)) {
+      Navigator.pushReplacementNamed(context, '/role-selection');
+      return;
+    }
+
+    final hasProfile = await _ensureProfileLoaded(authProvider);
+    if (!hasProfile) {
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!authProvider.isAdmin) {
+      final isApproved = await authProvider.checkApprovalStatus();
+      if (isApproved == false) {
+        Navigator.pushReplacementNamed(context, '/pending-approval');
+        return;
+      }
+    }
+
+    if (authProvider.isAdmin) {
+      Navigator.pushReplacementNamed(context, '/admin');
+    } else if (authProvider.isPendingApproval) {
+      Navigator.pushReplacementNamed(context, '/pending-approval');
+    } else {
+      Navigator.pushReplacementNamed(context, '/technician');
     }
   }
 
