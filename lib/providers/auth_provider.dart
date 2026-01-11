@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:gotrue/gotrue.dart';
+import 'package:crypto/crypto.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:async';
 import '../services/supabase_service.dart';
 import '../services/firebase_messaging_service.dart';
@@ -20,6 +25,7 @@ class AuthProvider with ChangeNotifier {
   bool _isInitialized = false;
   bool _isLoggingOut = false;
   bool _suppressAuthStateChanges = false;
+  static const Duration _authOperationTimeout = Duration(seconds: 15);
 
   User? get user => _user;
   UserRole get userRole => _userRole;
@@ -39,6 +45,30 @@ class AuthProvider with ChangeNotifier {
   bool get isTechnician => _userRole == UserRole.technician;
   bool get isPendingApproval => _userRole == UserRole.pending;
   bool get isLoggingOut => _isLoggingOut;
+
+  void resetLoadingState({String? reason}) {
+    if (_isLoading) {
+      debugPrint('🔄 Resetting auth loading state${reason != null ? " ($reason)" : ""}');
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
   
   /// Check if user's email is confirmed
   bool get isEmailConfirmed {
@@ -284,6 +314,12 @@ class AuthProvider with ChangeNotifier {
         if (_suppressAuthStateChanges) {
           debugPrint('🔍 Suppressing auth state change during account creation');
           return;
+        }
+        if (_isLoading &&
+            (data.event == AuthChangeEvent.signedIn ||
+                data.event == AuthChangeEvent.signedOut ||
+                data.event == AuthChangeEvent.userUpdated)) {
+          _isLoading = false;
         }
         _user = data.session?.user;
         // Only load role if we have a user - don't create default accounts
@@ -1762,9 +1798,93 @@ _isLoading = false;
     await _signInWithOAuthProvider(OAuthProvider.google);
   }
 
-  /// Sign in with Apple using Supabase OAuth
+  /// Sign in with Apple using native authorization + Supabase id token
   Future<void> signInWithApple() async {
-    await _signInWithOAuthProvider(OAuthProvider.apple);
+    if (kIsWeb) {
+      await _signInWithOAuthProvider(OAuthProvider.apple);
+      return;
+    }
+
+    if (!Platform.isIOS && !Platform.isMacOS) {
+      throw Exception('Sign in with Apple is only available on Apple devices.');
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw Exception(
+          'Sign in with Apple is not available. Ensure the capability is enabled for this app in Xcode and the Apple Developer App ID.',
+        );
+      }
+
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256ofString(rawNonce);
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      ).timeout(
+        _authOperationTimeout,
+        onTimeout: () {
+          throw TimeoutException(
+            'Apple sign-in timed out. Please try again.',
+            _authOperationTimeout,
+          );
+        },
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Apple sign-in failed to return a valid token.');
+      }
+
+      final response = await SupabaseService.client.auth
+          .signInWithIdToken(
+            provider: OAuthProvider.apple,
+            idToken: idToken,
+            nonce: rawNonce,
+          )
+          .timeout(
+            _authOperationTimeout,
+            onTimeout: () {
+              throw TimeoutException(
+                'Apple sign-in timed out. Please try again.',
+                _authOperationTimeout,
+              );
+            },
+          );
+
+      if (response.session == null || response.user == null) {
+        throw Exception('Apple sign-in failed to create a session.');
+      }
+
+      _user = response.user;
+      try {
+        await _loadUserRole().timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('⚠️ Could not load role after Apple sign-in: $e');
+      }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        debugPrint('ℹ️ Apple sign-in cancelled by user');
+        return;
+      }
+      debugPrint('❌ Apple sign-in failed: ${e.message}');
+      rethrow;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error during Apple sign-in: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
   
   /// Assign role to OAuth user (called after they select admin or technician)
@@ -1860,8 +1980,20 @@ _isLoading = false;
     _isLoading = true;
     notifyListeners();
 
+    StreamSubscription<AuthState>? authSubscription;
     try {
       final client = SupabaseService.client;
+      final authCompleter = Completer<AuthState>();
+
+      authSubscription = client.auth.onAuthStateChange.listen((data) {
+        if (data.event == AuthChangeEvent.signedIn ||
+            data.event == AuthChangeEvent.signedOut) {
+          if (!authCompleter.isCompleted) {
+            authCompleter.complete(data);
+          }
+          authSubscription?.cancel();
+        }
+      });
 
       // Configure OAuth with proper redirect URL for mobile apps
       // The redirect URL must match what's configured in Supabase dashboard
@@ -1869,20 +2001,30 @@ _isLoading = false;
         provider,
         redirectTo: 'com.rgs.app://auth/callback',
       );
-      
-      // Note: After OAuth sign-in, the user will be redirected back to the app
-      // The deep link handler in main.dart will catch the callback and process the session
-      // We don't need to do anything here - the session will be restored automatically
-      // The loading state will be cleared when the callback is processed
+
+      final authState = await authCompleter.future.timeout(
+        _authOperationTimeout,
+        onTimeout: () {
+          throw TimeoutException(
+            'Login timed out. Please try again.',
+            _authOperationTimeout,
+          );
+        },
+      );
+
+      if (authState.event == AuthChangeEvent.signedOut ||
+          authState.session == null) {
+        throw Exception('Sign-in was cancelled or failed. Please try again.');
+      }
     } catch (e, stackTrace) {
       debugPrint('❌ Error during OAuth sign-in ($provider): $e');
       debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    } finally {
+      await authSubscription?.cancel();
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
-    // Don't set _isLoading = false here - let the callback handler manage it
-    // The OAuth flow is asynchronous and will complete via deep link callback
   }
   
   Future<void> _loadUserRole() async {

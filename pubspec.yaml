@@ -48,6 +48,7 @@ dependencies:
   intl: ^0.19.0
   uuid: ^4.2.1
   connectivity_plus: ^6.0.5
+  crypto: ^3.0.3
   
   # Image handling
   image_picker: ^1.0.4
@@ -57,6 +58,7 @@ dependencies:
   # Backend
   supabase_flutter: ^2.3.4
   app_links: ^6.3.3
+  sign_in_with_apple: ^6.1.0
   
   # Firebase
   # Using older versions that use Firebase SDK 10.x (fully compatible with Swift 5.0)

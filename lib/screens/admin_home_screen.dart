@@ -656,18 +656,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 backgroundColor:
                                     AppTheme.secondaryColor.withOpacity(0.12),
                                 onTap: () {
-                                  // Navigate FIRST, then close bottom sheet - this prevents blank screen flash
-                                  Navigator.of(parentContext).push(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => const AdminManagementScreen(),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  ).then((_) {
-                                    // Bottom sheet is already covered, close it silently
-                                    if (Navigator.of(sheetContext).canPop()) {
-                                      Navigator.of(sheetContext).pop();
-                                    }
+                                  Navigator.of(sheetContext).pop();
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (!parentContext.mounted) return;
+                                    Navigator.of(parentContext).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const AdminManagementScreen(),
+                                      ),
+                                    );
                                   });
                                 },
                               ),

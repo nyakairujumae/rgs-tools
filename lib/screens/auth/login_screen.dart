@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
@@ -8,10 +9,13 @@ import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
 import '../../utils/logo_assets.dart';
 import '../../utils/responsive_helper.dart';
-import '../../models/user_role.dart';
 import '../../services/supabase_service.dart';
+import '../../services/user_profile_service.dart';
+import '../../models/user_role.dart';
 import '../../widgets/common/themed_text_field.dart';
 import '../../widgets/common/themed_button.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'auth_error_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  static const Duration _authTimeout = Duration(seconds: 15);
+  static const Duration _profileTimeout = Duration(seconds: 10);
 
   @override
   void dispose() {
@@ -35,9 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildSocialIconButtons(BuildContext context) {
     final theme = Theme.of(context);
-    final isIOS = !kIsWeb &&
+    final supportsApple = !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.iOS ||
             defaultTargetPlatform == TargetPlatform.macOS);
+    final showAppleSignIn = supportsApple;
 
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
@@ -84,8 +91,20 @@ class _LoginScreenState extends State<LoginScreen> {
           buildIconButton(
             onPressed: () async {
               try {
-                await authProvider.signInWithGoogle();
+                await authProvider
+                    .signInWithGoogle()
+                    .timeout(
+                      _authTimeout,
+                      onTimeout: () {
+                        authProvider.resetLoadingState(reason: 'google-timeout');
+                        throw TimeoutException(
+                          'Google sign-in timed out.',
+                          _authTimeout,
+                        );
+                      },
+                    );
               } catch (e) {
+                authProvider.resetLoadingState(reason: 'google-error');
                 if (context.mounted) {
                   final errorMessage = AuthErrorHandler.getErrorMessage(e);
                   AuthErrorHandler.showErrorSnackBar(context, errorMessage);
@@ -106,16 +125,39 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ];
 
-        if (isIOS) {
+        if (showAppleSignIn) {
           buttons.add(SizedBox(width: context.spacingLarge + context.spacingSmall)); // 20px
           buttons.add(
             buildIconButton(
               onPressed: () async {
                 try {
-                  await authProvider.signInWithApple();
+                  await authProvider
+                      .signInWithApple()
+                      .timeout(
+                        _authTimeout,
+                        onTimeout: () {
+                          authProvider.resetLoadingState(reason: 'apple-timeout');
+                          throw TimeoutException(
+                            'Apple sign-in timed out.',
+                            _authTimeout,
+                          );
+                        },
+                      );
                 } catch (e) {
+                  authProvider.resetLoadingState(reason: 'apple-error');
                   if (context.mounted) {
-                    final errorMessage = AuthErrorHandler.getErrorMessage(e);
+                    String errorMessage;
+                    if (e is SignInWithAppleAuthorizationException) {
+                      if (e.code == AuthorizationErrorCode.canceled) {
+                        errorMessage = 'Apple sign-in was cancelled.';
+                      } else {
+                        errorMessage = e.message ?? 'Apple sign-in failed.';
+                      }
+                    } else if (e.toString().contains('Sign in with Apple')) {
+                      errorMessage = e.toString();
+                    } else {
+                      errorMessage = AuthErrorHandler.getErrorMessage(e);
+                    }
                     AuthErrorHandler.showErrorSnackBar(context, errorMessage);
                   }
                 }
@@ -156,7 +198,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final logoAsset = getThemeLogoAsset(theme.brightness);
-    final bool isDesktopLayout = MediaQuery.of(context).size.width >= 900;
+    final mediaQuery = MediaQuery.of(context);
+    final size = mediaQuery.size;
+    final bool isDesktopLayout = size.width >= 900;
+    final bool isTabletLayout = !kIsWeb && size.shortestSide >= 600;
+    final bool useCardLayout = isDesktopLayout || isTabletLayout;
+    final double cardMaxWidth = isDesktopLayout
+        ? 520
+        : (isTabletLayout ? 560 : double.infinity);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final cardBackground = context.cardBackground;
+    final cardBorder = context.cardBorder;
+    final cardShadow = BoxShadow(
+      color: isDarkMode ? Colors.black54 : Colors.black12,
+      blurRadius: isDarkMode ? 30 : 24,
+      offset: Offset(0, isDarkMode ? 20 : 16),
+    );
     final initialRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
     final showDeepLinkBanner = initialRoute.contains('auth/callback') ||
         initialRoute.contains('reset-password') ||
@@ -165,37 +222,40 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            horizontal: isDesktopLayout ? 56 : 24,
-            vertical: 40,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isDesktopLayout ? 520 : double.infinity,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: ResponsiveHelper.getResponsivePadding(
+                context,
+                horizontal: useCardLayout ? 48 : 24,
+                vertical: isTabletLayout ? 24 : 40,
               ),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isDesktopLayout ? 32 : 0,
-                  vertical: isDesktopLayout ? 32 : 0,
-                ),
-                decoration: isDesktopLayout
-                    ? BoxDecoration(
-                        color: const Color(0xFF0B111C).withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(36),
-                        border: Border.all(color: Colors.white.withOpacity(0.08)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black54,
-                            blurRadius: 30,
-                            offset: Offset(0, 20),
-                          ),
-                        ],
-                      )
-                    : null,
-                child: Column(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Align(
+                  alignment:
+                      isTabletLayout ? Alignment.center : Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: cardMaxWidth,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: useCardLayout ? 32 : 0,
+                        vertical: useCardLayout ? 32 : 0,
+                      ),
+                      decoration: useCardLayout
+                          ? BoxDecoration(
+                              color: cardBackground.withOpacity(
+                                isDarkMode ? 0.9 : 1.0,
+                              ),
+                              borderRadius: BorderRadius.circular(36),
+                              border: Border.all(color: cardBorder),
+                              boxShadow: [cardShadow],
+                            )
+                          : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                   children: [
                     if (showDeepLinkBanner) ...[
                       Container(
@@ -219,13 +279,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: context.spacingLarge),
                     ],
                     // Top whitespace 80-100px
-                    SizedBox(height: context.spacingLarge * 5.625), // ~90px
+                    SizedBox(
+                      height: isTabletLayout
+                          ? context.spacingLarge * 3
+                          : context.spacingLarge * 5.625,
+                    ), // ~48px / ~90px
                     
                     // Logo centered - width 110-130px
                     Center(
                       child: Image.asset(
                         logoAsset,
-                        width: 120,
+                        width: isTabletLayout ? 140 : 120,
                         height: null,
                       fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
@@ -396,9 +460,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -430,9 +497,29 @@ class _LoginScreenState extends State<LoginScreen> {
       await authProvider.signIn(
         email: email,
         password: _passwordController.text,
+      ).timeout(
+        _authTimeout,
+        onTimeout: () {
+          authProvider.resetLoadingState(reason: 'email-timeout');
+          throw TimeoutException(
+            'Email sign-in timed out.',
+            _authTimeout,
+          );
+        },
       );
       
       if (mounted) {
+        final hasProfile = await _ensureProfileLoaded(authProvider);
+        if (!hasProfile) {
+          return;
+        }
+
+        final session = SupabaseService.client.auth.currentSession;
+        if (session == null || session.user == null) {
+          authProvider.resetLoadingState(reason: 'session-missing');
+          throw Exception('Login succeeded but no session was established.');
+        }
+
         // Wait a moment for role to be properly loaded
         await Future.delayed(Duration(milliseconds: 300));
         
@@ -457,11 +544,67 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      context.read<AuthProvider>().resetLoadingState(reason: 'email-error');
       if (mounted) {
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
     }
+  }
+
+  Future<bool> _ensureProfileLoaded(AuthProvider authProvider) async {
+    final session = SupabaseService.client.auth.currentSession;
+    final user = session?.user;
+    if (user == null) {
+      authProvider.resetLoadingState(reason: 'profile-session-missing');
+      return false;
+    }
+
+    Map<String, dynamic>? profile;
+    try {
+      profile = await UserProfileService.getUserProfile(user.id).timeout(
+        _profileTimeout,
+        onTimeout: () {
+          throw TimeoutException(
+            'Profile loading timed out.',
+            _profileTimeout,
+          );
+        },
+      );
+    } catch (_) {
+      profile = null;
+    }
+
+    final roleFromProvider = authProvider.userRole.value;
+    final role = profile?['role'] as String? ??
+        authProvider.user?.userMetadata?['role'] as String? ??
+        (roleFromProvider == 'pending' ? null : roleFromProvider);
+    final hasOrgField = profile?.containsKey('organization_id') ?? false;
+    final organizationId =
+        hasOrgField && profile != null ? profile['organization_id'] : null;
+    final missingRole = role == null || role.isEmpty;
+    final missingOrg = role == 'technician' &&
+        hasOrgField &&
+        (organizationId == null || organizationId.toString().isEmpty);
+    final isProfileIncomplete = missingRole || missingOrg;
+
+    if (isProfileIncomplete) {
+      await authProvider.signOut();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const AuthErrorScreen(
+              title: 'Profile Unavailable',
+              message:
+                  'We could not load your account details. Please contact support or try again.',
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+
+    return true;
   }
 
   Future<void> _handleForgotPassword() async {

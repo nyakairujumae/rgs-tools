@@ -20,6 +20,7 @@ import 'screens/splash_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
+import 'screens/auth/auth_error_screen.dart';
 import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'services/first_launch_service.dart';
@@ -41,6 +42,7 @@ import 'services/supabase_service.dart';
 import 'services/supabase_auth_storage.dart';
 import 'services/image_upload_service.dart';
 import 'services/last_route_service.dart';
+import 'services/user_profile_service.dart';
 import 'services/firebase_messaging_service.dart' as fcm_service
     if (dart.library.html) 'services/firebase_messaging_service_stub.dart';
 // Import background handler (top-level function)
@@ -785,6 +787,54 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
     super.dispose();
   }
 
+  bool _isProfileIncomplete(
+    Map<String, dynamic>? profile, {
+    String? roleOverride,
+  }) {
+    final role = roleOverride ?? profile?['role'] as String?;
+    final hasOrgField = profile?.containsKey('organization_id') ?? false;
+    final organizationId =
+        hasOrgField && profile != null ? profile['organization_id'] : null;
+    final missingRole = role == null || role.isEmpty;
+    final missingOrg = role == 'technician' &&
+        hasOrgField &&
+        (organizationId == null || organizationId.toString().isEmpty);
+    return missingRole || missingOrg;
+  }
+
+  Future<bool> _ensureProfileForSession(Session session) async {
+    Map<String, dynamic>? profile;
+    try {
+      profile = await UserProfileService.getUserProfile(session.user.id)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      profile = null;
+    }
+
+    final roleOverride = session.user.userMetadata?['role'] as String?;
+    if (!_isProfileIncomplete(profile, roleOverride: roleOverride)) {
+      return true;
+    }
+
+    await SupabaseService.client.auth.signOut();
+    _sessionEstablished = false;
+    _deepLinkProcessed = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navigatorKey.currentState?.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const AuthErrorScreen(
+            title: 'Profile Unavailable',
+            message:
+                'We could not load your account details. Please contact support or try again.',
+          ),
+        ),
+      );
+    });
+
+    return false;
+  }
+
   Future<void> _handleDeepLink(Uri uri) async {
     if (_isProcessingDeepLink) {
       print('🔐 Already processing a deep link, ignoring');
@@ -916,6 +966,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           } catch (e) {
             print('⚠️ Error creating admin user record: $e');
           }
+        }
+
+        final profileLoaded = await _ensureProfileForSession(session);
+        if (!profileLoaded) {
+          _isProcessingDeepLink = false;
+          return;
         }
         
         // Mark session as established and deep link as processed
