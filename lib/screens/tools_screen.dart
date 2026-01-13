@@ -1064,7 +1064,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         final colorScheme = theme.colorScheme;
         return Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
+            color: context.cardBackground,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(24),
             ),

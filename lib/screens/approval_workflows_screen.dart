@@ -84,31 +84,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: SizedBox(
-            height: 50,
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _showCreateRequestDialog,
-              icon: const Icon(Icons.add, size: 20),
-              label: const Text(
-                'Create Request',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-        ),
-      ),
+      bottomNavigationBar: null,
     );
   }
 
@@ -1381,6 +1357,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildToolPurchaseFields() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1389,7 +1366,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1442,6 +1419,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildToolAssignmentFields() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1450,7 +1428,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1480,6 +1458,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildToolDisposalFields() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1488,7 +1467,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1519,6 +1498,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildTransferFields() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1527,7 +1507,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1576,6 +1556,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildMaintenanceFields() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1584,7 +1565,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1614,6 +1595,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildPriorityAndDueDateSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1622,7 +1604,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1703,6 +1685,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildAssignmentSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1711,7 +1694,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1719,6 +1702,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedAssignedTo,
                 decoration: _buildInputDecoration('Assigned To'),
                 items: _assignedToOptions.map((option) {
@@ -1737,6 +1721,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
             const SizedBox(width: 16),
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedAssignedToRole,
                 decoration: _buildInputDecoration('Role'),
                 items: _assignedToRoles.map((role) {
@@ -1759,6 +1744,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
   }
 
   Widget _buildCommentsSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1767,7 +1753,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 16),
@@ -1923,4 +1909,3 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
-

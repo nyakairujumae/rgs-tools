@@ -1526,7 +1526,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       enableDrag: true,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardBackground,
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(24),
           ),

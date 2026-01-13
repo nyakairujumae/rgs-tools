@@ -855,16 +855,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         actions: [
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
-              if (authProvider.isLoading || authProvider.isLoggingOut) {
-                return IconButton(
-                  icon: Icon(Icons.account_circle),
-                  onPressed: null,
-                );
-              }
-              
+              final isDisabled = authProvider.isLoggingOut;
               return IconButton(
                 icon: const Icon(Icons.account_circle, size: 24),
-                onPressed: () => _showProfileBottomSheet(context, authProvider),
+                onPressed: isDisabled
+                    ? null
+                    : () => _showProfileBottomSheet(context, authProvider),
               );
             },
           ),
@@ -2294,20 +2290,29 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   // Brand (if available)
                   if (tool.brand != null && tool.brand!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                                Padding(
-                      padding: const EdgeInsets.only(left: 20),
-                                  child: Text(
-                                    tool.brand!,
-                                    style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.label_outline,
+                          size: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            tool.brand!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   // Holder line and request button
                   const SizedBox(height: 6),
                   Row(
@@ -2613,20 +2618,29 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   // Brand (if available)
                   if (tool.brand != null && tool.brand!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                          Padding(
-                      padding: const EdgeInsets.only(left: 20),
-                            child: Text(
-                              tool.brand!,
-                              style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.label_outline,
+                          size: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            tool.brand!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
                       ],
+                    ),
+                  ],
                   ],
               ),
           ),

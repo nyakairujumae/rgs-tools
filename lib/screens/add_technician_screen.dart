@@ -697,7 +697,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

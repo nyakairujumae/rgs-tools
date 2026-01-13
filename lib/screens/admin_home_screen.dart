@@ -380,18 +380,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   actions: [
                     Consumer<AuthProvider>(
                       builder: (context, authProvider, child) {
-                        if (authProvider.isLoading ||
-                            authProvider.isLoggingOut) {
-                          return IconButton(
-                            icon: const Icon(Icons.account_circle_outlined),
-                            onPressed: null,
-                          );
-                        }
-
+                        final isDisabled = authProvider.isLoggingOut;
                         return IconButton(
                           icon: const Icon(Icons.account_circle_outlined),
-                          onPressed: () =>
-                              _showProfileBottomSheet(context, authProvider),
+                          onPressed: isDisabled
+                              ? null
+                              : () => _showProfileBottomSheet(context, authProvider),
                         );
                       },
                     ),
