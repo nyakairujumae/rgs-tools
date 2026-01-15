@@ -17,6 +17,7 @@ import '../services/last_route_service.dart';
 import '../services/badge_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
+import '../utils/name_formatter.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
@@ -972,6 +973,7 @@ class AuthProvider with ChangeNotifier {
   ) async {
     try {
       String? profilePictureUrl;
+      final formattedName = NameFormatter.format(name);
 
       // First, create the auth user with 'technician' role
       // Note: signUp will create a basic pending approval, but we need to update it with additional details
@@ -979,7 +981,7 @@ class AuthProvider with ChangeNotifier {
       final response = await signUp(
         email: email,
         password: password,
-        fullName: name.toUpperCase(), // Force uppercase for technician names
+        fullName: formattedName,
         role: UserRole.technician, // Explicitly set as technician
       );
       
@@ -998,7 +1000,7 @@ class AuthProvider with ChangeNotifier {
           debugPrint('📧 Sending push notification for new technician registration...');
           await PushNotificationService.sendToAdmins(
             title: 'New User Registration',
-            body: '$name has registered and is waiting for approval',
+            body: '$formattedName has registered and is waiting for approval',
             data: {
               'type': 'new_registration',
               'user_id': _user!.id,
@@ -1075,7 +1077,7 @@ class AuthProvider with ChangeNotifier {
             final insertData = {
               'user_id': _user!.id,
               'email': email,
-              'full_name': name.toUpperCase(), // Force uppercase for technician names
+              'full_name': formattedName,
               'employee_id': employeeId,
               'phone': phone,
               'department': department,
@@ -1109,8 +1111,8 @@ class AuthProvider with ChangeNotifier {
               'create_admin_notification',
               params: {
                 'p_title': 'New User Registration',
-                'p_message': '$name has registered and is waiting for approval',
-                'p_technician_name': name.toUpperCase(),
+                'p_message': '$formattedName has registered and is waiting for approval',
+                'p_technician_name': formattedName,
                 'p_technician_email': email,
                 'p_type': 'new_registration',
                 'p_data': {
@@ -1128,8 +1130,8 @@ class AuthProvider with ChangeNotifier {
                   .from('admin_notifications')
                   .insert({
                     'title': 'New User Registration',
-                    'message': '$name has registered and is waiting for approval',
-                    'technician_name': name.toUpperCase(),
+                    'message': '$formattedName has registered and is waiting for approval',
+                    'technician_name': formattedName,
                     'technician_email': email,
                     'type': 'new_registration',
                     'is_read': false,
@@ -1704,6 +1706,35 @@ _isLoading = false;
     }
   }
 
+  Future<void> deleteAccount() async {
+    final currentUser = _user;
+    if (currentUser == null) {
+      throw Exception('No active user session');
+    }
+
+    try {
+      debugPrint('🗑️ Deleting account for user: ${currentUser.id}');
+      final response = await SupabaseService.client.functions
+          .invoke('delete-account')
+          .timeout(_authOperationTimeout);
+
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? (errorData['error']?.toString() ??
+                errorData['message']?.toString() ??
+                'Account deletion failed')
+            : (errorData?.toString() ?? 'Account deletion failed');
+        throw Exception(errorMessage);
+      }
+
+      debugPrint('✅ Account deletion completed');
+    } catch (e) {
+      debugPrint('❌ Account deletion failed: $e');
+      rethrow;
+    }
+  }
+
   Future<void> resetPassword(String email, {String? redirectTo}) async {
     try {
       // Use direct deep link (simpler, no web page needed)
@@ -1737,12 +1768,13 @@ _isLoading = false;
     String? department,
   }) async {
     try {
+      final formattedName = NameFormatter.format(name);
       debugPrint('🔍 Inviting technician via edge function: $email');
       final response = await SupabaseService.client.functions.invoke(
         'invite-technician',
         body: {
           'email': email,
-          'full_name': name,
+          'full_name': formattedName,
           'department': department,
         },
       );
@@ -1953,7 +1985,12 @@ _isLoading = false;
       final client = SupabaseService.client;
       final userId = _user!.id;
       final email = _user!.email ?? '';
-      final name = fullName ?? _user!.userMetadata?['full_name'] ?? _user!.userMetadata?['name'] ?? email.split('@')[0];
+      final name = fullName ??
+          _user!.userMetadata?['full_name'] ??
+          _user!.userMetadata?['name'] ??
+          email.split('@')[0];
+      final formattedName =
+          role == UserRole.technician ? NameFormatter.format(name) : name.trim();
       
       debugPrint('🔐 Assigning role to OAuth user: $role');
       debugPrint('🔐 User ID: $userId, Email: $email, Name: $name');
@@ -1963,7 +2000,7 @@ _isLoading = false;
         UserAttributes(
           data: {
             'role': role.value,
-            'full_name': name.toUpperCase(),
+            'full_name': formattedName,
           },
         ),
       );
@@ -1972,7 +2009,7 @@ _isLoading = false;
       await client.from('users').upsert({
         'id': userId,
         'email': email,
-        'full_name': name.toUpperCase(),
+        'full_name': formattedName,
         'role': role.value,
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -1987,7 +2024,7 @@ _isLoading = false;
           final approvalResponse = await client.from('pending_user_approvals').insert({
             'user_id': userId,
             'email': email,
-            'full_name': name.toUpperCase(),
+            'full_name': formattedName,
             'status': 'pending',
             'created_at': DateTime.now().toIso8601String(),
           }).select().single();
@@ -1995,7 +2032,7 @@ _isLoading = false;
           
           // Create notification for admins in the main notification center
           try {
-            final displayName = name.toUpperCase();
+            final displayName = formattedName;
             await client
                 .from('admin_notifications')
                 .insert({
@@ -2486,14 +2523,17 @@ _isLoading = false;
     if (_user == null) return;
 
     try {
-      debugPrint('🔧 Updating user name to: $newName');
+      final formattedName = _userRole == UserRole.technician
+          ? NameFormatter.format(newName)
+          : newName.trim();
+      debugPrint('🔧 Updating user name to: $formattedName');
       
       // Update user metadata in Supabase Auth
       await SupabaseService.client.auth.updateUser(
         UserAttributes(
           data: {
             ..._user!.userMetadata ?? {},
-            'full_name': newName,
+            'full_name': formattedName,
           },
         ),
       );
@@ -2504,7 +2544,7 @@ _isLoading = false;
           .upsert({
             'id': _user!.id,
             'email': _user!.email,
-            'full_name': newName,
+            'full_name': formattedName,
             'role': _userRole.value,
             'updated_at': DateTime.now().toIso8601String(),
           });

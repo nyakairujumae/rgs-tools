@@ -16,6 +16,36 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
     })
   : null;
 
+async function findUserIdByEmail(email: string): Promise<string | null> {
+  if (!supabase) return null;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const { data: authUser, error: authError } = await supabase
+    .schema("auth")
+    .from("users")
+    .select("id, email")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (!authError && authUser?.id) {
+    return authUser.id;
+  }
+
+  const { data: listData, error: listError } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+
+  if (!listError && listData?.users) {
+    const match = listData.users.find((user) =>
+      user.email?.toLowerCase() === normalizedEmail
+    );
+    return match?.id ?? null;
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (!supabase) {
     return new Response(
@@ -121,12 +151,7 @@ Deno.serve(async (req) => {
   if (createError) {
     const message = createError.message ?? '';
     if (message.toLowerCase().includes('already')) {
-      const { data: existingUser } = await supabase
-        .from("auth.users")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-      userId = existingUser?.id ?? null;
+      userId = await findUserIdByEmail(email);
     } else {
       return new Response(
         JSON.stringify({ error: createError.message ?? "User creation failed" }),
@@ -138,12 +163,7 @@ Deno.serve(async (req) => {
   }
 
   if (!userId) {
-    const { data: fallbackUser } = await supabase
-      .from("auth.users")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-    userId = fallbackUser?.id ?? null;
+    userId = await findUserIdByEmail(email);
   }
 
   const { error: resetError } = await supabase.auth.resetPasswordForEmail(

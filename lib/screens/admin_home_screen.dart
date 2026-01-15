@@ -16,6 +16,7 @@ import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/account_deletion_helper.dart';
 import 'package:shimmer/shimmer.dart';
 import 'tools_screen.dart';
 import 'technicians_screen.dart';
@@ -686,6 +687,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                             ),
                             const SizedBox(height: 20),
                             _buildSectionLabel(parentContext, 'Security'),
+                            const SizedBox(height: 12),
+                            _buildProfileOption(
+                              context: parentContext,
+                              icon: Icons.delete_forever,
+                              label: 'Delete Account',
+                              iconColor: Colors.red,
+                              iconPadding: 8,
+                              backgroundColor: Colors.red.withOpacity(0.12),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                AccountDeletionHelper.showDeleteAccountDialog(
+                                  parentContext,
+                                  authProvider,
+                                );
+                              },
+                              showTrailingChevron: false,
+                            ),
                             const SizedBox(height: 12),
                             _buildProfileOption(
                               context: parentContext,

@@ -1022,10 +1022,15 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         imageUrl = await ImageUploadService.uploadImage(_selectedImage!, tempId);
       }
 
+      final name = _capitalizeFirst(_nameController.text.trim());
+      final brandInput = _brandController.text.trim();
+      final brand =
+          brandInput.isEmpty ? null : _capitalizeFirst(brandInput);
+
       final tool = Tool(
-        name: _nameController.text.trim(),
+        name: name,
         category: _selectedCategory.trim(),
-        brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
+        brand: brand,
         model: _modelController.text.trim().isEmpty ? null : _modelController.text.trim(),
         serialNumber: _serialNumberController.text.trim().isEmpty ? null : _serialNumberController.text.trim(),
         purchaseDate: _purchaseDate?.toIso8601String().split('T').first,
@@ -1063,5 +1068,10 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _capitalizeFirst(String value) {
+    if (value.isEmpty) return value;
+    return '${value[0].toUpperCase()}${value.substring(1)}';
   }
 }

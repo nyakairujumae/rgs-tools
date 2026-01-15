@@ -11,6 +11,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../services/csv_export_service.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/account_deletion_helper.dart';
 import 'terms_of_service_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -128,6 +129,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _buildSectionLabel(context, 'Account Details'),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAccountDetails(context, authProvider),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        _buildSectionLabel(context, 'Account Management'),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                        _buildAccountManagementCard(authProvider),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                         _buildSectionLabel(context, 'Preferences'),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -289,6 +294,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: isDesktop ? 8 : 10),
           _buildAccountDetailRow(context, 'Role', roleLabel),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAccountManagementCard(AuthProvider authProvider) {
+    final isAdmin = authProvider.isAdmin;
+    final title = isAdmin ? 'Delete Account' : 'Request Account Deletion';
+    final subtitle = isAdmin
+        ? 'Permanently delete your account and data'
+        : 'Ask your administrator to delete your account';
+
+    return _buildCard(
+      context,
+      ListTile(
+        contentPadding: _tilePadding(context),
+        leading: _iconBadge(
+          context: context,
+          color: Colors.red,
+          child: Icon(
+            Icons.delete_forever,
+            color: Colors.red,
+            size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: ResponsiveHelper.getResponsiveIconSize(context, 16),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+        ),
+        onTap: () {
+          if (isAdmin) {
+            AccountDeletionHelper.showDeleteAccountDialog(context, authProvider);
+          } else {
+            AccountDeletionHelper.showDeletionRequestDialog(context);
+          }
+        },
       ),
     );
   }

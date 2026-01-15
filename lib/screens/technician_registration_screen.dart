@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -9,6 +8,7 @@ import '../models/user_role.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/name_formatter.dart';
 import '../config/app_config.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
@@ -185,14 +185,7 @@ class _TechnicianRegistrationScreenState
                     // Name Field
                     ThemedTextField(
                       controller: _nameController,
-                      inputFormatters: [
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          return TextEditingValue(
-                            text: newValue.text.toUpperCase(),
-                            selection: newValue.selection,
-                          );
-                        }),
-                      ],
+                      textCapitalization: TextCapitalization.words,
                       label: 'Full Name',
                       hint: 'Enter full name',
                       prefixIcon: Icons.person_outline,
@@ -671,7 +664,7 @@ class _TechnicianRegistrationScreenState
       debugPrint('🔍 Starting technician registration...');
       // Phone and department are required - validators ensure they're not empty
       await authProvider.registerTechnician(
-        _nameController.text.trim().toUpperCase(),
+        NameFormatter.format(_nameController.text),
         _emailController.text.trim(),
         _passwordController.text,
         _employeeIdController.text.trim().isEmpty

@@ -31,6 +31,7 @@ import '../models/admin_notification.dart';
 import '../models/technician_notification.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/account_deletion_helper.dart';
 import '../models/user_role.dart';
 import '../widgets/common/loading_widget.dart';
 
@@ -368,6 +369,22 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                             ),
                             const SizedBox(height: 20),
                             _buildSectionLabel(parentContext, 'Security'),
+                            const SizedBox(height: 12),
+                            _buildProfileOption(
+                              context: parentContext,
+                              icon: Icons.delete_forever,
+                              label: 'Request Account Deletion',
+                              iconColor: Colors.red,
+                              iconPadding: 8,
+                              backgroundColor: Colors.red.withValues(alpha: 0.12),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                AccountDeletionHelper.showDeletionRequestDialog(
+                                  parentContext,
+                                );
+                              },
+                              showTrailingChevron: false,
+                            ),
                             const SizedBox(height: 12),
                             _buildProfileOption(
                               context: parentContext,

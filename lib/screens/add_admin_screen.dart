@@ -158,6 +158,17 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
     } catch (e) {
       if (!mounted) return;
       String errorMessage = e.toString();
+      final normalizedError = errorMessage.toLowerCase();
+      final isExistingAccount = normalizedError.contains('already') ||
+          normalizedError.contains('user created but no user id returned') ||
+          normalizedError.contains('user exists');
+      final title = _isEdit
+          ? 'Failed to Update Admin'
+          : (isExistingAccount ? 'Admin Already Added' : 'Failed to Add Admin');
+      if (isExistingAccount) {
+        errorMessage =
+            'This email already has an admin account. Ask them to sign in or reset their password.';
+      }
       // Clean up error message
       if (errorMessage.contains('Exception:')) {
         errorMessage = errorMessage.replaceAll('Exception:', '').trim();
@@ -174,7 +185,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isEdit ? 'Failed to Update Admin' : 'Failed to Add Admin',
+                      title,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(

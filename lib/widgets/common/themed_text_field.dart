@@ -39,6 +39,7 @@ class ThemedTextField extends StatelessWidget {
   final String? helperText;
   final String? errorText;
   final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   const ThemedTextField({
     super.key,
@@ -57,6 +58,7 @@ class ThemedTextField extends StatelessWidget {
     this.helperText,
     this.errorText,
     this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -71,6 +73,7 @@ class ThemedTextField extends StatelessWidget {
       maxLength: maxLength,
       enabled: enabled,
       inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
       decoration: context.chatGPTInputDecoration.copyWith(
         labelText: label,
         hintText: hint,
@@ -128,4 +131,3 @@ class ThemedLabeledField extends StatelessWidget {
     );
   }
 }
-

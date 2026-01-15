@@ -579,7 +579,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddTool,
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: AppTheme.secondaryColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Add Tool'),
@@ -829,4 +829,3 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     }
   }
 }
-

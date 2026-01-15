@@ -10,6 +10,7 @@ import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/name_formatter.dart';
 import '../config/app_config.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
@@ -146,14 +147,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     // Name Field
                     ThemedTextField(
                       controller: _nameController,
-                      inputFormatters: [
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          return TextEditingValue(
-                            text: newValue.text.toUpperCase(),
-                            selection: newValue.selection,
-                          );
-                        }),
-                      ],
+                      textCapitalization: TextCapitalization.words,
                       label: 'Full Name',
                       hint: 'Enter full name',
                       prefixIcon: Icons.person_outline,
@@ -483,9 +477,11 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
         profilePictureUrl = widget.technician!.profilePictureUrl;
       }
 
+      final formattedName = NameFormatter.format(_nameController.text);
+
       final technician = Technician(
         id: widget.technician?.id,
-        name: _nameController.text.trim().toUpperCase(),
+        name: formattedName,
         employeeId: _employeeIdController.text.trim().isEmpty ? null : _employeeIdController.text.trim(),
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
@@ -506,7 +502,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
             debugPrint('🔍 Creating auth account for admin-added technician: ${technician.email}');
             userId = await authProvider.createTechnicianAuthAccount(
               email: technician.email!,
-              name: technician.name,
+              name: formattedName,
               department: technician.department,
             );
             debugPrint('✅ Auth account created with user_id: $userId');
