@@ -34,6 +34,8 @@ class AuthProvider with ChangeNotifier {
 
   User? get user => _user;
   UserRole get userRole => _userRole;
+  String? get userEmail =>
+      (_user ?? SupabaseService.client.auth.currentUser)?.email;
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated {
@@ -1878,7 +1880,13 @@ _isLoading = false;
 
   String? get userEmail => _user?.email;
   String? get userId => _user?.id;
-  String? get userFullName => _user?.userMetadata?['full_name'] as String?;
+  String? get userFullName {
+    final activeUser = _user ?? SupabaseService.client.auth.currentUser;
+    final fullName = activeUser?.userMetadata?['full_name'];
+    final altName = activeUser?.userMetadata?['name'];
+    final resolved = (fullName ?? altName)?.toString().trim();
+    return (resolved == null || resolved.isEmpty) ? null : resolved;
+  }
 
   /// Sign in with Google using Supabase OAuth
   Future<void> signInWithGoogle() async {

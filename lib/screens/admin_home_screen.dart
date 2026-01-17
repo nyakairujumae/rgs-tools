@@ -754,7 +754,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       BuildContext sheetContext, BuildContext parentContext, AuthProvider authProvider) {
     final theme = Theme.of(parentContext);
     final isDesktop = ResponsiveHelper.isDesktop(parentContext);
-    final fullName = authProvider.userFullName ?? 'Admin User';
+    final displayName = _resolveDisplayName(authProvider);
+    final fullName = displayName ?? 'Account';
     final roleLabel = authProvider.userRole.displayName;
     final initials = _getInitials(fullName);
 
@@ -1110,13 +1111,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   String _getInitials(String? fullName) {
     final cleaned = fullName?.trim();
     if (cleaned == null || cleaned.isEmpty) {
-      return 'AD';
+      return '?';
     }
     final parts = cleaned.split(RegExp(r'\s+'));
     if (parts.isEmpty) return 'AD';
     final first = parts[0][0];
     final second = parts.length > 1 ? parts[1][0] : '';
     return (first + second).toUpperCase();
+  }
+
+  String? _resolveDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.userFullName?.trim();
+    if (fullName != null && fullName.isNotEmpty) {
+      return fullName;
+    }
+    final email = authProvider.userEmail;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return null;
   }
 
 }
@@ -1532,13 +1545,22 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${_getGreeting()}, ${_getFirstName(authProvider.userFullName ?? 'Admin')}!',
-                  style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final displayName = _resolveDisplayName(authProvider);
+                    final firstName = _getFirstName(displayName);
+                    final greeting = firstName.isEmpty
+                        ? '${_getGreeting()}!'
+                        : '${_getGreeting()}, $firstName!';
+                    return Text(
+                      greeting,
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                 Text(
@@ -2352,7 +2374,7 @@ class DashboardScreen extends StatelessWidget {
 
   String _getFirstName(String? fullName) {
     if (fullName == null || fullName.trim().isEmpty) {
-      return 'Admin';
+      return '';
     }
     return fullName.split(RegExp(r"\s+")).first;
   }

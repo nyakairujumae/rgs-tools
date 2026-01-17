@@ -140,7 +140,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       BuildContext context, AuthProvider authProvider) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    final fullName = (authProvider.userFullName ?? 'Technician').trim();
+    final displayName = _resolveDisplayName(authProvider);
+    final fullName = (displayName ?? 'Account').trim();
     final roleLabel = authProvider.isAdmin ? 'Administrator' : 'Technician';
     final roleColor = authProvider.isAdmin ? AppTheme.warningColor : AppTheme.secondaryColor;
 
@@ -185,7 +186,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  fullName.isNotEmpty ? fullName : 'Technician',
+                  fullName,
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     fontWeight: FontWeight.w600,
@@ -434,7 +435,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       BuildContext sheetContext, BuildContext parentContext, AuthProvider authProvider) {
     final theme = Theme.of(parentContext);
     final isDesktop = ResponsiveHelper.isDesktop(parentContext);
-    final fullName = authProvider.userFullName ?? 'Technician';
+    final displayName = _resolveDisplayName(authProvider);
+    final fullName = displayName ?? 'Account';
     final roleLabel = authProvider.userRole.displayName;
     final initials = _getInitials(fullName);
 
@@ -733,10 +735,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   String _getInitials(String? fullName) {
     final cleaned = fullName?.trim();
     if (cleaned == null || cleaned.isEmpty) {
-      return 'T';
+      return '?';
     }
     final parts = cleaned.split(RegExp(r'\s+'));
-    if (parts.isEmpty) return 'T';
+    if (parts.isEmpty) return '?';
     final first = parts[0][0];
     final second = parts.length > 1 ? parts[1][0] : '';
     return (first + second).toUpperCase();
@@ -1959,7 +1961,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                              _greeting(authProvider.userFullName),
+                              _greeting(_resolveDisplayName(authProvider)),
                               style: TextStyle(
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
                                 fontWeight: FontWeight.w800,
@@ -2919,10 +2921,23 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         : hour < 17
             ? 'Good Afternoon'
             : 'Good Evening';
-    final name = (fullName == null || fullName.trim().isEmpty)
-        ? 'Technician'
-        : fullName.split(RegExp(r"\s+")).first;
+    if (fullName == null || fullName.trim().isEmpty) {
+      return '$salutation!';
+    }
+    final name = fullName.split(RegExp(r"\s+")).first;
     return '$salutation, $name!';
+  }
+
+  String? _resolveDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.userFullName?.trim();
+    if (fullName != null && fullName.isNotEmpty) {
+      return fullName;
+    }
+    final email = authProvider.userEmail;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return null;
   }
 
   Widget _buildSkeletonDashboard(BuildContext context) {
