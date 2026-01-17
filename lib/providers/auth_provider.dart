@@ -1878,7 +1878,6 @@ _isLoading = false;
     return buffer.toString();
   }
 
-  String? get userEmail => _user?.email;
   String? get userId => _user?.id;
   String? get userFullName {
     final activeUser = _user ?? SupabaseService.client.auth.currentUser;

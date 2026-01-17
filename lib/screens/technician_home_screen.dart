@@ -744,6 +744,18 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     return (first + second).toUpperCase();
   }
 
+  String? _resolveDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.userFullName?.trim();
+    if (fullName != null && fullName.isNotEmpty) {
+      return fullName;
+    }
+    final email = authProvider.userEmail;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return null;
+  }
+
   Future<void> _handleSignOut(
       BuildContext context, AuthProvider authProvider) async {
     if (_isDisposed || !mounted) return;

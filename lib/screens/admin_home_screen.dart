@@ -2378,4 +2378,16 @@ class DashboardScreen extends StatelessWidget {
     }
     return fullName.split(RegExp(r"\s+")).first;
   }
+
+  String? _resolveDisplayName(AuthProvider authProvider) {
+    final fullName = authProvider.userFullName?.trim();
+    if (fullName != null && fullName.isNotEmpty) {
+      return fullName;
+    }
+    final email = authProvider.userEmail;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return null;
+  }
 }
