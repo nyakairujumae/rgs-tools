@@ -471,6 +471,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   Widget _buildNavigationRail(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return NavigationRail(
       selectedIndex: _selectedIndex,
@@ -478,51 +479,55 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         setState(() => _selectedIndex = index.clamp(0, 3));
       },
       labelType: NavigationRailLabelType.all,
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: isDark ? const Color(0xFF0D1117) : Colors.white,
       elevation: 0,
-      indicatorColor: colorScheme.secondary.withValues(alpha: 0.12),
-      selectedIconTheme: IconThemeData(color: colorScheme.secondary),
-      unselectedIconTheme:
-          IconThemeData(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+      indicatorColor: colorScheme.secondary.withValues(alpha: 0.15),
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      selectedIconTheme: IconThemeData(color: colorScheme.secondary, size: 22),
+      unselectedIconTheme: IconThemeData(
+        color: colorScheme.onSurface.withValues(alpha: 0.5),
+        size: 22,
+      ),
       selectedLabelTextStyle: TextStyle(
         color: colorScheme.secondary,
         fontWeight: FontWeight.w600,
+        fontSize: 12,
       ),
       unselectedLabelTextStyle: TextStyle(
-        color: colorScheme.onSurface.withValues(alpha: 0.6),
+        color: colorScheme.onSurface.withValues(alpha: 0.5),
         fontWeight: FontWeight.w500,
+        fontSize: 12,
       ),
-      groupAlignment: -0.8,
+      groupAlignment: -0.85,
+      minWidth: 72,
       leading: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.25),
-                ),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.precision_manufacturing,
                 color: AppTheme.secondaryColor,
-                size: 22,
+                size: 20,
               ),
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+            const SizedBox(height: 6),
             Text(
               'RGS',
               style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                letterSpacing: 0.6,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+                letterSpacing: 0.8,
               ),
             ),
           ],
@@ -1138,10 +1143,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateToTab;
   final Function(String) onNavigateToToolsWithFilter;
-  static const double _cardRadiusValue = 20;
+  static const double _cardRadiusValue = 8; // Sharper web-style corners
+  static const double _mobileCardRadiusValue = 16; // Keep mobile rounded
   static const Color _dashboardGreen = Color(0xFF2E7D32);
   static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
   static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
+  
+  double _getCardRadius(BuildContext context) {
+    return ResponsiveHelper.isWeb ? _cardRadiusValue : _mobileCardRadiusValue;
+  }
 
   const DashboardScreen({
     super.key,
@@ -1266,6 +1276,60 @@ class DashboardScreen extends StatelessWidget {
                         context, isWideLayout ? 24 : 26),
                   ),
 
+                  // Web: Key Metrics and Quick Actions side-by-side for dashboard feel
+                  if (isWideLayout) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Key Metrics',
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                              isLoadingDashboard
+                                  ? _buildMetricsSkeleton(context)
+                                  : _buildWebStatsRow(
+                                      context,
+                                      totalTools: totalTools,
+                                      technicianCount: technicians.length,
+                                      totalValue: totalValue,
+                                      maintenanceCount: toolsNeedingMaintenance.length,
+                                      statValueStyle: statValueStyle,
+                                    ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Quick Actions',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                              ),
+                              SizedBox(height: 16),
+                              isLoadingDashboard
+                                  ? _buildQuickActionsSkeleton(context)
+                                  : _buildQuickActionsGrid(context),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
                   Text(
                     'Key Metrics',
                     style: TextStyle(
@@ -1276,98 +1340,98 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
 
-                  // Stats Grid
+                  // Stats Grid - mobile uses grid
                   isLoadingDashboard
                       ? _buildMetricsSkeleton(context)
                       : GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount:
-                              ResponsiveHelper.getGridCrossAxisCount(context),
-                          crossAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
-                          mainAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
-                          childAspectRatio: ResponsiveHelper.isWeb ? 1.5 : 1.2,
-                          children: [
-                            _buildStatCard(
-                              'Total Tools',
-                              Text(
-                                totalTools.toString(),
-                                style: statValueStyle.copyWith(color: Colors.blue),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Icons.build,
-                              Colors.blue,
-                              context,
-                              () => onNavigateToTab(1), // Navigate to Tools tab
-                            ),
-                            _buildStatCard(
-                              'Technicians',
-                              Text(
-                          technicians.length.toString(),
-                          style: statValueStyle.copyWith(color: _dashboardGreen),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Icons.people,
-                        _dashboardGreen,
-                              context,
-                              () => onNavigateToTab(3), // Navigate to Technicians tab
-                            ),
-                            _buildStatCard(
-                              'Total Value',
-                              CurrencyFormatter.formatCurrencyWidget(
-                                totalValue,
-                                decimalDigits: 0,
-                                style: statValueStyle.copyWith(color: Colors.orange),
-                                context: context,
-                              ),
-                              Icons.attach_money,
-                              Colors.orange,
-                              context,
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ReportDetailScreen(
-                                    reportType: ReportType.financialSummary,
-                                    timePeriod: 'Last 30 Days',
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
+                              mainAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
+                              childAspectRatio: 1.2,
+                              children: [
+                                _buildStatCard(
+                                  'Total Tools',
+                                  Text(
+                                    totalTools.toString(),
+                                    style: statValueStyle.copyWith(color: Colors.blue),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Icons.build,
+                                  Colors.blue,
+                                  context,
+                                  () => onNavigateToTab(1),
+                                ),
+                                _buildStatCard(
+                                  'Technicians',
+                                  Text(
+                                    technicians.length.toString(),
+                                    style: statValueStyle.copyWith(color: _dashboardGreen),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Icons.people,
+                                  _dashboardGreen,
+                                  context,
+                                  () => onNavigateToTab(3),
+                                ),
+                                _buildStatCard(
+                                  'Total Value',
+                                  CurrencyFormatter.formatCurrencyWidget(
+                                    totalValue,
+                                    decimalDigits: 0,
+                                    style: statValueStyle.copyWith(color: Colors.orange),
+                                    context: context,
+                                  ),
+                                  Icons.attach_money,
+                                  Colors.orange,
+                                  context,
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ReportDetailScreen(
+                                        reportType: ReportType.financialSummary,
+                                        timePeriod: 'Last 30 Days',
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            _buildStatCard(
-                              'Maintenance',
-                              Text(
-                                '${toolsNeedingMaintenance.length}',
-                                style: statValueStyle.copyWith(color: Colors.red),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Icons.warning,
-                              Colors.red,
-                              context,
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const MaintenanceScreen(),
+                                _buildStatCard(
+                                  'Maintenance',
+                                  Text(
+                                    '${toolsNeedingMaintenance.length}',
+                                    style: statValueStyle.copyWith(color: Colors.red),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Icons.warning,
+                                  Colors.red,
+                                  context,
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const MaintenanceScreen(),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
 
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
 
-                  // Status Overview
+                  // Status Overview (mobile only; web has it in top row)
                   if (!isWideLayout) ...[
                     statusOverviewCard,
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                   ],
 
-                  // Quick Actions
+                  // Quick Actions (mobile only; web has it in side-by-side section above)
+                  if (!isWideLayout) ...[
                   Text(
                     'Quick Actions',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -1377,8 +1441,6 @@ class DashboardScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   if (isLoadingDashboard)
                     _buildQuickActionsSkeleton(context)
-                  else if (isWideLayout)
-                    _buildQuickActionsGrid(context)
                   else ...[
                     Row(
                       children: [
@@ -1508,7 +1570,9 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ],
+                  ],  // end else quick actions
+                  ],  // end if (!isWideLayout) Quick Actions section
+                  ],  // end else (mobile Key Metrics + Quick Actions)
                 ],
               ),
             ),
@@ -1518,32 +1582,211 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  /// Web: 2x2 grid of stat cards (less elongated, more dashboard-like)
+  Widget _buildWebStatsRow(
+    BuildContext context, {
+    required int totalTools,
+    required int technicianCount,
+    required double totalValue,
+    required int maintenanceCount,
+    required TextStyle statValueStyle,
+  }) {
+    const gap = 12.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildWebStatTile(
+                context,
+                label: 'Total Tools',
+                value: totalTools.toString(),
+                icon: Icons.build,
+                color: Colors.blue,
+                onTap: () => onNavigateToTab(1),
+              ),
+            ),
+            const SizedBox(width: gap),
+            Expanded(
+              child: _buildWebStatTile(
+                context,
+                label: 'Technicians',
+                value: technicianCount.toString(),
+                icon: Icons.people,
+                color: _dashboardGreen,
+                onTap: () => onNavigateToTab(3),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: gap),
+        Row(
+          children: [
+            Expanded(
+              child: _buildWebStatTile(
+                context,
+                label: 'Total Value',
+                valueWidget: CurrencyFormatter.formatCurrencyWidget(
+                  totalValue,
+                  decimalDigits: 0,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.orange,
+                  ),
+                  context: context,
+                ),
+                icon: Icons.attach_money,
+                color: Colors.orange,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReportDetailScreen(
+                      reportType: ReportType.financialSummary,
+                      timePeriod: 'Last 30 Days',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: gap),
+            Expanded(
+              child: _buildWebStatTile(
+                context,
+                label: 'Maintenance',
+                value: maintenanceCount.toString(),
+                icon: Icons.warning,
+                color: Colors.red,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MaintenanceScreen(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWebStatTile(
+    BuildContext context, {
+    required String label,
+    String? value,
+    Widget? valueWidget,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(_cardRadiusValue),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(_cardRadiusValue),
+          border: Border.all(
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.06),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  valueWidget ?? Text(
+                    value ?? '',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGreetingCard(BuildContext context, AuthProvider authProvider) {
+    final isWeb = ResponsiveHelper.isWeb;
+    final theme = Theme.of(context);
+    final cardRadius = _getCardRadius(context);
+    
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(context.spacingLarge * 1.5),
-      decoration: context.cardDecoration,
+      padding: EdgeInsets.symmetric(
+        horizontal: isWeb ? 20 : context.spacingLarge * 1.5,
+        vertical: isWeb ? 16 : context.spacingLarge * 1.5,
+      ),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.06),
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
           Container(
-            width: ResponsiveHelper.getResponsiveIconSize(context, 52),
-            height: ResponsiveHelper.getResponsiveIconSize(context, 52),
+            width: isWeb ? 44 : ResponsiveHelper.getResponsiveIconSize(context, 52),
+            height: isWeb ? 44 : ResponsiveHelper.getResponsiveIconSize(context, 52),
             decoration: BoxDecoration(
               color: _dashboardGreen.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+              borderRadius: BorderRadius.circular(isWeb ? 8 : context.borderRadiusLarge),
             ),
             child: Center(
               child: Icon(
                 Icons.admin_panel_settings,
                 color: _dashboardGreen,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 26),
+                size: isWeb ? 22 : ResponsiveHelper.getResponsiveIconSize(context, 26),
               ),
             ),
           ),
-          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+          SizedBox(width: isWeb ? 14 : ResponsiveHelper.getResponsiveSpacing(context, 16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Builder(
                   builder: (context) {
@@ -1555,22 +1798,19 @@ class DashboardScreen extends StatelessWidget {
                     return Text(
                       greeting,
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
+                        fontSize: isWeb ? 18 : ResponsiveHelper.getResponsiveFontSize(context, 24),
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     );
                   },
                 ),
-                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                SizedBox(height: isWeb ? 2 : ResponsiveHelper.getResponsiveSpacing(context, 4)),
                 Text(
                   'Manage your HVAC tools and technicians',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    fontSize: isWeb ? 13 : ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -1588,31 +1828,40 @@ class DashboardScreen extends StatelessWidget {
     bool showTitle = false,
   }) {
     final isWebLayout = ResponsiveHelper.isWeb;
-    final dividerColor = Theme.of(context)
-        .colorScheme
-        .onSurface
-        .withValues(alpha: 0.08);
+    final theme = Theme.of(context);
+    final cardRadius = _getCardRadius(context);
+    final dividerColor = theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(context.spacingLarge * 1.5),
-      decoration: context.cardDecoration,
+      padding: EdgeInsets.symmetric(
+        horizontal: isWebLayout ? 16 : context.spacingLarge * 1.5,
+        vertical: isWebLayout ? 10 : context.spacingLarge * 1.5,
+      ),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.06),
+          width: 1,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (showTitle) ...[
             Text(
               'Tool Status',
               style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                fontSize: isWebLayout ? 13 : ResponsiveHelper.getResponsiveFontSize(context, 14),
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+            SizedBox(height: isWebLayout ? 10 : ResponsiveHelper.getResponsiveSpacing(context, 12)),
           ],
           Row(
             children: [
@@ -1625,7 +1874,7 @@ class DashboardScreen extends StatelessWidget {
               if (isWebLayout)
                 Container(
                   width: 1,
-                  height: ResponsiveHelper.getResponsiveSpacing(context, 36),
+                  height: 36,
                   color: dividerColor,
                 ),
               _buildStatusItem(
@@ -1642,125 +1891,214 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    final isWideLayout = ResponsiveHelper.isDesktop(context);
-    final spacing = ResponsiveHelper.getResponsiveGridSpacing(context, 16);
-    final aspectRatio = isWideLayout ? 3.0 : 2.6;
-    final columnCount = isWideLayout ? 3 : 2;
+    final spacing = 10.0;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: columnCount,
-      crossAxisSpacing: spacing,
-      mainAxisSpacing: spacing,
-      childAspectRatio: aspectRatio,
+    // Web uses a more compact 2-row layout
+    return Column(
       children: [
-        _buildQuickActionCard(
-          'Add Tool',
-          Icons.add,
-          AppTheme.primaryColor,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddToolScreen(),
-            ),
-          ),
-          context,
-        ),
-        _buildQuickActionCard(
-          'Assign Tool',
-          Icons.person_add,
-          _dashboardGreen,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ToolsScreen(isSelectionMode: true),
-            ),
-          ),
-          context,
-        ),
-        Consumer<PendingApprovalsProvider>(
-          builder: (context, provider, child) {
-            final pendingCount = provider.pendingCount;
-            return _buildQuickActionCardWithBadge(
-              'Authorize Users',
-              Icons.verified_user,
-              Colors.blue,
-              () => Navigator.push(
+        // First row - 4 items
+        Row(
+          children: [
+            Expanded(
+              child: _buildWebQuickActionTile(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminApprovalScreen(),
+                'Add Tool',
+                Icons.add,
+                AppTheme.primaryColor,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddToolScreen()),
                 ),
               ),
-              context,
-              badgeCount: pendingCount,
-            );
-          },
-        ),
-        _buildQuickActionCard(
-          'Reports',
-          Icons.analytics,
-          Colors.purple,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ReportsScreen(),
             ),
-          ),
-          context,
-        ),
-        _buildQuickActionCard(
-          'Tool Issues',
-          Icons.report_problem,
-          Colors.red,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ToolIssuesScreen(),
+            SizedBox(width: spacing),
+            Expanded(
+              child: _buildWebQuickActionTile(
+                context,
+                'Assign Tool',
+                Icons.person_add,
+                _dashboardGreen,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ToolsScreen(isSelectionMode: true)),
+                ),
+              ),
             ),
-          ),
-          context,
-        ),
-        _buildQuickActionCard(
-          'Approvals',
-          Icons.approval,
-          Colors.amber,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ApprovalWorkflowsScreen(),
+            SizedBox(width: spacing),
+            Expanded(
+              child: Consumer<PendingApprovalsProvider>(
+                builder: (context, provider, child) {
+                  return _buildWebQuickActionTile(
+                    context,
+                    'Authorize Users',
+                    Icons.verified_user,
+                    Colors.blue,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminApprovalScreen()),
+                    ),
+                    badgeCount: provider.pendingCount,
+                  );
+                },
+              ),
             ),
-          ),
-          context,
-        ),
-        _buildQuickActionCard(
-          'Maintenance Schedule',
-          Icons.schedule,
-          Colors.teal,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MaintenanceScreen(),
+            SizedBox(width: spacing),
+            Expanded(
+              child: _buildWebQuickActionTile(
+                context,
+                'Reports',
+                Icons.analytics,
+                Colors.purple,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ReportsScreen()),
+                ),
+              ),
             ),
-          ),
-          context,
+          ],
+        ),
+        SizedBox(height: spacing),
+        // Second row - 3 items
+        Row(
+          children: [
+            Expanded(
+              child: _buildWebQuickActionTile(
+                context,
+                'Tool Issues',
+                Icons.report_problem,
+                Colors.red,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
+                ),
+              ),
+            ),
+            SizedBox(width: spacing),
+            Expanded(
+              child: _buildWebQuickActionTile(
+                context,
+                'Approvals',
+                Icons.approval,
+                Colors.amber,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ApprovalWorkflowsScreen()),
+                ),
+              ),
+            ),
+            SizedBox(width: spacing),
+            Expanded(
+              child: _buildWebQuickActionTile(
+                context,
+                'Maintenance',
+                Icons.schedule,
+                Colors.teal,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
+                ),
+              ),
+            ),
+            // Empty spacer to balance
+            SizedBox(width: spacing),
+            const Expanded(child: SizedBox()),
+          ],
         ),
       ],
     );
   }
 
+  Widget _buildWebQuickActionTile(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    int badgeCount = 0,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(_cardRadiusValue),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(_cardRadiusValue),
+          border: Border.all(
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.06),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (badgeCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : badgeCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGreetingSkeleton(BuildContext context, BorderRadius cardRadius) {
-    final iconSize = ResponsiveHelper.getResponsiveIconSize(context, 52);
+    final isWeb = ResponsiveHelper.isWeb;
+    final iconSize = isWeb ? 44.0 : ResponsiveHelper.getResponsiveIconSize(context, 52);
     return Shimmer.fromColors(
       baseColor: _skeletonBaseColor,
       highlightColor: _skeletonHighlightColor,
       period: const Duration(milliseconds: 1500),
       child: Container(
         width: double.infinity,
-        padding: ResponsiveHelper.getResponsivePadding(context, all: 24),
+        padding: EdgeInsets.symmetric(
+          horizontal: isWeb ? 20 : 24,
+          vertical: isWeb ? 16 : 24,
+        ),
         decoration: BoxDecoration(
           color: context.cardBackground,
-          borderRadius: cardRadius,
+          borderRadius: BorderRadius.circular(_getCardRadius(context)),
         ),
         child: Row(
           children: [
@@ -1769,25 +2107,23 @@ class DashboardScreen extends StatelessWidget {
               height: iconSize,
               decoration: BoxDecoration(
                 color: _skeletonBaseColor,
-                borderRadius: BorderRadius.circular(
-                  ResponsiveHelper.getResponsiveBorderRadius(context, _cardRadiusValue),
-                ),
+                borderRadius: BorderRadius.circular(isWeb ? 8 : 16),
               ),
             ),
-            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+            SizedBox(width: isWeb ? 14 : 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildSkeletonLine(
                     context,
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 20),
+                    height: isWeb ? 18 : 20,
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                  SizedBox(height: isWeb ? 6 : 8),
                   _buildSkeletonLine(
                     context,
                     widthFactor: 0.5,
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 14),
+                    height: isWeb ? 13 : 14,
                   ),
                 ],
               ),
@@ -1799,6 +2135,55 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildMetricsSkeleton(BuildContext context) {
+    final isWeb = ResponsiveHelper.isWeb;
+    
+    // Web uses horizontal row skeleton
+    if (isWeb && ResponsiveHelper.isDesktop(context)) {
+      return Shimmer.fromColors(
+        baseColor: _skeletonBaseColor,
+        highlightColor: _skeletonHighlightColor,
+        period: const Duration(milliseconds: 1500),
+        child: Row(
+          children: List.generate(4, (index) => [
+            if (index > 0) const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: context.cardBackground,
+                  borderRadius: BorderRadius.circular(_cardRadiusValue),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: _skeletonBaseColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSkeletonLine(context, widthFactor: 0.6, height: 12),
+                          const SizedBox(height: 6),
+                          _buildSkeletonLine(context, widthFactor: 0.4, height: 18),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ]).expand((x) => x).toList(),
+        ),
+      );
+    }
+    
+    // Mobile uses grid skeleton
     return Shimmer.fromColors(
       baseColor: _skeletonBaseColor,
       highlightColor: _skeletonHighlightColor,
@@ -1806,48 +2191,37 @@ class DashboardScreen extends StatelessWidget {
       child: GridView.count(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
-        crossAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
-        mainAxisSpacing: ResponsiveHelper.getResponsiveGridSpacing(context, 16),
-        childAspectRatio: ResponsiveHelper.isWeb ? 1.5 : 1.2,
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.2,
         children: List.generate(
           4,
           (_) => Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveHelper.getResponsiveSpacing(context, 18),
-              vertical: ResponsiveHelper.getResponsiveSpacing(context, 16),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             decoration: context.cardDecoration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: Center(
-                    child: _buildSkeletonLine(
-                      context,
-                      height: ResponsiveHelper.getResponsiveSpacing(context, 26),
-                    ),
+                    child: _buildSkeletonLine(context, height: 26),
                   ),
                 ),
-                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
-                      width: ResponsiveHelper.getResponsiveSpacing(context, 32),
-                      height: ResponsiveHelper.getResponsiveSpacing(context, 32),
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: _skeletonBaseColor,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: _buildSkeletonLine(
-                        context,
-                        height: ResponsiveHelper.getResponsiveSpacing(context, 14),
-                      ),
+                      child: _buildSkeletonLine(context, height: 14),
                     ),
                   ],
                 ),
@@ -1882,16 +2256,20 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStatusOverviewSkeleton(
       BuildContext context, BorderRadius cardRadius) {
+    final isWeb = ResponsiveHelper.isWeb;
     return Shimmer.fromColors(
       baseColor: _skeletonBaseColor,
       highlightColor: _skeletonHighlightColor,
       period: const Duration(milliseconds: 1500),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.symmetric(
+          horizontal: isWeb ? 16 : 20,
+          vertical: isWeb ? 14 : 20,
+        ),
         decoration: BoxDecoration(
           color: context.cardBackground,
-          borderRadius: cardRadius,
+          borderRadius: BorderRadius.circular(_getCardRadius(context)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1899,13 +2277,13 @@ class DashboardScreen extends StatelessWidget {
             _buildSkeletonLine(
               context,
               widthFactor: 0.35,
-              height: ResponsiveHelper.getResponsiveSpacing(context, 14),
+              height: isWeb ? 13 : 14,
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
+            SizedBox(height: isWeb ? 10 : 18),
             Row(
               children: [
                 Expanded(child: _buildStatusSkeletonTile(context)),
-                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                SizedBox(width: isWeb ? 8 : 12),
                 Expanded(child: _buildStatusSkeletonTile(context)),
               ],
             ),
@@ -1988,15 +2366,14 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildSkeletonLine(BuildContext context,
       {double? widthFactor, double height = 12}) {
+    final isWeb = ResponsiveHelper.isWeb;
     return FractionallySizedBox(
       widthFactor: widthFactor ?? 1,
       child: Container(
         height: height,
         decoration: BoxDecoration(
           color: _skeletonBaseColor,
-          borderRadius: BorderRadius.circular(
-            ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-          ),
+          borderRadius: BorderRadius.circular(isWeb ? 4 : 8),
         ),
       ),
     );
@@ -2118,49 +2495,46 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildStatusItem(
       String status, String count, Color color, BuildContext context) {
     final isWebLayout = ResponsiveHelper.isWeb;
+    final theme = Theme.of(context);
+    final cardRadius = _getCardRadius(context);
+    
     return Expanded(
       child: Container(
-        margin: EdgeInsets.symmetric(
-          horizontal: ResponsiveHelper.getResponsiveSpacing(
-              context, isWebLayout ? 2 : 4),
-        ),
+        margin: EdgeInsets.symmetric(horizontal: isWebLayout ? 4 : 4),
         padding: EdgeInsets.symmetric(
-          vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
-          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
+          vertical: isWebLayout ? 10 : ResponsiveHelper.getResponsiveSpacing(context, 12),
+          horizontal: isWebLayout ? 12 : ResponsiveHelper.getResponsiveSpacing(context, 8),
         ),
-        decoration: context.cardDecoration,
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.06)
+                : Colors.black.withOpacity(0.04),
+            width: 1,
+          ),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment:
-              isWebLayout ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               count,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+                fontSize: isWebLayout ? 18 : ResponsiveHelper.getResponsiveFontSize(context, 20),
                 letterSpacing: -0.5,
               ),
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.color
-                        ?.withValues(alpha: 0.8),
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                  textAlign: isWebLayout ? TextAlign.left : TextAlign.center,
-                ),
+            SizedBox(height: isWebLayout ? 2 : ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            Text(
+              status,
+              style: TextStyle(
+                color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+                fontSize: isWebLayout ? 12 : ResponsiveHelper.getResponsiveFontSize(context, 12),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

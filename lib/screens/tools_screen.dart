@@ -173,7 +173,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.55),
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
                                 ),
                               ),
                             ],
@@ -571,21 +571,47 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   ],
                                 ),
                               )
-                            : GridView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 10.0,
-                                  mainAxisSpacing: 12.0,
-                                  childAspectRatio:
-                                      0.75, // Square image + consistent details below
-                                ),
-                                itemCount: toolGroups.length,
-                                itemBuilder: (context, index) {
-                                  final toolGroup = toolGroups[index];
-                                  return _buildToolCard(toolGroup);
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // Responsive grid for web
+                                  final screenWidth = constraints.maxWidth;
+                                  final isDesktop = kIsWeb && screenWidth >= 900;
+                                  
+                                  int crossAxisCount = 2;
+                                  double crossAxisSpacing = 10.0;
+                                  double mainAxisSpacing = 12.0;
+                                  double childAspectRatio = 0.75;
+                                  double padding = 16.0;
+                                  
+                                  if (isDesktop) {
+                                    if (screenWidth > 1600) {
+                                      crossAxisCount = 6;
+                                    } else if (screenWidth > 1200) {
+                                      crossAxisCount = 5;
+                                    } else if (screenWidth > 900) {
+                                      crossAxisCount = 4;
+                                    }
+                                    crossAxisSpacing = 8.0;
+                                    mainAxisSpacing = 8.0;
+                                    childAspectRatio = 0.85;
+                                    padding = 20.0;
+                                  }
+                                  
+                                  return GridView.builder(
+                                    padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: crossAxisSpacing,
+                                      mainAxisSpacing: mainAxisSpacing,
+                                      childAspectRatio: childAspectRatio,
+                                    ),
+                                    itemCount: toolGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final toolGroup = toolGroups[index];
+                                      return _buildToolCard(toolGroup);
+                                    },
+                                  );
                                 },
                               );
                                 },
@@ -676,6 +702,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final isSelected = widget.isSelectionMode &&
         toolGroup.instances
             .any((t) => t.id != null && _selectedTools.contains(t.id!));
+    
+    // Use sharper corners on web for professional look
+    final cardRadius = kIsWeb ? 8.0 : context.borderRadiusLarge;
 
     return InkWell(
       onTap: () {
@@ -709,7 +738,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       onLongPress: widget.isSelectionMode
           ? () {}
           : () => _showToolActions(context, representativeTool),
-      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+      borderRadius: BorderRadius.circular(cardRadius),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -723,7 +752,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   Container(
                     decoration: context.cardDecoration.copyWith(
-                      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+                      borderRadius: BorderRadius.circular(cardRadius),
                       border: widget.isSelectionMode && isSelected
                           ? Border.all(
                               color: AppTheme.secondaryColor,
@@ -739,7 +768,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             representativeTool.imagePath!.isNotEmpty)
                           (representativeTool.imagePath!.startsWith('http') || kIsWeb
                               ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+                                  borderRadius: BorderRadius.circular(cardRadius),
                                   child: Image.network(
                                     representativeTool.imagePath!,
                                     width: double.infinity,
@@ -751,7 +780,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   ),
                                 )
                               : ClipRRect(
-                                  borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+                                  borderRadius: BorderRadius.circular(cardRadius),
                                   child: (() {
                                     final localImage = buildLocalFileImage(
                                       representativeTool.imagePath!,
@@ -765,7 +794,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 ))
                         else
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+                            borderRadius: BorderRadius.circular(cardRadius),
                             child: _buildPlaceholderImage(),
                           ),
                         // Count badge overlay
@@ -837,9 +866,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           ),
 
-          // Details Below Card - Clean and simple
+          // Details Below Card - Clean and simple (tighter on web for squarer tile)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: EdgeInsets.only(
+              top: kIsWeb ? 6.0 : 8.0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,

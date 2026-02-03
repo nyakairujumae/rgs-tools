@@ -520,7 +520,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget _buildToolCard(
       Tool tool, SupabaseTechnicianProvider technicianProvider) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
-    const double cardRadius = 18.0; // Match card decoration borderRadius
+    // Use sharper corners on web for professional look
+    final double cardRadius = ResponsiveHelper.isWeb ? 8.0 : 18.0;
 
     return InkWell(
       onTap: () {
@@ -542,10 +543,10 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               aspectRatio: 1.0,
               child: Container(
                 decoration: context.cardDecoration.copyWith(
-                  borderRadius: BorderRadius.circular(18), // Match card decoration
+                  borderRadius: BorderRadius.circular(cardRadius),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _buildToolImage(tool),
+                child: _buildToolImage(tool, cardRadius),
               ),
             ),
           ),
@@ -612,7 +613,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     );
   }
 
-  Widget _buildToolImage(Tool tool) {
+  Widget _buildToolImage(Tool tool, [double cardRadius = 18.0]) {
     final imageUrls = _getToolImageUrls(tool);
     
     if (imageUrls.isEmpty) {
@@ -620,7 +621,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18), // Match card decoration
+      borderRadius: BorderRadius.circular(cardRadius),
       child: Stack(
         children: [
           _buildImageWidget(imageUrls[0]),

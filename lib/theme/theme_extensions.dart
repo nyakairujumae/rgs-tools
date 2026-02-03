@@ -61,6 +61,7 @@ extension ThemeColorExtension on BuildContext {
   /// Premium soft-filled style - subtle border with web-only shadow
   /// Automatically adapts to light/dark theme
   BoxDecoration get cardDecoration {
+    final isWebPlatform = ResponsiveHelper.isWeb;
     return BoxDecoration(
       color: cardBackground, // Theme-aware background
       borderRadius: BorderRadius.circular(
@@ -68,9 +69,33 @@ extension ThemeColorExtension on BuildContext {
       ),
       border: Border.all(
         color: AppTheme.getCardBorderSubtle(this), // Theme-aware border
-        width: ResponsiveHelper.isWeb ? 0.8 : 0.5,
+        width: isWebPlatform ? 1.0 : 0.5,
       ),
-      boxShadow: ResponsiveHelper.isWeb ? cardShadows : [],
+      boxShadow: isWebPlatform 
+          ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 4,
+                spreadRadius: 0,
+                offset: const Offset(0, 1),
+              ),
+            ]
+          : [],
+    );
+  }
+  
+  /// Get web-optimized card decoration with minimal styling
+  BoxDecoration get webCardDecoration {
+    final isDark = Theme.of(this).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: cardBackground,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: isDark 
+            ? Colors.white.withOpacity(0.08) 
+            : Colors.black.withOpacity(0.08),
+        width: 1,
+      ),
     );
   }
   

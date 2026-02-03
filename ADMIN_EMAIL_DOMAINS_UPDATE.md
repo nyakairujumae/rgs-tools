@@ -50,5 +50,3 @@ Now admins can register/login with:
 
 **Changes are ready to commit and push!** ✅
 
-
-

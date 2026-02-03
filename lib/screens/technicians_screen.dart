@@ -394,19 +394,28 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                               ],
                             ),
                           )
-                            : ListView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                itemCount: filteredTechnicians.length,
-                                itemBuilder: (context, index) {
-                                  final technician = filteredTechnicians[index];
-                                  final isLast =
-                                      index == filteredTechnicians.length - 1;
-                                  return Column(
-                                    children: [
-                                      _buildTechnicianCard(technician),
-                                      if (!isLast) const SizedBox(height: 12), // Spacing between cards
-                                    ],
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final screenWidth = constraints.maxWidth;
+                                  final isDesktop = kIsWeb && screenWidth >= 900;
+                                  final padding = isDesktop ? 20.0 : 16.0;
+                                  final spacing = isDesktop ? 8.0 : 12.0;
+                                  
+                                  return ListView.builder(
+                                    padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+                                    itemCount: filteredTechnicians.length,
+                                    itemBuilder: (context, index) {
+                                      final technician = filteredTechnicians[index];
+                                      final isLast = index == filteredTechnicians.length - 1;
+                                      return Column(
+                                        children: [
+                                          isDesktop 
+                                            ? _buildWebTechnicianRow(technician)
+                                            : _buildTechnicianCard(technician),
+                                          if (!isLast) SizedBox(height: spacing),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -603,6 +612,199 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Web-optimized compact row for technicians
+  Widget _buildWebTechnicianRow(Technician technician) {
+    final isSelected =
+        technician.id != null && _selectedTechnicians.contains(technician.id!);
+    final assignedToolsCount = context
+        .read<SupabaseToolProvider>()
+        .tools
+        .where((tool) => tool.assignedTo == technician.id)
+        .length;
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () {
+        if (_selectedTools != null) {
+          setState(() {
+            if (technician.id != null) {
+              if (isSelected) {
+                _selectedTechnicians.remove(technician.id!);
+              } else {
+                _selectedTechnicians.add(technician.id!);
+              }
+            }
+          });
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  TechnicianDetailScreen(technician: technician),
+            ),
+          );
+        }
+      },
+      onLongPress: () {
+        if (_selectedTools == null) {
+          _showEditTechnicianDialog(technician);
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.secondaryColor.withOpacity(0.06)
+              : context.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.secondaryColor.withOpacity(0.3)
+                : theme.brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.06),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Avatar - smaller for web
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.onSurface.withOpacity(0.05),
+              ),
+              child: _buildTechnicianAvatarContent(technician, 36),
+            ),
+            const SizedBox(width: 12),
+            // Name
+            Expanded(
+              flex: 3,
+              child: Text(
+                technician.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Department
+            Expanded(
+              flex: 2,
+              child: Text(
+                technician.department?.isNotEmpty == true
+                    ? technician.department!
+                    : '-',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Status
+            SizedBox(
+              width: 80,
+              child: _buildStatusChip(technician.status),
+            ),
+            // Tools count
+            SizedBox(
+              width: 70,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.build_outlined,
+                    size: 14,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$assignedToolsCount',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Selection checkbox or chevron
+            if (_selectedTools != null)
+              Icon(
+                isSelected
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                color: isSelected
+                    ? AppTheme.secondaryColor
+                    : theme.colorScheme.onSurface.withOpacity(0.3),
+                size: 20,
+              )
+            else
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                size: 18,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTechnicianAvatarContent(Technician technician, double size) {
+    final hasImage = technician.profilePictureUrl != null &&
+        technician.profilePictureUrl!.isNotEmpty;
+    final initials = technician.name.isNotEmpty
+        ? technician.name.trim()[0].toUpperCase()
+        : '?';
+
+    if (hasImage) {
+      return ClipOval(
+        child: Image.network(
+          technician.profilePictureUrl!,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (context, error, stackTrace) {
+            return Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: size * 0.4,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.65),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: size * 0.4,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context)
+              .colorScheme
+              .onSurface
+              .withOpacity(0.65),
         ),
       ),
     );
