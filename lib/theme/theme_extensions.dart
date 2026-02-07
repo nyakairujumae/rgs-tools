@@ -71,13 +71,13 @@ extension ThemeColorExtension on BuildContext {
         color: AppTheme.getCardBorderSubtle(this), // Theme-aware border
         width: isWebPlatform ? 1.0 : 0.5,
       ),
-      boxShadow: isWebPlatform 
+      boxShadow: isWebPlatform
           ? [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 4,
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
                 spreadRadius: 0,
-                offset: const Offset(0, 1),
+                offset: const Offset(0, 2),
               ),
             ]
           : [],

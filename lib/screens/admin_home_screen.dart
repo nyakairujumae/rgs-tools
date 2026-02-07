@@ -1143,7 +1143,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateToTab;
   final Function(String) onNavigateToToolsWithFilter;
-  static const double _cardRadiusValue = 8; // Sharper web-style corners
+  static const double _cardRadiusValue = 12; // Apple/Jobber-style web (matches global theme)
   static const double _mobileCardRadiusValue = 16; // Keep mobile rounded
   static const Color _dashboardGreen = Color(0xFF2E7D32);
   static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
@@ -1256,80 +1256,45 @@ class DashboardScreen extends StatelessWidget {
                   SizedBox(
                     height: ResponsiveHelper.getResponsiveSpacing(context, 16),
                   ),
-                  if (isWideLayout)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 3, child: greetingCard),
-                        SizedBox(
-                          width:
-                              ResponsiveHelper.getResponsiveSpacing(context, 16),
-                        ),
-                        Expanded(flex: 2, child: statusOverviewCard),
-                      ],
-                    )
-                  else
+                  if (isWideLayout) ...[
+                    // Web: compact greeting bar (no card wrapper)
+                    greetingCard,
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+                    // Web: single row of 4 stat tiles
+                    isLoadingDashboard
+                        ? _buildMetricsSkeleton(context)
+                        : _buildWebStatsRow(
+                            context,
+                            totalTools: totalTools,
+                            technicianCount: technicians.length,
+                            totalValue: totalValue,
+                            maintenanceCount: toolsNeedingMaintenance.length,
+                            statValueStyle: statValueStyle,
+                          ),
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+                    // Web: status overview inline
+                    statusOverviewCard,
+                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                    // Web: quick actions as full-width wrap
+                    Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    isLoadingDashboard
+                        ? _buildQuickActionsSkeleton(context)
+                        : _buildQuickActionsGrid(context),
+                  ] else ...[
                     greetingCard,
 
                   SizedBox(
-                    height: ResponsiveHelper.getResponsiveSpacing(
-                        context, isWideLayout ? 24 : 26),
+                    height: ResponsiveHelper.getResponsiveSpacing(context, 26),
                   ),
 
-                  // Web: Key Metrics and Quick Actions side-by-side for dashboard feel
-                  if (isWideLayout) ...[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 5,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Key Metrics',
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                                ),
-                              ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                              isLoadingDashboard
-                                  ? _buildMetricsSkeleton(context)
-                                  : _buildWebStatsRow(
-                                      context,
-                                      totalTools: totalTools,
-                                      technicianCount: technicians.length,
-                                      totalValue: totalValue,
-                                      maintenanceCount: toolsNeedingMaintenance.length,
-                                      statValueStyle: statValueStyle,
-                                    ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        Expanded(
-                          flex: 6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Quick Actions',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                                    ),
-                              ),
-                              SizedBox(height: 16),
-                              isLoadingDashboard
-                                  ? _buildQuickActionsSkeleton(context)
-                                  : _buildQuickActionsGrid(context),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
                   Text(
                     'Key Metrics',
                     style: TextStyle(
@@ -1582,7 +1547,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Web: 2x2 grid of stat cards (less elongated, more dashboard-like)
+  /// Web: single row of 4 stat tiles (compact dashboard style)
   Widget _buildWebStatsRow(
     BuildContext context, {
     required int totalTools,
@@ -1592,81 +1557,72 @@ class DashboardScreen extends StatelessWidget {
     required TextStyle statValueStyle,
   }) {
     const gap = 12.0;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildWebStatTile(
-                context,
-                label: 'Total Tools',
-                value: totalTools.toString(),
-                icon: Icons.build,
-                color: Colors.blue,
-                onTap: () => onNavigateToTab(1),
-              ),
-            ),
-            const SizedBox(width: gap),
-            Expanded(
-              child: _buildWebStatTile(
-                context,
-                label: 'Technicians',
-                value: technicianCount.toString(),
-                icon: Icons.people,
-                color: _dashboardGreen,
-                onTap: () => onNavigateToTab(3),
-              ),
-            ),
-          ],
+        Expanded(
+          child: _buildWebStatTile(
+            context,
+            label: 'Total Tools',
+            value: totalTools.toString(),
+            icon: Icons.build,
+            color: Colors.blue,
+            onTap: () => onNavigateToTab(1),
+          ),
         ),
-        SizedBox(height: gap),
-        Row(
-          children: [
-            Expanded(
-              child: _buildWebStatTile(
-                context,
-                label: 'Total Value',
-                valueWidget: CurrencyFormatter.formatCurrencyWidget(
-                  totalValue,
-                  decimalDigits: 0,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange,
-                  ),
-                  context: context,
-                ),
-                icon: Icons.attach_money,
+        const SizedBox(width: gap),
+        Expanded(
+          child: _buildWebStatTile(
+            context,
+            label: 'Technicians',
+            value: technicianCount.toString(),
+            icon: Icons.people,
+            color: _dashboardGreen,
+            onTap: () => onNavigateToTab(3),
+          ),
+        ),
+        const SizedBox(width: gap),
+        Expanded(
+          child: _buildWebStatTile(
+            context,
+            label: 'Total Value',
+            valueWidget: CurrencyFormatter.formatCurrencyWidget(
+              totalValue,
+              decimalDigits: 0,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 color: Colors.orange,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ReportDetailScreen(
-                      reportType: ReportType.financialSummary,
-                      timePeriod: 'Last 30 Days',
-                    ),
-                  ),
+              ),
+              context: context,
+            ),
+            icon: Icons.attach_money,
+            color: Colors.orange,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ReportDetailScreen(
+                  reportType: ReportType.financialSummary,
+                  timePeriod: 'Last 30 Days',
                 ),
               ),
             ),
-            const SizedBox(width: gap),
-            Expanded(
-              child: _buildWebStatTile(
-                context,
-                label: 'Maintenance',
-                value: maintenanceCount.toString(),
-                icon: Icons.warning,
-                color: Colors.red,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MaintenanceScreen(),
-                  ),
-                ),
+          ),
+        ),
+        const SizedBox(width: gap),
+        Expanded(
+          child: _buildWebStatTile(
+            context,
+            label: 'Maintenance',
+            value: maintenanceCount.toString(),
+            icon: Icons.warning,
+            color: Colors.red,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MaintenanceScreen(),
               ),
             ),
-          ],
+          ),
         ),
       ],
     );
@@ -1891,120 +1847,152 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    final spacing = 10.0;
+    const spacing = 10.0;
 
-    // Web uses a more compact 2-row layout
-    return Column(
+    // Web: compact wrap layout for all quick actions
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
       children: [
-        // First row - 4 items
-        Row(
-          children: [
-            Expanded(
-              child: _buildWebQuickActionTile(
-                context,
-                'Add Tool',
-                Icons.add,
-                AppTheme.primaryColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddToolScreen()),
-                ),
-              ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: _buildWebQuickActionTile(
-                context,
-                'Assign Tool',
-                Icons.person_add,
-                _dashboardGreen,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ToolsScreen(isSelectionMode: true)),
-                ),
-              ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: Consumer<PendingApprovalsProvider>(
-                builder: (context, provider, child) {
-                  return _buildWebQuickActionTile(
-                    context,
-                    'Authorize Users',
-                    Icons.verified_user,
-                    Colors.blue,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AdminApprovalScreen()),
-                    ),
-                    badgeCount: provider.pendingCount,
-                  );
-                },
-              ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: _buildWebQuickActionTile(
-                context,
-                'Reports',
-                Icons.analytics,
-                Colors.purple,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReportsScreen()),
-                ),
-              ),
-            ),
-          ],
+        _buildWebQuickActionChip(
+          context,
+          'Add Tool',
+          Icons.add,
+          AppTheme.primaryColor,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddToolScreen()),
+          ),
         ),
-        SizedBox(height: spacing),
-        // Second row - 3 items
-        Row(
-          children: [
-            Expanded(
-              child: _buildWebQuickActionTile(
+        _buildWebQuickActionChip(
+          context,
+          'Assign Tool',
+          Icons.person_add,
+          _dashboardGreen,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ToolsScreen(isSelectionMode: true)),
+          ),
+        ),
+        Consumer<PendingApprovalsProvider>(
+          builder: (context, provider, child) {
+            return _buildWebQuickActionChip(
+              context,
+              'Authorize Users',
+              Icons.verified_user,
+              Colors.blue,
+              () => Navigator.push(
                 context,
-                'Tool Issues',
-                Icons.report_problem,
-                Colors.red,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
-                ),
+                MaterialPageRoute(builder: (context) => const AdminApprovalScreen()),
               ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: _buildWebQuickActionTile(
-                context,
-                'Approvals',
-                Icons.approval,
-                Colors.amber,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ApprovalWorkflowsScreen()),
-                ),
-              ),
-            ),
-            SizedBox(width: spacing),
-            Expanded(
-              child: _buildWebQuickActionTile(
-                context,
-                'Maintenance',
-                Icons.schedule,
-                Colors.teal,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
-                ),
-              ),
-            ),
-            // Empty spacer to balance
-            SizedBox(width: spacing),
-            const Expanded(child: SizedBox()),
-          ],
+              badgeCount: provider.pendingCount,
+            );
+          },
+        ),
+        _buildWebQuickActionChip(
+          context,
+          'Reports',
+          Icons.analytics,
+          Colors.purple,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ReportsScreen()),
+          ),
+        ),
+        _buildWebQuickActionChip(
+          context,
+          'Tool Issues',
+          Icons.report_problem,
+          Colors.red,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
+          ),
+        ),
+        _buildWebQuickActionChip(
+          context,
+          'Approvals',
+          Icons.approval,
+          Colors.amber,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ApprovalWorkflowsScreen()),
+          ),
+        ),
+        _buildWebQuickActionChip(
+          context,
+          'Maintenance',
+          Icons.schedule,
+          Colors.teal,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
+          ),
         ),
       ],
+    );
+  }
+
+  /// Web: compact action chip for quick actions (button-like, not card)
+  Widget _buildWebQuickActionChip(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    int badgeCount = 0,
+  }) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withOpacity(0.18),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              if (badgeCount > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 

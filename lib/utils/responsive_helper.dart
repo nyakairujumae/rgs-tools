@@ -24,7 +24,7 @@ class ResponsiveHelper {
   
   static double getCardBorderRadius(BuildContext context) {
     if (isWeb) {
-      return 8; // Sharper, more professional web look
+      return 12; // Apple/Jobber-style: slightly rounded, clean web look
     }
     return 16;
   }
