@@ -56,46 +56,54 @@ extension ThemeColorExtension on BuildContext {
   double get borderRadiusLarge => AppTheme.borderRadiusLarge;
   double get borderRadiusXLarge => AppTheme.borderRadiusXLarge;
   
-  /// Get ChatGPT-style card decoration
+  /// Apple / Jobber-style card decoration
   /// Use this for all cards, containers, list tiles, tool widgets, and form surfaces
-  /// Premium soft-filled style - subtle border with web-only shadow
+  /// Clean border-driven style with very subtle web shadow
   /// Automatically adapts to light/dark theme
   BoxDecoration get cardDecoration {
     final isWebPlatform = ResponsiveHelper.isWeb;
     return BoxDecoration(
-      color: cardBackground, // Theme-aware background
+      color: cardBackground,
       borderRadius: BorderRadius.circular(
         ResponsiveHelper.getCardBorderRadius(this),
       ),
       border: Border.all(
-        color: AppTheme.getCardBorderSubtle(this), // Theme-aware border
+        color: AppTheme.getCardBorderSubtle(this),
         width: isWebPlatform ? 1.0 : 0.5,
       ),
       boxShadow: isWebPlatform
           ? [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 8,
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
                 spreadRadius: 0,
-                offset: const Offset(0, 2),
+                offset: const Offset(0, 1),
               ),
             ]
           : [],
     );
   }
   
-  /// Get web-optimized card decoration with minimal styling
+  /// Web-optimized card decoration – Apple / Jobber style
   BoxDecoration get webCardDecoration {
     final isDark = Theme.of(this).brightness == Brightness.dark;
     return BoxDecoration(
       color: cardBackground,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: isDark 
-            ? Colors.white.withOpacity(0.08) 
-            : Colors.black.withOpacity(0.08),
+        color: isDark
+            ? const Color(0xFF38383A)
+            : const Color(0xFFE5E5EA),
         width: 1,
       ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+          blurRadius: 10,
+          spreadRadius: 0,
+          offset: const Offset(0, 1),
+        ),
+      ],
     );
   }
   

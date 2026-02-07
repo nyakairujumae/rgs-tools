@@ -49,21 +49,25 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildImagePlaceholder(ColorScheme colorScheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: context.cardBackground,
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.04)
+          : const Color(0xFFF5F5F7),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.build_outlined,
-            size: 48,
-            color: colorScheme.onSurface.withOpacity(0.4),
+            kIsWeb ? Icons.build_rounded : Icons.build_outlined,
+            size: kIsWeb ? 40 : 48,
+            color: colorScheme.onSurface.withValues(alpha: 0.25),
           ),
           const SizedBox(height: 8),
           Text(
             'No image available',
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 14,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -135,13 +139,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            padding: EdgeInsets.fromLTRB(
+              kIsWeb ? 24 : 16,
+              kIsWeb ? 24 : 20,
+              kIsWeb ? 24 : 16,
+              0,
+            ),
             child: Row(
               children: [
                 IconButton(
@@ -158,9 +167,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   child: Text(
                     _currentTool.name,
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: kIsWeb ? 24 : 22,
                       fontWeight: FontWeight.w700,
-                      color: theme.textTheme.bodyLarge?.color,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: kIsWeb ? -0.3 : 0,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -170,7 +180,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   width: 44,
                   height: 44,
                   decoration: context.cardDecoration.copyWith(
-                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      kIsWeb ? 10 : context.borderRadiusMedium,
+                    ),
                   ),
                   child: PopupMenuButton<String>(
                   onSelected: _handleMenuAction,
@@ -230,8 +242,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               isLoading: _isLoading,
               loadingMessage: 'Loading tool details...',
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                padding: EdgeInsets.fromLTRB(
+                  kIsWeb ? 24 : 16,
+                  kIsWeb ? 20 : 16,
+                  kIsWeb ? 24 : 16,
+                  32,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -321,7 +337,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             height: 250,
             decoration: BoxDecoration(
               color: context.cardBackground,
-              borderRadius: BorderRadius.circular(18), // Match card decoration
+              borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
             ),
             child: Center(
               child: Column(
@@ -341,7 +357,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             height: 250,
             decoration: BoxDecoration(
               color: context.cardBackground,
-              borderRadius: BorderRadius.circular(18), // Match card decoration
+              borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
             ),
             child: Center(
               child: CircularProgressIndicator(
@@ -371,7 +387,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         width: double.infinity,
         height: 250,
         color: context.cardBackground,
-        child: Icon(Icons.image, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+        child: Icon(Icons.image, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
       );
     }
     
@@ -380,7 +396,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       height: 250,
       decoration: BoxDecoration(
         color: context.cardBackground,
-        borderRadius: BorderRadius.circular(18), // Match card decoration
+        borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
       ),
       child: Center(
         child: Column(
@@ -400,13 +416,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
     final imageUrls = _getToolImageUrls(_currentTool);
+    final cardRadius = kIsWeb ? 12.0 : 18.0;
 
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
         decoration: context.cardDecoration,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18), // Match card decoration
+          borderRadius: BorderRadius.circular(cardRadius),
           child: imageUrls.isNotEmpty
               ? Stack(
                   children: [
@@ -455,7 +472,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         child: Icon(
                           Icons.open_in_full,
                           size: 20,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
@@ -476,7 +493,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                                 shape: BoxShape.circle,
                                 color: _currentImageIndex == index
                                     ? Colors.white
-                                    : Colors.white.withOpacity(0.4),
+                                    : Colors.white.withValues(alpha: 0.4),
                               ),
                             ),
                           ),
@@ -503,26 +520,32 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       }
     }
 
+    final sectionPadding = kIsWeb ? 24.0 : 16.0;
+    final cardRadius = kIsWeb ? 12.0 : 18.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          padding: EdgeInsets.fromLTRB(sectionPadding, kIsWeb ? 24 : 20, sectionPadding, 8),
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontSize: kIsWeb ? 17 : 18,
+              fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
+              letterSpacing: kIsWeb ? -0.2 : 0,
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: sectionPadding),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: context.cardDecoration,
+            padding: EdgeInsets.all(kIsWeb ? 20 : 16),
+            decoration: context.cardDecoration.copyWith(
+              borderRadius: BorderRadius.circular(cardRadius),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: spacedChildren,
@@ -551,12 +574,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 130,
+          width: kIsWeb ? 140 : 130,
           child: Text(
             label,
             style: TextStyle(
               fontSize: 13,
-              color: colorScheme.onSurface.withOpacity(0.55),
+              color: colorScheme.onSurface.withValues(alpha: 0.55),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -577,43 +600,55 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   Widget _buildCompactStatusChip(String status, {bool isAssigned = false}) {
-    // Use app green for assigned tools or "In Use" status
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final color = (isAssigned || status.toLowerCase() == 'in use')
         ? AppTheme.secondaryColor 
         : AppTheme.getStatusColor(status);
-    // Show "Assigned" text if tool is assigned, otherwise show the status
     final displayText = isAssigned ? 'Assigned' : status;
+    final isWeb = ResponsiveHelper.isWeb;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: isWeb ? 10 : 6,
+        vertical: isWeb ? 4 : 3,
+      ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: isDark ? 0.15 : 0.12),
+        borderRadius: BorderRadius.circular(isWeb ? 8 : 6),
       ),
       child: Text(
         displayText,
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w600,
-          fontSize: 10,
+          fontSize: isWeb ? 12 : 10,
+          letterSpacing: isWeb ? -0.1 : 0,
         ),
       ),
     );
   }
 
   Widget _buildCompactConditionChip(String condition) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final color = AppTheme.getConditionColor(condition);
+    final isWeb = ResponsiveHelper.isWeb;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: isWeb ? 10 : 6,
+        vertical: isWeb ? 4 : 3,
+      ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: isDark ? 0.15 : 0.12),
+        borderRadius: BorderRadius.circular(isWeb ? 8 : 6),
       ),
       child: Text(
         condition,
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w600,
-          fontSize: 10,
+          fontSize: isWeb ? 12 : 10,
+          letterSpacing: isWeb ? -0.1 : 0,
         ),
       ),
     );
@@ -795,21 +830,25 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     required List<Color> colors,
     required VoidCallback onTap,
   }) {
+    final btnRadius = kIsWeb ? 10.0 : context.borderRadiusLarge;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: colors),
-        borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+        borderRadius: BorderRadius.circular(btnRadius),
         // No shadows - clean design
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(context.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(btnRadius),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(
+              vertical: kIsWeb ? 14 : 16,
+              horizontal: kIsWeb ? 16 : 0,
+            ),
             alignment: Alignment.center,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -818,10 +857,11 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: kIsWeb ? 15 : 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: kIsWeb ? -0.1 : 0,
                   ),
                 ),
               ],
@@ -842,18 +882,21 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
     
+    final cardRadius = kIsWeb ? 12.0 : 18.0;
     return Container(
       decoration: BoxDecoration(
         color: context.cardBackground,
-        borderRadius: BorderRadius.circular(18), // Match card decoration
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-        // No shadows - clean design
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(
+          color: color.withValues(alpha: isDarkMode ? 0.25 : 0.3),
+          width: kIsWeb ? 1 : 1.5,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18), // Match card decoration
+          borderRadius: BorderRadius.circular(cardRadius),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
             alignment: Alignment.center,
@@ -868,8 +911,9 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     label,
                     style: TextStyle(
                       color: color,
-                      fontSize: 14,
+                      fontSize: kIsWeb ? 13 : 14,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: kIsWeb ? -0.05 : 0,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -1064,7 +1108,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           const SizedBox(height: 4),
           Container(
             height: 1,
-            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(height: 4),
         ],

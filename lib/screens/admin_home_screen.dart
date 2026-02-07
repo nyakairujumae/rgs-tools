@@ -305,7 +305,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 
     final contentScaffold = Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: (_selectedIndex == 0)
+      appBar: (_selectedIndex == 0 && !isWebDesktop)
           ? AppBar(
                   toolbarHeight: 56,
                   backgroundColor: context.appBarBackground,
@@ -450,15 +450,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             ? SafeArea(
                 child: Row(
                   children: [
-                    _buildNavigationRail(context),
-                    VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.08),
-                    ),
+                    _buildWebSidebar(context),
                     Expanded(child: contentScaffold),
                   ],
                 ),
@@ -468,93 +460,282 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     );
   }
 
-  Widget _buildNavigationRail(BuildContext context) {
+  // ---------------------------------------------------------------------------
+  // Apple / Jobber-style web sidebar
+  // ---------------------------------------------------------------------------
+
+  Widget _buildWebSidebar(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
+
+    return Container(
+      width: 232,
+      decoration: BoxDecoration(
+        color: AppTheme.getWebSidebarBackground(context),
+        border: Border(
+          right: BorderSide(
+            color: AppTheme.getWebSidebarBorder(context),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Brand header ──────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.precision_manufacturing,
+                    color: AppTheme.secondaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'RGS Tools',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'Admin Panel',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Navigation items ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSidebarNavItem(
+                  context, 0, 'Dashboard',
+                  Icons.dashboard_outlined, Icons.dashboard_rounded,
+                ),
+                const SizedBox(height: 2),
+                _buildSidebarNavItem(
+                  context, 1, 'Tools',
+                  Icons.build_outlined, Icons.build_rounded,
+                ),
+                const SizedBox(height: 2),
+                _buildSidebarNavItem(
+                  context, 2, 'Shared Tools',
+                  Icons.share_outlined, Icons.share_rounded,
+                ),
+                const SizedBox(height: 2),
+                _buildSidebarNavItem(
+                  context, 3, 'Technicians',
+                  Icons.people_outline, Icons.people_rounded,
+                ),
+              ],
+            ),
+          ),
+
+          const Spacer(),
+
+          // ── Bottom section ────────────────────────────────────────────
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+          ),
+          const SizedBox(height: 4),
+
+          Consumer<AdminNotificationProvider>(
+            builder: (context, notificationProvider, child) {
+              return _buildSidebarBottomItem(
+                context,
+                'Notifications',
+                Icons.notifications_outlined,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminNotificationScreen(),
+                    ),
+                  );
+                },
+                badge: notificationProvider.unreadCount,
+              );
+            },
+          ),
+
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return _buildSidebarBottomItem(
+                context,
+                'Account',
+                Icons.account_circle_outlined,
+                onTap: () => _showProfileBottomSheet(context, authProvider),
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebarNavItem(
+    BuildContext context,
+    int index,
+    String label,
+    IconData icon,
+    IconData selectedIcon,
+  ) {
+    final isSelected = _selectedIndex == index;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = AppTheme.secondaryColor;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
+        borderRadius: BorderRadius.circular(8),
+        hoverColor: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.black.withValues(alpha: 0.03),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? accent.withValues(alpha: isDark ? 0.15 : 0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                size: 20,
+                color: isSelected
+                    ? accent
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.55),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? accent
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarBottomItem(
+    BuildContext context,
+    String label,
+    IconData icon, {
+    required VoidCallback onTap,
+    int badge = 0,
+  }) {
+    final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return NavigationRail(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (index) {
-        setState(() => _selectedIndex = index.clamp(0, 3));
-      },
-      labelType: NavigationRailLabelType.all,
-      backgroundColor: isDark ? const Color(0xFF0D1117) : Colors.white,
-      elevation: 0,
-      indicatorColor: colorScheme.secondary.withValues(alpha: 0.15),
-      indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      selectedIconTheme: IconThemeData(color: colorScheme.secondary, size: 22),
-      unselectedIconTheme: IconThemeData(
-        color: colorScheme.onSurface.withValues(alpha: 0.5),
-        size: 22,
-      ),
-      selectedLabelTextStyle: TextStyle(
-        color: colorScheme.secondary,
-        fontWeight: FontWeight.w600,
-        fontSize: 12,
-      ),
-      unselectedLabelTextStyle: TextStyle(
-        color: colorScheme.onSurface.withValues(alpha: 0.5),
-        fontWeight: FontWeight.w500,
-        fontSize: 12,
-      ),
-      groupAlignment: -0.85,
-      minWidth: 72,
-      leading: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.precision_manufacturing,
-                color: AppTheme.secondaryColor,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        hoverColor: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.black.withValues(alpha: 0.03),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          child: Row(
+            children: [
+              Icon(
+                icon,
                 size: 20,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'RGS',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                letterSpacing: 0.8,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                  ),
+                ),
               ),
-            ),
-          ],
+              if (badge > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF3B30),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badge > 99 ? '99+' : '$badge',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      height: 1.0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-      destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: Text('Dashboard'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.build_outlined),
-          selectedIcon: Icon(Icons.build),
-          label: Text('Tools'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.share_outlined),
-          selectedIcon: Icon(Icons.share),
-          label: Text('Shared'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.people_outline),
-          selectedIcon: Icon(Icons.people),
-          label: Text('Technicians'),
-        ),
-      ],
     );
   }
 
@@ -1221,7 +1402,7 @@ class DashboardScreen extends StatelessWidget {
                   SafeArea(
                     bottom: false,
                     minimum: EdgeInsets.only(
-                      top: ResponsiveHelper.getResponsiveSpacing(context, 18),
+                      top: isWideLayout ? 24 : ResponsiveHelper.getResponsiveSpacing(context, 18),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1230,24 +1411,26 @@ class DashboardScreen extends StatelessWidget {
                         Text(
                           'Dashboard',
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context, 22),
+                            fontSize: isWideLayout
+                                ? 24
+                                : ResponsiveHelper.getResponsiveFontSize(context, 22),
                             fontWeight: FontWeight.w700,
-                            color:
-                                Theme.of(context).textTheme.bodyLarge?.color,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            letterSpacing: -0.3,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Overview of your tools, technicians, and approvals.',
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context, 12),
+                            fontSize: isWideLayout
+                                ? 14
+                                : ResponsiveHelper.getResponsiveFontSize(context, 12),
                             fontWeight: FontWeight.w400,
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: isWideLayout ? 0.5 : 0.6),
                           ),
                         ),
                       ],
@@ -1257,9 +1440,9 @@ class DashboardScreen extends StatelessWidget {
                     height: ResponsiveHelper.getResponsiveSpacing(context, 16),
                   ),
                   if (isWideLayout) ...[
-                    // Web: compact greeting bar (no card wrapper)
+                    // Web: greeting
                     greetingCard,
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
+                    const SizedBox(height: 20),
                     // Web: single row of 4 stat tiles
                     isLoadingDashboard
                         ? _buildMetricsSkeleton(context)
@@ -1271,20 +1454,21 @@ class DashboardScreen extends StatelessWidget {
                             maintenanceCount: toolsNeedingMaintenance.length,
                             statValueStyle: statValueStyle,
                           ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-                    // Web: status overview inline
+                    const SizedBox(height: 20),
+                    // Web: status overview
                     statusOverviewCard,
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                    // Web: quick actions as full-width wrap
+                    const SizedBox(height: 28),
+                    // Web: quick actions
                     Text(
                       'Quick Actions',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        letterSpacing: -0.1,
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     isLoadingDashboard
                         ? _buildQuickActionsSkeleton(context)
                         : _buildQuickActionsGrid(context),
@@ -1547,7 +1731,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Web: single row of 4 stat tiles (compact dashboard style)
+  /// Web: single row of 4 stat tiles – Apple / Jobber dashboard style
   Widget _buildWebStatsRow(
     BuildContext context, {
     required int totalTools,
@@ -1556,7 +1740,8 @@ class DashboardScreen extends StatelessWidget {
     required int maintenanceCount,
     required TextStyle statValueStyle,
   }) {
-    const gap = 12.0;
+    const gap = 14.0;
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -1564,7 +1749,7 @@ class DashboardScreen extends StatelessWidget {
             context,
             label: 'Total Tools',
             value: totalTools.toString(),
-            icon: Icons.build,
+            icon: Icons.build_rounded,
             color: Colors.blue,
             onTap: () => onNavigateToTab(1),
           ),
@@ -1575,7 +1760,7 @@ class DashboardScreen extends StatelessWidget {
             context,
             label: 'Technicians',
             value: technicianCount.toString(),
-            icon: Icons.people,
+            icon: Icons.people_rounded,
             color: _dashboardGreen,
             onTap: () => onNavigateToTab(3),
           ),
@@ -1589,13 +1774,14 @@ class DashboardScreen extends StatelessWidget {
               totalValue,
               decimalDigits: 0,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Colors.orange,
+                color: theme.colorScheme.onSurface,
+                letterSpacing: -0.5,
               ),
               context: context,
             ),
-            icon: Icons.attach_money,
+            icon: Icons.attach_money_rounded,
             color: Colors.orange,
             onTap: () => Navigator.push(
               context,
@@ -1614,7 +1800,7 @@ class DashboardScreen extends StatelessWidget {
             context,
             label: 'Maintenance',
             value: maintenanceCount.toString(),
-            icon: Icons.warning,
+            icon: Icons.warning_rounded,
             color: Colors.red,
             onTap: () => Navigator.push(
               context,
@@ -1638,63 +1824,71 @@ class DashboardScreen extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
+    final isDark = theme.brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(_cardRadiusValue),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(_cardRadiusValue),
-          border: Border.all(
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.06),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(icon, color: color, size: 18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(_cardRadiusValue),
+        hoverColor: isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: context.cardBackground,
+            borderRadius: BorderRadius.circular(_cardRadiusValue),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFF38383A)
+                  : const Color(0xFFE5E5EA),
+              width: 1,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: isDark ? 0.18 : 0.08),
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Icon(icon, color: color, size: 18),
                   ),
-                  const SizedBox(height: 2),
-                  valueWidget ?? Text(
-                    value ?? '',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
                   ),
                 ],
               ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 18,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
-            ),
-          ],
+              const SizedBox(height: 14),
+              valueWidget ?? Text(
+                value ?? '',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1703,19 +1897,90 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildGreetingCard(BuildContext context, AuthProvider authProvider) {
     final isWeb = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
-    
+
+    // Web: lightweight inline greeting (no heavy card wrapper)
+    if (isWeb) {
+      final displayName = _resolveDisplayName(authProvider);
+      final firstName = _getFirstName(displayName);
+      final greeting = firstName.isEmpty
+          ? '${_getGreeting()}!'
+          : '${_getGreeting()}, $firstName!';
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF38383A)
+                : const Color(0xFFE5E5EA),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _dashboardGreen.withValues(alpha: isDark ? 0.18 : 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: _dashboardGreen,
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    greeting,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Manage your HVAC tools and technicians',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile: original card layout
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isWeb ? 20 : context.spacingLarge * 1.5,
-        vertical: isWeb ? 16 : context.spacingLarge * 1.5,
+        horizontal: context.spacingLarge * 1.5,
+        vertical: context.spacingLarge * 1.5,
       ),
       decoration: BoxDecoration(
         color: context.cardBackground,
         borderRadius: BorderRadius.circular(cardRadius),
         border: Border.all(
-          color: theme.brightness == Brightness.dark
+          color: isDark
               ? Colors.white.withOpacity(0.08)
               : Colors.black.withOpacity(0.06),
           width: 1,
@@ -1724,21 +1989,21 @@ class DashboardScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: isWeb ? 44 : ResponsiveHelper.getResponsiveIconSize(context, 52),
-            height: isWeb ? 44 : ResponsiveHelper.getResponsiveIconSize(context, 52),
+            width: ResponsiveHelper.getResponsiveIconSize(context, 52),
+            height: ResponsiveHelper.getResponsiveIconSize(context, 52),
             decoration: BoxDecoration(
               color: _dashboardGreen.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(isWeb ? 8 : context.borderRadiusLarge),
+              borderRadius: BorderRadius.circular(context.borderRadiusLarge),
             ),
             child: Center(
               child: Icon(
                 Icons.admin_panel_settings,
                 color: _dashboardGreen,
-                size: isWeb ? 22 : ResponsiveHelper.getResponsiveIconSize(context, 26),
+                size: ResponsiveHelper.getResponsiveIconSize(context, 26),
               ),
             ),
           ),
-          SizedBox(width: isWeb ? 14 : ResponsiveHelper.getResponsiveSpacing(context, 16)),
+          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1754,18 +2019,18 @@ class DashboardScreen extends StatelessWidget {
                     return Text(
                       greeting,
                       style: TextStyle(
-                        fontSize: isWeb ? 18 : ResponsiveHelper.getResponsiveFontSize(context, 24),
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
                         fontWeight: FontWeight.w600,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     );
                   },
                 ),
-                SizedBox(height: isWeb ? 2 : ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                 Text(
                   'Manage your HVAC tools and technicians',
                   style: TextStyle(
-                    fontSize: isWeb ? 13 : ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
@@ -1785,20 +2050,81 @@ class DashboardScreen extends StatelessWidget {
   }) {
     final isWebLayout = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
-    final dividerColor = theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
+    // Web: cleaner status overview with divider
+    if (isWebLayout) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF38383A)
+                : const Color(0xFFE5E5EA),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showTitle) ...[
+              Text(
+                'Tool Status',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  letterSpacing: -0.1,
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+            Row(
+              children: [
+                _buildStatusItem(
+                  'Available',
+                  availableCount.toString(),
+                  _dashboardGreen,
+                  context,
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  color: isDark
+                      ? const Color(0xFF38383A)
+                      : const Color(0xFFE5E5EA),
+                ),
+                _buildStatusItem(
+                  'Assigned',
+                  assignedCount.toString(),
+                  Colors.blue,
+                  context,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile: original style
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isWebLayout ? 16 : context.spacingLarge * 1.5,
-        vertical: isWebLayout ? 10 : context.spacingLarge * 1.5,
+        horizontal: context.spacingLarge * 1.5,
+        vertical: context.spacingLarge * 1.5,
       ),
       decoration: BoxDecoration(
         color: context.cardBackground,
         borderRadius: BorderRadius.circular(cardRadius),
         border: Border.all(
-          color: theme.brightness == Brightness.dark
+          color: isDark
               ? Colors.white.withOpacity(0.08)
               : Colors.black.withOpacity(0.06),
           width: 1,
@@ -1808,17 +2134,6 @@ class DashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (showTitle) ...[
-            Text(
-              'Tool Status',
-              style: TextStyle(
-                fontSize: isWebLayout ? 13 : ResponsiveHelper.getResponsiveFontSize(context, 14),
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-            SizedBox(height: isWebLayout ? 10 : ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          ],
           Row(
             children: [
               _buildStatusItem(
@@ -1827,12 +2142,6 @@ class DashboardScreen extends StatelessWidget {
                 _dashboardGreen,
                 context,
               ),
-              if (isWebLayout)
-                Container(
-                  width: 1,
-                  height: 36,
-                  color: dividerColor,
-                ),
               _buildStatusItem(
                 'Assigned',
                 assignedCount.toString(),
@@ -1847,93 +2156,125 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    const spacing = 10.0;
-
-    // Web: compact wrap layout for all quick actions
-    return Wrap(
-      spacing: spacing,
-      runSpacing: spacing,
+    // Web: full-width cards to fill dashboard (same style as mobile)
+    return Column(
       children: [
-        _buildWebQuickActionChip(
-          context,
-          'Add Tool',
-          Icons.add,
-          AppTheme.primaryColor,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddToolScreen()),
-          ),
-        ),
-        _buildWebQuickActionChip(
-          context,
-          'Assign Tool',
-          Icons.person_add,
-          _dashboardGreen,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ToolsScreen(isSelectionMode: true)),
-          ),
-        ),
-        Consumer<PendingApprovalsProvider>(
-          builder: (context, provider, child) {
-            return _buildWebQuickActionChip(
-              context,
-              'Authorize Users',
-              Icons.verified_user,
-              Colors.blue,
-              () => Navigator.push(
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                'Add Tool',
+                Icons.add,
+                AppTheme.primaryColor,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddToolScreen()),
+                ),
                 context,
-                MaterialPageRoute(builder: (context) => const AdminApprovalScreen()),
               ),
-              badgeCount: provider.pendingCount,
-            );
-          },
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                'Assign Tool',
+                Icons.person_add,
+                _dashboardGreen,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ToolsScreen(isSelectionMode: true),
+                  ),
+                ),
+                context,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Consumer<PendingApprovalsProvider>(
+                builder: (context, provider, child) {
+                  return _buildQuickActionCardWithBadge(
+                    'Authorize Users',
+                    Icons.verified_user,
+                    Colors.blue,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminApprovalScreen(),
+                      ),
+                    ),
+                    context,
+                    badgeCount: provider.pendingCount,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                'Reports',
+                Icons.analytics,
+                Colors.purple,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ReportsScreen()),
+                ),
+                context,
+              ),
+            ),
+          ],
         ),
-        _buildWebQuickActionChip(
-          context,
-          'Reports',
-          Icons.analytics,
-          Colors.purple,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ReportsScreen()),
-          ),
-        ),
-        _buildWebQuickActionChip(
-          context,
-          'Tool Issues',
-          Icons.report_problem,
-          Colors.red,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
-          ),
-        ),
-        _buildWebQuickActionChip(
-          context,
-          'Approvals',
-          Icons.approval,
-          Colors.amber,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ApprovalWorkflowsScreen()),
-          ),
-        ),
-        _buildWebQuickActionChip(
-          context,
-          'Maintenance',
-          Icons.schedule,
-          Colors.teal,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                'Tool Issues',
+                Icons.report_problem,
+                Colors.red,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
+                ),
+                context,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                'Approvals',
+                Icons.approval,
+                Colors.amber,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ApprovalWorkflowsScreen(),
+                  ),
+                ),
+                context,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickActionCard(
+                'Maintenance Schedule',
+                Icons.schedule,
+                Colors.teal,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
+                ),
+                context,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()), // Spacer to balance row
+          ],
         ),
       ],
     );
   }
 
-  /// Web: compact action chip for quick actions (button-like, not card)
+  /// Web: clean action chip for quick actions – Apple / Jobber style
   Widget _buildWebQuickActionChip(
     BuildContext context,
     String title,
@@ -1943,18 +2284,23 @@ class DashboardScreen extends StatelessWidget {
     int badgeCount = 0,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
+        hoverColor: color.withValues(alpha: isDark ? 0.12 : 0.06),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(8),
+            color: isDark
+                ? color.withValues(alpha: 0.08)
+                : color.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: color.withOpacity(0.18),
+              color: color.withValues(alpha: isDark ? 0.2 : 0.12),
               width: 1,
             ),
           ),
@@ -1968,15 +2314,19 @@ class DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: color,
+                  color: isDark ? color.withValues(alpha: 0.9) : color,
+                  letterSpacing: -0.1,
                 ),
               ),
               if (badgeCount > 0) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: color,
+                    color: const Color(0xFFFF3B30),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -2484,20 +2834,62 @@ class DashboardScreen extends StatelessWidget {
       String status, String count, Color color, BuildContext context) {
     final isWebLayout = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
-    
+
+    if (isWebLayout) {
+      // Web: clean inline status with colour dot
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                count,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile: original card style
     return Expanded(
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: isWebLayout ? 4 : 4),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.symmetric(
-          vertical: isWebLayout ? 10 : ResponsiveHelper.getResponsiveSpacing(context, 12),
-          horizontal: isWebLayout ? 12 : ResponsiveHelper.getResponsiveSpacing(context, 8),
+          vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
+          horizontal: ResponsiveHelper.getResponsiveSpacing(context, 8),
         ),
         decoration: BoxDecoration(
           color: context.cardBackground,
           borderRadius: BorderRadius.circular(cardRadius),
           border: Border.all(
-            color: theme.brightness == Brightness.dark
+            color: isDark
                 ? Colors.white.withOpacity(0.06)
                 : Colors.black.withOpacity(0.04),
             width: 1,
@@ -2512,16 +2904,16 @@ class DashboardScreen extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: isWebLayout ? 18 : ResponsiveHelper.getResponsiveFontSize(context, 20),
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                 letterSpacing: -0.5,
               ),
             ),
-            SizedBox(height: isWebLayout ? 2 : ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
             Text(
               status,
               style: TextStyle(
                 color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
-                fontSize: isWebLayout ? 12 : ResponsiveHelper.getResponsiveFontSize(context, 12),
+                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                 fontWeight: FontWeight.w500,
               ),
             ),

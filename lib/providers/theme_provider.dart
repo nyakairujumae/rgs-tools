@@ -6,8 +6,8 @@ import '../theme/app_theme.dart';
 class ThemeProvider with ChangeNotifier {
   static const String _themeKey = 'app_theme';
   
-  ThemeMode _themeMode = ThemeMode.system;
-  bool _isDarkMode = false; // Will be determined by system
+  ThemeMode _themeMode = ThemeMode.light;
+  bool _isDarkMode = false; // Always light mode
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _isDarkMode;
@@ -47,11 +47,11 @@ class ThemeProvider with ChangeNotifier {
   // Initialize theme properly
   Future<void> _initializeTheme() async {
     await _loadTheme();
-    // Force system theme for all users (automatic adaptation)
-    await forceSystemTheme();
+    // Force light theme for all users
+    await forceLightTheme();
   }
 
-  // Load theme from SharedPreferences
+  // Load theme from SharedPreferences (always light mode)
   Future<void> _loadTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance().timeout(
@@ -60,23 +60,18 @@ class ThemeProvider with ChangeNotifier {
           throw TimeoutException('SharedPreferences timeout');
         },
       );
-      final themeIndex = prefs.getInt(_themeKey) ?? 2; // Default to system (index 2)
-      _themeMode = ThemeMode.values[themeIndex];
-      
-      // Always ensure system theme is the default for new users
+      // Always use light mode – ignore saved preference
+      _themeMode = ThemeMode.light;
       if (!prefs.containsKey(_themeKey)) {
-        _themeMode = ThemeMode.system;
         await _saveTheme();
       }
-      
-      // Update dark mode based on theme mode
+
       _updateDarkMode();
       notifyListeners();
     } catch (e) {
       debugPrint('⚠️ Error loading theme: $e');
       debugPrint('⚠️ Error type: ${e.runtimeType}');
-      // Fallback to system theme
-      _themeMode = ThemeMode.system;
+      _themeMode = ThemeMode.light;
       _updateDarkMode();
       notifyListeners();
     }
@@ -151,13 +146,16 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Force app to always use system theme (removes any user overrides)
-  Future<void> forceSystemTheme() async {
-    _themeMode = ThemeMode.system;
+  // Force app to always use light theme
+  Future<void> forceLightTheme() async {
+    _themeMode = ThemeMode.light;
     _updateDarkMode();
     await _saveTheme();
     notifyListeners();
   }
+
+  /// @deprecated Use forceLightTheme – app is light-only
+  Future<void> forceSystemTheme() async => forceLightTheme();
 
   // Check if theme is properly initialized
   bool get isInitialized => _themeMode != null;

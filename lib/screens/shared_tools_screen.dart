@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -66,7 +67,12 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                padding: EdgeInsets.fromLTRB(
+                  kIsWeb ? 24 : 16,
+                  kIsWeb ? 28 : 20,
+                  kIsWeb ? 24 : 16,
+                  0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -75,14 +81,14 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                         if (isTechnician)
                           Padding(
                             padding: const EdgeInsets.only(right: 12.0),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.chevron_left,
-                              size: 28,
-                              color: Theme.of(context).colorScheme.onSurface,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.chevron_left,
+                                size: 28,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              onPressed: () => NavigationHelper.safePop(context),
                             ),
-                            onPressed: () => NavigationHelper.safePop(context),
-                          ),
                           ),
                         Expanded(
                           child: Column(
@@ -91,17 +97,19 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                               Text(
                                 'Shared Tools',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: kIsWeb ? 24 : 22,
                                   fontWeight: FontWeight.w700,
-                                  color: theme.textTheme.bodyLarge?.color,
+                                  color: theme.colorScheme.onSurface,
+                                  letterSpacing: kIsWeb ? -0.3 : 0,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Access and monitor tools that are shared by teams',
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                  fontSize: kIsWeb ? 14 : 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: kIsWeb ? 0.5 : 0.6),
                                 ),
                               ),
                             ],
@@ -229,7 +237,10 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget _buildSearchAndFilters(List<String> categories) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: kIsWeb ? 24 : 16,
+        vertical: 12,
+      ),
       child: Column(
         children: [
           TextField(
@@ -306,7 +317,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   size: 16,
                                   color: category == 'Category'
                                       ? theme.colorScheme.onSurface
-                                          .withOpacity(0.35)
+                                          .withValues(alpha: 0.35)
                                       : _getCategoryIconColor(category),
                                 ),
                                 const SizedBox(width: 4),
@@ -339,7 +350,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   size: 16,
                                   color: category == 'Category'
                                       ? theme.colorScheme.onSurface
-                                          .withOpacity(0.35)
+                                          .withValues(alpha: 0.35)
                                       : _getCategoryIconColor(category),
                                 ),
                                 const SizedBox(width: 6),
@@ -354,7 +365,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                           : FontWeight.w500,
                                       color: category == 'Category'
                                           ? theme.colorScheme.onSurface
-                                              .withOpacity(0.6)
+                                              .withValues(alpha: 0.6)
                                           : theme.colorScheme.onSurface,
                                     ),
                                   ),
@@ -412,7 +423,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   Icons.filter_list_outlined,
                                   size: 16,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.35),
+                                      .withValues(alpha: 0.35),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
@@ -420,7 +431,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -492,7 +503,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   Icons.block_outlined,
                                   size: 16,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.45),
+                                      .withValues(alpha: 0.45),
                                 ),
                                 const SizedBox(width: 8),
                                 const Text('Retired'),
@@ -520,8 +531,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget _buildToolCard(
       Tool tool, SupabaseTechnicianProvider technicianProvider) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
-    // Use sharper corners on web for professional look
-    final double cardRadius = ResponsiveHelper.isWeb ? 8.0 : 18.0;
+    // Apple/Jobber style: 12px on web, rounded on mobile
+    final double cardRadius = ResponsiveHelper.isWeb ? 12.0 : 18.0;
 
     return InkWell(
       onTap: () {
@@ -593,19 +604,27 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   Widget _buildStatusPill(String status) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final Color statusColor = _getStatusColor(status);
+    // Web: slightly larger pill for readability
+    final isWebLayout = ResponsiveHelper.isWeb;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: isWebLayout ? 10 : 8,
+        vertical: isWebLayout ? 4 : 3,
+      ),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(10),
+        color: statusColor.withValues(alpha: isDark ? 0.15 : 0.12),
+        borderRadius: BorderRadius.circular(isWebLayout ? 8 : 10),
       ),
       child: Text(
         status,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: isWebLayout ? 12 : 10,
           fontWeight: FontWeight.w600,
           color: statusColor,
+          letterSpacing: isWebLayout ? -0.1 : 0,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -632,7 +651,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -711,28 +730,33 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   }
 
   Widget _buildPlaceholderImage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: context.cardBackground,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF5F5F7),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.build,
-            size: 40,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+            Icons.build_rounded,
+            size: kIsWeb ? 28 : 40,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'No Image',
-            style: TextStyle(
-              fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+          if (!kIsWeb) ...[
+            const SizedBox(height: 4),
+            Text(
+              'No Image',
+              style: TextStyle(
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -841,7 +865,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         final colorScheme = theme.colorScheme;
         return Container(
           decoration: BoxDecoration(
-            color: theme.cardColor,
+            color: context.cardBackground,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(24),
             ),
@@ -856,7 +880,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 width: 48,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withOpacity(0.3),
+                  color: colorScheme.onSurface.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1068,9 +1092,9 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         label,

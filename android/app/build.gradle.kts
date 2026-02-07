@@ -29,10 +29,16 @@ android {
         applicationId = "com.rgs.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Explicitly set minSdk to 21 (Android 5.0) for maximum compatibility
+        minSdk = 21
+        // Target Android 13 (API 33) for compatibility with Android 13+ devices
+        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Build for all architectures to ensure compatibility with all devices
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
     }
 
     signingConfigs {

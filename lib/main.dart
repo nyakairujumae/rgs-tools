@@ -255,8 +255,8 @@ Future<void> _initializeServicesInBackground() async {
         }
       }
       
-      // Listen for auth state changes to handle password reset links
-      if (supabaseInitialized && !kIsWeb) {
+      // Listen for auth state changes (password reset, ensure user row in DB - same for web and app)
+      if (supabaseInitialized) {
         try {
           // Try to get client from Supabase.instance, fallback to SupabaseService
           SupabaseClient authClient;
@@ -1159,19 +1159,30 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
+            themeMode: ThemeMode.light, // Light mode only – Apple/Jobber style
             // Don't use home - let onGenerateRoute handle everything including deep links
             initialRoute: defaultRoute,
             builder: (context, child) {
-              return ResponsiveBreakpoints.builder(
+              final content = ErrorBoundary(child: child!);
+              final wrapped = ResponsiveBreakpoints.builder(
                 breakpoints: [
                   const Breakpoint(start: 0, end: 450, name: MOBILE),
                   const Breakpoint(start: 451, end: 800, name: TABLET),
                   const Breakpoint(start: 801, end: 1920, name: DESKTOP),
                   const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
                 ],
-                child: ErrorBoundary(child: child!),
+                child: content,
               );
+              // Web: constrain width so content isn't elongated full-bleed; keep logic identical
+              if (kIsWeb) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1440),
+                    child: wrapped,
+                  ),
+                );
+              }
+              return wrapped;
             },
             routes: {
               '/role-selection': (context) => const RoleSelectionScreen(),

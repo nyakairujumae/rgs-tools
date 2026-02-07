@@ -24,13 +24,33 @@ class AppTheme {
   static const Color cardBorder = Color(0xFFE5E5E5); // Card border color (light mode)
   static const Color darkCardBorder = Color(0xFF21262D); // Card border color (dark mode)
 
-  // Web-specific surfaces for a cleaner dashboard feel
-  static const Color webLightScaffoldBackground = Color(0xFFF6F7FB);
+  // Web-specific surfaces – Apple / Jobber-inspired palette
+  static const Color webLightScaffoldBackground = Color(0xFFF5F5F7);
   static const Color webLightCardBackground = Color(0xFFFFFFFF);
-  static const Color webLightCardBorder = Color(0xFFE5E7EB);
-  static const Color webDarkScaffoldBackground = Color(0xFF0B0F14);
-  static const Color webDarkCardBackground = Color(0xFF111827);
-  static const Color webDarkCardBorder = Color(0xFF1F2937);
+  static const Color webLightCardBorder = Color(0xFFE5E5EA);
+  static const Color webDarkScaffoldBackground = Color(0xFF000000);
+  static const Color webDarkCardBackground = Color(0xFF1C1C1E);
+  static const Color webDarkCardBorder = Color(0xFF38383A);
+  
+  // Web sidebar colours
+  static const Color webLightSidebarBackground = Color(0xFFFFFFFF);
+  static const Color webDarkSidebarBackground = Color(0xFF1C1C1E);
+  
+  /// Sidebar background that adapts to theme brightness
+  static Color getWebSidebarBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? webDarkSidebarBackground
+        : webLightSidebarBackground;
+  }
+  
+  /// Sidebar border that adapts to theme brightness
+  static Color getWebSidebarBorder(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? webDarkCardBorder
+        : webLightCardBorder;
+  }
   
   // Spacing constants
   static const double spacingMicro = 4.0;
@@ -305,18 +325,16 @@ class AppTheme {
         ),
       ),
 
-      // Card theme - ChatGPT style (SOFT-FILLED, NO OUTLINES)
+      // Card theme – Apple / Jobber style: border-driven, minimal shadow
       cardTheme: CardThemeData(
         color: kIsWeb ? webLightCardBackground : cardBackground,
-        elevation: kIsWeb ? 1 : 0,
-        shadowColor:
-            kIsWeb ? Colors.black.withValues(alpha: 0.08) : Colors.transparent,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
-          // Subtle border for lifted effect
           side: BorderSide(
             color: kIsWeb ? webLightCardBorder : Colors.black.withOpacity(0.04),
-            width: kIsWeb ? 0.8 : 0.5,
+            width: kIsWeb ? 1.0 : 0.5,
           ),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -403,16 +421,24 @@ class AppTheme {
         floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
 
-      // Button themes - ChatGPT style
+      // Button themes – Apple / Jobber style
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: secondaryColor, // Green accent
+          backgroundColor: secondaryColor,
           foregroundColor: Colors.white,
-          elevation: 0, // No hard shadow
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+            borderRadius: BorderRadius.circular(kIsWeb ? 10 : 14),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 14), // ChatGPT-style button padding
+          padding: EdgeInsets.symmetric(
+            vertical: kIsWeb ? 12 : 14,
+            horizontal: kIsWeb ? 20 : 16,
+          ),
+          textStyle: TextStyle(
+            fontSize: kIsWeb ? 14 : 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.1,
+          ),
         ),
       ),
 
@@ -421,19 +447,25 @@ class AppTheme {
           foregroundColor: secondaryColor,
           side: const BorderSide(color: secondaryColor),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+            borderRadius: BorderRadius.circular(kIsWeb ? 10 : 14),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(
+            vertical: kIsWeb ? 12 : 14,
+            horizontal: kIsWeb ? 20 : 16,
+          ),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: secondaryColor, // Green accent text
+          foregroundColor: secondaryColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+            borderRadius: BorderRadius.circular(kIsWeb ? 10 : 14),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(
+            vertical: kIsWeb ? 12 : 14,
+            horizontal: kIsWeb ? 20 : 16,
+          ),
         ),
       ),
 
@@ -514,17 +546,17 @@ class AppTheme {
         ),
       ),
 
-      // Card theme
+      // Card theme – Apple / Jobber dark style
       cardTheme: CardThemeData(
         color: kIsWeb ? webDarkCardBackground : const Color(0xFF161B22),
-        elevation: kIsWeb ? 1 : 8,
-        shadowColor: Colors.black.withValues(alpha: kIsWeb ? 0.35 : 0.5),
+        elevation: kIsWeb ? 0 : 8,
+        shadowColor: kIsWeb ? Colors.transparent : Colors.black.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: kIsWeb ? webDarkCardBorder : const Color(0xFF21262D),
             width: 1,
-          ), // Subtle border
+          ),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
