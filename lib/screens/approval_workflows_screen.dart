@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/approval_workflow.dart';
@@ -69,7 +70,12 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-      child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Column(
           children: [
             const SizedBox(height: 12),
             _buildSearchBar(),
@@ -83,6 +89,8 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
             ),
           ],
         ),
+          ),
+        ),
       ),
       bottomNavigationBar: null,
     );
@@ -94,8 +102,6 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
     if (workflows.isEmpty) {
       return _buildEmptyState();
     }
-
-    final isDesktop = ResponsiveHelper.isDesktop(context);
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<ApprovalWorkflowsProvider>().loadWorkflows();
@@ -104,9 +110,9 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       backgroundColor: context.scaffoldBackground,
       child: ListView.separated(
         padding: EdgeInsets.fromLTRB(
-          isDesktop ? 24 : 16,
-          isDesktop ? 16 : 12,
-          isDesktop ? 24 : 16,
+          kIsWeb ? 24 : 16,
+          kIsWeb ? 16 : 12,
+          kIsWeb ? 24 : 16,
           120,
         ),
         itemCount: workflows.length,
@@ -121,7 +127,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
@@ -134,7 +140,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
           prefixIcon: Icon(
             Icons.search,
             size: 20,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -144,7 +150,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.55),
+                        .withValues(alpha: 0.55),
                   ),
                   onPressed: () {
                     _searchController.clear();
@@ -162,7 +168,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       height: 32,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
         itemCount: _filters.length,
         itemBuilder: (context, index) {
           final filter = _filters[index];
@@ -177,7 +183,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 style: TextStyle(
                   color: isSelected
                       ? AppTheme.secondaryColor
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
@@ -189,7 +195,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                 setState(() => _selectedFilter = filter);
               },
               backgroundColor: context.cardBackground,
-              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+              selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
@@ -211,7 +217,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
       height: 32,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
         itemCount: _types.length,
         itemBuilder: (context, index) {
           final type = _types[index];
@@ -360,7 +366,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           color:
-                              theme.colorScheme.onSurface.withOpacity(0.55),
+                              theme.colorScheme.onSurface.withValues(alpha: 0.55),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -385,7 +391,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               workflow.description,
               style: TextStyle(
                 fontSize: 13,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -395,7 +401,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
               style: TextStyle(
                 fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
               ),
             ),
           ],
@@ -1094,7 +1100,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
     final isDesktop = ResponsiveHelper.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -1660,7 +1666,7 @@ class _CreateRequestDialogState extends State<_CreateRequestDialog> {
                       Icon(
                         Icons.calendar_today,
                         size: 20,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

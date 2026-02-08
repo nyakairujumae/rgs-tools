@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
@@ -98,7 +99,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Column(
           children: [
             const SizedBox(height: 12),
             _buildSearchBar(),
@@ -107,6 +113,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               child: _buildMaintenanceList(),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -144,9 +152,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
           backgroundColor: context.scaffoldBackground,
           child: ListView.separated(
               padding: EdgeInsets.fromLTRB(
-                ResponsiveHelper.isDesktop(context) ? 24 : 16,
-                ResponsiveHelper.isDesktop(context) ? 16 : 12,
-                ResponsiveHelper.isDesktop(context) ? 24 : 16,
+                kIsWeb ? 24 : 16,
+                kIsWeb ? 16 : 12,
+                kIsWeb ? 24 : 16,
                 120,
               ),
               itemCount: toolsUnderMaintenance.length,
@@ -213,7 +221,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                       details,
                       style: TextStyle(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withOpacity(0.55),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                   ],
@@ -235,7 +243,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
             'Serial: ${tool.serialNumber ?? 'N/A'}',
             style: TextStyle(
               fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 4),
@@ -243,7 +251,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
             'Brand: ${tool.brand ?? 'Unknown'}',
             style: TextStyle(
               fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 12),
@@ -280,7 +288,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
       child: TextField(
         controller: _searchController,
         decoration: context.chatGPTInputDecoration.copyWith(
@@ -409,7 +417,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),

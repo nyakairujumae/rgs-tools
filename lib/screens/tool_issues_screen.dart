@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
@@ -68,10 +69,15 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildPremiumAppBar(context),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Column(
           children: [
             const SizedBox(height: 12),
             _buildSearchBar(),
@@ -185,9 +191,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             ),
           ],
         ),
+          ),
+        ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 0, kIsWeb ? 24 : 16, 20),
         child: SizedBox(
           height: 50,
           width: double.infinity,
@@ -801,7 +809,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       height: 32,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
         itemCount: _filters.length,
         itemBuilder: (context, index) {
           final filter = _filters[index];
@@ -816,7 +824,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                 style: TextStyle(
                   color: isSelected
                       ? AppTheme.secondaryColor
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
@@ -832,11 +840,11 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                 setState(() => _selectedFilter = filter);
               },
               backgroundColor: context.cardBackground,
-              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+              selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
                 width: isSelected ? 1.2 : 0.5,
               ),
               shape: RoundedRectangleBorder(
@@ -851,7 +859,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
       child: Container(
         decoration: context.cardDecoration,
         child: TextField(

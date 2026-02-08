@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -210,19 +210,25 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Container(
-          color: theme.scaffoldBackgroundColor,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Container(
+              color: context.scaffoldBackground,
           child: Column(
             children: [
               // Header with back button and title
               Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                  vertical: 20,
+                padding: EdgeInsets.fromLTRB(
+                  kIsWeb ? 24 : 16,
+                  kIsWeb ? 24 : 20,
+                  kIsWeb ? 24 : 16,
+                  0,
                 ),
                 child: Row(
                   children: [
@@ -288,7 +294,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     final workflows = workflowProvider.workflows;
 
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 0, kIsWeb ? 24 : 16, 16),
                       child: _buildReportContent(tools, technicians, technicianProvider, issues, workflows),
                     );
                   },
@@ -298,7 +304,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildReportContent(
@@ -785,7 +793,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(issue.status).withOpacity(0.1),
+                  color: _getStatusColor(issue.status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -804,7 +812,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             'Type: ${issue.issueType ?? 'Unknown'} • Priority: ${issue.priority ?? 'Medium'}',
             style: TextStyle(
               fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           if (issue.description != null && issue.description!.isNotEmpty) ...[
@@ -813,7 +821,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               issue.description!,
               style: TextStyle(
                 fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -1034,7 +1042,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           Text(
@@ -1177,7 +1185,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -1215,7 +1223,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(

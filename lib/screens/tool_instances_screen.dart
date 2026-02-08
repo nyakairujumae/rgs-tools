@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../models/tool.dart';
@@ -70,9 +71,9 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
             }
           });
           return Scaffold(
-            backgroundColor: theme.scaffoldBackgroundColor,
+            backgroundColor: context.scaffoldBackground,
             appBar: AppBar(
-              backgroundColor: theme.scaffoldBackgroundColor,
+              backgroundColor: context.scaffoldBackground,
               elevation: 0,
               leading: IconButton(
                 icon: Icon(
@@ -98,14 +99,14 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: 64,
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No instances found',
                     style: TextStyle(
                       fontSize: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -125,13 +126,18 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
         final instances = updatedToolGroup.instances;
 
         return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(72),
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(
+              kIsWeb ? 24 : 16,
+              kIsWeb ? 20 : 16,
+              kIsWeb ? 24 : 16,
+              8,
+            ),
             child: Row(
               children: [
                 IconButton(
@@ -160,7 +166,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                         '${instances.length} instance${instances.length > 1 ? 's' : ''}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.55),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -188,15 +194,22 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Summary Card
-            const SizedBox(height: 16),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: context.cardDecoration,
-              child: Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: context.cardDecoration.copyWith(
+                      borderRadius: BorderRadius.circular(kIsWeb ? 12 : 18),
+                    ),
+                    child: Row(
                 children: [
                   Expanded(
                     child: _buildStatItem(
@@ -209,7 +222,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 0.5,
                     height: 40,
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -222,7 +235,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Container(
                     width: 0.5,
                     height: 40,
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -233,12 +246,12 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Instances List
-            Expanded(
-              child: instances.isEmpty
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: instances.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -246,7 +259,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 64,
-                            color: theme.colorScheme.onSurface.withOpacity(0.3),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -254,34 +267,56 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                                  theme.colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: widget.isSelectionMode ? 80 : 16,
-                      ),
-                      itemCount: instances.length,
-                      itemBuilder: (context, index) {
-                        final tool = instances[index];
-                        final isSelected = widget.isSelectionMode &&
-                            tool.id != null &&
-                            _selectedToolIds.contains(tool.id!);
-                        return _buildInstanceCard(tool, isSelected);
-                      },
-                    ),
-            ),
+                  : kIsWeb
+                      ? GridView.builder(
+                          padding: EdgeInsets.only(
+                            left: 24,
+                            right: 24,
+                            bottom: widget.isSelectionMode ? 80 : 24,
+                          ),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.4,
+                          ),
+                          itemCount: instances.length,
+                          itemBuilder: (context, index) {
+                            final tool = instances[index];
+                            final isSelected = widget.isSelectionMode &&
+                                tool.id != null &&
+                                _selectedToolIds.contains(tool.id!);
+                            return _buildInstanceCard(tool, isSelected);
+                          },
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            bottom: widget.isSelectionMode ? 80 : 16,
+                          ),
+                          itemCount: instances.length,
+                          itemBuilder: (context, index) {
+                            final tool = instances[index];
+                            final isSelected = widget.isSelectionMode &&
+                                tool.id != null &&
+                                _selectedToolIds.contains(tool.id!);
+                            return _buildInstanceCard(tool, isSelected);
+                          },
+                        ),
+                ),
             // Assign Button - Only show in selection mode
-            if (widget.isSelectionMode && _selectedToolIds.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
+                if (widget.isSelectionMode && _selectedToolIds.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: context.scaffoldBackground,
                   border: Border(
                     top: BorderSide(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
@@ -334,7 +369,9 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   ),
                 ),
               ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -361,7 +398,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -370,9 +407,11 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
 
   Widget _buildInstanceCard(Tool tool, bool isSelected) {
     final theme = Theme.of(context);
+    final cardRadius = kIsWeb ? 12.0 : 18.0;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: kIsWeb ? 0 : 12),
       decoration: context.cardDecoration.copyWith(
+        borderRadius: BorderRadius.circular(cardRadius),
         border: isSelected
             ? Border.all(
                 color: AppTheme.secondaryColor,
@@ -391,13 +430,13 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   ),
                 );
               },
-        borderRadius: BorderRadius.circular(18), // Match card decoration
+        borderRadius: BorderRadius.circular(cardRadius),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(kIsWeb ? 12 : 14),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(18), // Match card decoration
+                borderRadius: BorderRadius.circular(cardRadius),
                 child: SizedBox(
                   width: 80,
                   height: 80,
@@ -467,7 +506,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                         'Serial: ${tool.serialNumber}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     const SizedBox(height: 8),
@@ -533,8 +572,8 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
       );
     }
 
-    final tintedBackground = color.withOpacity(
-      color.opacity < 1 ? color.opacity : 0.12,
+    final tintedBackground = color.withValues(
+      alpha: color.opacity < 1 ? color.opacity : 0.12,
     );
 
     return Container(
@@ -572,7 +611,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
       child: Icon(
         Icons.build,
         size: 32,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
       ),
     );
   }

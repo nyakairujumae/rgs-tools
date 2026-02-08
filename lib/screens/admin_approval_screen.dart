@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/pending_approvals_provider.dart';
@@ -55,16 +56,21 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
     return Scaffold(
       appBar: _buildPremiumAppBar(context),
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 900 : double.infinity,
+            ),
+            child: Column(
           children: [
             const SizedBox(height: 12),
             _buildSearchBar(),
             const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
               child: Container(
                 decoration: context.cardDecoration,
                 child: TabBar(
@@ -75,7 +81,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                   ),
                   labelColor: Colors.white,
                   unselectedLabelColor:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   labelStyle: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -112,6 +118,8 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               ),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -163,7 +171,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 8, kIsWeb ? 24 : 16, 8),
           itemCount: pendingApprovals.length,
           itemBuilder: (context, index) {
             final approval = pendingApprovals[index];
@@ -210,7 +218,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
+          padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 16, kIsWeb ? 24 : 16, 16),
           itemCount: approvedApprovals.length,
           itemBuilder: (context, index) {
             final approval = approvedApprovals[index];
@@ -257,7 +265,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 8, kIsWeb ? 24 : 16, 8),
           itemCount: rejectedApprovals.length,
           itemBuilder: (context, index) {
             final approval = rejectedApprovals[index];
@@ -270,7 +278,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
       child: TextField(
         controller: _searchController,
         onChanged: (value) {
@@ -290,7 +298,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
             color: Theme.of(context)
                 .colorScheme
                 .onSurface
-                .withOpacity(0.55),
+                .withValues(alpha: 0.55),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -300,7 +308,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.55),
+                        .withValues(alpha: 0.55),
                   ),
                   onPressed: () {
                     _searchController.clear();
@@ -376,7 +384,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withOpacity(0.1),
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -408,7 +416,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                     Text(
                       approval.email,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withOpacity(0.55),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                         fontSize: 13,
                       ),
                     ),
@@ -418,7 +426,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                         detailText,
                         style: TextStyle(
                           color:
-                              theme.colorScheme.onSurface.withOpacity(0.45),
+                              theme.colorScheme.onSurface.withValues(alpha: 0.45),
                           fontSize: 12,
                         ),
                       ),
@@ -445,7 +453,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               approval.hireDate != null) ...[
             const SizedBox(height: 12),
             Divider(
-              color: theme.colorScheme.onSurface.withOpacity(0.04),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
               height: 1,
               thickness: 0.5,
             ),
@@ -463,7 +471,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               Icon(
                 Icons.access_time,
                 size: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               const SizedBox(width: 8),
               Text(
@@ -482,7 +490,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 Icon(
                   Icons.check_circle_outline,
                   size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -501,10 +509,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.08),
+                color: Colors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: Colors.red.withOpacity(0.2),
+                  color: Colors.red.withValues(alpha: 0.2),
                   width: 0.5,
                 ),
               ),
@@ -599,7 +607,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         color: context.cardBackground,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Colors.black.withOpacity(0.04),
+          color: Colors.black.withValues(alpha: 0.04),
           width: 0.5,
         ),
       ),
@@ -760,7 +768,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           style: Theme.of(context)
               .textTheme
               .bodyMedium
-              ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -853,7 +861,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: Colors.red.withOpacity(0.3),
+                    color: Colors.red.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -864,10 +872,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.08),
+                  color: Colors.red.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.red.withOpacity(0.2),
+                    color: Colors.red.withValues(alpha: 0.2),
                     width: 0.5,
                   ),
                 ),
