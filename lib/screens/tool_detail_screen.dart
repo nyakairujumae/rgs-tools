@@ -167,41 +167,28 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   child: Text(
                     _currentTool.name,
                     style: TextStyle(
-                      fontSize: kIsWeb ? 24 : 22,
-                      fontWeight: FontWeight.w700,
+                      fontSize: kIsWeb ? 20 : 22,
+                      fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurface,
-                      letterSpacing: kIsWeb ? -0.3 : 0,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: context.cardDecoration.copyWith(
-                    borderRadius: BorderRadius.circular(
-                      kIsWeb ? 10 : context.borderRadiusMedium,
-                    ),
-                  ),
-                  child: PopupMenuButton<String>(
+                PopupMenuButton<String>(
                   onSelected: _handleMenuAction,
                   icon: Icon(
                     Icons.more_vert,
-                    color: theme.textTheme.bodyLarge?.color,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    size: 24,
                   ),
-                    padding: EdgeInsets.zero,
+                  padding: EdgeInsets.zero,
                   color: context.cardBackground,
-                    elevation: 0, // No elevation - clean design
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18), // Match card decoration
-                    side: BorderSide(
-                        color: AppTheme.getCardBorderSubtle(context),
-                        width: 0.5,
-                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   itemBuilder: (context) => _buildAppBarMenuItems(theme),
-                  ),
                 ),
               ],
             ),
@@ -242,66 +229,144 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               isLoading: _isLoading,
               loadingMessage: 'Loading tool details...',
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  kIsWeb ? 24 : 16,
-                  kIsWeb ? 20 : 16,
-                  kIsWeb ? 24 : 16,
-                  32,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    _buildImageSection(),
-                    const SizedBox(height: 16),
-                    _buildInfoSection('Basic Information', [
-                        _buildInfoRow('Name', _currentTool.name),
-                        _buildInfoRow('Category', _currentTool.category),
-                        if (_currentTool.brand != null) _buildInfoRow('Brand', _currentTool.brand!),
-                        if (_currentTool.model != null) _buildInfoRow('Model', _currentTool.model!),
-                        if (_currentTool.serialNumber != null) _buildInfoRow('Serial Number', _currentTool.serialNumber!),
-                        if (_currentTool.location != null) _buildInfoRow('Location', _currentTool.location!),
-                      ]),
-                    const SizedBox(height: 12),
-                    // Status & Assignment
-                    _buildInfoSection('Status & Assignment', [
-                        _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
-                        _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
-                        if (_currentTool.assignedTo != null) 
-                  FutureBuilder<String>(
-                    future: UserNameService.getUserName(_currentTool.assignedTo!),
-                    builder: (context, snapshot) {
-                      final name = snapshot.hasData ? snapshot.data! : 'Unknown';
-                      return _buildInfoRow('Assigned To', name);
-                    },
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: kIsWeb ? 900 : double.infinity,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        kIsWeb ? 24 : 16,
+                        kIsWeb ? 16 : 16,
+                        kIsWeb ? 24 : 16,
+                        32,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          _buildImageSection(),
+                          const SizedBox(height: 20),
+                          if (kIsWeb) ...[
+                            // Web: two-column layout like add tool screen – compact, not elongated
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildInfoSection('Basic Information', [
+                                    _buildInfoRow('Name', _currentTool.name),
+                                    _buildInfoRow('Category', _currentTool.category),
+                                    if (_currentTool.brand != null) _buildInfoRow('Brand', _currentTool.brand!),
+                                    if (_currentTool.model != null) _buildInfoRow('Model', _currentTool.model!),
+                                    if (_currentTool.serialNumber != null) _buildInfoRow('Serial Number', _currentTool.serialNumber!),
+                                    if (_currentTool.location != null) _buildInfoRow('Location', _currentTool.location!),
+                                  ], isFirstSection: true),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  child: _buildInfoSection('Status & Assignment', [
+                                    _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
+                                    _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
+                                    if (_currentTool.assignedTo != null)
+                                      FutureBuilder<String>(
+                                        future: UserNameService.getUserName(_currentTool.assignedTo!),
+                                        builder: (context, snapshot) {
+                                          final name = snapshot.hasData ? snapshot.data! : 'Unknown';
+                                          return _buildInfoRow('Assigned To', name);
+                                        },
+                                      ),
+                                    if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
+                                    if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
+                                  ]),
+                                ),
+                              ],
+                            ),
+                            Builder(
+                              builder: (context) {
+                                final hasFinancial = _currentTool.purchasePrice != null || _currentTool.currentValue != null;
+                                final hasNotes = _currentTool.notes != null && _currentTool.notes!.isNotEmpty;
+                                if (hasFinancial && hasNotes) {
+                                  return Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _buildInfoSection('Financial Information', [
+                                          if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
+                                          if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
+                                          if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
+                                          if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
+                                            _buildInfoRow('Depreciation', _calculateDepreciation()),
+                                        ]),
+                                      ),
+                                      const SizedBox(width: 24),
+                                      Expanded(
+                                        child: _buildInfoSection('Notes', [
+                                          _buildInfoRow('', _currentTool.notes!),
+                                        ]),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                if (hasFinancial) {
+                                  return _buildInfoSection('Financial Information', [
+                                    if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
+                                    if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
+                                    if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
+                                    if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
+                                      _buildInfoRow('Depreciation', _calculateDepreciation()),
+                                  ]);
+                                }
+                                if (hasNotes) {
+                                  return _buildInfoSection('Notes', [
+                                    _buildInfoRow('', _currentTool.notes!),
+                                  ]);
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                          ] else ...[
+                            // Mobile: single column with cards
+                            _buildInfoSection('Basic Information', [
+                              _buildInfoRow('Name', _currentTool.name),
+                              _buildInfoRow('Category', _currentTool.category),
+                              if (_currentTool.brand != null) _buildInfoRow('Brand', _currentTool.brand!),
+                              if (_currentTool.model != null) _buildInfoRow('Model', _currentTool.model!),
+                              if (_currentTool.serialNumber != null) _buildInfoRow('Serial Number', _currentTool.serialNumber!),
+                              if (_currentTool.location != null) _buildInfoRow('Location', _currentTool.location!),
+                            ], isFirstSection: true),
+                            _buildInfoSection('Status & Assignment', [
+                              _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
+                              _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
+                              if (_currentTool.assignedTo != null)
+                                FutureBuilder<String>(
+                                  future: UserNameService.getUserName(_currentTool.assignedTo!),
+                                  builder: (context, snapshot) {
+                                    final name = snapshot.hasData ? snapshot.data! : 'Unknown';
+                                    return _buildInfoRow('Assigned To', name);
+                                  },
+                                ),
+                              if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
+                              if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
+                            ]),
+                            if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
+                              _buildInfoSection('Financial Information', [
+                                if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
+                                if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
+                                if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
+                                if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
+                                  _buildInfoRow('Depreciation', _calculateDepreciation()),
+                              ]),
+                            if (_currentTool.notes != null && _currentTool.notes!.isNotEmpty)
+                              _buildInfoSection('Notes', [
+                                _buildInfoRow('', _currentTool.notes!),
+                              ]),
+                          ],
+                          const SizedBox(height: 24),
+                          _buildActionButtons(),
+                        ],
+                      ),
+                    ),
                   ),
-                if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
-                if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
-            ]),
-
-            // Financial Information
-              if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
-              _buildInfoSection('Financial Information', [
-                  if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
-                  if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
-                  if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
-                  if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
-                    _buildInfoRow('Depreciation', _calculateDepreciation()),
-              ]),
-              if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
-                const SizedBox(height: 12),
-
-            // Notes
-              if (_currentTool.notes != null && _currentTool.notes!.isNotEmpty)
-              _buildInfoSection('Notes', [
-                  _buildInfoRow('', _currentTool.notes!),
-              ]),
-
-                    const SizedBox(height: 24),
-
-            // Action Buttons
-                    _buildActionButtons(),
-                  ],
                 ),
               ),
             ),
@@ -508,7 +573,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
 
-  Widget _buildInfoSection(String title, List<Widget> children) {
+  Widget _buildInfoSection(String title, List<Widget> children, {bool isFirstSection = false}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -521,20 +586,53 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     }
 
     final sectionPadding = kIsWeb ? 24.0 : 16.0;
-    final cardRadius = kIsWeb ? 12.0 : 18.0;
+    final cardRadius = 18.0;
 
+    // Web: no elongated cards – ChatGPT-like flowing content with section header + divider
+    if (kIsWeb) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isFirstSection)
+            Divider(
+              height: 24,
+              thickness: 1,
+              color: colorScheme.onSurface.withValues(alpha: 0.08),
+            ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(sectionPadding, 8, sectionPadding, 10),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(sectionPadding, 0, sectionPadding, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: spacedChildren,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Mobile: keep card layout
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(sectionPadding, kIsWeb ? 24 : 20, sectionPadding, 8),
+          padding: EdgeInsets.fromLTRB(sectionPadding, 20, sectionPadding, 8),
           child: Text(
             title,
             style: TextStyle(
-              fontSize: kIsWeb ? 17 : 18,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
-              letterSpacing: kIsWeb ? -0.2 : 0,
             ),
           ),
         ),
@@ -542,7 +640,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           padding: EdgeInsets.symmetric(horizontal: sectionPadding),
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.all(kIsWeb ? 20 : 16),
+            padding: const EdgeInsets.all(16),
             decoration: context.cardDecoration.copyWith(
               borderRadius: BorderRadius.circular(cardRadius),
             ),
