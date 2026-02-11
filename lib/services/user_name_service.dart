@@ -25,58 +25,81 @@ class UserNameService {
     }
 
     try {
-      // First try: Query users table
-      final userResponse = await SupabaseService.client
-          .from('users')
-          .select('full_name, email')
-          .eq('id', userId)
-          .maybeSingle();
-      
-      String name = 'Unknown';
-      
-      if (userResponse != null) {
-        final fullName = userResponse['full_name'] as String?;
-        if (fullName != null && fullName.trim().isNotEmpty) {
-          name = fullName;
-        } else {
-          // Fallback to email if no full_name
-          final email = userResponse['email'] as String?;
-          if (email != null && email.isNotEmpty) {
-            name = email.split('@').first;
-          }
-        }
-        
-        // Cache the result
-        _nameCache[userId] = name;
-        _cacheTimestamps[userId] = DateTime.now();
-        debugPrint('✅ [UserName] Fetched and cached name for $userId: $name');
-        return name;
-      }
-      
-      // Second try: Query technicians table by user_id (if user_id column exists)
-      debugPrint('⚠️ [UserName] User not found in users table, trying technicians table by user_id...');
+      // First try: technicians table by user_id (assignedTo stores auth user ID when badging)
+      // Technicians table typically has permissive RLS for reading (needed for dropdowns, lists),
+      // so other technicians can see who has a shared tool.
       try {
         final technicianResponse = await SupabaseService.client
             .from('technicians')
             .select('name, email, user_id')
             .eq('user_id', userId)
             .maybeSingle();
-        
+
         if (technicianResponse != null) {
           final techName = technicianResponse['name'] as String?;
           if (techName != null && techName.trim().isNotEmpty) {
-            name = techName;
-            _nameCache[userId] = name;
+            _nameCache[userId] = techName;
             _cacheTimestamps[userId] = DateTime.now();
-            debugPrint('✅ [UserName] Found name in technicians table for $userId: $name');
-            return name;
+            debugPrint('✅ [UserName] Found name in technicians table for $userId: $techName');
+            return techName;
+          }
+          final email = technicianResponse['email'] as String?;
+          if (email != null && email.isNotEmpty) {
+            final fallback = email.split('@').first;
+            _nameCache[userId] = fallback;
+            _cacheTimestamps[userId] = DateTime.now();
+            return fallback;
           }
         }
       } catch (techError) {
         debugPrint('⚠️ [UserName] Error querying technicians table: $techError');
-        // If user_id column doesn't exist, that's okay - continue
       }
-      
+
+      // Second try: users table (may be blocked by RLS for other users on some setups)
+      final userResponse = await SupabaseService.client
+          .from('users')
+          .select('full_name, email')
+          .eq('id', userId)
+          .maybeSingle();
+
+      String name = 'Unknown';
+
+      if (userResponse != null) {
+        final fullName = userResponse['full_name'] as String?;
+        if (fullName != null && fullName.trim().isNotEmpty) {
+          name = fullName;
+        } else {
+          final email = userResponse['email'] as String?;
+          if (email != null && email.isNotEmpty) {
+            name = email.split('@').first;
+          }
+        }
+        if (name != 'Unknown') {
+          _nameCache[userId] = name;
+          _cacheTimestamps[userId] = DateTime.now();
+          debugPrint('✅ [UserName] Fetched and cached name for $userId: $name');
+          return name;
+        }
+      }
+
+      // Third try: technicians by id (in case assignedTo sometimes stores technician.id)
+      try {
+        final techByIdResponse = await SupabaseService.client
+            .from('technicians')
+            .select('name')
+            .eq('id', userId)
+            .maybeSingle();
+        if (techByIdResponse != null) {
+          final techName = techByIdResponse['name'] as String?;
+          if (techName != null && techName.trim().isNotEmpty) {
+            _nameCache[userId] = techName;
+            _cacheTimestamps[userId] = DateTime.now();
+            debugPrint('✅ [UserName] Found name in technicians by id for $userId: $techName');
+            return techName;
+          }
+        }
+      } catch (_) {}
+
       // If all lookups failed
       debugPrint('⚠️ [UserName] No user found for $userId in users or technicians table');
       // Don't cache "Unknown" - allow retries in case user is added later

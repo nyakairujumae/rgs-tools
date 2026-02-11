@@ -40,6 +40,7 @@ import 'admin_management_screen.dart';
 import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
+import 'all_tool_history_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
@@ -1717,6 +1718,21 @@ class DashboardScreen extends StatelessWidget {
                             context,
                           ),
                         ),
+                        SizedBox(width: context.spacingMedium),
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            'Tool History',
+                            Icons.history,
+                            Colors.indigo,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AllToolHistoryScreen(),
+                              ),
+                            ),
+                            context,
+                          ),
+                        ),
                       ],
                     ),
                   ],  // end else quick actions
@@ -2267,7 +2283,18 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(child: SizedBox()), // Spacer to balance row
+            Expanded(
+              child: _buildQuickActionCard(
+                'Tool History',
+                Icons.history,
+                Colors.indigo,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AllToolHistoryScreen()),
+                ),
+                context,
+              ),
+            ),
           ],
         ),
       ],

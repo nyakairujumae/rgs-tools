@@ -1,5 +1,6 @@
 class Technician {
   final String? id;
+  final String? userId; // auth.users id - links technician to their login account
   final String name;
   final String? employeeId;
   final String? phone;
@@ -12,6 +13,7 @@ class Technician {
 
   Technician({
     this.id,
+    this.userId,
     required this.name,
     this.employeeId,
     this.phone,
@@ -49,6 +51,7 @@ class Technician {
   factory Technician.fromMap(Map<String, dynamic> map) {
     return Technician(
       id: map['id'],
+      userId: map['user_id'],
       name: map['name'],
       employeeId: map['employee_id'],
       phone: map['phone'],
@@ -63,6 +66,7 @@ class Technician {
 
   Technician copyWith({
     String? id,
+    String? userId,
     String? name,
     String? employeeId,
     String? phone,
@@ -75,6 +79,7 @@ class Technician {
   }) {
     return Technician(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       employeeId: employeeId ?? this.employeeId,
       phone: phone ?? this.phone,

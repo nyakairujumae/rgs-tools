@@ -219,10 +219,6 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
         actions: [
           if (canManageAdmins)
             IconButton(

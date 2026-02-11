@@ -19,11 +19,14 @@ import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../services/push_notification_service.dart';
 import '../services/user_name_service.dart';
+import '../services/tool_history_service.dart';
+import '../models/tool_history.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
 import 'edit_tool_screen.dart';
 import 'tools_screen.dart';
 import 'image_viewer_screen.dart';
+import 'tool_history_screen.dart';
 
 class ToolDetailScreen extends StatefulWidget {
   final Tool tool;
@@ -1457,6 +1460,19 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       );
 
       await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: _currentTool.id!,
+        toolName: _currentTool.name,
+        action: ToolHistoryActions.badged,
+        description: '${authProvider.userFullName ?? 'Technician'} badged this tool (I have it)',
+        oldValue: _currentTool.assignedTo,
+        newValue: authProvider.userId,
+        performedById: authProvider.userId,
+        performedByName: authProvider.userFullName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        location: _currentTool.location,
+      );
       
       // Clear name cache for this user so fresh data is fetched
       UserNameService.clearCacheForUser(authProvider.userId!);
@@ -1512,6 +1528,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       );
 
       await toolProvider.updateTool(updatedTool);
+
+      final authProvider = context.read<AuthProvider>();
+      await ToolHistoryService.record(
+        toolId: _currentTool.id!,
+        toolName: _currentTool.name,
+        action: ToolHistoryActions.releasedBadge,
+        description: '${authProvider.userFullName ?? 'Technician'} released the badge. Tool is now available.',
+        oldValue: _currentTool.assignedTo,
+        newValue: null,
+        performedById: authProvider.userId,
+        performedByName: authProvider.userFullName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        location: _currentTool.location,
+      );
       
       // Reload tools to ensure fresh data from database
       await toolProvider.loadTools();
@@ -1663,12 +1693,13 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   void _viewHistory() {
-    // TODO: Implement history view
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Tool history coming soon!'),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 3),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ToolHistoryScreen(
+          toolId: _currentTool.id!,
+          toolName: _currentTool.name,
+        ),
       ),
     );
   }

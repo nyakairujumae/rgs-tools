@@ -339,18 +339,6 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
           color: theme.colorScheme.onSurface,
         ),
       ),
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-          child: IconButton(
-          icon: Icon(
-              Icons.chevron_left,
-              size: 24,
-            color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: () => NavigationHelper.safePop(context),
-            splashRadius: 24,
-        ),
-      ),
       actions: [],
     );
   }

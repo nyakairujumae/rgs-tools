@@ -31,6 +31,8 @@ import '../models/admin_notification.dart';
 import '../models/technician_notification.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../services/tool_history_service.dart';
+import '../models/tool_history.dart';
 import '../utils/account_deletion_helper.dart';
 import '../models/user_role.dart';
 import '../widgets/common/loading_widget.dart';
@@ -1462,10 +1464,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final type = notification['type'] as String? ?? 'general';
     final data = notification['data'] as Map<String, dynamic>?;
     final notificationColor = _getNotificationColor(type);
+    final authProvider = context.read<AuthProvider>();
+    final isToolRequestForCurrentHolder = type == 'tool_request' &&
+        data != null &&
+        (data['owner_id']?.toString() == authProvider.userId);
+    final requesterName = data?['requester_name']?.toString() ?? 'the requester';
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.brightness == Brightness.dark
             ? theme.colorScheme.surface
             : Colors.white,
@@ -1571,8 +1578,24 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
         ),
         actions: [
+          if (isToolRequestForCurrentHolder)
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _releaseToolToRequester(context, data!, notification);
+              },
+              icon: const Icon(Icons.handshake, size: 18),
+              label: Text('Release to $requesterName'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
               shape: RoundedRectangleBorder(
@@ -1590,6 +1613,122 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ],
       ),
     );
+  }
+
+  Future<void> _releaseToolToRequester(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final requesterId = data['requester_id']?.toString();
+    final requesterName = data['requester_name']?.toString() ?? 'Requester';
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final authProvider = context.read<AuthProvider>();
+    final holderName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || requesterId == null) {
+      if (context.mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Missing tool or requester information. Cannot release.',
+        );
+      }
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client
+            .from('tools')
+            .select()
+            .eq('id', toolId)
+            .maybeSingle();
+        if (res != null) {
+          existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+        }
+      }
+      if (existingTool == null) {
+        if (context.mounted) {
+          AuthErrorHandler.showErrorSnackBar(
+            context,
+            'Tool not found. It may have been removed.',
+          );
+        }
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(
+        assignedTo: requesterId,
+        status: 'In Use',
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId,
+        toolName: toolName,
+        action: ToolHistoryActions.releasedToRequester,
+        description: '$holderName released the $toolName to $requesterName',
+        oldValue: authProvider.userId,
+        newValue: requesterId,
+        performedById: authProvider.userId,
+        performedByName: holderName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'requester_id': requesterId, 'requester_name': requesterName},
+      );
+
+      await toolProvider.loadTools();
+
+      UserNameService.clearCacheForUser(requesterId);
+
+      await SupabaseService.client.from('technician_notifications').insert({
+        'user_id': requesterId,
+        'title': 'Tool Released to You: $toolName',
+        'message': '$holderName has released the $toolName to you. You now have this tool.',
+        'type': 'tool_assigned',
+        'is_read': false,
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': {
+          'tool_id': toolId,
+          'tool_name': toolName,
+          'released_by_id': authProvider.userId,
+          'released_by_name': holderName,
+        },
+      });
+
+      try {
+        await PushNotificationService.sendToUser(
+          userId: requesterId,
+          title: 'Tool Released to You: $toolName',
+          body: '$holderName has released the $toolName to you.',
+          data: {
+            'type': 'tool_assigned',
+            'tool_id': toolId,
+            'tool_name': toolName,
+          },
+        );
+      } catch (_) {}
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$toolName released to $requesterName. They and other technicians will now see they have it.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to release tool: ${e.toString()}',
+        );
+      }
+    }
   }
 
   Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon) {
@@ -2029,13 +2168,23 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           vertical: 4,
                         ),
                           ),
-                          child: Text(
-                        'See All >',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'See All',
                             style: TextStyle(
-                          color: AppTheme.secondaryColor,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          fontWeight: FontWeight.w600,
-                        ),
+                              color: AppTheme.secondaryColor,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -2111,17 +2260,27 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                           vertical: 4,
                         ),
                       ),
-                      child: Text(
-                        'See All >',
-                        style: TextStyle(
-                          color: AppTheme.secondaryColor,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          fontWeight: FontWeight.w600,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'See All',
+                            style: TextStyle(
+                              color: AppTheme.secondaryColor,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ],
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
 
@@ -2780,8 +2939,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _holderLine(
       BuildContext context, Tool tool, List<dynamic> technicians, String? currentUserId) {
     final theme = Theme.of(context);
-    
-    if (tool.assignedTo == null) {
+
+    if (tool.assignedTo == null || tool.assignedTo!.isEmpty) {
       return Text(
         'No current holder',
         style: TextStyle(
@@ -2791,23 +2950,36 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
-        }
-    
-    // Fetch user name from users table (not technicians table)
-    // tool.assignedTo contains user ID from auth.users
-    // Show holder even if it's the current user (for shared tools that are badged)
+    }
+
+    // Try in-memory technicians first (assignedTo = auth user ID when badged; match by user_id or id)
+    final techProvider = context.read<SupabaseTechnicianProvider>();
+    final nameFromProvider = techProvider.getTechnicianNameById(tool.assignedTo!);
+    if (nameFromProvider != null && nameFromProvider.isNotEmpty) {
+      final displayName = UserNameService.getFirstName(nameFromProvider);
+      return Text(
+        '$displayName has this tool',
+        style: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface.withOpacity(0.8),
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // Fallback: fetch from UserNameService (technicians table by user_id, then users table)
     return FutureBuilder<String>(
       future: UserNameService.getUserName(tool.assignedTo!),
       builder: (context, snapshot) {
         String name = 'Unknown';
-        
         if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
           final fullName = snapshot.data!;
           if (fullName != 'Unknown') {
             name = UserNameService.getFirstName(fullName);
           }
         }
-        
         return Text(
           '$name has this tool',
           style: TextStyle(

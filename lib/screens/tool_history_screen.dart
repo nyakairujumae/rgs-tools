@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/tool_history.dart';
+import '../services/tool_history_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
+import '../widgets/common/loading_widget.dart';
 
 class ToolHistoryScreen extends StatefulWidget {
-  final int toolId;
+  final String toolId;
   final String toolName;
 
   const ToolHistoryScreen({
@@ -21,22 +23,41 @@ class ToolHistoryScreen extends StatefulWidget {
 class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
   String _selectedFilter = 'All';
   bool _isLoading = false;
+  List<ToolHistory> _historyItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _isLoading = true);
+    try {
+      final items = await ToolHistoryService.getHistoryForTool(widget.toolId);
+      if (mounted) {
+        setState(() {
+          _historyItems = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: context.scaffoldBackground,
       appBar: AppBar(
         title: Text('${widget.toolName} History'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.textPrimary,
+        backgroundColor: context.appBarBackground,
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _showFilterDialog,
-            icon: Icon(Icons.filter_list),
-            tooltip: 'Filter History',
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -45,7 +66,13 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
           
           // History List
           Expanded(
-            child: _buildHistoryList(),
+            child: _isLoading
+                ? const Center(child: LoadingWidget())
+                : RefreshIndicator(
+                    onRefresh: _loadHistory,
+                    color: AppTheme.secondaryColor,
+                    child: _buildHistoryList(),
+                  ),
           ),
         ],
       ),
@@ -53,6 +80,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
   }
 
   Widget _buildFilterChips() {
+    final theme = Theme.of(context);
     final filters = ['All', 'Recent', 'Assignments', 'Maintenance', 'Updates'];
     
     return SizedBox(
@@ -74,7 +102,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                 style: TextStyle(
                   color: isSelected
                       ? AppTheme.secondaryColor
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
@@ -92,7 +120,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : Colors.black.withOpacity(0.04),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.12),
                 width: isSelected ? 1.2 : 0.5,
               ),
               shape: RoundedRectangleBorder(
@@ -106,8 +134,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
   }
 
   Widget _buildHistoryList() {
-    final historyItems = ToolHistoryService.getMockHistory();
-    final filteredItems = _filterHistoryItems(historyItems);
+    final filteredItems = _filterHistoryItems(_historyItems);
 
     if (filteredItems.isEmpty) {
       return _buildEmptyState();
@@ -163,8 +190,11 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
   }
 
   Widget _buildHistoryCard(ToolHistory item) {
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: context.cardDecoration,
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -196,14 +226,14 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         item.timeAgo,
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -235,7 +265,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
               item.description,
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.textPrimary,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             
@@ -254,7 +284,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       'From: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     Text(
@@ -262,17 +292,17 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.textPrimary,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(width: 16),
-                    Icon(Icons.arrow_forward, size: 16, color: AppTheme.textSecondary),
+                    Icon(Icons.arrow_forward, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                     SizedBox(width: 16),
                     Text(
                       'To: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     Text(
@@ -296,14 +326,14 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                   Icon(
                     Icons.person,
                     size: 16,
-                    color: AppTheme.textSecondary,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   SizedBox(width: 4),
                   Text(
                     'Performed by: ${item.performedBy}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   if (item.performedByRole != null) ...[
@@ -335,14 +365,14 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                   Icon(
                     Icons.location_on,
                     size: 16,
-                    color: AppTheme.textSecondary,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   SizedBox(width: 4),
                   Text(
                     item.location!,
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -355,8 +385,9 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: context.inputBackground,
                   borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: context.cardBorder.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +395,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                     Icon(
                       Icons.note,
                       size: 16,
-                      color: AppTheme.textSecondary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     SizedBox(width: 8),
                     Expanded(
@@ -372,7 +403,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                         item.notes!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -395,7 +426,10 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
         return items.where((item) => 
           item.action == ToolHistoryActions.assigned || 
           item.action == ToolHistoryActions.returned ||
-          item.action == ToolHistoryActions.transferred
+          item.action == ToolHistoryActions.transferred ||
+          item.action == ToolHistoryActions.badged ||
+          item.action == ToolHistoryActions.releasedBadge ||
+          item.action == ToolHistoryActions.releasedToRequester
         ).toList();
       case 'Maintenance':
         return items.where((item) => item.action == ToolHistoryActions.maintenance).toList();
@@ -417,8 +451,11 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
       case ToolHistoryActions.created:
         return AppTheme.successColor;
       case ToolHistoryActions.assigned:
+      case ToolHistoryActions.badged:
         return AppTheme.primaryColor;
       case ToolHistoryActions.returned:
+      case ToolHistoryActions.releasedBadge:
+      case ToolHistoryActions.releasedToRequester:
         return AppTheme.secondaryColor;
       case ToolHistoryActions.maintenance:
         return AppTheme.warningColor;
@@ -436,8 +473,11 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
       case ToolHistoryActions.created:
         return Icons.add_circle;
       case ToolHistoryActions.assigned:
+      case ToolHistoryActions.badged:
         return Icons.person_add;
       case ToolHistoryActions.returned:
+      case ToolHistoryActions.releasedBadge:
+      case ToolHistoryActions.releasedToRequester:
         return Icons.assignment_return;
       case ToolHistoryActions.maintenance:
         return Icons.build;
@@ -464,42 +504,4 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
     }
   }
 
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Filter History'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildFilterOption('All', 'Show all history'),
-            _buildFilterOption('Recent', 'Show recent activity (last 24 hours)'),
-            _buildFilterOption('Assignments', 'Show assignment changes'),
-            _buildFilterOption('Maintenance', 'Show maintenance records'),
-            _buildFilterOption('Updates', 'Show tool updates'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterOption(String filter, String description) {
-    return ListTile(
-      title: Text(filter),
-      subtitle: Text(description),
-      trailing: _selectedFilter == filter ? Icon(Icons.check, color: AppTheme.primaryColor) : null,
-      onTap: () {
-        setState(() {
-          _selectedFilter = filter;
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
 }

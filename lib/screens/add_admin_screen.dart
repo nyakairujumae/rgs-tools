@@ -226,10 +226,6 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

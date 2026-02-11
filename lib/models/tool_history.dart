@@ -1,6 +1,6 @@
 class ToolHistory {
-  final int? id;
-  final int toolId;
+  final String? id;
+  final String toolId;
   final String toolName;
   final String action; // 'Created', 'Updated', 'Assigned', 'Returned', 'Maintenance', 'Deleted'
   final String description;
@@ -31,7 +31,7 @@ class ToolHistory {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'tool_id': toolId,
       'tool_name': toolName,
       'action': action,
@@ -49,19 +49,23 @@ class ToolHistory {
 
   factory ToolHistory.fromMap(Map<String, dynamic> map) {
     return ToolHistory(
-      id: map['id'],
-      toolId: map['tool_id'],
+      id: map['id']?.toString(),
+      toolId: map['tool_id']?.toString() ?? '',
       toolName: map['tool_name'],
       action: map['action'],
       description: map['description'],
       oldValue: map['old_value'],
       newValue: map['new_value'],
-      performedBy: map['performed_by'],
-      performedByRole: map['performed_by_role'],
+      performedBy: map['performed_by']?.toString(),
+      performedByRole: map['performed_by_role']?.toString(),
       timestamp: map['timestamp'],
       location: map['location'],
       notes: map['notes'],
-      metadata: map['metadata'] != null ? _stringToMap(map['metadata']) : null,
+      metadata: map['metadata'] != null
+          ? (map['metadata'] is Map
+              ? Map<String, dynamic>.from(map['metadata'] as Map)
+              : _stringToMap(map['metadata']?.toString()))
+          : null,
     );
   }
 
@@ -84,8 +88,8 @@ class ToolHistory {
   }
 
   ToolHistory copyWith({
-    int? id,
-    int? toolId,
+    String? id,
+    String? toolId,
     String? toolName,
     String? action,
     String? description,
@@ -135,6 +139,12 @@ class ToolHistory {
         return 'Status Changed';
       case 'Location Changed':
         return 'Location Changed';
+      case 'Badged':
+        return 'Tool Badged';
+      case 'Released Badge':
+        return 'Badge Released';
+      case 'Released to Requester':
+        return 'Released to Requester';
       default:
         return action;
     }
@@ -179,129 +189,7 @@ class ToolHistoryActions {
   static const String valueUpdated = 'Value Updated';
   static const String imageAdded = 'Image Added';
   static const String notesUpdated = 'Notes Updated';
-}
-
-// History service for creating history entries
-class ToolHistoryService {
-  static ToolHistory createHistory({
-    required int toolId,
-    required String toolName,
-    required String action,
-    required String description,
-    String? oldValue,
-    String? newValue,
-    String? performedBy,
-    String? performedByRole,
-    String? location,
-    String? notes,
-    Map<String, dynamic>? metadata,
-  }) {
-    return ToolHistory(
-      toolId: toolId,
-      toolName: toolName,
-      action: action,
-      description: description,
-      oldValue: oldValue,
-      newValue: newValue,
-      performedBy: performedBy,
-      performedByRole: performedByRole,
-      timestamp: DateTime.now().toIso8601String(),
-      location: location,
-      notes: notes,
-      metadata: metadata,
-    );
-  }
-
-  static List<ToolHistory> getMockHistory() {
-    final now = DateTime.now();
-    return [
-      ToolHistory(
-        id: 1,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.created,
-        description: 'Tool added to inventory',
-        performedBy: 'Admin User',
-        performedByRole: 'Administrator',
-        timestamp: now.subtract(const Duration(days: 30)).toIso8601String(),
-        location: 'Main Office',
-      ),
-      ToolHistory(
-        id: 2,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.assigned,
-        description: 'Assigned to Ahmed Hassan',
-        oldValue: 'Available',
-        newValue: 'In Use',
-        performedBy: 'Manager',
-        performedByRole: 'Manager',
-        timestamp: now.subtract(const Duration(days: 25)).toIso8601String(),
-        location: 'Main Office',
-      ),
-      ToolHistory(
-        id: 3,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.maintenance,
-        description: 'Annual calibration performed',
-        performedBy: 'Maintenance Team',
-        performedByRole: 'Technician',
-        timestamp: now.subtract(const Duration(days: 20)).toIso8601String(),
-        location: 'Main Office',
-        notes: 'Calibration passed, accuracy within ±0.1%',
-      ),
-      ToolHistory(
-        id: 4,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.locationChanged,
-        description: 'Moved to Site A - Downtown',
-        oldValue: 'Main Office',
-        newValue: 'Site A - Downtown',
-        performedBy: 'Ahmed Hassan',
-        performedByRole: 'Technician',
-        timestamp: now.subtract(const Duration(days: 15)).toIso8601String(),
-        location: 'Site A - Downtown',
-      ),
-      ToolHistory(
-        id: 5,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.updated,
-        description: 'Current value updated',
-        oldValue: '400.00',
-        newValue: '380.00',
-        performedBy: 'Admin User',
-        performedByRole: 'Administrator',
-        timestamp: now.subtract(const Duration(days: 10)).toIso8601String(),
-        location: 'Site A - Downtown',
-        notes: 'Depreciation calculation applied',
-      ),
-      ToolHistory(
-        id: 6,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.imageAdded,
-        description: 'Tool image updated',
-        performedBy: 'Ahmed Hassan',
-        performedByRole: 'Technician',
-        timestamp: now.subtract(const Duration(days: 5)).toIso8601String(),
-        location: 'Site A - Downtown',
-      ),
-      ToolHistory(
-        id: 7,
-        toolId: 1,
-        toolName: 'Digital Multimeter',
-        action: ToolHistoryActions.notesUpdated,
-        description: 'Notes updated',
-        oldValue: 'Standard multimeter for electrical work',
-        newValue: 'Standard multimeter for electrical work. Recently calibrated.',
-        performedBy: 'Ahmed Hassan',
-        performedByRole: 'Technician',
-        timestamp: now.subtract(const Duration(days: 2)).toIso8601String(),
-        location: 'Site A - Downtown',
-      ),
-    ];
-  }
+  static const String badged = 'Badged';
+  static const String releasedBadge = 'Released Badge';
+  static const String releasedToRequester = 'Released to Requester';
 }

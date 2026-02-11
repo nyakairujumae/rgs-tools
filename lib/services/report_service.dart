@@ -11,6 +11,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
 import '../models/tool_issue.dart';
+import '../models/tool_history.dart';
 import '../models/approval_workflow.dart';
 import '../services/supabase_service.dart';
 
@@ -174,6 +175,90 @@ class ReportService {
     }
     
     return file;
+  }
+
+  /// Generate PDF report from tool movement history (from tool_history table).
+  static Future<File> generateToolMovementHistoryReport({
+    required List<ToolHistory> historyItems,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final pdf = pw.Document();
+    final dateRangeText = _buildDateRangeText(startDate, endDate);
+
+    final tableRows = [
+      pw.TableRow(
+        decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
+        children: [
+          _cell('Timestamp'),
+          _cell('Action'),
+          _cell('Description'),
+          _cell('Tool'),
+          _cell('Performed By'),
+        ],
+      ),
+      ...historyItems.map((h) => pw.TableRow(
+            children: [
+              _cell(h.timestamp),
+              _cell(h.action),
+              _cell(h.description),
+              _cell(h.toolName),
+              _cell(h.performedBy ?? '-'),
+            ],
+          )),
+    ];
+    if (historyItems.isEmpty) {
+      tableRows.add(pw.TableRow(
+        children: [
+          _cell('No history records for the selected period.'),
+          _cell(''),
+          _cell(''),
+          _cell(''),
+          _cell(''),
+        ],
+      ));
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => [
+          pw.Text(
+            'Tool Movement History Report',
+            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text('Generated: ${_dateFormat.format(DateTime.now())}'),
+          if (dateRangeText.isNotEmpty) pw.Text('Period: $dateRangeText'),
+          pw.SizedBox(height: 16),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(1.5),
+              1: const pw.FlexColumnWidth(1.5),
+              2: const pw.FlexColumnWidth(3),
+              3: const pw.FlexColumnWidth(2),
+              4: const pw.FlexColumnWidth(1.5),
+            },
+            children: tableRows,
+          ),
+        ],
+      ),
+    );
+
+    final directory = await _getDownloadsDirectory();
+    final fileName = 'RGS_Tools_MovementHistory_${_fileNameFormat.format(DateTime.now())}.pdf';
+    final file = File('${directory.path}/$fileName');
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  static pw.Widget _cell(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(6),
+      child: pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
+    );
   }
 
   static String _getSheetName(ReportType type) {

@@ -4,6 +4,7 @@ import "../providers/supabase_tool_provider.dart";
 import "../providers/supabase_technician_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 
 class TemporaryReturnScreen extends StatefulWidget {
@@ -41,39 +42,23 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-    final primary = colorScheme.primary;
-    final primaryContainer = colorScheme.primaryContainer;
-    final onSurface = colorScheme.onSurface;
-    
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.scaffoldBackground,
       appBar: AppBar(
         title: Text(
           'Temporary Return: ${widget.tool.name}',
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
             fontWeight: FontWeight.w600,
-            color: theme.textTheme.bodyLarge?.color,
+            color: theme.colorScheme.onSurface,
           ),
         ),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: context.appBarBackground,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
           padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,17 +67,8 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
               Container(
                 width: double.infinity,
                 padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: onSurface.withOpacity(0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+                decoration: context.cardDecoration,
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -102,14 +78,12 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                           width: ResponsiveHelper.getResponsiveIconSize(context, 56),
                           height: ResponsiveHelper.getResponsiveIconSize(context, 56),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [primary, primaryContainer],
-                            ),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
                           ),
                           child: Icon(
                             Icons.build,
-                            color: Colors.white,
+                            color: AppTheme.primaryColor,
                             size: ResponsiveHelper.getResponsiveIconSize(context, 28),
                           ),
                         ),
@@ -123,7 +97,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                                 style: TextStyle(
                                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                                   fontWeight: FontWeight.w700,
-                                  color: theme.textTheme.bodyLarge?.color,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
@@ -131,7 +105,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                                 '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
                                 style: TextStyle(
                                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                  color: theme.textTheme.bodySmall?.color,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
                               if (widget.tool.assignedTo != null)
@@ -144,7 +118,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                                         'Currently assigned to: $technicianName',
                                         style: TextStyle(
                                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                          color: primary,
+                                          color: AppTheme.primaryColor,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -167,7 +141,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.w700,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
@@ -175,7 +149,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 'This tool will be temporarily returned to the company. The technician will get it back when they return.',
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  color: theme.textTheme.bodySmall?.color,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
@@ -186,33 +160,24 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.w700,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: onSurface.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                decoration: context.cardDecoration,
+                clipBehavior: Clip.antiAlias,
                 child: Padding(
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
                   child: DropdownButtonFormField<String>(
                     value: _returnReason,
                     style: TextStyle(
-                      color: theme.textTheme.bodyLarge?.color,
+                      color: theme.colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       labelText: 'Select reason',
                       labelStyle: TextStyle(
-                        color: theme.textTheme.bodySmall?.color,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
@@ -221,14 +186,14 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                       filled: true,
                       fillColor: Colors.transparent,
                     ),
-                    dropdownColor: colorScheme.surface,
+                    dropdownColor: context.cardBackground,
                     items: _returnReasons.map((reason) {
                       return DropdownMenuItem(
                         value: reason,
                         child: Text(
                           reason,
                           style: TextStyle(
-                            color: theme.textTheme.bodyLarge?.color,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       );
@@ -249,31 +214,26 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.w700,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: onSurface.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+              Text(
+                'When will the technician return?',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
+              ),
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
+              Container(
+                decoration: context.cardDecoration,
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: _selectReturnDate,
                   borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      labelText: 'When will the technician return?',
-                      labelStyle: TextStyle(
-                        color: theme.textTheme.bodySmall?.color,
-                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
                         borderSide: BorderSide.none,
@@ -289,8 +249,8 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                         color: _expectedReturnDate != null 
-                            ? theme.textTheme.bodyLarge?.color 
-                            : theme.textTheme.bodySmall?.color,
+                            ? theme.colorScheme.onSurface 
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -304,31 +264,22 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.w700,
-                  color: theme.textTheme.bodyLarge?.color,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
               Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.cardGradientFor(context),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: onSurface.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                decoration: context.cardDecoration,
+                clipBehavior: Clip.antiAlias,
                 child: TextField(
                   controller: _notesController,
                   style: TextStyle(
-                    color: theme.textTheme.bodyLarge?.color,
+                    color: theme.colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Add any notes about this temporary return...',
                     hintStyle: TextStyle(
-                      color: theme.textTheme.bodySmall?.color,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
@@ -344,63 +295,43 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 32)),
 
               // Return Button
-              Container(
+              SizedBox(
                 width: double.infinity,
                 height: ResponsiveHelper.getResponsiveSpacing(context, 56),
-                decoration: BoxDecoration(
-                  gradient: _expectedReturnDate != null && !_isLoading
-                      ? LinearGradient(
-                          colors: [primary, primaryContainer],
-                        )
+                child: FilledButton(
+                  onPressed: _expectedReturnDate != null && !_isLoading
+                      ? _temporaryReturn
                       : null,
-                  color: _expectedReturnDate == null || _isLoading
-                      ? onSurface.withOpacity(0.12)
-                      : null,
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                  boxShadow: _expectedReturnDate != null && !_isLoading
-                      ? [
-                          BoxShadow(
-                            color: primary.withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _expectedReturnDate != null && !_isLoading
-                        ? _temporaryReturn
-                        : null,
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                    child: Container(
-                      alignment: Alignment.center,
-                      child: _isLoading
-                          ? SizedBox(
-                              width: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                              height: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                              child: CircularProgressIndicator(
-                                color: colorScheme.onPrimary,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              'Temporary Return',
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onPrimary,
-                              ),
-                            ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    disabledBackgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
                     ),
                   ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                          height: ResponsiveHelper.getResponsiveIconSize(context, 24),
+                          child: const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Temporary Return',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -439,7 +370,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${widget.tool.name} temporarily returned. Expected back: ${_expectedReturnDate!.toIso8601String().split('T')[0]}'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: AppTheme.secondaryColor,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -450,7 +381,7 @@ class _TemporaryReturnScreenState extends State<TemporaryReturnScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error processing return: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.errorColor,
             duration: const Duration(seconds: 3),
           ),
         );

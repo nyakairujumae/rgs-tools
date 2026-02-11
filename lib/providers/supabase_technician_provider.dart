@@ -125,18 +125,16 @@ class SupabaseTechnicianProvider with ChangeNotifier {
     return _technicians.where((technician) => technician.status == 'Active').toList();
   }
 
-  // Get technician name by ID (returns UUID if not found, for backwards compatibility)
-  String? getTechnicianNameById(String? technicianId) {
-    if (technicianId == null) return null;
-    try {
-      final technician = _technicians.firstWhere(
-        (tech) => tech.id == technicianId,
-        orElse: () => Technician(id: null, name: technicianId), // Fallback to ID if not found
-      );
-      return technician.id == null ? technicianId : technician.name;
-    } catch (e) {
-      // If not found, return the ID (might be a name from old data)
-      return technicianId;
+  /// Get technician name by id or user_id.
+  /// assignedTo stores auth user ID when technicians badge shared tools,
+  /// so we match both tech.id and tech.userId.
+  String? getTechnicianNameById(String? idOrUserId) {
+    if (idOrUserId == null || idOrUserId.isEmpty) return null;
+    for (final tech in _technicians) {
+      if (tech.id == idOrUserId || tech.userId == idOrUserId) {
+        return tech.name;
+      }
     }
+    return null;
   }
 }
