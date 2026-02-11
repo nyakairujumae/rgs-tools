@@ -60,7 +60,6 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   ];
 
   final List<String> _conditions = const ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'];
-  final List<String> _statuses = const ['Assigned', 'Available', 'In Use', 'Maintenance', 'Retired'];
 
   BoxDecoration _outlineDecoration(
     BuildContext context, {
@@ -492,7 +491,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                           color: theme.colorScheme.onSurface,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'Purchase Price',
+                          labelText: 'Purchase Price (optional)',
                           hintText: '0.00',
                           prefixText: 'AED ',
                         ),
@@ -502,17 +501,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
                     Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardSurfaceColor(context),
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        border: Border.all(
-                          color: AppTheme.subtleBorder,
-                          width: 1.1,
-                        ),
-                        boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
-                      ),
+                      decoration: _outlineDecoration(context, radius: 24),
                       child: InkWell(
                         onTap: _selectPurchaseDate,
                         borderRadius: BorderRadius.circular(
@@ -520,7 +509,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         ),
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Purchase Date',
+                            labelText: 'Purchase Date (optional)',
                             contentPadding: ResponsiveHelper.getResponsivePadding(
                               context,
                               horizontal: 20,
@@ -543,11 +532,11 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
 
-                    // Status and Condition
+                    // Condition (status is always Assigned - new tools appear in My Tools)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Status & Condition',
+                        'Condition',
                         style: TextStyle(
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
                           fontWeight: FontWeight.bold,
@@ -558,92 +547,44 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 24),
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_condition),
-                              value: _condition,
+                    Container(
+                      decoration: _outlineDecoration(context, radius: 24),
+                      child: DropdownButtonFormField<String>(
+                        key: ValueKey(_condition),
+                        value: _condition,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Condition',
+                          contentPadding: ResponsiveHelper.getResponsivePadding(
+                            context,
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: _conditions.map((condition) {
+                          return DropdownMenuItem(
+                            value: condition,
+                            child: Text(
+                              condition,
                               style: TextStyle(
                                 color: theme.colorScheme.onSurface,
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                fontWeight: FontWeight.w500,
                               ),
-                              decoration: InputDecoration(
-                                labelText: 'Condition',
-                                contentPadding: ResponsiveHelper.getResponsivePadding(
-                                  context,
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                              items: _conditions.map((condition) {
-                                return DropdownMenuItem(
-                                  value: condition,
-                                  child: Text(
-                                    condition,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _condition = value ?? _condition;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              dropdownColor: AppTheme.cardSurfaceColor(context),
                             ),
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                        Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 24),
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey(_status),
-                              value: _status,
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface,
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                fontWeight: FontWeight.w500,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: 'Status',
-                                contentPadding: ResponsiveHelper.getResponsivePadding(
-                                  context,
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                              items: _statuses.map((status) {
-                                return DropdownMenuItem(
-                                  value: status,
-                                  child: Text(
-                                    status,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _status = value ?? _status;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              dropdownColor: AppTheme.cardSurfaceColor(context),
-                            ),
-                          ),
-                        ),
-                      ],
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _condition = value ?? _condition;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        dropdownColor: AppTheme.cardSurfaceColor(context),
+                      ),
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
