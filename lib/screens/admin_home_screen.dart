@@ -466,63 +466,72 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildWebSidebar(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final onSurface = theme.colorScheme.onSurface;
-
     return Container(
-      width: 232,
-      decoration: BoxDecoration(
-        color: AppTheme.getWebSidebarBackground(context),
-        border: Border(
-          right: BorderSide(
-            color: AppTheme.getWebSidebarBorder(context),
-            width: 1,
-          ),
-        ),
+      width: 264,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Brand header ──────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF10B981),
+                        const Color(0xFF10B981).withValues(alpha: 0.7),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.precision_manufacturing,
-                    color: AppTheme.secondaryColor,
-                    size: 20,
+                    Icons.precision_manufacturing_rounded,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
+                const SizedBox(width: 14),
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'RGS Tools',
+                        'Royal Gulf',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: onSurface,
+                          color: Color(0xFFE2E8F0),
                           letterSpacing: -0.3,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 1),
                       Text(
-                        'Admin Panel',
+                        'Services',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE2E8F0),
+                          letterSpacing: -0.3,
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'HVAC Tools Management',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: onSurface.withValues(alpha: 0.45),
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ],
@@ -532,15 +541,29 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             ),
           ),
 
-          Divider(
+          Container(
             height: 1,
-            thickness: 1,
-            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: const Color(0xFF1E293B),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          // ── Navigation items ──────────────────────────────────────────
+          // ── OVERVIEW section ──
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'OVERVIEW',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
@@ -548,36 +571,81 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               children: [
                 _buildSidebarNavItem(
                   context, 0, 'Dashboard',
-                  Icons.dashboard_outlined, Icons.dashboard_rounded,
+                  Icons.grid_view_rounded, Icons.grid_view_rounded,
                 ),
                 const SizedBox(height: 2),
                 _buildSidebarNavItem(
                   context, 1, 'Tools',
-                  Icons.build_outlined, Icons.build_rounded,
+                  Icons.construction_outlined, Icons.construction_rounded,
                 ),
                 const SizedBox(height: 2),
                 _buildSidebarNavItem(
                   context, 2, 'Shared Tools',
-                  Icons.share_outlined, Icons.share_rounded,
+                  Icons.swap_horiz_rounded, Icons.swap_horiz_rounded,
                 ),
                 const SizedBox(height: 2),
                 _buildSidebarNavItem(
                   context, 3, 'Technicians',
-                  Icons.people_outline, Icons.people_rounded,
+                  Icons.engineering_outlined, Icons.engineering_rounded,
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // ── MANAGEMENT section ──
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'MANAGEMENT',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSidebarRouteItem(context, 'Reports', Icons.bar_chart_rounded, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
+                }),
+                const SizedBox(height: 2),
+                _buildSidebarRouteItem(context, 'Maintenance', Icons.handyman_rounded, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
+                }),
+                const SizedBox(height: 2),
+                _buildSidebarRouteItem(context, 'Approvals', Icons.task_alt_rounded, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+                }),
+                const SizedBox(height: 2),
+                _buildSidebarRouteItem(context, 'Tool Issues', Icons.report_outlined, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
+                }),
+                const SizedBox(height: 2),
+                _buildSidebarRouteItem(context, 'Tool History', Icons.history_rounded, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
+                }),
               ],
             ),
           ),
 
           const Spacer(),
 
-          // ── Bottom section ────────────────────────────────────────────
-          Divider(
+          // ── Bottom section ──
+          Container(
             height: 1,
-            thickness: 1,
-            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: const Color(0xFF1E293B),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
           Consumer<AdminNotificationProvider>(
             builder: (context, notificationProvider, child) {
@@ -609,7 +677,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -623,9 +691,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     IconData selectedIcon,
   ) {
     final isSelected = _selectedIndex == index;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accent = AppTheme.secondaryColor;
+    const accent = Color(0xFF10B981);
+    const textPrimary = Color(0xFFE2E8F0);
+    const textSecondary = Color(0xFF94A3B8);
 
     return Material(
       color: Colors.transparent,
@@ -633,16 +701,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
         borderRadius: BorderRadius.circular(8),
-        hoverColor: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.black.withValues(alpha: 0.03),
+        hoverColor: const Color(0xFF1E293B),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? accent.withValues(alpha: isDark ? 0.15 : 0.08)
+                ? accent.withValues(alpha: 0.12)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -651,9 +717,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               Icon(
                 isSelected ? selectedIcon : icon,
                 size: 20,
-                color: isSelected
-                    ? accent
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                color: isSelected ? accent : textSecondary,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -662,13 +726,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? accent
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    color: isSelected ? textPrimary : textSecondary,
                     letterSpacing: -0.1,
                   ),
                 ),
               ),
+              if (isSelected)
+                Container(
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
             ],
           ),
         ),
@@ -683,44 +754,34 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     required VoidCallback onTap,
     int badge = 0,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const textSecondary = Color(0xFF94A3B8);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        hoverColor: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.black.withValues(alpha: 0.03),
+        hoverColor: const Color(0xFF1E293B),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 11),
           child: Row(
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-              ),
+              Icon(icon, size: 20, color: textSecondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                    color: textSecondary,
                   ),
                 ),
               ),
               if (badge > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B30),
+                    color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -733,6 +794,50 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                     ),
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarRouteItem(
+    BuildContext context,
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    const textSecondary = Color(0xFF94A3B8);
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        hoverColor: const Color(0xFF1E293B),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: textSecondary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: textSecondary,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.arrow_outward_rounded,
+                size: 14,
+                color: Color(0xFF475569),
+              ),
             ],
           ),
         ),
@@ -1400,50 +1505,14 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SafeArea(
-                    bottom: false,
-                    minimum: EdgeInsets.only(
-                      top: isWideLayout ? 24 : ResponsiveHelper.getResponsiveSpacing(context, 18),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Dashboard',
-                          style: TextStyle(
-                            fontSize: isWideLayout
-                                ? 24
-                                : ResponsiveHelper.getResponsiveFontSize(context, 22),
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Overview of your tools, technicians, and approvals.',
-                          style: TextStyle(
-                            fontSize: isWideLayout
-                                ? 14
-                                : ResponsiveHelper.getResponsiveFontSize(context, 12),
-                            fontWeight: FontWeight.w400,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: isWideLayout ? 0.5 : 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 16),
-                  ),
                   if (isWideLayout) ...[
-                    // Web: greeting
-                    greetingCard,
-                    const SizedBox(height: 20),
+                    // Web: professional dashboard header
+                    SafeArea(
+                      bottom: false,
+                      minimum: const EdgeInsets.only(top: 28),
+                      child: greetingCard,
+                    ),
+                    const SizedBox(height: 32),
                     // Web: single row of 4 stat tiles
                     isLoadingDashboard
                         ? _buildMetricsSkeleton(context)
@@ -1455,25 +1524,70 @@ class DashboardScreen extends StatelessWidget {
                             maintenanceCount: toolsNeedingMaintenance.length,
                             statValueStyle: statValueStyle,
                           ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 28),
                     // Web: status overview
                     statusOverviewCard,
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 36),
                     // Web: quick actions
                     Text(
                       'Quick Actions',
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        letterSpacing: -0.1,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Frequently used tools and workflows',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     isLoadingDashboard
                         ? _buildQuickActionsSkeleton(context)
                         : _buildQuickActionsGrid(context),
                   ] else ...[
+                  SafeArea(
+                    bottom: false,
+                    minimum: EdgeInsets.only(
+                      top: ResponsiveHelper.getResponsiveSpacing(context, 18),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Dashboard',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Overview of your tools, technicians, and approvals.',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                            fontWeight: FontWeight.w400,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: ResponsiveHelper.getResponsiveSpacing(context, 16),
+                  ),
                     greetingCard,
 
                   SizedBox(
@@ -1747,7 +1861,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Web: single row of 4 stat tiles – Apple / Jobber dashboard style
+  /// Web: single row of 4 stat tiles – professional dashboard style
   Widget _buildWebStatsRow(
     BuildContext context, {
     required int totalTools,
@@ -1756,7 +1870,7 @@ class DashboardScreen extends StatelessWidget {
     required int maintenanceCount,
     required TextStyle statValueStyle,
   }) {
-    const gap = 14.0;
+    const gap = 16.0;
     final theme = Theme.of(context);
     return Row(
       children: [
@@ -1790,8 +1904,8 @@ class DashboardScreen extends StatelessWidget {
               totalValue,
               decimalDigits: 0,
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
                 color: theme.colorScheme.onSurface,
                 letterSpacing: -0.5,
               ),
@@ -1843,18 +1957,18 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(_cardRadiusValue),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(_cardRadiusValue),
+        borderRadius: BorderRadius.circular(14),
         hoverColor: isDark
             ? Colors.white.withValues(alpha: 0.03)
             : Colors.black.withValues(alpha: 0.02),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: context.cardBackground,
-            borderRadius: BorderRadius.circular(_cardRadiusValue),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark
                   ? const Color(0xFF38383A)
@@ -1869,27 +1983,36 @@ class DashboardScreen extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: isDark ? 0.18 : 0.08),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icon, color: color, size: 18),
+                    child: Icon(icon, color: color, size: 20),
                   ),
                   const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 13,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.trending_up_rounded,
+                      size: 16,
+                      color: color.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
               valueWidget ?? Text(
                 value ?? '',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: theme.colorScheme.onSurface,
                   letterSpacing: -0.5,
                 ),
@@ -1901,6 +2024,7 @@ class DashboardScreen extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  letterSpacing: 0.1,
                 ),
               ),
             ],
@@ -1916,44 +2040,20 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
 
-    // Web: lightweight inline greeting (no heavy card wrapper)
+    // Web: professional dashboard header with greeting and date
     if (isWeb) {
       final displayName = _resolveDisplayName(authProvider);
       final firstName = _getFirstName(displayName);
       final greeting = firstName.isEmpty
           ? '${_getGreeting()}!'
           : '${_getGreeting()}, $firstName!';
+      final today = DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(cardRadius),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF38383A)
-                : const Color(0xFFE5E5EA),
-            width: 1,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _dashboardGreen.withValues(alpha: isDark ? 0.18 : 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.admin_panel_settings_rounded,
-                  color: _dashboardGreen,
-                  size: 22,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1962,19 +2062,52 @@ class DashboardScreen extends StatelessWidget {
                   Text(
                     greeting,
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
                       color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.3,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 6),
                   Text(
-                    'Manage your HVAC tools and technicians',
+                    'Monitor and manage your HVAC tool operations',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       fontWeight: FontWeight.w400,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: context.cardBackground,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF38383A)
+                      : const Color(0xFFE5E5EA),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    today,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -2069,14 +2202,18 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
 
-    // Web: cleaner status overview with divider
+    // Web: professional status overview with progress bar
     if (isWebLayout) {
+      final total = availableCount + assignedCount;
+      final availablePercent = total > 0 ? (availableCount / total * 100).round() : 0;
+      final assignedPercent = total > 0 ? (assignedCount / total * 100).round() : 0;
+
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: context.cardBackground,
-          borderRadius: BorderRadius.circular(cardRadius),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDark
                 ? const Color(0xFF38383A)
@@ -2088,40 +2225,67 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (showTitle) ...[
-              Text(
-                'Tool Status',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  letterSpacing: -0.1,
-                ),
-              ),
-              const SizedBox(height: 14),
-            ],
             Row(
               children: [
-                _buildStatusItem(
-                  'Available',
-                  availableCount.toString(),
-                  _dashboardGreen,
-                  context,
+                Text(
+                  'Tool Status Overview',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  color: isDark
-                      ? const Color(0xFF38383A)
-                      : const Color(0xFFE5E5EA),
+                const Spacer(),
+                Text(
+                  '$total total tools',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                  ),
                 ),
-                _buildStatusItem(
-                  'Assigned',
-                  assignedCount.toString(),
-                  Colors.blue,
-                  context,
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                height: 10,
+                child: Row(
+                  children: [
+                    if (availableCount > 0)
+                      Expanded(
+                        flex: availableCount,
+                        child: Container(color: _dashboardGreen),
+                      ),
+                    if (availableCount > 0 && assignedCount > 0)
+                      const SizedBox(width: 3),
+                    if (assignedCount > 0)
+                      Expanded(
+                        flex: assignedCount,
+                        child: Container(color: AppTheme.primaryColor),
+                      ),
+                    if (total == 0)
+                      Expanded(
+                        child: Container(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.06),
+                        ),
+                      ),
+                  ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            // Legend row
+            Row(
+              children: [
+                _buildWebStatusLegend('Available', availableCount, '$availablePercent%', _dashboardGreen, theme),
+                const SizedBox(width: 40),
+                _buildWebStatusLegend('Assigned', assignedCount, '$assignedPercent%', AppTheme.primaryColor, theme),
               ],
             ),
           ],
@@ -2172,7 +2336,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    // Web: full-width cards to fill dashboard (same style as mobile)
+    // Web: professional 2×4 grid of action cards
     return Column(
       children: [
         Row(
@@ -2180,7 +2344,7 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: _buildQuickActionCard(
                 'Add Tool',
-                Icons.add,
+                Icons.add_circle_outline_rounded,
                 AppTheme.primaryColor,
                 () => Navigator.push(
                   context,
@@ -2189,11 +2353,11 @@ class DashboardScreen extends StatelessWidget {
                 context,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildQuickActionCard(
                 'Assign Tool',
-                Icons.person_add,
+                Icons.person_add_alt_1_rounded,
                 _dashboardGreen,
                 () => Navigator.push(
                   context,
@@ -2204,13 +2368,13 @@ class DashboardScreen extends StatelessWidget {
                 context,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Consumer<PendingApprovalsProvider>(
                 builder: (context, provider, child) {
                   return _buildQuickActionCardWithBadge(
                     'Authorize Users',
-                    Icons.verified_user,
+                    Icons.verified_user_outlined,
                     Colors.blue,
                     () => Navigator.push(
                       context,
@@ -2224,11 +2388,11 @@ class DashboardScreen extends StatelessWidget {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildQuickActionCard(
                 'Reports',
-                Icons.analytics,
+                Icons.assessment_outlined,
                 Colors.purple,
                 () => Navigator.push(
                   context,
@@ -2239,13 +2403,13 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
               child: _buildQuickActionCard(
                 'Tool Issues',
-                Icons.report_problem,
+                Icons.report_outlined,
                 Colors.red,
                 () => Navigator.push(
                   context,
@@ -2254,12 +2418,12 @@ class DashboardScreen extends StatelessWidget {
                 context,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildQuickActionCard(
                 'Approvals',
-                Icons.approval,
-                Colors.amber,
+                Icons.task_alt_rounded,
+                Colors.amber.shade700,
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -2269,11 +2433,11 @@ class DashboardScreen extends StatelessWidget {
                 context,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildQuickActionCard(
-                'Maintenance Schedule',
-                Icons.schedule,
+                'Maintenance',
+                Icons.handyman_rounded,
                 Colors.teal,
                 () => Navigator.push(
                   context,
@@ -2282,11 +2446,11 @@ class DashboardScreen extends StatelessWidget {
                 context,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildQuickActionCard(
                 'Tool History',
-                Icons.history,
+                Icons.history_rounded,
                 Colors.indigo,
                 () => Navigator.push(
                   context,
@@ -2950,6 +3114,47 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildWebStatusLegend(String label, int count, String percent, Color color, ThemeData theme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        Text(
+          ' ($percent)',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildQuickActionCard(
     String title,
     IconData icon,
@@ -2959,6 +3164,7 @@ class DashboardScreen extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
     final isWebLayout = ResponsiveHelper.isWeb;
+    final isDark = theme.brightness == Brightness.dark;
     final textStyle = TextStyle(
       color: theme.textTheme.bodyLarge?.color,
       fontSize:
@@ -2966,10 +3172,10 @@ class DashboardScreen extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
     final iconContainer = Container(
-      width: ResponsiveHelper.getResponsiveSpacing(context, 36),
-      height: ResponsiveHelper.getResponsiveSpacing(context, 36),
+      width: ResponsiveHelper.getResponsiveSpacing(context, isWebLayout ? 40 : 36),
+      height: ResponsiveHelper.getResponsiveSpacing(context, isWebLayout ? 40 : 36),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: isDark ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 10),
         ),
@@ -2977,51 +3183,73 @@ class DashboardScreen extends StatelessWidget {
       child: Icon(
         icon,
         color: color,
-        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+        size: ResponsiveHelper.getResponsiveIconSize(context, isWebLayout ? 20 : 18),
       ),
     );
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: context.spacingLarge,
-          vertical: context.spacingMedium,
-        ),
-        decoration: context.cardDecoration,
-        child: isWebLayout
-            ? Row(
-                children: [
-                  iconContainer,
-                  SizedBox(width: context.spacingMedium),
-                  Expanded(
-                    child: Text(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(isWebLayout ? 14 : context.borderRadiusLarge),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(isWebLayout ? 14 : context.borderRadiusLarge),
+        hoverColor: isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isWebLayout ? 16 : context.spacingLarge,
+            vertical: isWebLayout ? 14 : context.spacingMedium,
+          ),
+          decoration: isWebLayout
+              ? BoxDecoration(
+                  color: context.cardBackground,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF38383A)
+                        : const Color(0xFFE5E5EA),
+                    width: 1,
+                  ),
+                )
+              : context.cardDecoration,
+          child: isWebLayout
+              ? Row(
+                  children: [
+                    iconContainer,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: color, size: 22),
+                    SizedBox(height: context.spacingSmall),
+                    Text(
                       title,
                       style: textStyle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: color, size: 22),
-                  SizedBox(height: context.spacingSmall),
-                  Text(
-                    title,
-                    style: textStyle,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -3036,6 +3264,7 @@ class DashboardScreen extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final isWebLayout = ResponsiveHelper.isWeb;
+    final isDark = theme.brightness == Brightness.dark;
     final textStyle = TextStyle(
       color: theme.textTheme.bodyLarge?.color,
       fontSize:
@@ -3043,10 +3272,10 @@ class DashboardScreen extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
     final iconContainer = Container(
-      width: ResponsiveHelper.getResponsiveSpacing(context, 36),
-      height: ResponsiveHelper.getResponsiveSpacing(context, 36),
+      width: ResponsiveHelper.getResponsiveSpacing(context, isWebLayout ? 40 : 36),
+      height: ResponsiveHelper.getResponsiveSpacing(context, isWebLayout ? 40 : 36),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: isDark ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getResponsiveBorderRadius(context, 10),
         ),
@@ -3054,89 +3283,130 @@ class DashboardScreen extends StatelessWidget {
       child: Icon(
         icon,
         color: color,
-        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
+        size: ResponsiveHelper.getResponsiveIconSize(context, isWebLayout ? 20 : 18),
       ),
     );
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(context.borderRadiusLarge),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: context.spacingLarge,
-          vertical: context.spacingMedium,
-        ),
-        decoration: context.cardDecoration,
-        child: Stack(
-          alignment: isWebLayout ? Alignment.centerLeft : Alignment.center,
-          children: [
-            isWebLayout
-                ? Row(
-                    children: [
-                      iconContainer,
-                      SizedBox(width: context.spacingMedium),
-                      Expanded(
-                        child: Text(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(isWebLayout ? 14 : context.borderRadiusLarge),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(isWebLayout ? 14 : context.borderRadiusLarge),
+        hoverColor: isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isWebLayout ? 16 : context.spacingLarge,
+            vertical: isWebLayout ? 14 : context.spacingMedium,
+          ),
+          decoration: isWebLayout
+              ? BoxDecoration(
+                  color: context.cardBackground,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF38383A)
+                        : const Color(0xFFE5E5EA),
+                    width: 1,
+                  ),
+                )
+              : context.cardDecoration,
+          child: Stack(
+            alignment: isWebLayout ? Alignment.centerLeft : Alignment.center,
+            children: [
+              isWebLayout
+                  ? Row(
+                      children: [
+                        iconContainer,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (badgeCount > 0) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              badgeCount > 99 ? '99+' : badgeCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, color: color, size: 22),
+                        SizedBox(height: context.spacingSmall),
+                        Text(
                           title,
                           style: textStyle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: ResponsiveHelper.getResponsiveIconSize(context, 18),
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                    ],
-                  )
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, color: color, size: 22),
-                      SizedBox(height: context.spacingSmall),
-                      Text(
-                        title,
-                        style: textStyle,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-            if (badgeCount > 0)
-              Positioned(
-                top: context.spacingMicro,
-                right: context.spacingMicro,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: badgeCount > 9 ? 5 : 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 1.5,
+                      ],
                     ),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
-                  ),
-                  child: Text(
-                    badgeCount > 99 ? '99+' : badgeCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      height: 1.0,
+              if (badgeCount > 0 && !isWebLayout)
+                Positioned(
+                  top: context.spacingMicro,
+                  right: context.spacingMicro,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: badgeCount > 9 ? 5 : 6,
+                      vertical: 2,
                     ),
-                    textAlign: TextAlign.center,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.5,
+                      ),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : badgeCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

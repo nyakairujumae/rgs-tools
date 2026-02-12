@@ -207,6 +207,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               scale: isPressed ? 0.98 : 1.0,
               child: Material(
                 color: Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: borderRadius),
                 child: InkWell(
                   onTap: onTap,
                   borderRadius: borderRadius,
