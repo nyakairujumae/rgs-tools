@@ -1159,7 +1159,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.light, // Light mode only – Apple/Jobber style
+            themeMode: ThemeMode.system,
             // Don't use home - let onGenerateRoute handle everything including deep links
             initialRoute: defaultRoute,
             builder: (context, child) {

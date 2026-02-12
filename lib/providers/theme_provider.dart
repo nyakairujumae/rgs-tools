@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
 import '../theme/app_theme.dart';
 
 class ThemeProvider with ChangeNotifier {
-  static const String _themeKey = 'app_theme';
-  
-  ThemeMode _themeMode = ThemeMode.light;
-  bool _isDarkMode = false; // Always light mode
+  ThemeMode _themeMode = ThemeMode.system;
+  bool _isDarkMode = false;
 
-  ThemeMode get themeMode => _themeMode;
+  ThemeMode get themeMode => ThemeMode.system;
   bool get isDarkMode => _isDarkMode;
   
   // Get the current theme data
@@ -44,57 +40,14 @@ class ThemeProvider with ChangeNotifier {
     _listenToSystemBrightness();
   }
 
-  // Initialize theme properly
+  // Initialize theme: always follow device system
   Future<void> _initializeTheme() async {
-    await _loadTheme();
-    // Force light theme for all users
-    await forceLightTheme();
+    _themeMode = ThemeMode.system;
+    _updateDarkMode();
+    notifyListeners();
   }
 
-  // Load theme from SharedPreferences (always light mode)
-  Future<void> _loadTheme() async {
-    try {
-      final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw TimeoutException('SharedPreferences timeout');
-        },
-      );
-      // Always use light mode – ignore saved preference
-      _themeMode = ThemeMode.light;
-      if (!prefs.containsKey(_themeKey)) {
-        await _saveTheme();
-      }
-
-      _updateDarkMode();
-      notifyListeners();
-    } catch (e) {
-      debugPrint('⚠️ Error loading theme: $e');
-      debugPrint('⚠️ Error type: ${e.runtimeType}');
-      _themeMode = ThemeMode.light;
-      _updateDarkMode();
-      notifyListeners();
-    }
-  }
-
-  // Save theme to SharedPreferences
-  Future<void> _saveTheme() async {
-    try {
-      final prefs = await SharedPreferences.getInstance().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw TimeoutException('SharedPreferences timeout');
-        },
-      );
-      await prefs.setInt(_themeKey, _themeMode.index);
-    } catch (e) {
-      debugPrint('⚠️ Error saving theme: $e');
-      debugPrint('⚠️ Error type: ${e.runtimeType}');
-      // Don't throw - theme will still work, just won't persist
-    }
-  }
-
-  // Update dark mode based on current theme mode
+  // Update dark mode from device system brightness
   void _updateDarkMode() {
     switch (_themeMode) {
       case ThemeMode.light:
@@ -130,14 +83,11 @@ class ThemeProvider with ChangeNotifier {
     WidgetsBinding.instance.addObserver(_AppLifecycleObserver(this));
   }
 
-  // Change theme mode
+  // Theme always follows device – user cannot override
   Future<void> setThemeMode(ThemeMode mode) async {
-    if (_themeMode != mode) {
-      _themeMode = mode;
-      _updateDarkMode();
-      await _saveTheme();
-      notifyListeners();
-    }
+    _themeMode = ThemeMode.system;
+    _updateDarkMode();
+    notifyListeners();
   }
 
   // Force refresh theme (useful for debugging or manual refresh)
@@ -146,16 +96,17 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Force app to always use light theme
   Future<void> forceLightTheme() async {
-    _themeMode = ThemeMode.light;
+    _themeMode = ThemeMode.system;
     _updateDarkMode();
-    await _saveTheme();
     notifyListeners();
   }
 
-  /// @deprecated Use forceLightTheme – app is light-only
-  Future<void> forceSystemTheme() async => forceLightTheme();
+  Future<void> forceSystemTheme() async {
+    _themeMode = ThemeMode.system;
+    _updateDarkMode();
+    notifyListeners();
+  }
 
   // Check if theme is properly initialized
   bool get isInitialized => _themeMode != null;
