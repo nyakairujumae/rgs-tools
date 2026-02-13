@@ -167,7 +167,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(padding, 16, padding, 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: context.scaffoldBackground,
         border: Border(bottom: BorderSide(color: border)),
       ),
       child: Row(

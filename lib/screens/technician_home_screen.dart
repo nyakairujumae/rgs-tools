@@ -826,9 +826,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.scaffoldBackground,
-      appBar: (_selectedIndex == 1 || _selectedIndex == 2)
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: context.scaffoldBackground,
+        appBar: (_selectedIndex == 1 || _selectedIndex == 2)
           ? null
           : AppBar(
         backgroundColor: context.appBarBackground,
@@ -952,7 +953,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ],
       ),
       ),
-    );
+    ));
   }
 
   void _showNotifications(BuildContext context) async {

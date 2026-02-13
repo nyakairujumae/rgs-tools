@@ -65,7 +65,15 @@ final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>()
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Ensure status bar (clock, network, battery) is visible - not covered by app content
+  if (!kIsWeb) {
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
+  }
+
   // CRITICAL: Splash screen ONLY on fresh install (first launch)
   // After first launch, NEVER show splash again, even if user is not logged in
   // Use single persistent boolean flag - save immediately when splash is shown

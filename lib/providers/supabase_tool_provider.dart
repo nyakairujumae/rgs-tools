@@ -140,9 +140,8 @@ class SupabaseToolProvider with ChangeNotifier {
       debugPrint(
           '✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
 
-      // Reload tools to ensure sync with database and clear any stale references
-      await loadTools();
-      
+      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
+      // and log the user out. Local state is already correct.
       notifyListeners();
       debugPrint('✅ Provider: Notified listeners after reload');
     } catch (e) {

@@ -1784,11 +1784,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 final toolId = _currentTool.id!;
                 final toolProvider = context.read<SupabaseToolProvider>();
                 
-                // Delete from database first
-                await SupabaseService.client.from('tools').delete().eq('id', toolId);
-                
-                // Update local state immediately for instant UI feedback
-                toolProvider.removeToolFromList(toolId);
+                // Use provider to delete (avoids duplicate logic and session issues)
+                await toolProvider.deleteTool(toolId);
                 
                 // Clear loading state and navigate immediately
                 if (mounted) {
@@ -1810,11 +1807,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     );
                   });
                 }
-                
-                // Reload tools in background to ensure full sync
-                toolProvider.loadTools().catchError((e) {
-                  debugPrint('Error reloading tools after deletion: $e');
-                });
+                // Do NOT call loadTools() here - it can trigger session refresh/401
+                // and log the user out. removeToolFromList already updated local state.
               } catch (e) {
                 debugPrint('❌ Error deleting tool: $e');
                 

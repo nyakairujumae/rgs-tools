@@ -470,7 +470,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   ],
                 ),
               )
-            : contentScaffold,
+            : SafeArea(
+                child: contentScaffold,
+              ),
       ),
     );
   }
