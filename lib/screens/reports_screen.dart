@@ -106,132 +106,119 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWebDesktop = kIsWeb && ResponsiveHelper.isDesktop(context);
+    final contentPadding = isWebDesktop ? 32.0 : 16.0;
+
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: kIsWeb ? 900 : double.infinity,
-            ),
-            child: Container(
-              color: context.scaffoldBackground,
-              child: Column(
-                children: [
-                  // Header with back button and title
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      kIsWeb ? 24 : 16,
-                      kIsWeb ? 24 : 20,
-                      kIsWeb ? 24 : 16,
-                      0,
-                    ),
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        icon: Icon(
-                            Icons.chevron_left,
-                            size: 24,
-                          color: theme.colorScheme.onSurface,
-                          ),
-                        onPressed: () => NavigationHelper.safePop(context),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Reports & Analytics',
-                            style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                              fontWeight: FontWeight.w700,
-                              color: theme.textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Preview RGS tools reports summaries',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_isExporting)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppTheme.secondaryColor,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.download_rounded),
-                        onPressed: _exportReport,
-                        tooltip: 'Export Report',
-                      ),
-                  ],
-                ),
-              ),
-              Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
-                builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
-                  if (toolProvider.isLoading || technicianProvider.isLoading || issueProvider.isLoading || workflowProvider.isLoading) {
-                    return Expanded(
-                      child: _buildReportSkeleton(context),
-                    );
-                  }
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // B2B header
+            _buildReportsHeader(context, theme, contentPadding),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(contentPadding, 0, contentPadding, 24),
+                child: Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
+                  builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
+                    if (toolProvider.isLoading || technicianProvider.isLoading || issueProvider.isLoading || workflowProvider.isLoading) {
+                      return _buildReportSkeleton(context);
+                    }
 
-                  final tools = toolProvider.tools;
-                  final technicians = technicianProvider.technicians;
-                  final issues = issueProvider.issues;
-                  final workflows = workflowProvider.workflows;
-                  
-                  return Expanded(
-                    child: Column(
+                    final tools = toolProvider.tools;
+                    final technicians = technicianProvider.technicians;
+                    final issues = issueProvider.issues;
+                    final workflows = workflowProvider.workflows;
+
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Report Configuration Section
                         _buildConfigurationSection(context),
-                        const SizedBox(height: 12),
-                        // Data Preview Section
-                        Expanded(
-                          child: _buildDataPreviewSection(
-                            context,
-                            tools,
-                            technicians,
-                            issues,
-                            workflows,
-                            toolProvider,
-                            technicianProvider,
-                            issueProvider,
-                            workflowProvider,
-                          ),
+                        const SizedBox(height: 20),
+                        _buildDataPreviewSection(
+                          context,
+                          tools,
+                          technicians,
+                          issues,
+                          workflows,
+                          toolProvider,
+                          technicianProvider,
+                          issueProvider,
+                          workflowProvider,
                         ),
                       ],
-                    ),
-                  );
-                },
-              ),
-                ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReportsHeader(BuildContext context, ThemeData theme, double padding) {
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(padding, 16, padding, 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(bottom: BorderSide(color: border)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => NavigationHelper.safePop(context),
+            style: IconButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Reports & Analytics',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  'Preview RGS tools reports summaries',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isExporting)
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.download_rounded),
+              onPressed: _exportReport,
+              tooltip: 'Export Report',
+            ),
+        ],
       ),
     );
   }
@@ -244,15 +231,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildConfigurationSection(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 12, kIsWeb ? 24 : 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Bar
-          Container(
-            decoration: context.cardDecoration,
-            child: TextField(
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: border),
+          ),
+          child: TextField(
               controller: _searchController,
               style: TextStyle(
                 fontSize: 14,
@@ -272,18 +263,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       )
                     : null,
               ),
-              onChanged: (value) {
-                setState(() {
-                  // Trigger rebuild for search filtering if needed
-                });
-              },
+              onChanged: (value) => setState(() {}),
             ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Filter Pills Row
-          Row(
+        ),
+        const SizedBox(height: 12),
+        Row(
             children: [
               // Report Type Filter Pill
               Expanded(
@@ -309,7 +293,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ],
           ),
         ],
-      ),
     );
   }
 
@@ -317,12 +300,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
     final spacing = ResponsiveHelper.getResponsiveSpacing(context, 12);
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 0, kIsWeb ? 24 : 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           const SizedBox(height: 8),
           SkeletonLoader(
             height: 24,
@@ -375,21 +355,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: 24),
         ],
-      ),
     );
   }
-  
+
   Widget _buildFilterPill(BuildContext context, {required String label, required String value, required VoidCallback onTap}) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         height: ResponsiveHelper.getResponsiveListItemHeight(context, 48),
         padding: EdgeInsets.symmetric(
           horizontal: ResponsiveHelper.getResponsiveSpacing(context, 16),
         ),
-        decoration: context.cardDecoration,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: border),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -836,18 +822,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
     ToolIssueProvider issueProvider,
     ApprovalWorkflowsProvider workflowProvider,
   ) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 0, kIsWeb ? 24 : 16, 24),
-      child: _buildDetailedPreview(
-        tools,
-        technicians,
-        issues,
-        workflows,
-        toolProvider,
-        technicianProvider,
-        issueProvider,
-        workflowProvider,
-      ),
+    return _buildDetailedPreview(
+      tools,
+      technicians,
+      issues,
+      workflows,
+      toolProvider,
+      technicianProvider,
+      issueProvider,
+      workflowProvider,
     );
   }
 

@@ -9,8 +9,8 @@ class ResponsiveHelper {
   static double getMaxWidth(BuildContext context) {
     if (isWeb) {
       final screenWidth = MediaQuery.of(context).size.width;
-      // Limit max width on web for better readability
-      return screenWidth > 1200 ? 1200 : screenWidth;
+      // Use full width; cap only on very wide displays for readability
+      return screenWidth > 1920 ? 1920 : screenWidth;
     }
     return double.infinity;
   }

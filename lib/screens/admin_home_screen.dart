@@ -1448,58 +1448,36 @@ class DashboardScreen extends StatelessWidget {
                 showTitle: isWideLayout,
               );
 
+        final screenWidth = MediaQuery.of(context).size.width;
+        final contentPadding = isWideLayout ? (screenWidth > 1600 ? 48.0 : 32.0) : horizontalPadding;
+
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
+            contentPadding,
             topPadding,
-            horizontalPadding,
+            contentPadding,
             bottomPadding,
           ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: ResponsiveHelper.getMaxWidth(context),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isWideLayout) ...[
-                    // Web: professional dashboard header
-                    SafeArea(
-                      bottom: false,
-                      minimum: const EdgeInsets.only(top: 28),
-                      child: greetingCard,
-                    ),
-                    const SizedBox(height: 32),
-                    // Web: single row of 4 stat tiles
-                    isLoadingDashboard
-                        ? _buildMetricsSkeleton(context)
-                        : _buildWebStatsRow(
-                            context,
-                            totalTools: totalTools,
-                            technicianCount: technicians.length,
-                            totalValue: totalValue,
-                            maintenanceCount: toolsNeedingMaintenance.length,
-                            statValueStyle: statValueStyle,
-                          ),
-                    const SizedBox(height: 28),
-                    // Web: status overview
-                    statusOverviewCard,
-                    const SizedBox(height: 36),
-                    // Web: quick actions
-                    Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    isLoadingDashboard
-                        ? _buildQuickActionsSkeleton(context)
-                        : _buildQuickActionsGrid(context),
-                  ] else ...[
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (isWideLayout) ...[
+                SafeArea(
+                  bottom: false,
+                  minimum: const EdgeInsets.only(top: 32),
+                  child: _buildWebDashboard(
+                    context,
+                    greetingCard: greetingCard,
+                    isLoadingDashboard: isLoadingDashboard,
+                    totalTools: totalTools,
+                    technicianCount: technicians.length,
+                    totalValue: totalValue,
+                    maintenanceCount: toolsNeedingMaintenance.length,
+                    availableCount: availableTools.length,
+                    assignedCount: assignedTools.length,
+                  ),
+                ),
+              ] else ...[
                   SafeArea(
                     bottom: false,
                     minimum: EdgeInsets.only(
@@ -1802,14 +1780,529 @@ class DashboardScreen extends StatelessWidget {
                   ],  // end else (mobile Key Metrics + Quick Actions)
                 ],
               ),
-            ),
-          ),
         );
       },
     );
   }
 
-  /// Web: B2B metric cards – clean, minimal
+  /// Web: New dashboard layout – metric strip, status bar, action list
+  Widget _buildWebDashboard(
+    BuildContext context, {
+    required Widget greetingCard,
+    required bool isLoadingDashboard,
+    required int totalTools,
+    required int technicianCount,
+    required double totalValue,
+    required int maintenanceCount,
+    required int availableCount,
+    required int assignedCount,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = theme.colorScheme.surface;
+    final onSurface = theme.colorScheme.onSurface;
+    final muted = onSurface.withValues(alpha: 0.6);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        greetingCard,
+        const SizedBox(height: 32),
+        if (isLoadingDashboard)
+          _buildWebDashboardSkeleton(context)
+        else ...[
+        // Metric strip – single horizontal bar, 4 segments
+        Container(
+          decoration: BoxDecoration(
+            color: surface,
+            border: Border.all(
+              color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                _buildMetricSegment(
+                  context,
+                  icon: Icons.build_rounded,
+                  value: totalTools.toString(),
+                  label: 'Total Tools',
+                  color: AppTheme.primaryColor,
+                  onTap: () => onNavigateToTab(1),
+                  isFirst: true,
+                ),
+                _buildMetricSegment(
+                  context,
+                  icon: Icons.people_rounded,
+                  value: technicianCount.toString(),
+                  label: 'Technicians',
+                  color: AppTheme.secondaryColor,
+                  onTap: () => onNavigateToTab(3),
+                  isFirst: false,
+                ),
+                _buildMetricSegment(
+                  context,
+                  icon: Icons.account_balance_wallet_rounded,
+                  value: CurrencyFormatter.formatCurrencyWhole(totalValue),
+                  label: 'Total Value',
+                  color: AppTheme.primaryColor,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReportDetailScreen(
+                        reportType: ReportType.financialSummary,
+                        timePeriod: 'Last 30 Days',
+                      ),
+                    ),
+                  ),
+                  isFirst: false,
+                ),
+                _buildMetricSegment(
+                  context,
+                  icon: Icons.build_circle_rounded,
+                  value: maintenanceCount.toString(),
+                  label: 'Maintenance',
+                  color: AppTheme.errorColor,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MaintenanceScreen(),
+                    ),
+                  ),
+                  isFirst: false,
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Two-column: status + actions
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status panel
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fleet status',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: muted,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Available',
+                                    style: TextStyle(fontSize: 12, color: muted),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    availableCount.toString(),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.secondaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 48,
+                              color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Assigned',
+                                    style: TextStyle(fontSize: 12, color: muted),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    assignedCount.toString(),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Row(
+                            children: [
+                              if (availableCount + assignedCount > 0) ...[
+                                Expanded(
+                                  flex: availableCount,
+                                  child: Container(
+                                    height: 8,
+                                    color: AppTheme.secondaryColor,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: assignedCount,
+                                  child: Container(
+                                    height: 8,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ] else
+                                Expanded(
+                                  child: Container(
+                                    height: 8,
+                                    color: onSurface.withValues(alpha: 0.1),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 32),
+            // Action list
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick actions',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: muted,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildWebActionList(context),
+                ],
+              ),
+            ),
+          ],
+        ),
+        ], // end else
+      ],
+    );
+  }
+
+  Widget _buildWebDashboardSkeleton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = Theme.of(context).colorScheme.surface;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Shimmer.fromColors(
+      baseColor: _skeletonBaseColor,
+      highlightColor: _skeletonHighlightColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 80,
+            decoration: BoxDecoration(
+              color: surface,
+              border: Border.all(color: border),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    border: Border.all(color: border),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 32),
+              Expanded(
+                child: Container(
+                  height: 320,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    border: Border.all(color: border),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricSegment(
+    BuildContext context, {
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    required bool isFirst,
+    bool isLast = false,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            border: isFirst
+                ? null
+                : Border(
+                    left: BorderSide(color: border),
+                  ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWebActionList(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = theme.colorScheme.surface;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: surface,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          _buildWebActionRow(
+            context,
+            'Add Tool',
+            Icons.add_rounded,
+            AppTheme.primaryColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen())),
+            showDivider: true,
+          ),
+          _buildWebActionRow(
+            context,
+            'Assign Tool',
+            Icons.person_add_rounded,
+            AppTheme.secondaryColor,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)),
+            ),
+            showDivider: true,
+          ),
+          Consumer<PendingApprovalsProvider>(
+            builder: (context, provider, _) => _buildWebActionRow(
+              context,
+              'Authorize Users',
+              Icons.verified_user_rounded,
+              AppTheme.primaryColor,
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
+              showDivider: true,
+              badgeCount: provider.pendingCount,
+            ),
+          ),
+          _buildWebActionRow(
+            context,
+            'Reports',
+            Icons.analytics_rounded,
+            AppTheme.primaryColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+            showDivider: true,
+          ),
+          _buildWebActionRow(
+            context,
+            'Tool Issues',
+            Icons.report_problem_rounded,
+            AppTheme.errorColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen())),
+            showDivider: true,
+          ),
+          _buildWebActionRow(
+            context,
+            'Approvals',
+            Icons.task_alt_rounded,
+            AppTheme.warningColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen())),
+            showDivider: true,
+          ),
+          _buildWebActionRow(
+            context,
+            'Maintenance Schedule',
+            Icons.schedule_rounded,
+            AppTheme.secondaryColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen())),
+            showDivider: true,
+          ),
+          _buildWebActionRow(
+            context,
+            'Tool History',
+            Icons.history_rounded,
+            AppTheme.primaryColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen())),
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebActionRow(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    bool showDivider = true,
+    int badgeCount = 0,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(icon, size: 20, color: color),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (badgeCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (showDivider)
+          Container(
+            height: 1,
+            margin: const EdgeInsets.only(left: 50),
+            color: border,
+          ),
+      ],
+    );
+  }
+
+  /// Web: B2B metric cards – clean, minimal (kept for mobile/skeleton)
   Widget _buildWebStatsRow(
     BuildContext context, {
     required int totalTools,
