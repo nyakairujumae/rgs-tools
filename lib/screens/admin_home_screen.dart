@@ -450,9 +450,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         child: isWebDesktop
             ? SafeArea(
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildWebSidebar(context),
-                    Expanded(child: contentScaffold),
+                    Expanded(
+                      child: Container(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF111318)
+                            : const Color(0xFFF5F7FA),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildWebTopBar(context),
+                            Expanded(child: contentScaffold),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               )
@@ -462,76 +476,60 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // Apple / Jobber-style web sidebar
+  // B2B web sidebar – light, minimal, brand colors
   // ---------------------------------------------------------------------------
 
   Widget _buildWebSidebar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1A1D21) : Colors.white;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
     return Container(
-      width: 264,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+      width: 240,
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(right: BorderSide(color: border, width: 1)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Brand header ──────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
             child: Row(
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF10B981),
-                        const Color(0xFF10B981).withValues(alpha: 0.7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.secondaryColor,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.precision_manufacturing_rounded,
                     color: Colors.white,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Royal Gulf',
+                        'RGS Tools',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFE2E8F0),
-                          letterSpacing: -0.3,
-                          height: 1.2,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Text(
-                        'Services',
+                        'Admin Panel',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFE2E8F0),
-                          letterSpacing: -0.3,
-                          height: 1.2,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'HVAC Tools Management',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                          letterSpacing: 0.3,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -541,96 +539,51 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             ),
           ),
 
-          Container(
-            height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            color: const Color(0xFF1E293B),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── OVERVIEW section ──
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'OVERVIEW',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
+          Container(height: 1, color: border),
+          const SizedBox(height: 16),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSidebarNavItem(
-                  context, 0, 'Dashboard',
-                  Icons.grid_view_rounded, Icons.grid_view_rounded,
-                ),
+                _buildSidebarNavItem(context, 0, 'Dashboard', Icons.dashboard_outlined, Icons.dashboard_rounded),
                 const SizedBox(height: 2),
-                _buildSidebarNavItem(
-                  context, 1, 'Tools',
-                  Icons.construction_outlined, Icons.construction_rounded,
-                ),
+                _buildSidebarNavItem(context, 1, 'Tools', Icons.build_outlined, Icons.build_rounded),
                 const SizedBox(height: 2),
-                _buildSidebarNavItem(
-                  context, 2, 'Shared Tools',
-                  Icons.swap_horiz_rounded, Icons.swap_horiz_rounded,
-                ),
+                _buildSidebarNavItem(context, 2, 'Shared Tools', Icons.share_outlined, Icons.share_rounded),
                 const SizedBox(height: 2),
-                _buildSidebarNavItem(
-                  context, 3, 'Technicians',
-                  Icons.engineering_outlined, Icons.engineering_rounded,
-                ),
+                _buildSidebarNavItem(context, 3, 'Technicians', Icons.people_outline, Icons.people_rounded),
               ],
             ),
           ),
 
-          const SizedBox(height: 28),
-
-          // ── MANAGEMENT section ──
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'MANAGEMENT',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          Container(height: 1, color: border),
+          const SizedBox(height: 16),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSidebarRouteItem(context, 'Reports', Icons.bar_chart_rounded, () {
+                _buildSidebarRouteItem(context, 'Reports', Icons.analytics_outlined, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
                 }),
                 const SizedBox(height: 2),
-                _buildSidebarRouteItem(context, 'Maintenance', Icons.handyman_rounded, () {
+                _buildSidebarRouteItem(context, 'Maintenance', Icons.handyman_outlined, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
                 }),
                 const SizedBox(height: 2),
-                _buildSidebarRouteItem(context, 'Approvals', Icons.task_alt_rounded, () {
+                _buildSidebarRouteItem(context, 'Approvals', Icons.approval_outlined, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
                 }),
                 const SizedBox(height: 2),
-                _buildSidebarRouteItem(context, 'Tool Issues', Icons.report_outlined, () {
+                _buildSidebarRouteItem(context, 'Tool Issues', Icons.report_problem_outlined, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
                 }),
                 const SizedBox(height: 2),
-                _buildSidebarRouteItem(context, 'Tool History', Icons.history_rounded, () {
+                _buildSidebarRouteItem(context, 'Tool History', Icons.history, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
                 }),
               ],
@@ -639,12 +592,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
 
           const Spacer(),
 
-          // ── Bottom section ──
-          Container(
-            height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            color: const Color(0xFF1E293B),
-          ),
+          Container(height: 1, color: border),
           const SizedBox(height: 8),
 
           Consumer<AdminNotificationProvider>(
@@ -656,16 +604,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const AdminNotificationScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const AdminNotificationScreen()),
                   );
                 },
                 badge: notificationProvider.unreadCount,
               );
             },
           ),
-
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return _buildSidebarBottomItem(
@@ -677,7 +622,46 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             },
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebTopBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+    const titles = ['Dashboard', 'Tools', 'Shared Tools', 'Technicians'];
+    final title = titles[_selectedIndex.clamp(0, 3)];
+    final today = DateFormat('MMM d, yyyy').format(DateTime.now());
+
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(bottom: BorderSide(color: border, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            today,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
         ],
       ),
     );
@@ -691,33 +675,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     IconData selectedIcon,
   ) {
     final isSelected = _selectedIndex == index;
-    const accent = Color(0xFF10B981);
-    const textPrimary = Color(0xFFE2E8F0);
-    const textSecondary = Color(0xFF94A3B8);
+    final theme = Theme.of(context);
+    final primary = AppTheme.primaryColor;
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
-        borderRadius: BorderRadius.circular(8),
-        hoverColor: const Color(0xFF1E293B),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? accent.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
             children: [
               Icon(
                 isSelected ? selectedIcon : icon,
                 size: 20,
-                color: isSelected ? accent : textSecondary,
+                color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -726,20 +702,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? textPrimary : textSecondary,
-                    letterSpacing: -0.1,
+                    color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
               ),
-              if (isSelected)
-                Container(
-                  width: 4,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: accent,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
             ],
           ),
         ),
@@ -754,26 +720,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     required VoidCallback onTap,
     int badge = 0,
   }) {
-    const textSecondary = Color(0xFF94A3B8);
+    final theme = Theme.of(context);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        hoverColor: const Color(0xFF1E293B),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: textSecondary),
+              Icon(icon, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: textSecondary,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -807,37 +772,30 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     IconData icon,
     VoidCallback onTap,
   ) {
-    const textSecondary = Color(0xFF94A3B8);
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        hoverColor: const Color(0xFF1E293B),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: textSecondary),
+              Icon(icon, size: 20, color: muted),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: textSecondary,
-                    letterSpacing: -0.1,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
               ),
-              const Icon(
-                Icons.arrow_outward_rounded,
-                size: 14,
-                color: Color(0xFF475569),
-              ),
+              Icon(Icons.chevron_right, size: 18, color: muted),
             ],
           ),
         ),
@@ -1532,22 +1490,12 @@ class DashboardScreen extends StatelessWidget {
                     Text(
                       'Quick Actions',
                       style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurface,
-                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Frequently used tools and workflows',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     isLoadingDashboard
                         ? _buildQuickActionsSkeleton(context)
                         : _buildQuickActionsGrid(context),
@@ -1861,7 +1809,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Web: single row of 4 stat tiles – professional dashboard style
+  /// Web: B2B metric cards – clean, minimal
   Widget _buildWebStatsRow(
     BuildContext context, {
     required int totalTools,
@@ -1875,44 +1823,40 @@ class DashboardScreen extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _buildWebStatTile(
+          child: _buildB2BStatCard(
             context,
             label: 'Total Tools',
             value: totalTools.toString(),
-            icon: Icons.build_rounded,
-            color: Colors.blue,
+            accentColor: AppTheme.primaryColor,
             onTap: () => onNavigateToTab(1),
           ),
         ),
         const SizedBox(width: gap),
         Expanded(
-          child: _buildWebStatTile(
+          child: _buildB2BStatCard(
             context,
             label: 'Technicians',
             value: technicianCount.toString(),
-            icon: Icons.people_rounded,
-            color: _dashboardGreen,
+            accentColor: AppTheme.secondaryColor,
             onTap: () => onNavigateToTab(3),
           ),
         ),
         const SizedBox(width: gap),
         Expanded(
-          child: _buildWebStatTile(
+          child: _buildB2BStatCard(
             context,
             label: 'Total Value',
             valueWidget: CurrencyFormatter.formatCurrencyWidget(
               totalValue,
               decimalDigits: 0,
               style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
-                letterSpacing: -0.5,
               ),
               context: context,
             ),
-            icon: Icons.attach_money_rounded,
-            color: Colors.orange,
+            accentColor: AppTheme.primaryColor,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -1926,12 +1870,11 @@ class DashboardScreen extends StatelessWidget {
         ),
         const SizedBox(width: gap),
         Expanded(
-          child: _buildWebStatTile(
+          child: _buildB2BStatCard(
             context,
             label: 'Maintenance',
             value: maintenanceCount.toString(),
-            icon: Icons.warning_rounded,
-            color: Colors.red,
+            accentColor: AppTheme.errorColor,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -1944,87 +1887,63 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWebStatTile(
+  Widget _buildB2BStatCard(
     BuildContext context, {
     required String label,
     String? value,
     Widget? valueWidget,
-    required IconData icon,
-    required Color color,
+    required Color accentColor,
     VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        hoverColor: isDark
-            ? Colors.white.withValues(alpha: 0.03)
-            : Colors.black.withValues(alpha: 0.02),
         child: Container(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           decoration: BoxDecoration(
-            color: context.cardBackground,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark
-                  ? const Color(0xFF38383A)
-                  : const Color(0xFFE5E5EA),
-              width: 1,
-            ),
+            color: theme.colorScheme.surface,
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: isDark ? 0.18 : 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : Colors.black.withValues(alpha: 0.03),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.trending_up_rounded,
-                      size: 16,
-                      color: color.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              valueWidget ?? Text(
-                value ?? '',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: -0.5,
+              Container(
+                width: 4,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  letterSpacing: 0.1,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    valueWidget ?? Text(
+                      value ?? '',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -2040,80 +1959,22 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
 
-    // Web: professional dashboard header with greeting and date
+    // Web: B2B minimal header
     if (isWeb) {
       final displayName = _resolveDisplayName(authProvider);
       final firstName = _getFirstName(displayName);
       final greeting = firstName.isEmpty
           ? '${_getGreeting()}!'
           : '${_getGreeting()}, $firstName!';
-      final today = DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    greeting,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Monitor and manage your HVAC tool operations',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.cardBackground,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF38383A)
-                      : const Color(0xFFE5E5EA),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    today,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Text(
+          greeting,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+          ),
         ),
       );
     }
@@ -2202,90 +2063,40 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final cardRadius = _getCardRadius(context);
 
-    // Web: professional status overview with progress bar
+    // Web: B2B status overview – minimal table-style
     if (isWebLayout) {
-      final total = availableCount + assignedCount;
-      final availablePercent = total > 0 ? (availableCount / total * 100).round() : 0;
-      final assignedPercent = total > 0 ? (assignedCount / total * 100).round() : 0;
+      final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
 
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF38383A)
-                : const Color(0xFFE5E5EA),
-            width: 1,
-          ),
+          color: theme.colorScheme.surface,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Text(
-                  'Tool Status Overview',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '$total total tools',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                height: 10,
-                child: Row(
-                  children: [
-                    if (availableCount > 0)
-                      Expanded(
-                        flex: availableCount,
-                        child: Container(color: _dashboardGreen),
-                      ),
-                    if (availableCount > 0 && assignedCount > 0)
-                      const SizedBox(width: 3),
-                    if (assignedCount > 0)
-                      Expanded(
-                        flex: assignedCount,
-                        child: Container(color: AppTheme.primaryColor),
-                      ),
-                    if (total == 0)
-                      Expanded(
-                        child: Container(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.06),
-                        ),
-                      ),
-                  ],
-                ),
+            Text(
+              'Tool Status',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 18),
-            // Legend row
+            const SizedBox(height: 16),
             Row(
               children: [
-                _buildWebStatusLegend('Available', availableCount, '$availablePercent%', _dashboardGreen, theme),
-                const SizedBox(width: 40),
-                _buildWebStatusLegend('Assigned', assignedCount, '$assignedPercent%', AppTheme.primaryColor, theme),
+                Expanded(
+                  child: _buildB2BStatusRow('Available', availableCount.toString(), AppTheme.secondaryColor, theme),
+                ),
+                Container(width: 1, height: 32, color: border),
+                Expanded(
+                  child: _buildB2BStatusRow('Assigned', assignedCount.toString(), AppTheme.primaryColor, theme),
+                ),
               ],
             ),
           ],
@@ -2336,139 +2147,48 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    // Web: professional 2×4 grid of action cards
-    return Column(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionCard(
-                'Add Tool',
-                Icons.add_circle_outline_rounded,
-                AppTheme.primaryColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddToolScreen()),
-                ),
-                context,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildQuickActionCard(
-                'Assign Tool',
-                Icons.person_add_alt_1_rounded,
-                _dashboardGreen,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ToolsScreen(isSelectionMode: true),
-                  ),
-                ),
-                context,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Consumer<PendingApprovalsProvider>(
-                builder: (context, provider, child) {
-                  return _buildQuickActionCardWithBadge(
-                    'Authorize Users',
-                    Icons.verified_user_outlined,
-                    Colors.blue,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AdminApprovalScreen(),
-                      ),
-                    ),
-                    context,
-                    badgeCount: provider.pendingCount,
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildQuickActionCard(
-                'Reports',
-                Icons.assessment_outlined,
-                Colors.purple,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReportsScreen()),
-                ),
-                context,
-              ),
-            ),
-          ],
+        _buildB2BQuickAction(context, 'Add Tool', Icons.add, AppTheme.primaryColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen()));
+        }),
+        _buildB2BQuickAction(context, 'Assign Tool', Icons.person_add, AppTheme.secondaryColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)));
+        }),
+        Consumer<PendingApprovalsProvider>(
+          builder: (context, provider, _) => _buildB2BQuickAction(
+            context,
+            'Authorize Users',
+            Icons.verified_user,
+            AppTheme.primaryColor,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
+            badgeCount: provider.pendingCount,
+          ),
         ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionCard(
-                'Tool Issues',
-                Icons.report_outlined,
-                Colors.red,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ToolIssuesScreen()),
-                ),
-                context,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildQuickActionCard(
-                'Approvals',
-                Icons.task_alt_rounded,
-                Colors.amber.shade700,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ApprovalWorkflowsScreen(),
-                  ),
-                ),
-                context,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildQuickActionCard(
-                'Maintenance',
-                Icons.handyman_rounded,
-                Colors.teal,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MaintenanceScreen()),
-                ),
-                context,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _buildQuickActionCard(
-                'Tool History',
-                Icons.history_rounded,
-                Colors.indigo,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AllToolHistoryScreen()),
-                ),
-                context,
-              ),
-            ),
-          ],
-        ),
+        _buildB2BQuickAction(context, 'Reports', Icons.analytics, AppTheme.primaryColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
+        }),
+        _buildB2BQuickAction(context, 'Tool Issues', Icons.report_problem, AppTheme.errorColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
+        }),
+        _buildB2BQuickAction(context, 'Approvals', Icons.approval, AppTheme.warningColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+        }),
+        _buildB2BQuickAction(context, 'Maintenance Schedule', Icons.schedule, AppTheme.secondaryColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
+        }),
+        _buildB2BQuickAction(context, 'Tool History', Icons.history, AppTheme.primaryColor, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
+        }),
       ],
     );
   }
 
-  /// Web: clean action chip for quick actions – Apple / Jobber style
-  Widget _buildWebQuickActionChip(
+  Widget _buildB2BQuickAction(
     BuildContext context,
-    String title,
+    String label,
     IconData icon,
     Color color,
     VoidCallback onTap, {
@@ -2476,137 +2196,49 @@ class DashboardScreen extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
+
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        hoverColor: color.withValues(alpha: isDark ? 0.12 : 0.06),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isDark
-                ? color.withValues(alpha: 0.08)
-                : color.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: color.withValues(alpha: isDark ? 0.2 : 0.12),
-              width: 1,
-            ),
+            color: theme.colorScheme.surface,
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 8),
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 10),
               Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? color.withValues(alpha: 0.9) : color,
-                  letterSpacing: -0.1,
-                ),
-              ),
-              if (badgeCount > 0) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B30),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    badgeCount > 99 ? '99+' : '$badgeCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWebQuickActionTile(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap, {
-    int badgeCount = 0,
-  }) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(_cardRadiusValue),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(_cardRadiusValue),
-          border: Border.all(
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.06),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(icon, color: color, size: 16),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
+                label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.onSurface,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            if (badgeCount > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  badgeCount > 99 ? '99+' : badgeCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+              if (badgeCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : '$badgeCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                   ),
                 ),
-              )
-            else
-              Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -3114,41 +2746,34 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWebStatusLegend(String label, int count, String percent, Color color, ThemeData theme) {
+  Widget _buildB2BStatusRow(String label, String count, Color accentColor, ThemeData theme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
+            color: accentColor,
+            shape: BoxShape.circle,
           ),
         ),
         const SizedBox(width: 10),
         Text(
-          '$label: ',
+          label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
+        const Spacer(),
         Text(
-          '$count',
+          count,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          ' ($percent)',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ],
