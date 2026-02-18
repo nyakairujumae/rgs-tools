@@ -953,9 +953,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       ),
       ),
     );
-    return Theme.of(context).platform == TargetPlatform.android
-        ? homeScaffold
-        : SafeArea(child: homeScaffold);
+    return homeScaffold;
   }
 
   void _showNotifications(BuildContext context) async {
