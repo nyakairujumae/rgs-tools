@@ -470,9 +470,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   ],
                 ),
               )
-            : SafeArea(
-                child: contentScaffold,
-              ),
+            : (defaultTargetPlatform == TargetPlatform.android
+                ? contentScaffold
+                : SafeArea(
+                    child: contentScaffold,
+                  )),
       ),
     );
   }
