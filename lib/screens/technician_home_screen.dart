@@ -826,8 +826,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    final homeScaffold = Scaffold(
         backgroundColor: context.scaffoldBackground,
         appBar: (_selectedIndex == 1 || _selectedIndex == 2)
           ? null
@@ -953,7 +952,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ],
       ),
       ),
-    ));
+    );
+    return Theme.of(context).platform == TargetPlatform.android
+        ? homeScaffold
+        : SafeArea(child: homeScaffold);
   }
 
   void _showNotifications(BuildContext context) async {
