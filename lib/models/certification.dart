@@ -1,6 +1,6 @@
 class Certification {
-  final int? id;
-  final int toolId;
+  final String? id;
+  final String toolId;
   final String toolName;
   final String certificationType;
   final String certificationNumber;
@@ -18,7 +18,7 @@ class Certification {
 
   Certification({
     this.id,
-    required this.toolId,
+    required this.toolId, // UUID string matching tools.id
     required this.toolName,
     required this.certificationType,
     required this.certificationNumber,
@@ -58,8 +58,8 @@ class Certification {
 
   factory Certification.fromMap(Map<String, dynamic> map) {
     return Certification(
-      id: map['id'],
-      toolId: map['tool_id'],
+      id: map['id']?.toString(),
+      toolId: (map['tool_id'] ?? '').toString(),
       toolName: map['tool_name'],
       certificationType: map['certification_type'],
       certificationNumber: map['certification_number'],
@@ -78,8 +78,8 @@ class Certification {
   }
 
   Certification copyWith({
-    int? id,
-    int? toolId,
+    String? id,
+    String? toolId,
     String? toolName,
     String? certificationType,
     String? certificationNumber,
@@ -210,8 +210,8 @@ class CertificationService {
     final now = DateTime.now();
     return [
       Certification(
-        id: 1,
-        toolId: 1,
+        id: '1',
+        toolId: 'mock-tool-1',
         toolName: 'Digital Multimeter',
         certificationType: 'Calibration Certificate',
         certificationNumber: 'CAL-2024-001',
@@ -225,8 +225,8 @@ class CertificationService {
         notes: 'Annual calibration completed successfully',
       ),
       Certification(
-        id: 2,
-        toolId: 1,
+        id: '2',
+        toolId: 'mock-tool-1',
         toolName: 'Digital Multimeter',
         certificationType: 'Electrical Safety Test',
         certificationNumber: 'EST-2024-001',
@@ -240,8 +240,8 @@ class CertificationService {
         notes: 'Electrical safety test passed',
       ),
       Certification(
-        id: 3,
-        toolId: 2,
+        id: '3',
+        toolId: 'mock-tool-2',
         toolName: 'Refrigerant Manifold Gauge Set',
         certificationType: 'Pressure Test',
         certificationNumber: 'PT-2024-001',
@@ -255,8 +255,8 @@ class CertificationService {
         notes: 'Pressure test certificate expiring soon',
       ),
       Certification(
-        id: 4,
-        toolId: 3,
+        id: '4',
+        toolId: 'mock-tool-3',
         toolName: 'Vacuum Pump',
         certificationType: 'Safety Inspection',
         certificationNumber: 'SI-2024-001',
@@ -270,8 +270,8 @@ class CertificationService {
         notes: 'Safety inspection completed',
       ),
       Certification(
-        id: 5,
-        toolId: 4,
+        id: '5',
+        toolId: 'mock-tool-4',
         toolName: 'Cordless Drill',
         certificationType: 'CE Marking',
         certificationNumber: 'CE-2024-001',
@@ -285,8 +285,8 @@ class CertificationService {
         notes: 'CE marking certificate valid',
       ),
       Certification(
-        id: 6,
-        toolId: 5,
+        id: '6',
+        toolId: 'mock-tool-5',
         toolName: 'Safety Harness',
         certificationType: 'Safety Inspection',
         certificationNumber: 'SI-2023-001',

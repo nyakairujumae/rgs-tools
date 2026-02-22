@@ -20,6 +20,8 @@ import '../utils/account_deletion_helper.dart';
 import 'package:shimmer/shimmer.dart';
 import 'tools_screen.dart';
 import 'technicians_screen.dart';
+import 'calibration_screen.dart';
+import 'compliance_screen.dart';
 import 'add_tool_screen.dart';
 import 'checkin_screen.dart';
 import 'reports_screen.dart';
@@ -571,6 +573,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _buildSidebarRouteItem(context, 'Calibration', Icons.verified_outlined, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CalibrationScreen()));
+                }),
+                const SizedBox(height: 2),
+                _buildSidebarRouteItem(context, 'Compliance', Icons.assignment_outlined, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ComplianceScreen()));
+                }),
+                const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Reports', Icons.analytics_outlined, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
                 }),
@@ -1772,6 +1782,40 @@ class DashboardScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const AllToolHistoryScreen(),
+                              ),
+                            ),
+                            context,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: context.spacingMedium),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            'Calibration',
+                            Icons.verified_outlined,
+                            AppTheme.secondaryColor,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CalibrationScreen(),
+                              ),
+                            ),
+                            context,
+                          ),
+                        ),
+                        SizedBox(width: context.spacingMedium),
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            'Compliance',
+                            Icons.assignment_outlined,
+                            AppTheme.secondaryColor,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ComplianceScreen(),
                               ),
                             ),
                             context,

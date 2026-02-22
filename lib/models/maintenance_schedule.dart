@@ -1,6 +1,6 @@
 class MaintenanceSchedule {
   final int? id;
-  final int toolId;
+  final String toolId; // UUID string matching tools.id
   final String toolName;
   final String maintenanceType;
   final String description;
@@ -64,8 +64,8 @@ class MaintenanceSchedule {
 
   factory MaintenanceSchedule.fromMap(Map<String, dynamic> map) {
     return MaintenanceSchedule(
-      id: map['id'],
-      toolId: map['tool_id'],
+      id: map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? ''),
+      toolId: (map['tool_id'] ?? '').toString(),
       toolName: map['tool_name'],
       maintenanceType: map['maintenance_type'],
       description: map['description'],
@@ -89,7 +89,7 @@ class MaintenanceSchedule {
 
   MaintenanceSchedule copyWith({
     int? id,
-    int? toolId,
+    String? toolId,
     String? toolName,
     String? maintenanceType,
     String? description,

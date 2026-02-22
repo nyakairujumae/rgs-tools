@@ -28,6 +28,7 @@ import 'models/tool.dart';
 import 'models/user_role.dart';
 import 'providers/auth_provider.dart';
 import 'providers/supabase_tool_provider.dart';
+import 'providers/supabase_certification_provider.dart';
 import 'providers/supabase_technician_provider.dart';
 import 'providers/tool_issue_provider.dart';
 import 'providers/request_thread_provider.dart';
@@ -1040,6 +1041,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
         ChangeNotifierProvider(create: (_) => TechnicianNotificationProvider()),
         ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
+        ChangeNotifierProvider(create: (_) => SupabaseCertificationProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, child) {
