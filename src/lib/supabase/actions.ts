@@ -5,6 +5,7 @@ import type {
   ToolIssue,
   ToolHistory,
   Certification,
+  CertificationStatus,
   MaintenanceSchedule,
   AdminPosition,
   User,
@@ -808,6 +809,60 @@ export async function deleteCalibrationRecord(id: string): Promise<boolean> {
   }
   return true
 }
+
+// ── GENERIC CERTIFICATION CRUD ──
+
+export async function addCertification(params: {
+  tool_id: string
+  tool_name: string
+  certification_type: string
+  certification_number: string
+  issuing_authority: string
+  issue_date: string
+  expiry_date: string
+  status?: CertificationStatus
+  inspector_name?: string
+  notes?: string
+  location?: string
+}, performedBy?: string): Promise<Certification | null> {
+  const { data, error } = await supabase()
+    .from('certifications')
+    .insert({
+      tool_id: params.tool_id,
+      tool_name: params.tool_name,
+      certification_type: params.certification_type,
+      certification_number: params.certification_number,
+      issuing_authority: params.issuing_authority,
+      issue_date: params.issue_date,
+      expiry_date: params.expiry_date,
+      status: params.status || 'Valid',
+      inspector_name: params.inspector_name || null,
+      notes: params.notes || null,
+      location: params.location || null,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Failed to add certification:', error)
+    return null
+  }
+
+  await recordToolHistory({
+    tool_id: params.tool_id,
+    tool_name: params.tool_name,
+    action: 'Certified',
+    description: `${params.tool_name} — ${params.certification_type} ${params.certification_number}`,
+    new_value: `Valid until ${params.expiry_date}`,
+    performed_by: performedBy || 'Admin',
+    performed_by_role: 'admin',
+  })
+
+  return data
+}
+
+export const updateCertification = updateCalibrationRecord
+export const deleteCertification = deleteCalibrationRecord
 
 // ── MAINTENANCE SCHEDULES (Calibration) ──
 

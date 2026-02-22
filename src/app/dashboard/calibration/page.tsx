@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { deleteCalibrationRecord } from '@/lib/supabase/actions'
-import { StatusBadge } from '@/components/shared/status-badge'
 import { formatDate, cn } from '@/lib/utils'
 import {
   Loader2,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react'
 import { RecordCalibrationDialog } from '@/components/calibration/record-calibration-dialog'
 import { ScheduleCalibrationDialog } from '@/components/calibration/schedule-calibration-dialog'
+import { EditCalibrationDialog } from '@/components/calibration/edit-calibration-dialog'
 import type { Tool, Certification, MaintenanceSchedule } from '@/lib/types/database'
 
 type CalibrationStatus = 'Calibrated' | 'Due Soon' | 'Overdue' | 'Not Calibrated'
@@ -43,6 +43,7 @@ export default function CalibrationPage() {
   const [showRecordDialog, setShowRecordDialog] = useState(false)
   const [showScheduleDialog, setShowScheduleDialog] = useState(false)
   const [preselectedTool, setPreselectedTool] = useState<Tool | null>(null)
+  const [editCert, setEditCert] = useState<Certification | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<Certification | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -326,13 +327,22 @@ export default function CalibrationPage() {
                         <CalendarPlus className="w-3.5 h-3.5" />
                       </button>
                       {item.latestCert && (
-                        <button
-                          onClick={() => setDeleteConfirm(item.latestCert)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                          title="Delete Certificate"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setEditCert(item.latestCert)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                            title="Edit Calibration"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(item.latestCert)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                            title="Delete Certificate"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -342,6 +352,19 @@ export default function CalibrationPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Edit Calibration Dialog */}
+      {editCert && (
+        <EditCalibrationDialog
+          open={!!editCert}
+          certification={editCert}
+          onClose={() => setEditCert(null)}
+          onSuccess={(updated) => {
+            setCerts((prev) => prev.map((c) => c.id === updated.id ? updated : c))
+            setEditCert(null)
+          }}
+        />
+      )}
 
       {/* Record Calibration Dialog */}
       <RecordCalibrationDialog
