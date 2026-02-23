@@ -50,8 +50,12 @@ function dateRangeText(from?: string, to?: string): string {
 
 function getTechName(userId: string | undefined, technicians: Technician[]): string {
   if (!userId) return ''
-  const tech = technicians.find((t) => t.user_id === userId || t.id === userId)
-  return tech?.name || userId
+  const tech = technicians.find((t) =>
+    t.user_id === userId || t.id === userId || t.name === userId || t.employee_id === userId
+  )
+  if (tech) return tech.name
+  if (userId.length > 20) return 'Unlinked Technician'
+  return userId
 }
 
 
@@ -618,18 +622,27 @@ async function generateComprehensivePDF(opts: ReportOptions) {
     y += 14
   }
 
-  // ── 7. Tool History ──
+  // ── 7. Audit Trail ──
   y = ensureSpace(doc, y, 60)
-  y = addSectionTitle(doc, y, 'Tool History')
-  y = addSubtitle(doc, y, `Total Tools: ${tools.length}`)
+  y = addSectionTitle(doc, y, 'Audit Trail')
+  y = addSubtitle(doc, y, `${history.length} history records`)
 
-  y = dataTable(doc, autoTable, y,
-    ['Tool Name', 'Category', 'Status', 'Condition', 'Created', 'Last Updated', 'Location'],
-    tools.map((t) => [
-      t.name, t.category, t.status, t.condition,
-      fmtDT(t.created_at), fmtDT(t.updated_at), t.location || '',
-    ])
-  )
+  if (history.length > 0) {
+    y = dataTable(doc, autoTable, y,
+      ['Date', 'Tool', 'Action', 'Description', 'Old Value', 'New Value', 'Performed By'],
+      history.slice(0, 100).map((h) => [
+        fmt(h.timestamp), h.tool_name, h.action,
+        h.description.length > 60 ? h.description.slice(0, 57) + '...' : h.description,
+        h.old_value || '', h.new_value || '', h.performed_by || '',
+      ])
+    )
+  } else {
+    doc.setFontSize(10)
+    doc.setTextColor(...COLORS.textMuted)
+    doc.text('No history records found for the selected period.', 14, y)
+    doc.setTextColor(0)
+    y += 14
+  }
 
   return doc
 }
