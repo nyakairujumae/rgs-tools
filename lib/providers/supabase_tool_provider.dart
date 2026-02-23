@@ -308,7 +308,7 @@ class SupabaseToolProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error accepting assignment: $e');
+      Logger.debug('Error accepting assignment: $e');
       rethrow;
     }
   }
@@ -331,7 +331,7 @@ class SupabaseToolProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error declining assignment: $e');
+      Logger.debug('Error declining assignment: $e');
       rethrow;
     }
   }

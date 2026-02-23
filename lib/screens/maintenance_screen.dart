@@ -310,7 +310,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
           ResponsiveHelper.getResponsiveBorderRadius(context, 8),
         ),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
+          color: color.withValues(alpha: 0.55),
           width: 1,
         ),
       ),

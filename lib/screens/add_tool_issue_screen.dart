@@ -714,7 +714,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

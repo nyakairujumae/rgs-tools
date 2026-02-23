@@ -279,7 +279,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                           borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                           border: Border.all(
                             color: (isRejected ? Colors.red : Colors.orange)
-                                .withValues(alpha: 0.3),
+                                .withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -372,7 +372,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                                   color: Colors.red.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(context.borderRadiusSmall),
                                   border: Border.all(
-                                    color: Colors.red.withValues(alpha: 0.3),
+                                    color: Colors.red.withValues(alpha: 0.55),
                                   ),
                                 ),
                                 child: Row(

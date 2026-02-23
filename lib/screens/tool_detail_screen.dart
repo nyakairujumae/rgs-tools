@@ -457,7 +457,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         width: double.infinity,
         height: 250,
         color: context.cardBackground,
-        child: Icon(Icons.image, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+        child: Icon(Icons.image, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
       );
     }
     

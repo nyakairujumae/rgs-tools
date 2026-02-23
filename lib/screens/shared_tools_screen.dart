@@ -903,7 +903,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                 width: 48,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withValues(alpha: 0.3),
+                  color: colorScheme.onSurface.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

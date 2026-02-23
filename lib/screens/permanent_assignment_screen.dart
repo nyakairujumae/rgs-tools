@@ -583,7 +583,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             'Please ensure they have registered and been approved.');
       }
 
-      debugPrint('🔧 Assigning tool to userId: $userId');
+      Logger.debug('🔧 Assigning tool to userId: $userId');
       await context.read<SupabaseToolProvider>().assignTool(
         widget.tool.id!,
         userId,
@@ -609,7 +609,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         'timestamp': DateTime.now().toIso8601String(),
         'data': notificationData,
       });
-      debugPrint('✅ In-app notification inserted for technician $userId');
+      Logger.debug('✅ In-app notification inserted for technician $userId');
 
       // Push notification
       try {
@@ -619,9 +619,9 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
           body: '$adminName assigned "${widget.tool.name}" to you. Please accept or decline.',
           data: {'type': 'tool_assigned', ...notificationData},
         );
-        debugPrint('✅ Push notification sent to technician $userId');
+        Logger.debug('✅ Push notification sent to technician $userId');
       } catch (pushError) {
-        debugPrint('⚠️ Push notification failed (non-blocking): $pushError');
+        Logger.debug('⚠️ Push notification failed (non-blocking): $pushError');
       }
 
       if (mounted) {

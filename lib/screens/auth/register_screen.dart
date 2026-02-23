@@ -200,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.55),
                       width: 1,
                     ),
                   ),
@@ -309,14 +309,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         border: OutlineInputBorder(
           borderRadius: borderRadius,
           borderSide: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.55),
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: borderRadius,
           borderSide: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.55),
             width: 1,
           ),
         ),
@@ -561,7 +561,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                         ),
                         border: Border.all(
-                          color: colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: colorScheme.onSurface.withValues(alpha: 0.55),
                           width: 1,
                         ),
                       ),

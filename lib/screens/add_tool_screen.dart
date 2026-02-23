@@ -114,7 +114,6 @@ class _AddToolScreenState extends State<AddToolScreen> {
   }
 
   @override
-  @override
   void initState() {
     super.initState();
     _imagePageController = PageController();

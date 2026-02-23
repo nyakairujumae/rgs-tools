@@ -1376,7 +1376,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final baseColor = isDarkMode 
-        ? Colors.grey[800]!.withValues(alpha: 0.3)
+        ? Colors.grey[800]!.withValues(alpha: 0.55)
         : Colors.grey[300]!;
     final highlightColor = isDarkMode 
         ? Colors.grey[700]!.withValues(alpha: 0.5)

@@ -337,7 +337,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -346,7 +346,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -416,7 +416,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -425,7 +425,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),

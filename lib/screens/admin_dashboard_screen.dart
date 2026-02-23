@@ -2009,7 +2009,7 @@ class DashboardScreen extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 14,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ],
                 )
@@ -2131,7 +2131,7 @@ class DashboardScreen extends StatelessWidget {
                         Icon(
                           Icons.arrow_forward_ios_rounded,
                           size: 14,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                         ),
                       ],
                     )

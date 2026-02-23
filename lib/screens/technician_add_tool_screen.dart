@@ -371,7 +371,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withValues(alpha: 0.3),
+                              color: Colors.orange.withValues(alpha: 0.55),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),

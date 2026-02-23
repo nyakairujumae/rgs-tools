@@ -96,7 +96,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: 64,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -256,7 +256,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 64,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -608,7 +608,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
       child: Icon(
         Icons.build,
         size: 32,
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
       ),
     );
   }

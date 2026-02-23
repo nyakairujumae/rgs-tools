@@ -120,9 +120,9 @@ class TechnicianNotificationProvider extends ChangeNotifier {
           'assignment_type': assignmentType,
         },
       });
-      debugPrint('✅ [TechnicianNotifications] Tool assignment notification sent to $technicianUserId');
+      Logger.debug('✅ [TechnicianNotifications] Tool assignment notification sent to $technicianUserId');
     } catch (e) {
-      debugPrint('❌ [TechnicianNotifications] Error sending assignment notification: $e');
+      Logger.debug('❌ [TechnicianNotifications] Error sending assignment notification: $e');
       rethrow;
     }
   }

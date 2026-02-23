@@ -78,7 +78,7 @@ class HelpSupportScreen extends StatelessWidget {
                         color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.55),
                         ),
                       ),
                       child: Row(

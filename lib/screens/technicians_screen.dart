@@ -382,7 +382,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withValues(alpha: 0.3),
+                                      .withValues(alpha: 0.55),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -454,7 +454,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       : 'Select Technicians First'),
                   backgroundColor: _selectedTechnicians.isNotEmpty
                       ? Colors.green
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                 )
               : Padding(
                   padding: const EdgeInsets.only(right: 16, bottom: 16),

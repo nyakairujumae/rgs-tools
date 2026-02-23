@@ -330,7 +330,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                       width: 48,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -659,7 +659,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               Icon(
                 Icons.chevron_right,
                 size: isDesktop ? 18 : 20,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
               ),
           ],
         ),
@@ -1037,7 +1037,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                     width: 48,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
