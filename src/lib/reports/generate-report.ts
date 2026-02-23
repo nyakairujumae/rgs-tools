@@ -982,7 +982,7 @@ async function generateCalibrationExcel(opts: ReportOptions) {
         tool: t.name, category: t.category, serial: t.serial_number || '',
         cal_status: cert.status, cert_no: cert.certification_number,
         expiry: fmt(cert.expiry_date),
-        days: days < 0 ? \`\${Math.abs(days)}d overdue\` : \`\${days}d\`,
+        days: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`,
       })
     } else {
       statusSheet.addRow({
