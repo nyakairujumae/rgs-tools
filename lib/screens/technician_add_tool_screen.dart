@@ -151,7 +151,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
               inputDecorationTheme: theme.inputDecorationTheme.copyWith(
                 filled: false,
                 labelStyle: TextStyle(
-                  color: Colors.grey[600],
+                  color: context.secondaryTextColor,
                   fontWeight: FontWeight.w400,
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                 ),
@@ -161,7 +161,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 ),
                 floatingLabelBehavior: FloatingLabelBehavior.always,
                 hintStyle: TextStyle(
-                  color: Colors.grey[500],
+                  color: context.hintTextColor,
                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                 ),
                 border: OutlineInputBorder(
@@ -264,7 +264,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                           labelText: 'Category *',
                           hintText: 'Select a category',
                           hintStyle: TextStyle(
-                            color: Colors.grey[700],
+                            color: context.secondaryTextColor,
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                           ),
                           contentPadding: ResponsiveHelper.getResponsivePadding(
@@ -453,7 +453,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         'Scan barcode/QR code or generate ID for tools without serial numbers',
                         style: TextStyle(
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                          color: Colors.grey[600],
+                          color: context.secondaryTextColor,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -524,7 +524,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                             style: TextStyle(
                               color: _purchaseDate != null
                                   ? theme.colorScheme.onSurface
-                                  : Colors.grey[500],
+                                  : context.hintTextColor,
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                             ),
                           ),
@@ -626,7 +626,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                       child: Text(
                         'Tools you add here are also available to admins. Assign "Available" if the tool is ready for sharing, or keep "Assigned" if it is yours exclusively.',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: context.secondaryTextColor,
                           height: 1.4,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
                         ),
@@ -750,7 +750,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                         Text(
                           'Tap to select from gallery or camera',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                            color: context.secondaryTextColor,
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
                           ),
                         ),
@@ -780,7 +780,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: context.secondaryTextColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

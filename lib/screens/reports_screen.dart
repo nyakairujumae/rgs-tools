@@ -807,7 +807,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               reportInfo['description'] as String,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[400],
+                color: context.placeholderIcon,
                 height: 1.4,
               ),
             ),
@@ -1097,7 +1097,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${assignedTools.length - 15} more assignments',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: context.secondaryTextColor,
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -1237,7 +1237,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${technicians.length - 15} more technicians',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: context.secondaryTextColor,
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -1284,7 +1284,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   '${tech.department ?? "No Department"} • ${tech.status}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: context.secondaryTextColor,
                   ),
                 ),
                 if (tech.email != null && tech.email!.isNotEmpty)
@@ -1292,7 +1292,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     tech.email!,
                       style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: context.hintTextColor,
                       ),
                     ),
                   ],
@@ -1318,7 +1318,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   'tools',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: context.secondaryTextColor,
                   ),
                 ),
               ],
@@ -1460,7 +1460,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[400],
+              color: context.placeholderIcon,
             ),
           ),
           Text(
@@ -1968,7 +1968,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${issues.length - 15} more issues',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: context.secondaryTextColor,
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -2277,7 +2277,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             Icon(
               reportType != null ? Icons.arrow_forward_ios : Icons.check_circle,
-              color: reportType != null ? Colors.grey[400] : Colors.green,
+              color: reportType != null ? context.placeholderIcon : Colors.green,
               size: reportType != null ? 16 : 24,
             ),
           ],
@@ -2346,7 +2346,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           subtitle,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-            color: Colors.grey[600],
+            color: context.secondaryTextColor,
           ),
         ),
       ],

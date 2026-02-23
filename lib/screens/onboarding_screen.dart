@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../providers/auth_provider.dart';
 import 'admin_home_screen.dart';
 import 'technician_home_screen.dart';
@@ -166,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Expanded(
             child: LinearProgressIndicator(
               value: (_currentPage + 1) / _pages.length,
-              backgroundColor: Colors.grey[300],
+              backgroundColor: context.placeholderBackground,
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
           ),

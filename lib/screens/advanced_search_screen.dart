@@ -5,6 +5,7 @@ import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/responsive_helper.dart';
@@ -716,7 +717,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                             '${tool.brand ?? 'Unknown'} • ${tool.category}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: context.secondaryTextColor,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -796,7 +797,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
         ),
-        color: Colors.grey[200],
+        color: context.placeholderBackground,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -804,14 +805,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           Icon(
             Icons.build,
             size: 40,
-            color: Colors.grey[400],
+            color: context.placeholderIcon,
           ),
           SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[500],
+              color: context.hintTextColor,
             ),
           ),
         ],

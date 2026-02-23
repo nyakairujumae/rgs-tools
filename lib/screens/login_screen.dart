@@ -7,6 +7,7 @@ import '../config/app_config.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
+import '../theme/theme_extensions.dart';
 import '../widgets/premium_field_styles.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
@@ -251,18 +252,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Divider
                         Row(
                           children: [
-                            Expanded(child: Divider(color: Colors.grey[300])),
+                            Expanded(child: Divider(color: theme.dividerColor)),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
                                 'OR',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: context.secondaryTextColor,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
-                            Expanded(child: Divider(color: Colors.grey[300])),
+                            Expanded(child: Divider(color: theme.dividerColor)),
                           ],
                         ),
                         
@@ -289,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Text(
                               'Choose Admin or Technician registration',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: context.secondaryTextColor,
                                 fontSize: 12,
                               ),
                             ),
@@ -398,7 +399,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Sign in to your RGS HVAC Services account',
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          style: theme.textTheme.bodyMedium?.copyWith(color: context.secondaryTextColor),
           textAlign: TextAlign.center,
         ),
       ],

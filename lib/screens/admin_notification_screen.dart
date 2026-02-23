@@ -57,6 +57,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               child: Row(
                 children: [
                   IconButton(
+                    tooltip: 'Back',
                     icon: Icon(
                       Icons.chevron_left,
                       size: 28,
@@ -561,14 +562,14 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               'Name: ${notification.technicianName}',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.secondaryTextColor,
               ),
             ),
             Text(
               'Email: ${notification.technicianEmail}',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: context.secondaryTextColor,
               ),
             ),
             const SizedBox(height: 8),
@@ -576,7 +577,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               'Time: ${_formatTimestamp(notification.timestamp)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: context.hintTextColor,
               ),
             ),
           ],

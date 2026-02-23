@@ -321,6 +321,38 @@ class AppTheme {
             : Colors.black.withValues(alpha: 0.04));
   }
 
+  /// Theme-aware divider color
+  static Color getDividerColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.grey[300]!;
+  }
+
+  /// Theme-aware hint/caption text (lighter than secondary)
+  static Color getHintTextColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey[400]!
+        : Colors.grey[500]!;
+  }
+
+  /// Theme-aware placeholder background (image placeholders, empty states)
+  static Color getPlaceholderBackground(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey[800]!
+        : Colors.grey[200]!;
+  }
+
+  /// Theme-aware placeholder icon color
+  static Color getPlaceholderIcon(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.grey[600]!
+        : Colors.grey[400]!;
+  }
+
   // Text colors - ChatGPT-style light theme
   static const Color textPrimary = Color(0xFF1A1A1A); // Dark grey-black, not pure black
   static const Color textSecondary = Color.fromRGBO(0, 0, 0, 0.6); // rgba(0,0,0,0.6)

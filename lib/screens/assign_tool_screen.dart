@@ -70,7 +70,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       child: Icon(
                         Icons.build,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: context.placeholderIcon,
                       ),
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
@@ -79,7 +79,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
+                        color: context.secondaryTextColor,
                       ),
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
@@ -87,7 +87,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       'Add some tools first to assign them',
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                        color: Colors.grey[600],
+                        color: context.secondaryTextColor,
                       ),
                     ),
                   ],
@@ -137,7 +137,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               style: TextStyle(
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[800],
+                                color: Theme.of(context).textTheme.bodyLarge!.color!,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -147,7 +147,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               'Tap tools to select them, then tap "Assign" to continue',
                               style: TextStyle(
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                color: Colors.grey[600],
+                                color: context.secondaryTextColor,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -206,7 +206,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withOpacity(0.85)],
                             )
                           : null,
-                      color: _selectedTools.isEmpty ? Colors.grey[300] : null,
+                      color: _selectedTools.isEmpty ? context.dividerColor : null,
                       borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
                       boxShadow: _selectedTools.isNotEmpty
                           ? [
@@ -367,7 +367,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       color: isSelected ? AppTheme.secondaryColor : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AppTheme.secondaryColor : Colors.grey[300]!,
+                        color: isSelected ? AppTheme.secondaryColor : context.dividerColor,
                         width: 2,
                       ),
                       boxShadow: [
@@ -404,7 +404,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.bodyLarge!.color!,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -442,14 +442,14 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           Icon(
             Icons.build,
             size: ResponsiveHelper.getResponsiveIconSize(context, 40),
-            color: Colors.grey[400],
+            color: context.placeholderIcon,
           ),
           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
-              color: Colors.grey[500],
+              color: context.hintTextColor,
             ),
           ),
         ],

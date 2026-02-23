@@ -345,7 +345,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                           children: [
                             IconButton(
                               icon: const Icon(Icons.notifications_outlined),
-                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Notifications',
+                              visualDensity: VisualDensity.standard,
                               onPressed: () {
                                 Navigator.push(
                                   context,

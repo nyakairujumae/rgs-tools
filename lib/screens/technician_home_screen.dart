@@ -844,6 +844,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: IconButton(
+            tooltip: 'Notifications',
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_outlined, size: 24),
@@ -893,6 +894,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               final isDisabled = authProvider.isLoggingOut;
               return IconButton(
                 icon: const Icon(Icons.account_circle, size: 24),
+                tooltip: 'Profile',
                 onPressed: isDisabled
                     ? null
                     : () => _showProfileBottomSheet(context, authProvider),

@@ -454,7 +454,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               Icon(
                 Icons.warning_amber_rounded,
                 size: 64,
-                color: Colors.grey[400],
+                color: context.placeholderIcon,
               ),
               const SizedBox(height: 16),
               Text(
@@ -507,7 +507,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 Icon(
                 Icons.check_circle_outline,
                   size: 64,
-                  color: Colors.grey[400],
+                  color: context.placeholderIcon,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -1265,7 +1265,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           subtitle,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-            color: Colors.grey[600],
+            color: context.secondaryTextColor,
           ),
         ),
       ],
@@ -1558,7 +1558,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   'tools',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: context.secondaryTextColor,
                   ),
                 ),
               ],
