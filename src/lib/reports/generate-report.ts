@@ -957,6 +957,43 @@ async function generateCalibrationExcel(opts: ReportOptions) {
     'issue_date', opts.dateFrom, opts.dateTo
   )
 
+  // Tool calibration status sheet
+  const statusSheet = wb.addWorksheet('Tool Calibration Status')
+  statusSheet.columns = [
+    { header: 'Tool', key: 'tool', width: 22 },
+    { header: 'Category', key: 'category', width: 18 },
+    { header: 'Serial #', key: 'serial', width: 18 },
+    { header: 'Calibration Status', key: 'cal_status', width: 18 },
+    { header: 'Certificate #', key: 'cert_no', width: 20 },
+    { header: 'Expiry Date', key: 'expiry', width: 14 },
+    { header: 'Days Left', key: 'days', width: 14 },
+  ]
+  const latestCertByTool: Record<string, typeof calibrationCerts[0]> = {}
+  calibrationCerts.forEach((c) => {
+    if (!latestCertByTool[c.tool_id] || new Date(c.expiry_date) > new Date(latestCertByTool[c.tool_id].expiry_date)) {
+      latestCertByTool[c.tool_id] = c
+    }
+  })
+  opts.data.tools.forEach((t) => {
+    const cert = latestCertByTool[t.id]
+    if (cert) {
+      const days = daysUntil(cert.expiry_date)
+      statusSheet.addRow({
+        tool: t.name, category: t.category, serial: t.serial_number || '',
+        cal_status: cert.status, cert_no: cert.certification_number,
+        expiry: fmt(cert.expiry_date),
+        days: days < 0 ? \`\${Math.abs(days)}d overdue\` : \`\${days}d\`,
+      })
+    } else {
+      statusSheet.addRow({
+        tool: t.name, category: t.category, serial: t.serial_number || '',
+        cal_status: 'Not Calibrated', cert_no: '-', expiry: '-', days: '-',
+      })
+    }
+  })
+  addExcelHeader(statusSheet, 'Tool Calibration Status', opts.dateFrom, opts.dateTo)
+  styleHeader(statusSheet, undefined, 6)
+
   const sheet = wb.addWorksheet('Calibration Certificates')
   sheet.columns = [
     { header: 'Tool', key: 'tool', width: 22 },
@@ -1022,6 +1059,37 @@ async function generateComplianceExcel(opts: ReportOptions) {
   ])
   addExcelHeader(summarySheet, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo)
   styleHeader(summarySheet, undefined, 6)
+
+  // Tool compliance status sheet
+  const toolSheet = wb.addWorksheet('Tool Compliance Status')
+  toolSheet.columns = [
+    { header: 'Tool', key: 'tool', width: 22 },
+    { header: 'Category', key: 'category', width: 18 },
+    { header: 'Serial #', key: 'serial', width: 18 },
+    { header: 'Total Certs', key: 'total', width: 12 },
+    { header: 'Valid', key: 'valid', width: 10 },
+    { header: 'Expiring', key: 'expiring', width: 10 },
+    { header: 'Expired', key: 'expired_count', width: 10 },
+    { header: 'Compliance', key: 'compliance', width: 16 },
+  ]
+  const certsByTool: Record<string, typeof certs> = {}
+  certs.forEach((c) => {
+    if (!certsByTool[c.tool_id]) certsByTool[c.tool_id] = []
+    certsByTool[c.tool_id].push(c)
+  })
+  opts.data.tools.forEach((t) => {
+    const toolCerts = certsByTool[t.id] || []
+    const v = toolCerts.filter((c) => c.status === 'Valid').length
+    const ex = toolCerts.filter((c) => c.status === 'Expiring Soon').length
+    const exp = toolCerts.filter((c) => c.status === 'Expired').length
+    const status = toolCerts.length === 0 ? 'No Certs' : exp > 0 ? 'Non-Compliant' : ex > 0 ? 'At Risk' : 'Compliant'
+    toolSheet.addRow({
+      tool: t.name, category: t.category, serial: t.serial_number || '',
+      total: toolCerts.length, valid: v, expiring: ex, expired_count: exp, compliance: status,
+    })
+  })
+  addExcelHeader(toolSheet, 'Tool Compliance Status', opts.dateFrom, opts.dateTo)
+  styleHeader(toolSheet, undefined, 6)
 
   const sheet = wb.addWorksheet('All Certifications')
   sheet.columns = [
