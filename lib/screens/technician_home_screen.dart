@@ -826,8 +826,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: context.scaffoldBackground,
         appBar: (_selectedIndex == 1 || _selectedIndex == 2)
           ? null
@@ -1472,6 +1471,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final isToolRequestForCurrentHolder = type == 'tool_request' &&
         data != null &&
         (data['owner_id']?.toString() == authProvider.userId);
+    final isToolReleasedForCurrentUser = type == 'tool_released' && data != null;
+    final isToolAssignedForCurrentUser = type == 'tool_assigned' && data != null;
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
     
     showDialog(
@@ -1621,6 +1622,22 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 ),
               ),
             ),
+          if (isToolAssignedForCurrentUser)
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _acceptAssignedTool(context, data!, notification);
+              },
+              icon: const Icon(Icons.check_circle, size: 18),
+              label: Text('Accept ${data?['tool_name'] ?? 'Tool'}'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             style: TextButton.styleFrom(
@@ -1755,6 +1772,126 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           'Failed to release tool: ${e.toString()}',
         );
       }
+    }
+  }
+
+  Future<void> _acceptReleasedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final releasedByName = data['released_by_name']?.toString() ?? 'A technician';
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client.from('tools').select().eq('id', toolId).maybeSingle();
+        if (res != null) existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+      }
+      if (existingTool == null) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Tool not found.');
+        return;
+      }
+
+      if (existingTool.assignedTo != null && existingTool.assignedTo!.isNotEmpty && existingTool.assignedTo != currentUserId) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'This tool has already been assigned to someone else.');
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(assignedTo: currentUserId, status: 'In Use', updatedAt: DateTime.now().toIso8601String());
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.releasedToRequester,
+        description: '$currentUserName accepted the $toolName (released by $releasedByName)',
+        oldValue: null, newValue: currentUserId,
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'released_by_name': releasedByName, 'released_by_id': data['released_by_id']?.toString()},
+      );
+
+      await toolProvider.loadTools();
+      UserNameService.clearCacheForUser(currentUserId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to accept tool: ${e.toString()}');
+    }
+  }
+
+  Future<void> _acceptAssignedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final assignedByName = data['assigned_by_name']?.toString() ?? 'Admin';
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client.from('tools').select().eq('id', toolId).maybeSingle();
+        if (res != null) existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+      }
+      if (existingTool == null) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Tool not found.');
+        return;
+      }
+
+      if (existingTool.assignedTo != null && existingTool.assignedTo!.isNotEmpty && existingTool.assignedTo != currentUserId) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'This tool has been reassigned to someone else.');
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(assignedTo: currentUserId, status: 'In Use', updatedAt: DateTime.now().toIso8601String());
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.releasedToRequester,
+        description: '$currentUserName accepted tool assignment of $toolName (assigned by $assignedByName)',
+        oldValue: null, newValue: currentUserId,
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'assigned_by_name': assignedByName, 'assigned_by_id': data['assigned_by_id']?.toString()},
+      );
+
+      await toolProvider.loadTools();
+      UserNameService.clearCacheForUser(currentUserId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to accept tool: ${e.toString()}');
     }
   }
 
