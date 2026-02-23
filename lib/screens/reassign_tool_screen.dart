@@ -8,6 +8,7 @@ import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/logger.dart';
 
 class ReassignToolScreen extends StatefulWidget {
   final Tool tool;
@@ -459,13 +460,13 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                   userId = technician.id;
                 }
               } catch (e) {
-                debugPrint('Could not check technician.id as user_id: $e');
+                Logger.debug('Could not check technician.id as user_id: $e');
                 // If check fails, still try using it directly (might work for assignments)
                 userId = technician.id;
               }
             } else {
               // Not a UUID, might be a technician table ID - we'll need to find the user_id
-              debugPrint('Technician ID is not a UUID: ${technician.id}');
+              Logger.debug('Technician ID is not a UUID: ${technician.id}');
             }
           }
           
@@ -488,7 +489,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                 userId = approvalRecord['user_id'] as String;
               }
             } catch (e) {
-              debugPrint('Could not check pending approvals: $e');
+              Logger.debug('Could not check pending approvals: $e');
             }
             
             // If still not found, try to find user in users table
@@ -504,7 +505,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                   userId = userResponse['id'] as String;
                 }
               } catch (e) {
-                debugPrint('Could not check users table: $e');
+                Logger.debug('Could not check users table: $e');
               }
             }
           }
@@ -513,7 +514,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
           // (Some systems might use technician.id directly for assignments)
           if (userId == null && technician.id != null && technician.id!.isNotEmpty) {
             userId = technician.id;
-            debugPrint('Using technician.id directly as fallback: $userId');
+            Logger.debug('Using technician.id directly as fallback: $userId');
           }
           
           if (userId != null) {
@@ -542,7 +543,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
                 assignedNames.add(technician.name);
               } catch (e) {
                 // Assignments table might not exist or have different schema
-                debugPrint('Could not create assignment record: $e');
+                Logger.debug('Could not create assignment record: $e');
                 // Still count as assigned since we tried
                 assignedNames.add(technician.name);
               }
@@ -551,7 +552,7 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
             failedNames.add(technician.name);
           }
         } catch (e) {
-          debugPrint('Error assigning to ${technician.name}: $e');
+          Logger.debug('Error assigning to ${technician.name}: $e');
           failedNames.add(technician.name);
         }
       }

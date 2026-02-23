@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'admin_notification_provider.dart';
 import '../services/push_notification_service.dart';
+import '../utils/logger.dart';
 
 class PendingApproval {
   final String id;
@@ -115,10 +116,10 @@ class PendingApprovalsProvider extends ChangeNotifier {
           .map((item) => PendingApproval.fromMap(item))
           .toList();
 
-      debugPrint('[OK] Loaded ${_pendingApprovals.length} pending approvals');
+      Logger.debug('[OK] Loaded ${_pendingApprovals.length} pending approvals');
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error loading pending approvals: $e');
+      Logger.debug('❌ Error loading pending approvals: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -153,7 +154,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
         
         // Calculate exponential backoff delay (1s, 2s, 4s)
         final delayMs = 1000 * (1 << (attempt - 1));
-        debugPrint('⚠️ $operationName failed (attempt $attempt/$maxRetries). Retrying in ${delayMs}ms...');
+        Logger.debug('⚠️ $operationName failed (attempt $attempt/$maxRetries). Retrying in ${delayMs}ms...');
         
         await Future.delayed(Duration(milliseconds: delayMs));
       }
@@ -186,7 +187,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
               .update({'profile_picture_url': approval.profilePictureUrl})
               .eq('id', approval.userId);
         } catch (e) {
-          debugPrint('⚠️ Failed to sync technician profile picture after approval: $e');
+          Logger.debug('⚠️ Failed to sync technician profile picture after approval: $e');
         }
       }
 
@@ -211,8 +212,8 @@ class PendingApprovalsProvider extends ChangeNotifier {
             })
             .select()
             .single();
-        debugPrint('✅ Created admin notification for user approval in notification center');
-        debugPrint('✅ Notification ID: ${notificationResponse['id']}');
+        Logger.debug('✅ Created admin notification for user approval in notification center');
+        Logger.debug('✅ Notification ID: ${notificationResponse['id']}');
         
         // If buildContext is provided, immediately add notification to provider's list
         // This ensures it appears in the notification center without needing a reload
@@ -221,15 +222,15 @@ class PendingApprovalsProvider extends ChangeNotifier {
             final adminNotificationProvider = Provider.of<AdminNotificationProvider>(buildContext, listen: false);
             final notification = AdminNotification.fromJson(notificationResponse);
             adminNotificationProvider.addNotification(notification);
-            debugPrint('✅ Added notification to AdminNotificationProvider');
+            Logger.debug('✅ Added notification to AdminNotificationProvider');
           } catch (e) {
-            debugPrint('⚠️ Could not add notification to provider: $e');
+            Logger.debug('⚠️ Could not add notification to provider: $e');
             // This is not critical - the notification is in the database and will appear on next reload
           }
         }
       } catch (e) {
-        debugPrint('❌ Failed to create admin notification: $e');
-        debugPrint('❌ Error details: ${e.toString()}');
+        Logger.debug('❌ Failed to create admin notification: $e');
+        Logger.debug('❌ Error details: ${e.toString()}');
         // Don't fail the approval if notification creation fails
       }
 
@@ -251,7 +252,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
                 'approved_at': DateTime.now().toIso8601String(),
               },
             });
-        debugPrint('✅ Created technician notification for approval in notification center');
+        Logger.debug('✅ Created technician notification for approval in notification center');
         
         // Send push notification to the approved user
         // Note: fromUserId is null here because this is a system notification (admin approved)
@@ -265,24 +266,24 @@ class PendingApprovalsProvider extends ChangeNotifier {
               'approval_id': approval.id,
             },
           );
-          debugPrint('✅ Push notification sent to approved user');
+          Logger.debug('✅ Push notification sent to approved user');
         } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification to approved user: $pushError');
+          Logger.debug('⚠️ Could not send push notification to approved user: $pushError');
         }
       } catch (e) {
-        debugPrint('❌ Failed to create technician notification: $e');
-        debugPrint('❌ Error details: ${e.toString()}');
+        Logger.debug('❌ Failed to create technician notification: $e');
+        Logger.debug('❌ Error details: ${e.toString()}');
         // Don't fail the approval if notification creation fails, but log the error
       }
 
       // Reload the approvals
       await loadPendingApprovals();
       
-      debugPrint('✅ User approved successfully');
+      Logger.debug('✅ User approved successfully');
       return true;
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error approving user: $e');
+      Logger.debug('❌ Error approving user: $e');
       notifyListeners();
       return false;
     }
@@ -308,11 +309,11 @@ class PendingApprovalsProvider extends ChangeNotifier {
       // Reload the approvals
       await loadPendingApprovals();
       
-      debugPrint('✅ User rejected successfully');
+      Logger.debug('✅ User rejected successfully');
       return true;
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error rejecting user: $e');
+      Logger.debug('❌ Error rejecting user: $e');
       notifyListeners();
       return false;
     }
@@ -343,7 +344,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
           .select()
           .single();
 
-      debugPrint('✅ Pending approval submitted successfully');
+      Logger.debug('✅ Pending approval submitted successfully');
       
       // Create notification for admins in the main notification center
       try {
@@ -364,16 +365,16 @@ class PendingApprovalsProvider extends ChangeNotifier {
                 'submitted_at': DateTime.now().toIso8601String(),
               },
             });
-        debugPrint('✅ Created admin notification for new technician approval request');
+        Logger.debug('✅ Created admin notification for new technician approval request');
       } catch (e) {
-        debugPrint('⚠️ Failed to create admin notification for approval request: $e');
+        Logger.debug('⚠️ Failed to create admin notification for approval request: $e');
         // Don't fail the submission if notification creation fails
       }
       
       return true;
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error submitting pending approval: $e');
+      Logger.debug('❌ Error submitting pending approval: $e');
       notifyListeners();
       return false;
     }

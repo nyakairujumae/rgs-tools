@@ -87,23 +87,15 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
               child: Consumer2<ToolIssueProvider, ConnectivityProvider>(
                 builder: (context, issueProvider, connectivityProvider, child) {
                   final isOffline = !connectivityProvider.isOnline;
-                  
-                  if (isOffline && !issueProvider.isLoading) {
-                    return OfflineListSkeleton(
-                      itemCount: 5,
-                      itemHeight: 120,
-                      message: 'You are offline. Showing cached issues.',
-                    );
-                  }
-                  
+
+                  Widget content;
                   if (issueProvider.isLoading) {
-                    return ListSkeletonLoader(
+                    content = ListSkeletonLoader(
                       itemCount: 5,
                       itemHeight: 120,
                     );
-                  }
-                  if (issueProvider.error != null) {
-                    return Center(
+                  } else if (issueProvider.error != null) {
+                    content = Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -147,16 +139,16 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                                 ),
                                 child: const Text('Retry'),
                               ),
-                              if (issueProvider.error!.contains('Session expired') || 
+                              if (issueProvider.error!.contains('Session expired') ||
                                   issueProvider.error!.contains('Please log in'))
                                 const SizedBox(width: 16),
-                              if (issueProvider.error!.contains('Session expired') || 
+                              if (issueProvider.error!.contains('Session expired') ||
                                   issueProvider.error!.contains('Please log in'))
                                 ElevatedButton(
                                   onPressed: () {
                                     Navigator.pushNamedAndRemoveUntil(
-                                      context, 
-                                      '/role-selection', 
+                                      context,
+                                      '/role-selection',
                                       (route) => false
                                     );
                                   },
@@ -175,15 +167,41 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                         ],
                       ),
                     );
+                  } else {
+                    content = TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildIssuesList(issueProvider.issues),
+                        _buildIssuesList(issueProvider.openIssues),
+                        _buildIssuesList(issueProvider.criticalIssues),
+                        _buildIssuesList(issueProvider.resolvedIssues),
+                      ],
+                    );
                   }
 
-                  return TabBarView(
-                    controller: _tabController,
+                  return Column(
                     children: [
-                      _buildIssuesList(issueProvider.issues),
-                      _buildIssuesList(issueProvider.openIssues),
-                      _buildIssuesList(issueProvider.criticalIssues),
-                      _buildIssuesList(issueProvider.resolvedIssues),
+                      if (isOffline)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                              SizedBox(width: 8),
+                              Text(
+                                'Offline — showing cached data',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Expanded(child: content),
                     ],
                   );
                 },

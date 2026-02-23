@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/logger.dart';
 
 /// Service to track if splash screen has been shown
 /// Uses a single persistent boolean flag in local storage
@@ -21,7 +22,7 @@ class FirstLaunchService {
       final prefs = await SharedPreferences.getInstance().timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          print('⚠️ SharedPreferences timeout, assuming splash was shown');
+          Logger.debug('⚠️ SharedPreferences timeout, assuming splash was shown');
           return SharedPreferences.getInstance();
         },
       );
@@ -29,11 +30,11 @@ class FirstLaunchService {
       final splashShown = prefs.getBool(_splashShownKey) ?? false;
       _cachedValue = !splashShown; // Cache the inverse (isFirstLaunch)
       
-      print('🔍 Splash screen check: ${splashShown ? "ALREADY SHOWN" : "NOT SHOWN YET"}');
+      Logger.debug('🔍 Splash screen check: ${splashShown ? "ALREADY SHOWN" : "NOT SHOWN YET"}');
       return !splashShown;
     } catch (e) {
       // If we can't check, assume splash was shown (don't show again)
-      print('⚠️ Error checking splash status: $e - assuming splash was shown');
+      Logger.debug('⚠️ Error checking splash status: $e - assuming splash was shown');
       _cachedValue = false;
       return false;
     }
@@ -47,7 +48,7 @@ class FirstLaunchService {
       final prefs = await SharedPreferences.getInstance().timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          print('⚠️ SharedPreferences timeout while saving splash flag');
+          Logger.debug('⚠️ SharedPreferences timeout while saving splash flag');
           return SharedPreferences.getInstance();
         },
       );
@@ -55,9 +56,9 @@ class FirstLaunchService {
       await prefs.setBool(_splashShownKey, true);
       _cachedValue = false; // Update cache
       
-      print('✅ Splash screen flag saved - will NEVER show again');
+      Logger.debug('✅ Splash screen flag saved - will NEVER show again');
     } catch (e) {
-      print('⚠️ Error saving splash flag: $e');
+      Logger.debug('⚠️ Error saving splash flag: $e');
       // Still update cache even if save fails
       _cachedValue = false;
     }
@@ -74,9 +75,9 @@ class FirstLaunchService {
       );
       await prefs.remove(_splashShownKey);
       _cachedValue = null; // Clear cache
-      print('✅ Splash flag reset (testing only)');
+      Logger.debug('✅ Splash flag reset (testing only)');
     } catch (e) {
-      print('⚠️ Error resetting splash flag: $e');
+      Logger.debug('⚠️ Error resetting splash flag: $e');
     }
   }
 }

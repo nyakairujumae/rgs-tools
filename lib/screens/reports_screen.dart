@@ -18,6 +18,7 @@ import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/logger.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -31,6 +32,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   ReportType _selectedReportType = ReportType.comprehensive;
   bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _hasScrolled = false;
 
   final List<String> _periods = [
     'Last 7 Days',
@@ -91,6 +94,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Ensure admin reports load fresh data for previews and exports
@@ -101,6 +105,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
         context.read<ApprovalWorkflowsProvider>().loadWorkflows(),
       ]);
     });
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    if ((offset > 0) != _hasScrolled && mounted) {
+      setState(() => _hasScrolled = offset > 0);
+    }
   }
 
   @override
@@ -116,10 +127,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // B2B header
-            _buildReportsHeader(context, theme, contentPadding),
+            // B2B header - border only visible when scrolled
+            _buildReportsHeader(context, theme, contentPadding, showBorder: _hasScrolled),
             Expanded(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: EdgeInsets.fromLTRB(contentPadding, 0, contentPadding, 24),
                 child: Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
                   builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
@@ -160,7 +172,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildReportsHeader(BuildContext context, ThemeData theme, double padding) {
+  Widget _buildReportsHeader(BuildContext context, ThemeData theme, double padding, {bool showBorder = false}) {
     final isDark = theme.brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
 
@@ -168,7 +180,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       padding: EdgeInsets.fromLTRB(padding, 16, padding, 16),
       decoration: BoxDecoration(
         color: context.scaffoldBackground,
-        border: Border(bottom: BorderSide(color: border)),
+        border: showBorder ? Border(bottom: BorderSide(color: border)) : null,
       ),
       child: Row(
         children: [
@@ -225,46 +237,39 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   Widget _buildConfigurationSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: border),
+        TextField(
+          controller: _searchController,
+          style: TextStyle(
+            fontSize: 14,
+            color: theme.colorScheme.onSurface,
           ),
-          child: TextField(
-              controller: _searchController,
-              style: TextStyle(
-                fontSize: 14,
-                color: theme.colorScheme.onSurface,
-              ),
-              decoration: context.chatGPTInputDecoration.copyWith(
-                hintText: 'Search reports...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (value) => setState(() {}),
-            ),
+          decoration: context.chatGPTInputDecoration.copyWith(
+            hintText: 'Search reports...',
+            prefixIcon: const Icon(Icons.search, size: 20),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _searchController.clear();
+                      });
+                    },
+                  )
+                : null,
+          ),
+          onChanged: (value) => setState(() {}),
         ),
         const SizedBox(height: 12),
         Row(
@@ -2473,7 +2478,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             await OpenFile.open(file.path);
           }
         } catch (e) {
-          debugPrint('Could not open file: $e');
+          Logger.debug('Could not open file: $e');
         }
       }
     } catch (e) {

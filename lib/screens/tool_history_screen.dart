@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/tool_history.dart';
 import '../services/tool_history_service.dart';
+import '../services/user_name_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
@@ -269,49 +270,56 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
               ),
             ),
             
-            // Value Changes
+            // Value Changes (resolve user IDs to names for clearer display)
             if (item.oldValue != null && item.newValue != null) ...[
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'From: ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'From: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildValueDisplay(
+                            context,
+                            item.oldValue!,
+                            theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      item.oldValue!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Icon(Icons.arrow_forward, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                    SizedBox(width: 16),
-                    Text(
-                      'To: ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    Text(
-                      item.newValue!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryColor,
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_forward, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'To: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildValueDisplay(
+                            context,
+                            item.newValue!,
+                            AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -320,7 +328,7 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
             
             // Performed By
             if (item.performedBy != null) ...[
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(
@@ -328,12 +336,15 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
                     size: 16,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Performed by: ${item.performedBy}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Performed by: ${item.performedBy}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (item.performedByRole != null) ...[
@@ -415,6 +426,33 @@ class _ToolHistoryScreenState extends State<ToolHistoryScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Display value - resolves user IDs (UUIDs) to names when possible
+  Widget _buildValueDisplay(BuildContext context, String value, Color textColor) {
+    final isUuid = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(value.trim());
+    if (!isUuid) {
+      return Text(
+        value,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+    return FutureBuilder<String>(
+      future: UserNameService.getUserName(value),
+      builder: (context, snapshot) {
+        final display = snapshot.hasData ? snapshot.data! : value;
+        return Text(
+          display,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        );
+      },
     );
   }
 

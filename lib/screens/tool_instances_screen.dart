@@ -55,12 +55,16 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
     
     return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
-        // Rebuild tool group from current tools to reflect deletions
-        final currentTools = toolProvider.tools.where((tool) =>
-          tool.name == widget.toolGroup.name &&
-          tool.category == widget.toolGroup.category &&
-          (widget.toolGroup.brand == null || tool.brand == widget.toolGroup.brand)
-        ).toList();
+        // Rebuild tool group from current tools to reflect deletions.
+        // Use getGroupKey for consistency with grouping logic (case-insensitive).
+        final groupKey = widget.toolGroup.instances.isNotEmpty
+            ? ToolGroup.getGroupKey(widget.toolGroup.instances.first)
+            : null;
+        final currentTools = groupKey != null
+            ? toolProvider.tools
+                .where((tool) => ToolGroup.getGroupKey(tool) == groupKey)
+                .toList()
+            : <Tool>[];
         
         // If no tools match, navigate back (tool group was deleted)
         if (currentTools.isEmpty) {

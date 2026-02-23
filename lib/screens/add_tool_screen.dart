@@ -13,6 +13,7 @@ import '../utils/responsive_helper.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import 'barcode_scanner_screen.dart';
+import '../utils/logger.dart';
 
 class AddToolScreen extends StatefulWidget {
   final bool isFromMyTools;
@@ -1112,7 +1113,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   fontWeight: FontWeight.w500,
                   color: _purchaseDate != null
                       ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withOpacity(0.45),
+                      : theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
@@ -1236,10 +1237,10 @@ class _AddToolScreenState extends State<AddToolScreen> {
       // Reload tools to refresh all screens
       await context.read<SupabaseToolProvider>().loadTools();
 
-      debugPrint('✅ Admin tool added - ID: ${addedTool.id}');
-      debugPrint(
+      Logger.debug('✅ Admin tool added - ID: ${addedTool.id}');
+      Logger.debug(
           '✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
-      debugPrint('✅ AssignedTo: ${addedTool.assignedTo}');
+      Logger.debug('✅ AssignedTo: ${addedTool.assignedTo}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1296,11 +1297,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
             dismissDirection: DismissDirection.horizontal,
           ),
         );
-        Navigator.pop(context);
+        // Delay pop so snackbar has time to render before route is removed
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+        });
       }
     } catch (e) {
-      debugPrint('❌ Error in _handleSave: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Error in _handleSave: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
       if (mounted) {
         // Show detailed error message
         final errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -1541,7 +1547,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

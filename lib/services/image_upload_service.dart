@@ -7,6 +7,7 @@ import 'supabase_service.dart';
 import 'image_upload_service_stub.dart'
     if (dart.library.io) 'image_upload_service_mobile.dart'
     if (dart.library.html) 'image_upload_service_web.dart';
+import '../utils/logger.dart';
 
 class ImageUploadService {
   static const String _bucketName = 'tool-images';
@@ -45,8 +46,8 @@ class ImageUploadService {
         fileName = 'tool_${toolId}_$timestamp.$extension';
       }
 
-      print('Attempting to upload image: $fileName to bucket: $_bucketName');
-      print('User ID: ${user.id}');
+      Logger.debug('Attempting to upload image: $fileName to bucket: $_bucketName');
+      Logger.debug('User ID: ${user.id}');
 
       // Convert to appropriate format for upload
       final uploadData = await _prepareUploadData(imageFile);
@@ -62,13 +63,13 @@ class ImageUploadService {
             .from(_bucketName)
             .getPublicUrl(fileName);
 
-        print('Image uploaded successfully: $imageUrl');
+        Logger.debug('Image uploaded successfully: $imageUrl');
         return imageUrl;
       }
 
       return null;
     } catch (e) {
-      print('Error uploading image: $e');
+      Logger.debug('Error uploading image: $e');
       
       // Provide more specific error messages
       if (e.toString().contains('not authorized') || e.toString().contains('unauthorized')) {
@@ -149,7 +150,7 @@ class ImageUploadService {
           .from(_bucketName)
           .remove([fileName]);
     } catch (e) {
-      print('Error deleting image: $e');
+      Logger.debug('Error deleting image: $e');
       // Don't throw error for delete operations as the file might not exist
     }
   }
@@ -165,7 +166,7 @@ class ImageUploadService {
 
       return response;
     } catch (e) {
-      print('Error getting signed URL: $e');
+      Logger.debug('Error getting signed URL: $e');
       return null;
     }
   }
@@ -175,12 +176,12 @@ class ImageUploadService {
     try {
       // Try to list files from the bucket
       await SupabaseService.client.storage.from(_bucketName).list();
-      print('Storage bucket $_bucketName exists and is accessible');
+      Logger.debug('Storage bucket $_bucketName exists and is accessible');
     } catch (e) {
       // If bucket doesn't exist, we might need to create it
       // Note: Bucket creation usually requires admin privileges
       // For now, we'll just log the error
-      print('Storage bucket might not exist or is not accessible: $e');
+      Logger.debug('Storage bucket might not exist or is not accessible: $e');
     }
   }
 
@@ -188,10 +189,10 @@ class ImageUploadService {
   static bool isUserAuthenticated() {
     final user = SupabaseService.client.auth.currentUser;
     if (user == null) {
-      print('User is not authenticated');
+      Logger.debug('User is not authenticated');
       return false;
     }
-    print('User is authenticated: ${user.id}');
+    Logger.debug('User is authenticated: ${user.id}');
     return true;
   }
 

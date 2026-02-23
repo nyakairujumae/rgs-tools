@@ -682,7 +682,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                     Icons.calendar_today,
                     color: _checkinDate != null
                         ? AppTheme.primaryColor
-                        : theme.colorScheme.onSurface.withOpacity(0.4),
+                        : theme.colorScheme.onSurface.withOpacity(0.55),
                     size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                   ),
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
@@ -695,7 +695,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
                         fontWeight: FontWeight.w500,
                         color: _checkinDate != null
                             ? theme.colorScheme.onSurface
-                            : theme.colorScheme.onSurface.withOpacity(0.4),
+                            : theme.colorScheme.onSurface.withOpacity(0.55),
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
                     ),

@@ -276,15 +276,63 @@ class ResponsiveHelper {
     final screenWidth = MediaQuery.of(context).size.width;
     final textScaler = MediaQuery.of(context).textScaler;
     final textScaleFactor = textScaler.scale(1.0).clamp(0.9, 1.2);
-    
+
     double baseHeight = 60;
     if (screenWidth < 360) {
       baseHeight = 56;
     } else if (screenWidth > 600) {
       baseHeight = 64;
     }
-    
+
     return baseHeight * textScaleFactor;
+  }
+
+  // ============================================================
+  // Web Layout Helpers
+  // ============================================================
+
+  /// Check if the current layout should use desktop web layout
+  /// Returns true when on web platform AND screen width >= 1024px
+  static bool isDesktopLayout(BuildContext context) {
+    return kIsWeb && MediaQuery.of(context).size.width >= 1024;
+  }
+
+  /// Check if sidebar navigation should be shown
+  /// Same as isDesktopLayout - used for semantic clarity
+  static bool shouldShowSidebar(BuildContext context) {
+    return isDesktopLayout(context);
+  }
+
+  /// Get maximum content width for desktop layouts
+  /// Desktop: 1600px max for readability
+  /// Mobile: unlimited (full width)
+  static double getContentMaxWidth(BuildContext context) {
+    return isDesktopLayout(context) ? 1600 : double.infinity;
+  }
+
+  /// Get sidebar width based on collapsed state
+  /// Expanded: 280px, Collapsed: 64px (icon-only)
+  static double getSidebarWidth({bool collapsed = false}) {
+    return collapsed ? 64 : 280;
+  }
+
+  /// Get appropriate padding for web desktop layouts
+  /// Desktop: 24px, Mobile: 16px
+  static double getWebContentPadding(BuildContext context) {
+    return isDesktopLayout(context) ? 24 : 16;
+  }
+
+  /// Check if current layout should use mobile layout
+  /// Mobile: < 768px
+  static bool isMobileLayout(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
+  /// Check if current layout should use tablet layout
+  /// Tablet: 768px - 1023px
+  static bool isTabletLayout(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= 768 && width < 1024;
   }
 }
 

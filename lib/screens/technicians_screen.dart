@@ -13,6 +13,8 @@ import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class TechniciansScreen extends StatefulWidget {
   const TechniciansScreen({super.key});
@@ -204,7 +206,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                     child: Text(
-                      'Technicians',
+                      AppLocalizations.of(context).technicians_title,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -215,7 +217,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                     child: Text(
-                      'Manage active, inactive, and assigned technicians',
+                      AppLocalizations.of(context).technicians_subtitle,
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context)
@@ -297,7 +299,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         });
                       },
                       decoration: context.chatGPTInputDecoration.copyWith(
-                        hintText: 'Search technicians...',
+                        hintText: AppLocalizations.of(context).technicians_searchHint,
                         hintStyle: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context)
@@ -343,16 +345,31 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   ),
                   const SizedBox(height: 12),
 
+                  // Offline banner
+                  if (isOffline)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context).common_offlineBanner,
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // Technicians List
                   Expanded(
-                    child: isOffline && !technicianProvider.isLoading
-                        ? OfflineListSkeleton(
-                            itemCount: 5,
-                            itemHeight: 100,
-                            message:
-                                'You are offline. Showing cached technicians.',
-                          )
-                        : technicianProvider.isLoading
+                    child: technicianProvider.isLoading
                             ? _buildTechnicianSkeletonList(context)
                     : filteredTechnicians.isEmpty
                         ? Center(
@@ -369,7 +386,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No technicians found',
+                                  AppLocalizations.of(context).technicians_emptyTitle,
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -381,7 +398,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Add your first technician to get started',
+                                  AppLocalizations.of(context).technicians_emptySubtitle,
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Theme.of(context)
@@ -544,7 +561,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             Text(
                               technician.department?.isNotEmpty == true
                                   ? technician.department!
-                                  : 'No department',
+                                  : AppLocalizations.of(context).technicians_noDepartment,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Theme.of(context)
@@ -593,7 +610,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       Expanded(
                         child: Text(
                           assignedToolsCount == 0
-                              ? 'No tools'
+                              ? AppLocalizations.of(context).technicians_noTools
                               : '$assignedToolsCount tool${assignedToolsCount > 1 ? 's' : ''}',
                           style: TextStyle(
                             fontSize: 10.5,
@@ -748,13 +765,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                     : Icons.radio_button_unchecked,
                 color: isSelected
                     ? AppTheme.secondaryColor
-                    : theme.colorScheme.onSurface.withOpacity(0.3),
+                    : theme.colorScheme.onSurface.withOpacity(0.5),
                 size: 20,
               )
             else
               Icon(
                 Icons.chevron_right,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
                 size: 18,
               ),
           ],
@@ -849,8 +866,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  debugPrint('❌ Error loading profile picture for ${technician.name}: $error');
-                  debugPrint('❌ URL: ${technician.profilePictureUrl}');
+                  Logger.debug('❌ Error loading profile picture for ${technician.name}: $error');
+                  Logger.debug('❌ URL: ${technician.profilePictureUrl}');
                   return Center(
                     child: Text(
                       initials,
@@ -1008,18 +1025,18 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           borderRadius: BorderRadius.circular(18),
         ),
         title: Text(
-          'Delete Technician',
+          AppLocalizations.of(context).technicians_deleteTitle,
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
-          'Are you sure you want to delete ${technician.name}?',
+          AppLocalizations.of(context).technicians_deleteConfirm(technician.name),
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              AppLocalizations.of(context).common_cancel,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
             ),
           ),
@@ -1081,9 +1098,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             // Look up the user ID - check approval status first, then users table
             try {
               final technicianEmail = technician.email!.trim();
-              debugPrint(
+              Logger.debug(
                   '🔍 Looking up user for technician: ${technician.name}');
-              debugPrint('   Technician email: "$technicianEmail"');
+              Logger.debug('   Technician email: "$technicianEmail"');
 
               String? userId;
 
@@ -1099,10 +1116,10 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
               if (approvalRecord != null && approvalRecord['user_id'] != null) {
                 userId = approvalRecord['user_id'] as String;
-                debugPrint('   ✅ Found user ID from approval record: $userId');
+                Logger.debug('   ✅ Found user ID from approval record: $userId');
               } else {
                 // If no approval record, try to find user in users table
-                debugPrint(
+                Logger.debug(
                     '   No approval record found, checking users table...');
                 var userResponse = await SupabaseService.client
                     .from('users')
@@ -1112,25 +1129,25 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
                 // If not found with ilike, try fetching all and matching
                 if (userResponse == null) {
-                  debugPrint(
+                  Logger.debug(
                       '   No direct match found, searching all users...');
                   final allUsers = await SupabaseService.client
                       .from('users')
                       .select('id, email');
 
-                  debugPrint(
+                  Logger.debug(
                       '   Found ${(allUsers as List).length} total users');
                   for (var user in allUsers as List) {
                     final userEmail =
                         (user['email'] as String?)?.toLowerCase() ?? '';
                     if (userEmail == technicianEmail.toLowerCase()) {
                       userResponse = user;
-                      debugPrint('   ✅ Found matching user: ${user['id']}');
+                      Logger.debug('   ✅ Found matching user: ${user['id']}');
                       break;
                     }
                   }
                 } else {
-                  debugPrint('   ✅ Found user: ${userResponse['id']}');
+                  Logger.debug('   ✅ Found user: ${userResponse['id']}');
                 }
 
                 if (userResponse != null && userResponse['id'] != null) {
@@ -1148,18 +1165,18 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               } else {
                 // No user account found - technician needs to register and be approved first
                 failedAssignments.add(technician.name);
-                debugPrint(
+                Logger.debug(
                     '⚠️ No user account found for technician: ${technician.name} (${technician.email})');
-                debugPrint(
+                Logger.debug(
                     '   Technician must register in the app and be approved by admin first.');
               }
             } catch (e) {
-              debugPrint(
+              Logger.debug(
                   'Error looking up user for technician ${technician.name}: $e');
               failedAssignments.add(technician.name);
             }
           } else {
-            debugPrint('⚠️ Technician ${technician.name} has no email address');
+            Logger.debug('⚠️ Technician ${technician.name} has no email address');
             failedAssignments.add(technician.name);
           }
         }

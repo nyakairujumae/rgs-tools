@@ -1,13 +1,23 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class FirebaseConfig {
   // Firebase project configuration
-  static const String projectId = 'rgstools';
-  static const String apiKey = 'AIzaSyAa6G0Q32pKH-S5_hW-ASS815S1_QyPgH4';
-  static const String appId = '1:258248380025:android:288b94751360ed603e4ea8';
-  static const String messagingSenderId = '258248380025';
-  
+  static String get projectId =>
+      dotenv.env['FIREBASE_PROJECT_ID'] ?? const String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static String get apiKey =>
+      dotenv.env['FIREBASE_ANDROID_API_KEY'] ?? const String.fromEnvironment('FIREBASE_ANDROID_API_KEY');
+  static String get appId =>
+      dotenv.env['FIREBASE_ANDROID_APP_ID'] ?? const String.fromEnvironment('FIREBASE_ANDROID_APP_ID');
+  static String get messagingSenderId =>
+      dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? const String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
+
   // FCM topics
-  static const String adminTopic = 'admin_notifications';
-  static const String technicianTopic = 'technician_notifications';
-  static const String newRegistrationTopic = 'new_registrations';
-  static const String toolIssuesTopic = 'tool_issues';
+  static String get adminTopic =>
+      dotenv.env['FCM_ADMIN_TOPIC'] ?? 'admin_notifications';
+  static String get technicianTopic =>
+      dotenv.env['FCM_TECHNICIAN_TOPIC'] ?? 'technician_notifications';
+  static String get newRegistrationTopic =>
+      dotenv.env['FCM_NEW_REGISTRATION_TOPIC'] ?? 'new_registrations';
+  static String get toolIssuesTopic =>
+      dotenv.env['FCM_TOOL_ISSUES_TOPIC'] ?? 'tool_issues';
 }

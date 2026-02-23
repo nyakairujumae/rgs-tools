@@ -6,6 +6,7 @@ import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/badge_service.dart';
+import '../utils/logger.dart';
 
 class AdminNotificationProvider extends ChangeNotifier {
   List<AdminNotification> _notifications = [];
@@ -31,7 +32,7 @@ class AdminNotificationProvider extends ChangeNotifier {
   Future<void> loadNotifications({bool skipIfLoading = true}) async {
     // Prevent concurrent loads
     if (_isLoading && skipIfLoading) {
-      debugPrint('⚠️ [AdminNotifications] Already loading, skipping duplicate call');
+      Logger.debug('⚠️ [AdminNotifications] Already loading, skipping duplicate call');
       return;
     }
     
@@ -71,16 +72,16 @@ class AdminNotificationProvider extends ChangeNotifier {
         final currentBadge = await BadgeService.getBadgeCount();
         if (unreadCount != currentBadge) {
           await BadgeService.updateBadge(unreadCount);
-          debugPrint('✅ [AdminNotifications] Badge synced: $unreadCount unread');
+          Logger.debug('✅ [AdminNotifications] Badge synced: $unreadCount unread');
         }
       } catch (e) {
-        debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
+        Logger.debug('⚠️ [AdminNotifications] Error syncing badge: $e');
       }
       
       // Set up realtime subscription for real-time updates
       _setupRealtimeSubscription();
     } catch (e) {
-      debugPrint('Error loading notifications: $e');
+      Logger.debug('Error loading notifications: $e');
       if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
         _error = 'Session expired. Please log in again';
       } else if (e.toString().contains('PGRST204') || e.toString().contains('relation "admin_notifications" does not exist')) {
@@ -116,13 +117,13 @@ class AdminNotificationProvider extends ChangeNotifier {
         try {
           final unreadCount = _notifications.where((n) => !n.isRead).length;
           await BadgeService.updateBadge(unreadCount);
-          debugPrint('✅ [AdminNotifications] Badge updated after marking as read: $unreadCount unread');
+          Logger.debug('✅ [AdminNotifications] Badge updated after marking as read: $unreadCount unread');
         } catch (e) {
-          debugPrint('⚠️ [AdminNotifications] Error syncing badge: $e');
+          Logger.debug('⚠️ [AdminNotifications] Error syncing badge: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error marking notification as read: $e');
+      Logger.debug('Error marking notification as read: $e');
       // Still update locally even if API call fails
       final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
@@ -146,12 +147,12 @@ class AdminNotificationProvider extends ChangeNotifier {
       // Sync badge with database after marking all as read
       try {
         await BadgeService.clearBadge();
-        debugPrint('✅ [AdminNotifications] Badge cleared after marking all as read');
+        Logger.debug('✅ [AdminNotifications] Badge cleared after marking all as read');
       } catch (e) {
-        debugPrint('⚠️ [AdminNotifications] Error clearing badge: $e');
+        Logger.debug('⚠️ [AdminNotifications] Error clearing badge: $e');
       }
     } catch (e) {
-      debugPrint('Error marking all notifications as read: $e');
+      Logger.debug('Error marking all notifications as read: $e');
       // Still update locally even if API call fails
       _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
       notifyListeners();
@@ -169,7 +170,7 @@ class AdminNotificationProvider extends ChangeNotifier {
       _notifications.removeWhere((n) => n.id == notificationId);
       notifyListeners();
     } catch (e) {
-      debugPrint('Error removing notification: $e');
+      Logger.debug('Error removing notification: $e');
       // Still remove locally even if API call fails
       _notifications.removeWhere((n) => n.id == notificationId);
       notifyListeners();
@@ -210,12 +211,12 @@ class AdminNotificationProvider extends ChangeNotifier {
       }
 
       final notificationId = result.toString();
-      debugPrint('✅ Notification created with ID: $notificationId');
+      Logger.debug('✅ Notification created with ID: $notificationId');
       // Note: Approval workflows are now automatically created by the database function
       // when tool_request notifications are created - no client-side code needed!
 
       // Send push notification to admins (non-blocking)
-      debugPrint('📤 [Push] Attempting to send push notification to admins...');
+      Logger.debug('📤 [Push] Attempting to send push notification to admins...');
       PushNotificationService.sendToAdmins(
         title: title ?? _getNotificationTitle(type, technicianName),
         body: message ?? _getNotificationMessage(type, technicianName),
@@ -225,17 +226,17 @@ class AdminNotificationProvider extends ChangeNotifier {
           if (data != null) ...data,
         },
       ).then((count) {
-        debugPrint('✅ [Push] Push notification sent to $count admin(s)');
+        Logger.debug('✅ [Push] Push notification sent to $count admin(s)');
         if (count == 0) {
-          debugPrint('⚠️ [Push] WARNING: No admins received the notification!');
-          debugPrint('⚠️ [Push] This might mean:');
-          debugPrint('⚠️ [Push] 1. No admin users found in database');
-          debugPrint('⚠️ [Push] 2. Admin users have no FCM tokens');
-          debugPrint('⚠️ [Push] 3. RLS policies blocking token queries');
+          Logger.debug('⚠️ [Push] WARNING: No admins received the notification!');
+          Logger.debug('⚠️ [Push] This might mean:');
+          Logger.debug('⚠️ [Push] 1. No admin users found in database');
+          Logger.debug('⚠️ [Push] 2. Admin users have no FCM tokens');
+          Logger.debug('⚠️ [Push] 3. RLS policies blocking token queries');
         }
       }).catchError((e, stackTrace) {
-        debugPrint('❌ [Push] ERROR sending push notification: $e');
-        debugPrint('❌ [Push] Stack trace: $stackTrace');
+        Logger.debug('❌ [Push] ERROR sending push notification: $e');
+        Logger.debug('❌ [Push] Stack trace: $stackTrace');
       });
 
       // Create notification object from the data we already have
@@ -272,10 +273,10 @@ class AdminNotificationProvider extends ChangeNotifier {
       } catch (e) {
         // If we can't check role or add to list, that's okay
         // The notification was successfully created in the database
-        debugPrint('Note: Could not add notification to local list (user may not be admin): $e');
+        Logger.debug('Note: Could not add notification to local list (user may not be admin): $e');
       }
     } catch (e) {
-      debugPrint('❌ Error creating notification: $e');
+      Logger.debug('❌ Error creating notification: $e');
       if (e.toString().contains('Could not find the function')) {
         throw Exception('Database function not found. Please run FINAL_WORKING_FIX.sql in Supabase SQL Editor.');
       }
@@ -340,7 +341,7 @@ class AdminNotificationProvider extends ChangeNotifier {
     _realtimeSubscription?.cancel();
     
     try {
-      debugPrint('📡 [AdminNotifications] Setting up realtime subscription...');
+      Logger.debug('📡 [AdminNotifications] Setting up realtime subscription...');
       
       final channel = SupabaseService.client.channel('admin_notifications_realtime');
       
@@ -350,7 +351,7 @@ class AdminNotificationProvider extends ChangeNotifier {
         schema: 'public',
         table: 'admin_notifications',
         callback: (payload) async {
-          debugPrint('📡 [AdminNotifications] New notification received via realtime');
+          Logger.debug('📡 [AdminNotifications] New notification received via realtime');
           try {
             final newNotification = AdminNotification.fromJson(payload.newRecord);
             _notifications.insert(0, newNotification);
@@ -359,9 +360,9 @@ class AdminNotificationProvider extends ChangeNotifier {
             // Update badge in real-time
             final unreadCount = _notifications.where((n) => !n.isRead).length;
             await BadgeService.updateBadge(unreadCount);
-            debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+            Logger.debug('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
           } catch (e) {
-            debugPrint('⚠️ [AdminNotifications] Error processing new notification: $e');
+            Logger.debug('⚠️ [AdminNotifications] Error processing new notification: $e');
             // Reload notifications if parsing fails
             loadNotifications(skipIfLoading: false);
           }
@@ -374,7 +375,7 @@ class AdminNotificationProvider extends ChangeNotifier {
         schema: 'public',
         table: 'admin_notifications',
         callback: (payload) async {
-          debugPrint('📡 [AdminNotifications] Notification updated via realtime');
+          Logger.debug('📡 [AdminNotifications] Notification updated via realtime');
           try {
             final updatedNotification = AdminNotification.fromJson(payload.newRecord);
             final index = _notifications.indexWhere((n) => n.id == updatedNotification.id);
@@ -385,13 +386,13 @@ class AdminNotificationProvider extends ChangeNotifier {
               // Update badge in real-time
               final unreadCount = _notifications.where((n) => !n.isRead).length;
               await BadgeService.updateBadge(unreadCount);
-              debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+              Logger.debug('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
             } else {
               // Notification not in local list, reload
               loadNotifications(skipIfLoading: false);
             }
           } catch (e) {
-            debugPrint('⚠️ [AdminNotifications] Error processing notification update: $e');
+            Logger.debug('⚠️ [AdminNotifications] Error processing notification update: $e');
             loadNotifications(skipIfLoading: false);
           }
         },
@@ -403,7 +404,7 @@ class AdminNotificationProvider extends ChangeNotifier {
         schema: 'public',
         table: 'admin_notifications',
         callback: (payload) async {
-          debugPrint('📡 [AdminNotifications] Notification deleted via realtime');
+          Logger.debug('📡 [AdminNotifications] Notification deleted via realtime');
           try {
             final deletedId = payload.oldRecord['id'] as String;
             _notifications.removeWhere((n) => n.id == deletedId);
@@ -412,9 +413,9 @@ class AdminNotificationProvider extends ChangeNotifier {
             // Update badge in real-time
             final unreadCount = _notifications.where((n) => !n.isRead).length;
             await BadgeService.updateBadge(unreadCount);
-            debugPrint('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
+            Logger.debug('✅ [AdminNotifications] Badge updated in real-time: $unreadCount unread');
           } catch (e) {
-            debugPrint('⚠️ [AdminNotifications] Error processing notification deletion: $e');
+            Logger.debug('⚠️ [AdminNotifications] Error processing notification deletion: $e');
             loadNotifications(skipIfLoading: false);
           }
         },
@@ -422,10 +423,10 @@ class AdminNotificationProvider extends ChangeNotifier {
       
       channel.subscribe();
       _realtimeChannel = channel;
-      debugPrint('✅ [AdminNotifications] Realtime subscription active');
+      Logger.debug('✅ [AdminNotifications] Realtime subscription active');
     } catch (e) {
-      debugPrint('⚠️ [AdminNotifications] Error setting up realtime subscription: $e');
-      debugPrint('⚠️ [AdminNotifications] Notifications will still work, but updates may be delayed');
+      Logger.debug('⚠️ [AdminNotifications] Error setting up realtime subscription: $e');
+      Logger.debug('⚠️ [AdminNotifications] Notifications will still work, but updates may be delayed');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'supabase_service.dart';
 import 'package:flutter/material.dart';
+import '../utils/logger.dart';
 
 /// Service to manage app badge count synchronized with database notifications
 class BadgeService {
@@ -17,7 +18,7 @@ class BadgeService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getInt(_badgeCountKey) ?? 0;
     } catch (e) {
-      debugPrint('❌ [Badge] Error getting badge count: $e');
+      Logger.debug('❌ [Badge] Error getting badge count: $e');
       return 0;
     }
   }
@@ -27,9 +28,9 @@ class BadgeService {
     try {
       final currentCount = await getBadgeCount();
       await updateBadge(currentCount + 1);
-      debugPrint('✅ [Badge] Incremented to: ${currentCount + 1}');
+      Logger.debug('✅ [Badge] Incremented to: ${currentCount + 1}');
     } catch (e) {
-      debugPrint('❌ [Badge] Error incrementing badge: $e');
+      Logger.debug('❌ [Badge] Error incrementing badge: $e');
     }
   }
 
@@ -53,9 +54,9 @@ class BadgeService {
       // Note: Android notification badge is handled via notification payload (number field)
       // The FlutterAppBadger handles the app icon badge for both iOS and Android
       
-      debugPrint('✅ [Badge] Updated to: $badgeCount');
+      Logger.debug('✅ [Badge] Updated to: $badgeCount');
     } catch (e) {
-      debugPrint('❌ [Badge] Error updating badge: $e');
+      Logger.debug('❌ [Badge] Error updating badge: $e');
     }
   }
 
@@ -63,9 +64,9 @@ class BadgeService {
   static Future<void> clearBadge() async {
     try {
       await updateBadge(0);
-      debugPrint('✅ [Badge] Cleared');
+      Logger.debug('✅ [Badge] Cleared');
     } catch (e) {
-      debugPrint('❌ [Badge] Error clearing badge: $e');
+      Logger.debug('❌ [Badge] Error clearing badge: $e');
     }
   }
 
@@ -79,9 +80,9 @@ class BadgeService {
       // Update badge to match database count
       await updateBadge(unreadCount);
       
-      debugPrint('✅ [Badge] Synced with database: $unreadCount unread notifications');
+      Logger.debug('✅ [Badge] Synced with database: $unreadCount unread notifications');
     } catch (e) {
-      debugPrint('❌ [Badge] Error syncing with database: $e');
+      Logger.debug('❌ [Badge] Error syncing with database: $e');
     }
   }
 
@@ -111,7 +112,7 @@ class BadgeService {
           userEmail = userRecord['email'] as String?;
         }
       } catch (e) {
-        debugPrint('⚠️ [Badge] Could not fetch user role: $e');
+        Logger.debug('⚠️ [Badge] Could not fetch user role: $e');
       }
 
       // Count notifications based on user role
@@ -128,7 +129,7 @@ class BadgeService {
               .where((n) => (n['is_read'] as bool?) != true)
               .length;
         } catch (e) {
-          debugPrint('⚠️ [Badge] Error counting admin notifications: $e');
+          Logger.debug('⚠️ [Badge] Error counting admin notifications: $e');
         }
       } else if (userRole == 'technician') {
         // Technicians see technician_notifications for their user_id
@@ -144,7 +145,7 @@ class BadgeService {
             .where((n) => (n['is_read'] as bool?) != true)
             .length;
       } catch (e) {
-        debugPrint('⚠️ [Badge] Error counting technician notifications: $e');
+        Logger.debug('⚠️ [Badge] Error counting technician notifications: $e');
       }
 
       // Also count admin_notifications where technician_email matches (for technicians)
@@ -161,7 +162,7 @@ class BadgeService {
               .where((n) => (n['is_read'] as bool?) != true)
               .length;
         } catch (e) {
-          debugPrint('⚠️ [Badge] Error counting admin notifications for technician: $e');
+          Logger.debug('⚠️ [Badge] Error counting admin notifications for technician: $e');
         }
       }
       }
@@ -169,7 +170,7 @@ class BadgeService {
 
       return unreadCount;
     } catch (e) {
-      debugPrint('❌ [Badge] Error getting unread count: $e');
+      Logger.debug('❌ [Badge] Error getting unread count: $e');
       return 0;
     }
   }
@@ -179,9 +180,9 @@ class BadgeService {
     try {
       // Sync with database to get accurate count
       await syncBadgeWithDatabase(context);
-      debugPrint('✅ [Badge] Initialized');
+      Logger.debug('✅ [Badge] Initialized');
     } catch (e) {
-      debugPrint('❌ [Badge] Error initializing badge: $e');
+      Logger.debug('❌ [Badge] Error initializing badge: $e');
     }
   }
 

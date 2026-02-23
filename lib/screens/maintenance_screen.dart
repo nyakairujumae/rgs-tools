@@ -10,6 +10,7 @@ import '../utils/error_handler.dart';
 import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/logger.dart';
 
 class MaintenanceScreen extends StatefulWidget {
   const MaintenanceScreen({super.key});
@@ -47,7 +48,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
         await toolProvider.loadTools();
       }
     } catch (e) {
-      debugPrint('Error loading tools: $e');
+      Logger.debug('Error loading tools: $e');
     } finally {
       if (mounted) {
         setState(() {

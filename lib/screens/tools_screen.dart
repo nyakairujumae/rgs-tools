@@ -14,6 +14,8 @@ import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
@@ -71,7 +73,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         final tools = toolProvider.tools;
         final categories = ['Category', ...toolProvider.getCategories()];
 
-        debugPrint('🔍 Admin Tools Screen - Total tools: ${tools.length}');
+        Logger.debug('🔍 Admin Tools Screen - Total tools: ${tools.length}');
 
         // Filter tools based on search and filters
         final filteredTools = tools.where((tool) {
@@ -87,7 +89,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         // Group filtered tools by name + category + brand
         final toolGroups = ToolGroup.groupTools(filteredTools);
 
-        debugPrint(
+        Logger.debug(
             '🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}, Groups: ${toolGroups.length}');
         final theme = Theme.of(context);
 
@@ -164,7 +166,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Tools',
+                                AppLocalizations.of(context).tools_title,
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 24 : 22,
                                   fontWeight: FontWeight.w700,
@@ -556,17 +558,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: Consumer<ConnectivityProvider>(
                       builder: (context, connectivityProvider, _) {
                         final isOffline = !connectivityProvider.isOnline;
-                        
-                        if (isOffline && !toolProvider.isLoading) {
-                          // Show offline skeleton when offline
-                          return OfflineToolGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            message: 'You are offline. Showing cached data.',
-                          );
-                        }
-                        
-                        return toolProvider.isLoading
+
+                        return Column(
+                          children: [
+                            if (isOffline)
+                              _buildOfflineBanner(context),
+                            Expanded(
+                              child: toolProvider.isLoading
                         ? const ToolCardGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
@@ -676,9 +674,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                     },
                                   );
                                 },
-                              );
-                                },
                               ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -756,6 +757,28 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   : null,
         );
       },
+    );
+  }
+
+  Widget _buildOfflineBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            AppLocalizations.of(context).common_offlineBanner,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1404,7 +1427,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 width: 48,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withOpacity(0.3),
+                  color: colorScheme.onSurface.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

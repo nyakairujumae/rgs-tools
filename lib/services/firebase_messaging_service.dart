@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,12 @@ import 'supabase_service.dart';
 import 'badge_service.dart';
 import '../main.dart' show globalNavigatorKey;
 import '../screens/admin_notification_screen.dart';
+import '../screens/admin_approval_screen.dart';
+import '../screens/approval_workflows_screen.dart';
+import '../screens/tool_issues_screen.dart';
+import '../screens/maintenance_screen.dart';
+import '../screens/technician_home_screen.dart';
+import '../utils/logger.dart';
 
 // Background notification channel constants (must be accessible from background handler)
 const String _backgroundChannelId = 'rgs_notifications';
@@ -59,7 +66,7 @@ class FirebaseMessagingService {
   static Future<void> registerCurrentToken({bool forceRefresh = false}) async {
     try {
       if (Firebase.apps.isEmpty) {
-        debugPrint('❌ [FCM] Cannot register token: Firebase not initialized');
+        Logger.debug('❌ [FCM] Cannot register token: Firebase not initialized');
         return;
       }
 
@@ -74,7 +81,7 @@ class FirebaseMessagingService {
       }
 
       if (token == null || token.isEmpty) {
-        debugPrint('❌ [FCM] Cannot register token: token is null/empty');
+        Logger.debug('❌ [FCM] Cannot register token: token is null/empty');
         return;
       }
 
@@ -86,23 +93,23 @@ class FirebaseMessagingService {
       if (user != null) {
         await _sendTokenToServer(token);
       } else {
-        debugPrint('⚠️ [FCM] Token saved locally, user not logged in');
+        Logger.debug('⚠️ [FCM] Token saved locally, user not logged in');
       }
 
       _ensureTokenRefreshListener();
     } catch (e) {
-      debugPrint('❌ [FCM] Error registering current token: $e');
+      Logger.debug('❌ [FCM] Error registering current token: $e');
     }
   }
   
   /// Force refresh FCM token (useful when token is null)
   static Future<String?> refreshToken() async {
     try {
-      debugPrint('🔄 [FCM] Force refreshing FCM token...');
+      Logger.debug('🔄 [FCM] Force refreshing FCM token...');
       
       // Verify Firebase is initialized
       if (Firebase.apps.isEmpty) {
-        debugPrint('❌ [FCM] Cannot refresh token: Firebase not initialized');
+        Logger.debug('❌ [FCM] Cannot refresh token: Firebase not initialized');
         return null;
       }
       
@@ -110,18 +117,18 @@ class FirebaseMessagingService {
       try {
         final settings = await _messaging.getNotificationSettings();
         if (settings.authorizationStatus == AuthorizationStatus.denied) {
-          debugPrint('❌ [FCM] Cannot refresh token: Notification permission denied');
+          Logger.debug('❌ [FCM] Cannot refresh token: Notification permission denied');
           return null;
         }
       } catch (e) {
-        debugPrint('⚠️ [FCM] Could not check notification settings: $e');
+        Logger.debug('⚠️ [FCM] Could not check notification settings: $e');
       }
       
       // Get new token
       final newToken = await _messaging.getToken();
       if (newToken != null && newToken.isNotEmpty) {
         _fcmToken = newToken;
-        debugPrint('✅ [FCM] Token refreshed: ${newToken.substring(0, 20)}...');
+        Logger.debug('✅ [FCM] Token refreshed: ${newToken.substring(0, 20)}...');
         
         // Save to local storage
         final prefs = await SharedPreferences.getInstance();
@@ -135,12 +142,12 @@ class FirebaseMessagingService {
         
         return newToken;
       } else {
-        debugPrint('❌ [FCM] Token refresh returned null');
+        Logger.debug('❌ [FCM] Token refresh returned null');
         return null;
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Error refreshing token: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] Error refreshing token: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
       return null;
     }
   }
@@ -151,35 +158,35 @@ class FirebaseMessagingService {
   /// CRITICAL: This method is idempotent - safe to call multiple times
   static Future<void> initialize() async {
     try {
-      debugPrint('🔥 [FCM] ========== INITIALIZATION START ==========');
+      Logger.debug('🔥 [FCM] ========== INITIALIZATION START ==========');
       
       // CRITICAL: Prevent duplicate initialization
       if (_isInitialized) {
-        debugPrint('⚠️ [FCM] Already initialized, skipping duplicate initialization');
-        debugPrint('⚠️ [FCM] Firebase apps count: ${Firebase.apps.length}');
+        Logger.debug('⚠️ [FCM] Already initialized, skipping duplicate initialization');
+        Logger.debug('⚠️ [FCM] Firebase apps count: ${Firebase.apps.length}');
         for (final app in Firebase.apps) {
-          debugPrint('⚠️ [FCM] Firebase app: ${app.name} (${app.options.projectId})');
+          Logger.debug('⚠️ [FCM] Firebase app: ${app.name} (${app.options.projectId})');
         }
         return;
       }
       
       // Verify Firebase is initialized
       if (Firebase.apps.isEmpty) {
-        debugPrint('❌ [FCM] Firebase not initialized. Call Firebase.initializeApp() first.');
+        Logger.debug('❌ [FCM] Firebase not initialized. Call Firebase.initializeApp() first.');
         return;
       }
       
       // Check for multiple Firebase apps (indicates duplicate initialization)
       if (Firebase.apps.length > 1) {
-        debugPrint('⚠️ [FCM] WARNING: Multiple Firebase apps detected (${Firebase.apps.length})');
-        debugPrint('⚠️ [FCM] This can cause duplicate notifications!');
+        Logger.debug('⚠️ [FCM] WARNING: Multiple Firebase apps detected (${Firebase.apps.length})');
+        Logger.debug('⚠️ [FCM] This can cause duplicate notifications!');
         for (final app in Firebase.apps) {
-          debugPrint('⚠️ [FCM] App: ${app.name}, Project: ${app.options.projectId}');
+          Logger.debug('⚠️ [FCM] App: ${app.name}, Project: ${app.options.projectId}');
         }
-        debugPrint('⚠️ [FCM] Using default app: ${Firebase.app().name}');
+        Logger.debug('⚠️ [FCM] Using default app: ${Firebase.app().name}');
       }
       
-      debugPrint('✅ [FCM] Firebase is initialized (${Firebase.apps.length} app(s))');
+      Logger.debug('✅ [FCM] Firebase is initialized (${Firebase.apps.length} app(s))');
       
       // Initialize local notifications FIRST (needed for data-only messages)
       await _initializeLocalNotifications();
@@ -189,7 +196,7 @@ class FirebaseMessagingService {
       
       if (permission.authorizationStatus == AuthorizationStatus.authorized ||
           permission.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('✅ [FCM] Notification permission granted: ${permission.authorizationStatus}');
+        Logger.debug('✅ [FCM] Notification permission granted: ${permission.authorizationStatus}');
         
         // CRITICAL: Set iOS foreground notification presentation options ONCE
         // This ensures notifications appear when app is in foreground
@@ -208,39 +215,39 @@ class FirebaseMessagingService {
         // Token can be obtained later via refreshToken()
         _isInitialized = true;
         
-        debugPrint('✅ [FCM] Initialization complete');
+        Logger.debug('✅ [FCM] Initialization complete');
         if (_fcmToken == null || _fcmToken!.isEmpty) {
-          debugPrint('⚠️ [FCM] WARNING: Initialization complete but token is null');
-          debugPrint('⚠️ [FCM] Token will be obtained on next refresh or when permissions are granted');
+          Logger.debug('⚠️ [FCM] WARNING: Initialization complete but token is null');
+          Logger.debug('⚠️ [FCM] Token will be obtained on next refresh or when permissions are granted');
           
           // Retry getting token after a delay (in case permissions were just granted)
           Future.delayed(const Duration(seconds: 3), () async {
             if (_fcmToken == null || _fcmToken!.isEmpty) {
-              debugPrint('🔄 [FCM] Retrying token retrieval after initialization...');
+              Logger.debug('🔄 [FCM] Retrying token retrieval after initialization...');
               final retryToken = await refreshToken();
               if (retryToken != null) {
-                debugPrint('✅ [FCM] Token obtained on retry');
+                Logger.debug('✅ [FCM] Token obtained on retry');
               } else {
-                debugPrint('⚠️ [FCM] Token still null after retry - check notification permissions');
+                Logger.debug('⚠️ [FCM] Token still null after retry - check notification permissions');
               }
             }
           });
         }
-        debugPrint('🔥 [FCM] =========================================');
+        Logger.debug('🔥 [FCM] =========================================');
       } else {
-        debugPrint('❌ [FCM] Notification permission denied: ${permission.authorizationStatus}');
-        debugPrint('❌ [FCM] Token cannot be obtained without permission');
-        debugPrint('❌ [FCM] User must grant notification permission in device settings');
-        debugPrint('❌ [FCM] Initialization will be retried when permission is granted');
+        Logger.debug('❌ [FCM] Notification permission denied: ${permission.authorizationStatus}');
+        Logger.debug('❌ [FCM] Token cannot be obtained without permission');
+        Logger.debug('❌ [FCM] User must grant notification permission in device settings');
+        Logger.debug('❌ [FCM] Initialization will be retried when permission is granted');
         // Don't mark as initialized if permission is denied - we want to retry
         // But set up handlers anyway in case permission is granted later
         _setupMessageHandlers();
-        debugPrint('🔥 [FCM] =========================================');
+        Logger.debug('🔥 [FCM] =========================================');
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Initialization error: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
-      debugPrint('🔥 [FCM] =========================================');
+      Logger.debug('❌ [FCM] Initialization error: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('🔥 [FCM] =========================================');
       // Don't mark as initialized if there was an error
     }
   }
@@ -280,9 +287,9 @@ class FirebaseMessagingService {
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.createNotificationChannel(androidChannel);
       
-      debugPrint('✅ [FCM] Local notifications initialized');
+      Logger.debug('✅ [FCM] Local notifications initialized');
     } catch (e) {
-      debugPrint('❌ [FCM] Local notifications init error: $e');
+      Logger.debug('❌ [FCM] Local notifications init error: $e');
     }
   }
 
@@ -292,14 +299,14 @@ class FirebaseMessagingService {
   /// It will only request permission once, even across hot restarts
   static Future<NotificationSettings> _requestPermissionOnce() async {
     if (_permissionRequested) {
-      debugPrint('⚠️ [FCM] Permission already requested, checking current status...');
+      Logger.debug('⚠️ [FCM] Permission already requested, checking current status...');
       final currentSettings = await _messaging.getNotificationSettings();
-      debugPrint('📱 [FCM] Current permission status: ${currentSettings.authorizationStatus}');
+      Logger.debug('📱 [FCM] Current permission status: ${currentSettings.authorizationStatus}');
       return currentSettings;
     }
     
-    debugPrint('📱 [FCM] ========== REQUESTING PERMISSION ==========');
-    debugPrint('📱 [FCM] This should only happen ONCE per app install');
+    Logger.debug('📱 [FCM] ========== REQUESTING PERMISSION ==========');
+    Logger.debug('📱 [FCM] This should only happen ONCE per app install');
     
     _permissionRequested = true;
     final permission = await _messaging.requestPermission(
@@ -312,11 +319,11 @@ class FirebaseMessagingService {
       criticalAlert: false,
     );
     
-    debugPrint('📱 [FCM] Permission request result: ${permission.authorizationStatus}');
-    debugPrint('📱 [FCM] Alert: ${permission.alert}');
-    debugPrint('📱 [FCM] Badge: ${permission.badge}');
-    debugPrint('📱 [FCM] Sound: ${permission.sound}');
-    debugPrint('📱 [FCM] ===========================================');
+    Logger.debug('📱 [FCM] Permission request result: ${permission.authorizationStatus}');
+    Logger.debug('📱 [FCM] Alert: ${permission.alert}');
+    Logger.debug('📱 [FCM] Badge: ${permission.badge}');
+    Logger.debug('📱 [FCM] Sound: ${permission.sound}');
+    Logger.debug('📱 [FCM] ===========================================');
     
     return permission;
   }
@@ -330,12 +337,12 @@ class FirebaseMessagingService {
     }
     
     if (_iosForegroundOptionsSet) {
-      debugPrint('⚠️ [FCM] iOS foreground options already set, skipping');
+      Logger.debug('⚠️ [FCM] iOS foreground options already set, skipping');
       return;
     }
     
-    debugPrint('📱 [FCM] ========== SETTING iOS FOREGROUND OPTIONS ==========');
-    debugPrint('📱 [FCM] This should only happen ONCE');
+    Logger.debug('📱 [FCM] ========== SETTING iOS FOREGROUND OPTIONS ==========');
+    Logger.debug('📱 [FCM] This should only happen ONCE');
     
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: true,
@@ -344,98 +351,98 @@ class FirebaseMessagingService {
     );
     
     _iosForegroundOptionsSet = true;
-    debugPrint('✅ [FCM] iOS foreground notification options set');
-    debugPrint('📱 [FCM] ===================================================');
+    Logger.debug('✅ [FCM] iOS foreground notification options set');
+    Logger.debug('📱 [FCM] ===================================================');
   }
 
   /// Get FCM token
   static Future<void> _getFCMToken() async {
     try {
-      debugPrint('🔄 [FCM] Requesting FCM token...');
-      debugPrint('🔄 [FCM] Firebase apps count: ${Firebase.apps.length}');
-      debugPrint('🔄 [FCM] Platform: ${Platform.isIOS ? "iOS" : (Platform.isAndroid ? "Android" : "Unknown")}');
+      Logger.debug('🔄 [FCM] Requesting FCM token...');
+      Logger.debug('🔄 [FCM] Firebase apps count: ${Firebase.apps.length}');
+      Logger.debug('🔄 [FCM] Platform: ${Platform.isIOS ? "iOS" : (Platform.isAndroid ? "Android" : "Unknown")}');
       
       // Check notification settings before requesting token
       try {
         final settings = await _messaging.getNotificationSettings();
-        debugPrint('🔄 [FCM] Notification settings:');
-        debugPrint('🔄 [FCM]   Authorization: ${settings.authorizationStatus}');
-        debugPrint('🔄 [FCM]   Alert: ${settings.alert}');
-        debugPrint('🔄 [FCM]   Badge: ${settings.badge}');
-        debugPrint('🔄 [FCM]   Sound: ${settings.sound}');
+        Logger.debug('🔄 [FCM] Notification settings:');
+        Logger.debug('🔄 [FCM]   Authorization: ${settings.authorizationStatus}');
+        Logger.debug('🔄 [FCM]   Alert: ${settings.alert}');
+        Logger.debug('🔄 [FCM]   Badge: ${settings.badge}');
+        Logger.debug('🔄 [FCM]   Sound: ${settings.sound}');
         
         if (settings.authorizationStatus == AuthorizationStatus.denied) {
-          debugPrint('❌ [FCM] Notification permission is DENIED - token cannot be obtained');
-          debugPrint('❌ [FCM] User must grant notification permission in device settings');
+          Logger.debug('❌ [FCM] Notification permission is DENIED - token cannot be obtained');
+          Logger.debug('❌ [FCM] User must grant notification permission in device settings');
           return;
         }
       } catch (settingsError) {
-        debugPrint('⚠️ [FCM] Could not check notification settings: $settingsError');
+        Logger.debug('⚠️ [FCM] Could not check notification settings: $settingsError');
       }
       
       _fcmToken = await _messaging.getToken();
-      debugPrint('🔄 [FCM] getToken() returned: ${_fcmToken != null ? "Token (${_fcmToken!.length} chars)" : "NULL"}');
+      Logger.debug('🔄 [FCM] getToken() returned: ${_fcmToken != null ? "Token (${_fcmToken!.length} chars)" : "NULL"}');
       
       if (_fcmToken != null && _fcmToken!.isNotEmpty) {
-        debugPrint('✅ [FCM] ========== TOKEN OBTAINED ==========');
-        debugPrint('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
-        debugPrint('📱 [FCM] Platform: ${Platform.isIOS ? "iOS" : "Android"}');
-        debugPrint('📱 [FCM] Full token length: ${_fcmToken!.length}');
+        Logger.debug('✅ [FCM] ========== TOKEN OBTAINED ==========');
+        Logger.debug('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
+        Logger.debug('📱 [FCM] Platform: ${Platform.isIOS ? "iOS" : "Android"}');
+        Logger.debug('📱 [FCM] Full token length: ${_fcmToken!.length}');
         
         // Save token locally FIRST (always, even if user not logged in)
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', _fcmToken!);
-        debugPrint('✅ [FCM] Token saved to local storage');
+        Logger.debug('✅ [FCM] Token saved to local storage');
         
         // Check if user is logged in
         final user = SupabaseService.client.auth.currentUser;
         if (user != null) {
-          debugPrint('✅ [FCM] User is logged in, saving to server...');
+          Logger.debug('✅ [FCM] User is logged in, saving to server...');
         await _sendTokenToServer(_fcmToken!);
         } else {
-          debugPrint('⚠️ [FCM] User not logged in yet, token saved locally');
-          debugPrint('⚠️ [FCM] Token will be synced to server after login');
+          Logger.debug('⚠️ [FCM] User not logged in yet, token saved locally');
+          Logger.debug('⚠️ [FCM] Token will be synced to server after login');
         }
         
-        debugPrint('✅ [FCM] ===================================');
+        Logger.debug('✅ [FCM] ===================================');
         
         _ensureTokenRefreshListener();
       } else {
-        debugPrint('❌ [FCM] ========== TOKEN IS NULL OR EMPTY ==========');
-        debugPrint('❌ [FCM] FCM token is null or empty');
-        debugPrint('❌ [FCM] This may indicate:');
-        debugPrint('❌ [FCM] 1. Firebase not properly initialized');
-        debugPrint('❌ [FCM] 2. Notification permissions not granted');
-        debugPrint('❌ [FCM] 3. Network connectivity issues');
-        debugPrint('❌ [FCM] 4. Platform-specific issue (iOS simulator, etc.)');
+        Logger.debug('❌ [FCM] ========== TOKEN IS NULL OR EMPTY ==========');
+        Logger.debug('❌ [FCM] FCM token is null or empty');
+        Logger.debug('❌ [FCM] This may indicate:');
+        Logger.debug('❌ [FCM] 1. Firebase not properly initialized');
+        Logger.debug('❌ [FCM] 2. Notification permissions not granted');
+        Logger.debug('❌ [FCM] 3. Network connectivity issues');
+        Logger.debug('❌ [FCM] 4. Platform-specific issue (iOS simulator, etc.)');
         
         // Try to get more diagnostic info
         try {
           final settings = await _messaging.getNotificationSettings();
-          debugPrint('❌ [FCM] Current notification settings:');
-          debugPrint('❌ [FCM]   Authorization: ${settings.authorizationStatus}');
-          debugPrint('❌ [FCM]   Alert: ${settings.alert}');
-          debugPrint('❌ [FCM]   Badge: ${settings.badge}');
-          debugPrint('❌ [FCM]   Sound: ${settings.sound}');
+          Logger.debug('❌ [FCM] Current notification settings:');
+          Logger.debug('❌ [FCM]   Authorization: ${settings.authorizationStatus}');
+          Logger.debug('❌ [FCM]   Alert: ${settings.alert}');
+          Logger.debug('❌ [FCM]   Badge: ${settings.badge}');
+          Logger.debug('❌ [FCM]   Sound: ${settings.sound}');
           
           if (settings.authorizationStatus == AuthorizationStatus.denied) {
-            debugPrint('❌ [FCM] ACTION REQUIRED: Notification permission is DENIED');
-            debugPrint('❌ [FCM] User must enable notifications in device settings');
+            Logger.debug('❌ [FCM] ACTION REQUIRED: Notification permission is DENIED');
+            Logger.debug('❌ [FCM] User must enable notifications in device settings');
           } else if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
-            debugPrint('❌ [FCM] Permission not yet requested - this should not happen');
+            Logger.debug('❌ [FCM] Permission not yet requested - this should not happen');
           }
         } catch (e) {
-          debugPrint('⚠️ [FCM] Could not get notification settings for diagnosis: $e');
+          Logger.debug('⚠️ [FCM] Could not get notification settings for diagnosis: $e');
         }
         
-        debugPrint('❌ [FCM] ============================================');
+        Logger.debug('❌ [FCM] ============================================');
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] ========== TOKEN GET ERROR ==========');
-      debugPrint('❌ [FCM] Error getting token: $e');
-      debugPrint('❌ [FCM] Error type: ${e.runtimeType}');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
-      debugPrint('❌ [FCM] ======================================');
+      Logger.debug('❌ [FCM] ========== TOKEN GET ERROR ==========');
+      Logger.debug('❌ [FCM] Error getting token: $e');
+      Logger.debug('❌ [FCM] Error type: ${e.runtimeType}');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] ======================================');
     }
   }
 
@@ -446,24 +453,24 @@ class FirebaseMessagingService {
 
     _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((newToken) async {
       if (newToken.isEmpty) {
-        debugPrint('⚠️ [FCM] Token refresh returned empty token');
+        Logger.debug('⚠️ [FCM] Token refresh returned empty token');
         return;
       }
 
-      debugPrint('🔄 [FCM] ========== TOKEN REFRESHED ==========');
-      debugPrint('🔄 [FCM] New token: ${newToken.substring(0, 20)}...');
+      Logger.debug('🔄 [FCM] ========== TOKEN REFRESHED ==========');
+      Logger.debug('🔄 [FCM] New token: ${newToken.substring(0, 20)}...');
       _fcmToken = newToken;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', newToken);
 
       final currentUser = SupabaseService.client.auth.currentUser;
       if (currentUser != null) {
-        debugPrint('🔄 [FCM] User is logged in, saving refreshed token...');
+        Logger.debug('🔄 [FCM] User is logged in, saving refreshed token...');
         await _sendTokenToServer(newToken);
       } else {
-        debugPrint('⚠️ [FCM] User not logged in, refreshed token saved locally');
+        Logger.debug('⚠️ [FCM] User not logged in, refreshed token saved locally');
       }
-      debugPrint('🔄 [FCM] =====================================');
+      Logger.debug('🔄 [FCM] =====================================');
     });
   }
 
@@ -471,8 +478,8 @@ class FirebaseMessagingService {
   static Future<void> _sendTokenToServer(String token) async {
     final user = SupabaseService.client.auth.currentUser;
     if (user == null) {
-      debugPrint('⚠️ [FCM] No user logged in, skipping token save');
-      debugPrint('⚠️ [FCM] Token will be saved to local storage and synced after login');
+      Logger.debug('⚠️ [FCM] No user logged in, skipping token save');
+      Logger.debug('⚠️ [FCM] Token will be saved to local storage and synced after login');
       return;
     }
     
@@ -481,20 +488,20 @@ class FirebaseMessagingService {
       final trimmedToken = token.trim();
 
       if (trimmedToken.isEmpty) {
-        debugPrint('⚠️ [FCM] Token is empty after trimming, skipping save');
+        Logger.debug('⚠️ [FCM] Token is empty after trimming, skipping save');
         return;
       }
 
       if (platform == 'unknown') {
-        debugPrint('⚠️ [FCM] Platform is unknown, skipping token save');
+        Logger.debug('⚠️ [FCM] Platform is unknown, skipping token save');
         return;
       }
       
-      debugPrint('📤 [FCM] ========== SAVING TOKEN ==========');
-      debugPrint('📤 [FCM] User ID: ${user.id}');
-      debugPrint('📤 [FCM] Platform: $platform');
-      debugPrint('📤 [FCM] Token (first 30 chars): ${token.substring(0, token.length > 30 ? 30 : token.length)}...');
-      debugPrint('📤 [FCM] Token length: ${token.length}');
+      Logger.debug('📤 [FCM] ========== SAVING TOKEN ==========');
+      Logger.debug('📤 [FCM] User ID: ${user.id}');
+      Logger.debug('📤 [FCM] Platform: $platform');
+      Logger.debug('📤 [FCM] Token (first 30 chars): ${token.substring(0, token.length > 30 ? 30 : token.length)}...');
+      Logger.debug('📤 [FCM] Token length: ${token.length}');
       
       try {
         await SupabaseService.client
@@ -502,9 +509,9 @@ class FirebaseMessagingService {
             .delete()
             .eq('user_id', user.id)
             .eq('platform', platform);
-        debugPrint('✅ [FCM] Existing token deleted for user/platform');
+        Logger.debug('✅ [FCM] Existing token deleted for user/platform');
       } catch (deleteError) {
-        debugPrint('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
+        Logger.debug('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
       }
 
       await SupabaseService.client
@@ -515,7 +522,7 @@ class FirebaseMessagingService {
             'platform': platform,
             'updated_at': DateTime.now().toIso8601String(),
           });
-      debugPrint('✅ [FCM] Insert successful');
+      Logger.debug('✅ [FCM] Insert successful');
       
       // Verify token was saved by querying it back
       try {
@@ -531,49 +538,49 @@ class FirebaseMessagingService {
         if (verifyResponse != null) {
           final savedToken = verifyResponse['fcm_token'] as String?;
           if (savedToken != null && savedToken == trimmedToken) {
-            debugPrint('✅ [FCM] Token verified in database');
-            debugPrint('✅ [FCM] Saved token matches: ${savedToken.substring(0, 20)}...');
+            Logger.debug('✅ [FCM] Token verified in database');
+            Logger.debug('✅ [FCM] Saved token matches: ${savedToken.substring(0, 20)}...');
           } else {
-            debugPrint('⚠️ [FCM] Token saved but verification failed - token mismatch');
+            Logger.debug('⚠️ [FCM] Token saved but verification failed - token mismatch');
           }
         } else {
-          debugPrint('⚠️ [FCM] Token not found in database after save - possible RLS issue');
-          debugPrint('⚠️ [FCM] Check RLS policies for user_fcm_tokens table');
+          Logger.debug('⚠️ [FCM] Token not found in database after save - possible RLS issue');
+          Logger.debug('⚠️ [FCM] Check RLS policies for user_fcm_tokens table');
         }
       } catch (verifyError) {
-        debugPrint('⚠️ [FCM] Could not verify token save: $verifyError');
+        Logger.debug('⚠️ [FCM] Could not verify token save: $verifyError');
       }
       
-      debugPrint('✅ [FCM] Token save process completed');
-      debugPrint('📤 [FCM] ==================================');
+      Logger.debug('✅ [FCM] Token save process completed');
+      Logger.debug('📤 [FCM] ==================================');
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] ========== TOKEN SAVE ERROR ==========');
-      debugPrint('❌ [FCM] Error: $e');
-      debugPrint('❌ [FCM] Error type: ${e.runtimeType}');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] ========== TOKEN SAVE ERROR ==========');
+      Logger.debug('❌ [FCM] Error: $e');
+      Logger.debug('❌ [FCM] Error type: ${e.runtimeType}');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
       
       // Check for specific error types
       if (e.toString().contains('permission denied') || 
           e.toString().contains('RLS') ||
           e.toString().contains('row-level security')) {
-        debugPrint('⚠️ [FCM] RLS policy is blocking the insert/update');
-        debugPrint('⚠️ [FCM] Check Supabase RLS policies for user_fcm_tokens table');
-        debugPrint('⚠️ [FCM] Policy should allow: INSERT/UPDATE WHERE auth.uid() = user_id');
+        Logger.debug('⚠️ [FCM] RLS policy is blocking the insert/update');
+        Logger.debug('⚠️ [FCM] Check Supabase RLS policies for user_fcm_tokens table');
+        Logger.debug('⚠️ [FCM] Policy should allow: INSERT/UPDATE WHERE auth.uid() = user_id');
       }
       
       if (e.toString().contains('duplicate key') || 
           e.toString().contains('unique constraint') ||
           e.toString().contains('23505')) {
-        debugPrint('⚠️ [FCM] Duplicate key error - this is expected if token already exists');
-        debugPrint('⚠️ [FCM] Token may already be saved, verification will confirm');
+        Logger.debug('⚠️ [FCM] Duplicate key error - this is expected if token already exists');
+        Logger.debug('⚠️ [FCM] Token may already be saved, verification will confirm');
       }
       
       if (e.toString().contains('foreign key') || e.toString().contains('23503')) {
-        debugPrint('⚠️ [FCM] Foreign key constraint error');
-        debugPrint('⚠️ [FCM] User ID may not exist in auth.users table');
+        Logger.debug('⚠️ [FCM] Foreign key constraint error');
+        Logger.debug('⚠️ [FCM] User ID may not exist in auth.users table');
       }
       
-      debugPrint('❌ [FCM] ======================================');
+      Logger.debug('❌ [FCM] ======================================');
     }
   }
 
@@ -586,9 +593,9 @@ class FirebaseMessagingService {
     _foregroundSubscription?.cancel();
     _backgroundSubscription?.cancel();
     
-    debugPrint('📱 [FCM] ========== SETTING UP HANDLERS ==========');
-    debugPrint('📱 [FCM] Previous subscriptions cancelled');
-    debugPrint('📱 [FCM] This should only happen ONCE per app launch');
+    Logger.debug('📱 [FCM] ========== SETTING UP HANDLERS ==========');
+    Logger.debug('📱 [FCM] Previous subscriptions cancelled');
+    Logger.debug('📱 [FCM] This should only happen ONCE per app launch');
     
     // ============================================
     // FOREGROUND MESSAGES (App is open)
@@ -596,39 +603,39 @@ class FirebaseMessagingService {
     // NOTE: onMessage only fires when app is in FOREGROUND
     // When app is in background/terminated, the background handler processes it
     _foregroundSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint('📱 [FCM] ========== FOREGROUND MESSAGE ==========');
-      debugPrint('📱 [FCM] Message ID: ${message.messageId}');
-      debugPrint('📱 [FCM] From: ${message.from}');
-      debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
-      debugPrint('📱 [FCM] Data: ${message.data}');
-      debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
-      debugPrint('📱 [FCM] App State: FOREGROUND');
+      Logger.debug('📱 [FCM] ========== FOREGROUND MESSAGE ==========');
+      Logger.debug('📱 [FCM] Message ID: ${message.messageId}');
+      Logger.debug('📱 [FCM] From: ${message.from}');
+      Logger.debug('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+      Logger.debug('📱 [FCM] Data: ${message.data}');
+      Logger.debug('📱 [FCM] Sent Time: ${message.sentTime}');
+      Logger.debug('📱 [FCM] App State: FOREGROUND');
       
       // FCM automatically shows notifications when notification field is present
       // Only show local notification if this is a data-only message (no notification field)
       // This prevents duplicate notifications
       if (message.notification == null) {
-        debugPrint('📱 [FCM] Data-only message, showing local notification');
+        Logger.debug('📱 [FCM] Data-only message, showing local notification');
       await _showLocalNotification(message);
       } else {
-        debugPrint('📱 [FCM] Notification field present, FCM will show it automatically (skipping local notification to avoid duplicates)');
+        Logger.debug('📱 [FCM] Notification field present, FCM will show it automatically (skipping local notification to avoid duplicates)');
       }
       
       // Update badge regardless of notification type
       await _updateBadge();
       
-      debugPrint('📱 [FCM] ======================================');
+      Logger.debug('📱 [FCM] ======================================');
     });
     
     // ============================================
     // BACKGROUND MESSAGES (App is minimized)
     // ============================================
     _backgroundSubscription = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('📱 [FCM] ========== APP OPENED FROM BACKGROUND ==========');
-      debugPrint('📱 [FCM] Message ID: ${message.messageId}');
-      debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
-      debugPrint('📱 [FCM] Data: ${message.data}');
-      debugPrint('📱 [FCM] ================================================');
+      Logger.debug('📱 [FCM] ========== APP OPENED FROM BACKGROUND ==========');
+      Logger.debug('📱 [FCM] Message ID: ${message.messageId}');
+      Logger.debug('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+      Logger.debug('📱 [FCM] Data: ${message.data}');
+      Logger.debug('📱 [FCM] ================================================');
       
       // Handle navigation based on data
       _handleNotificationNavigation(message);
@@ -639,19 +646,19 @@ class FirebaseMessagingService {
     // ============================================
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('📱 [FCM] ========== APP OPENED FROM TERMINATED ==========');
-        debugPrint('📱 [FCM] Message ID: ${message.messageId}');
-        debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
-        debugPrint('📱 [FCM] Data: ${message.data}');
-        debugPrint('📱 [FCM] ================================================');
+        Logger.debug('📱 [FCM] ========== APP OPENED FROM TERMINATED ==========');
+        Logger.debug('📱 [FCM] Message ID: ${message.messageId}');
+        Logger.debug('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+        Logger.debug('📱 [FCM] Data: ${message.data}');
+        Logger.debug('📱 [FCM] ================================================');
         
         // Handle navigation based on data
         _handleNotificationNavigation(message);
       }
     });
     
-    debugPrint('✅ [FCM] Message handlers set up successfully');
-    debugPrint('📱 [FCM] =========================================');
+    Logger.debug('✅ [FCM] Message handlers set up successfully');
+    Logger.debug('📱 [FCM] =========================================');
   }
 
   /// Show local notification for every incoming message when the app is in the foreground
@@ -667,12 +674,12 @@ class FirebaseMessagingService {
       
       // If still no title/body, skip showing notification
       if (title == null || body == null) {
-        debugPrint('⚠️ [FCM] No title/body found in payload - skipping local notification');
+        Logger.debug('⚠️ [FCM] No title/body found in payload - skipping local notification');
         return;
       }
       
-      debugPrint('📱 [FCM] Showing local notification: $title - $body');
-      debugPrint('📱 [FCM] Local notification shown while app is foreground');
+      Logger.debug('📱 [FCM] Showing local notification: $title - $body');
+      Logger.debug('📱 [FCM] Local notification shown while app is foreground');
       
       // Get current badge count
       final badgeCount = await BadgeService.getBadgeCount();
@@ -715,7 +722,7 @@ class FirebaseMessagingService {
       final lastShown = prefs.getInt(notificationKey) ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - lastShown < 5000) {
-        debugPrint('⚠️ [FCM] Duplicate notification detected, skipping (shown ${(now - lastShown) / 1000}s ago)');
+        Logger.debug('⚠️ [FCM] Duplicate notification detected, skipping (shown ${(now - lastShown) / 1000}s ago)');
         return;
       }
       
@@ -727,49 +734,95 @@ class FirebaseMessagingService {
         title,
         body,
         details,
-        payload: message.data.toString(),
+        payload: jsonEncode(message.data),
       );
       
-      debugPrint('✅ [FCM] Local notification displayed successfully');
+      Logger.debug('✅ [FCM] Local notification displayed successfully');
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Error showing local notification: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] Error showing local notification: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
-  /// Handle notification tap navigation
+  /// Handle notification tap navigation (local notifications - e.g. foreground)
   static void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('📱 [FCM] ========== NOTIFICATION TAPPED ==========');
-    debugPrint('📱 [FCM] Notification ID: ${response.id}');
-    debugPrint('📱 [FCM] Action ID: ${response.actionId}');
-    debugPrint('📱 [FCM] Payload: ${response.payload}');
-    debugPrint('📱 [FCM] =========================================');
+    Logger.debug('📱 [FCM] ========== NOTIFICATION TAPPED ==========');
+    Logger.debug('📱 [FCM] Notification ID: ${response.id}');
+    Logger.debug('📱 [FCM] Action ID: ${response.actionId}');
+    Logger.debug('📱 [FCM] Payload: ${response.payload}');
+    Logger.debug('📱 [FCM] =========================================');
     
-    // Navigate to notification center
+    // Parse payload and navigate by type (same as _handleNotificationNavigation)
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(payload);
+        final type = decoded is Map ? decoded['type']?.toString() : null;
+        if (type != null && type.isNotEmpty) {
+          _navigateByType(type);
+          return;
+        }
+      } catch (_) {}
+    }
     _navigateToNotificationCenter();
   }
 
-  /// Handle navigation when app is opened from notification
+  /// Navigate to screen based on notification type (shared logic)
+  static void _navigateByType(String? type) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = globalNavigatorKey.currentState;
+      if (navigator == null) {
+        _navigateToNotificationCenter();
+        return;
+      }
+      final currentUser = SupabaseService.client.auth.currentUser;
+      if (currentUser == null) return;
+      final userRole = currentUser.userMetadata?['role'] as String?;
+      if (userRole == 'admin') {
+        Widget? targetScreen;
+        switch (type) {
+          case 'access_request':
+            targetScreen = const AdminApprovalScreen();
+            break;
+          case 'tool_request':
+            targetScreen = const ApprovalWorkflowsScreen();
+            break;
+          case 'maintenance_request':
+            targetScreen = const MaintenanceScreen();
+            break;
+          case 'issue_report':
+            targetScreen = const ToolIssuesScreen();
+            break;
+        }
+        if (targetScreen != null) {
+          navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
+          return;
+        }
+      }
+      if (userRole == 'technician' && type == 'user_approved') {
+        navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+        return;
+      }
+      _navigateToNotificationCenter();
+    });
+  }
+
+  /// Handle navigation when app is opened from notification (FCM - background/terminated)
   static void _handleNotificationNavigation(RemoteMessage message) {
-    // Extract navigation data from message.data
     final type = message.data['type'] as String?;
-    final id = message.data['id'] as String?;
-    
-    debugPrint('📱 [FCM] Navigation - Type: $type, ID: $id');
-    
-    // Navigate to notification center
-    _navigateToNotificationCenter();
+    Logger.debug('📱 [FCM] Navigation - Type: $type, Data: ${message.data}');
+    _navigateByType(type);
   }
   
   /// Navigate to the appropriate notification center based on user role
   static void _navigateToNotificationCenter() {
-    debugPrint('📱 [FCM] Navigating to notification center...');
+    Logger.debug('📱 [FCM] Navigating to notification center...');
     
     // Use post-frame callback to ensure we're not in the middle of a build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final navigator = globalNavigatorKey.currentState;
       if (navigator == null) {
-        debugPrint('⚠️ [FCM] Navigator not available, cannot navigate');
+        Logger.debug('⚠️ [FCM] Navigator not available, cannot navigate');
         return;
       }
       
@@ -777,12 +830,12 @@ class FirebaseMessagingService {
         // Check user role from Supabase
         final currentUser = SupabaseService.client.auth.currentUser;
         if (currentUser == null) {
-          debugPrint('⚠️ [FCM] No user logged in, cannot navigate to notifications');
+          Logger.debug('⚠️ [FCM] No user logged in, cannot navigate to notifications');
           return;
         }
         
         final userRole = currentUser.userMetadata?['role'] as String?;
-        debugPrint('📱 [FCM] User role: $userRole');
+        Logger.debug('📱 [FCM] User role: $userRole');
         
         if (userRole == 'admin') {
           // Navigate to admin notification center (separate screen)
@@ -791,17 +844,17 @@ class FirebaseMessagingService {
               builder: (context) => const AdminNotificationScreen(),
             ),
           );
-          debugPrint('✅ [FCM] Navigated to Admin Notification Center');
+          Logger.debug('✅ [FCM] Navigated to Admin Notification Center');
         } else if (userRole == 'technician') {
           // For technicians, just go to home - they have a notification bell there
           // The notification badge will show and they can tap to see notifications
           navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
-          debugPrint('✅ [FCM] Navigated to Technician Home');
+          Logger.debug('✅ [FCM] Navigated to Technician Home');
         } else {
-          debugPrint('⚠️ [FCM] Unknown user role: $userRole');
+          Logger.debug('⚠️ [FCM] Unknown user role: $userRole');
         }
       } catch (e) {
-        debugPrint('❌ [FCM] Error navigating to notification center: $e');
+        Logger.debug('❌ [FCM] Error navigating to notification center: $e');
       }
     });
   }
@@ -811,9 +864,9 @@ class FirebaseMessagingService {
     try {
       await BadgeService.incrementBadge();
       final badgeCount = await BadgeService.getBadgeCount();
-      debugPrint('✅ [FCM] Badge updated to: $badgeCount');
+      Logger.debug('✅ [FCM] Badge updated to: $badgeCount');
     } catch (e) {
-      debugPrint('❌ [FCM] Error updating badge: $e');
+      Logger.debug('❌ [FCM] Error updating badge: $e');
     }
   }
 
@@ -821,9 +874,9 @@ class FirebaseMessagingService {
   static Future<void> clearBadge() async {
     try {
       await BadgeService.clearBadge();
-      debugPrint('✅ [FCM] Badge cleared');
+      Logger.debug('✅ [FCM] Badge cleared');
     } catch (e) {
-      debugPrint('❌ [FCM] Error clearing badge: $e');
+      Logger.debug('❌ [FCM] Error clearing badge: $e');
     }
   }
 
@@ -833,9 +886,9 @@ class FirebaseMessagingService {
       await _messaging.subscribeToTopic('admin');
       await _messaging.subscribeToTopic('new_registration');
       await _messaging.subscribeToTopic('tool_issues');
-      debugPrint('✅ [FCM] Subscribed to topics');
+      Logger.debug('✅ [FCM] Subscribed to topics');
     } catch (e) {
-      debugPrint('❌ [FCM] Error subscribing to topics: $e');
+      Logger.debug('❌ [FCM] Error subscribing to topics: $e');
     }
   }
 
@@ -846,16 +899,16 @@ class FirebaseMessagingService {
       final trimmedToken = token.trim();
 
       if (trimmedToken.isEmpty) {
-        debugPrint('⚠️ [FCM] Token is empty after trimming, skipping save');
+        Logger.debug('⚠️ [FCM] Token is empty after trimming, skipping save');
         return;
       }
 
       if (platform == 'unknown') {
-        debugPrint('⚠️ [FCM] Platform is unknown, skipping token save');
+        Logger.debug('⚠️ [FCM] Platform is unknown, skipping token save');
         return;
       }
       
-      debugPrint('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
+      Logger.debug('📤 [FCM] Sending token to server for user: $userId, platform: $platform');
       
       try {
         await SupabaseService.client
@@ -863,9 +916,9 @@ class FirebaseMessagingService {
             .delete()
             .eq('user_id', userId)
             .eq('platform', platform);
-        debugPrint('✅ [FCM] Existing token deleted for user/platform');
+        Logger.debug('✅ [FCM] Existing token deleted for user/platform');
       } catch (deleteError) {
-        debugPrint('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
+        Logger.debug('⚠️ [FCM] Delete existing token failed (continuing): $deleteError');
       }
 
       await SupabaseService.client
@@ -877,10 +930,10 @@ class FirebaseMessagingService {
             'updated_at': DateTime.now().toIso8601String(),
           });
       
-      debugPrint('✅ [FCM] Token sent to server successfully');
+      Logger.debug('✅ [FCM] Token sent to server successfully');
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Error sending token: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] Error sending token: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
@@ -891,20 +944,20 @@ class FirebaseMessagingService {
       final savedToken = prefs.getString('fcm_token');
       
       if (savedToken == null || savedToken.isEmpty) {
-        debugPrint('⚠️ [FCM] No token found in local storage');
+        Logger.debug('⚠️ [FCM] No token found in local storage');
         return;
       }
       
       final user = SupabaseService.client.auth.currentUser;
       if (user == null) {
-        debugPrint('⚠️ [FCM] No user logged in, cannot save token from local storage');
+        Logger.debug('⚠️ [FCM] No user logged in, cannot save token from local storage');
         return;
       }
       
-      debugPrint('📤 [FCM] Saving token from local storage for user: ${user.id}');
+      Logger.debug('📤 [FCM] Saving token from local storage for user: ${user.id}');
       await sendTokenToServer(savedToken, user.id);
     } catch (e) {
-      debugPrint('❌ [FCM] Error saving token from local storage: $e');
+      Logger.debug('❌ [FCM] Error saving token from local storage: $e');
     }
   }
 
@@ -921,20 +974,31 @@ class FirebaseMessagingService {
 /// 4. If message is data-only → Handler shows local notification
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('📱 [FCM] ========== BACKGROUND/TERMINATED MESSAGE ==========');
-  debugPrint('📱 [FCM] Message ID: ${message.messageId}');
-  debugPrint('📱 [FCM] From: ${message.from}');
-  debugPrint('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
-  debugPrint('📱 [FCM] Data: ${message.data}');
-  debugPrint('📱 [FCM] Sent Time: ${message.sentTime}');
-  debugPrint('📱 [FCM] App State: BACKGROUND/TERMINATED');
+  Logger.debug('📱 [FCM] ========== BACKGROUND/TERMINATED MESSAGE ==========');
+  Logger.debug('📱 [FCM] Message ID: ${message.messageId}');
+  Logger.debug('📱 [FCM] From: ${message.from}');
+  Logger.debug('📱 [FCM] Notification: ${message.notification?.title} - ${message.notification?.body}');
+  Logger.debug('📱 [FCM] Data: ${message.data}');
+  Logger.debug('📱 [FCM] Sent Time: ${message.sentTime}');
+  Logger.debug('📱 [FCM] App State: BACKGROUND/TERMINATED');
   
   // Initialize Firebase if not already initialized (background handlers run in separate isolate)
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('✅ [FCM] Firebase initialized in background handler');
+  // Wrapped in try-catch to handle concurrent background messages both trying to initialize
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      Logger.debug('✅ [FCM] Firebase initialized in background handler');
+    }
+  } catch (e) {
+    // Another handler may have initialized concurrently — safe to continue
+    if (Firebase.apps.isNotEmpty) {
+      Logger.debug('⚠️ [FCM] Firebase already initialized by concurrent handler');
+    } else {
+      Logger.debug('❌ [FCM] Firebase initialization failed: $e');
+      return;
+    }
   }
   
   try {
@@ -977,13 +1041,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     if (message.notification != null) {
       // Message has notification payload → OS shows it automatically
       // DO NOT show local notification (would cause duplicate)
-      debugPrint('📱 [FCM] Message has notification payload → OS handles display');
-      debugPrint('📱 [FCM] System will show notification automatically');
-      debugPrint('📱 [FCM] NOT showing local notification (prevents duplicate)');
-      debugPrint('📱 [FCM] Only updating badge: $badgeCount');
+      Logger.debug('📱 [FCM] Message has notification payload → OS handles display');
+      Logger.debug('📱 [FCM] System will show notification automatically');
+      Logger.debug('📱 [FCM] NOT showing local notification (prevents duplicate)');
+      Logger.debug('📱 [FCM] Only updating badge: $badgeCount');
     } else if (message.data.isNotEmpty) {
       // Data-only message → We must show local notification
-      debugPrint('📱 [FCM] Data-only message → Showing local notification');
+      Logger.debug('📱 [FCM] Data-only message → Showing local notification');
       
       // Extract title and body from data payload
       final title = message.data['title'] as String? ?? 
@@ -1027,17 +1091,17 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           payload: message.data.toString(),
         );
         
-        debugPrint('✅ [FCM] Background notification displayed with badge: $badgeCount');
+        Logger.debug('✅ [FCM] Background notification displayed with badge: $badgeCount');
       } else {
-        debugPrint('⚠️ [FCM] No title/body found in data payload - skipping local notification');
+        Logger.debug('⚠️ [FCM] No title/body found in data payload - skipping local notification');
       }
     } else {
-      debugPrint('⚠️ [FCM] Message has no notification payload and no data - skipping');
+      Logger.debug('⚠️ [FCM] Message has no notification payload and no data - skipping');
     }
     
-    debugPrint('📱 [FCM] ====================================================');
+    Logger.debug('📱 [FCM] ====================================================');
   } catch (e, stackTrace) {
-    debugPrint('❌ [FCM] Error handling background message: $e');
-    debugPrint('❌ [FCM] Stack trace: $stackTrace');
+    Logger.debug('❌ [FCM] Error handling background message: $e');
+    Logger.debug('❌ [FCM] Stack trace: $stackTrace');
   }
 }

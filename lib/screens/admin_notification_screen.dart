@@ -7,9 +7,14 @@ import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
+import 'admin_approval_screen.dart';
+import 'approval_workflows_screen.dart';
+import 'tool_issues_screen.dart';
+import 'maintenance_screen.dart';
 import '../services/firebase_messaging_service.dart';
 import '../services/badge_service.dart';
 import '../widgets/common/loading_widget.dart';
+import '../l10n/app_localizations.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
   const AdminNotificationScreen({super.key});
@@ -295,7 +300,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               // Sync badge after marking as read
               await BadgeService.syncBadgeWithDatabase(context);
             }
-            _showNotificationDetails(notification);
+            if (!_navigateToScreenForType(notification)) {
+              _showNotificationDetails(notification);
+            }
           },
           borderRadius: BorderRadius.circular(18), // Match card decoration borderRadius
           child: Padding(
@@ -580,9 +587,51 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             ),
             child: const Text('Close'),
           ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _navigateToScreenForType(notification);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: const Text('View'),
+          ),
         ],
       ),
     );
+  }
+
+  /// Returns true if navigated to a screen, false if no screen (show dialog instead)
+  bool _navigateToScreenForType(AdminNotification notification) {
+    final navigator = Navigator.of(context);
+    Widget? targetScreen;
+    switch (notification.type) {
+      case NotificationType.accessRequest:
+        targetScreen = const AdminApprovalScreen();
+        break;
+      case NotificationType.toolRequest:
+        targetScreen = const ApprovalWorkflowsScreen();
+        break;
+      case NotificationType.maintenanceRequest:
+        targetScreen = const MaintenanceScreen();
+        break;
+      case NotificationType.issueReport:
+        targetScreen = const ToolIssuesScreen();
+        break;
+      case NotificationType.userApproved:
+      case NotificationType.general:
+        return false;
+    }
+    if (targetScreen != null) {
+      navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
+      return true;
+    }
+    return false;
   }
 
 }

@@ -11,6 +11,7 @@ import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
+import '../utils/logger.dart';
 
 class PermanentAssignmentScreen extends StatefulWidget {
   final Tool tool;
@@ -221,8 +222,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             // Debug: Print technician count
-            debugPrint('Total technicians: ${technicianProvider.technicians.length}');
-            debugPrint('Technician provider loading: ${technicianProvider.isLoading}');
+            Logger.debug('Total technicians: ${technicianProvider.technicians.length}');
+            Logger.debug('Technician provider loading: ${technicianProvider.isLoading}');
             
             if (technicianProvider.isLoading) {
               return const Center(
@@ -237,7 +238,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                 .where((tech) => tech.status == 'Active')
                 .toList();
 
-            debugPrint('Active technicians: ${activeTechnicians.length}');
+            Logger.debug('Active technicians: ${activeTechnicians.length}');
 
             if (activeTechnicians.isEmpty) {
               return Container(

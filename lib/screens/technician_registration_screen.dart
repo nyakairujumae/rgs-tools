@@ -13,6 +13,7 @@ import '../config/app_config.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import 'auth/login_screen.dart';
+import '../utils/logger.dart';
 
 class TechnicianRegistrationScreen extends StatefulWidget {
   const TechnicianRegistrationScreen({super.key});
@@ -661,7 +662,7 @@ class _TechnicianRegistrationScreenState
     try {
       final authProvider = context.read<AuthProvider>();
 
-      debugPrint('🔍 Starting technician registration...');
+      Logger.debug('🔍 Starting technician registration...');
       // Phone and department are required - validators ensure they're not empty
       await authProvider.registerTechnician(
         NameFormatter.format(_nameController.text),
@@ -681,7 +682,7 @@ class _TechnicianRegistrationScreenState
         final userCreated = authProvider.user != null;
         final hasSession = authProvider.isAuthenticated;
 
-        debugPrint(
+        Logger.debug(
           '🔍 Technician registration complete - '
           'User created: $userCreated, '
           'hasSession: $hasSession, '
@@ -693,7 +694,7 @@ class _TechnicianRegistrationScreenState
         // No email confirmation needed for technicians - clean flow
         if (userCreated) {
           // Navigate directly to pending approval screen
-          debugPrint('🔍 Navigating to pending approval screen immediately after registration');
+          Logger.debug('🔍 Navigating to pending approval screen immediately after registration');
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/pending-approval',
@@ -706,9 +707,9 @@ class _TechnicianRegistrationScreenState
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('❌ Technician registration error: $e');
-        debugPrint('❌ Error type: ${e.runtimeType}');
-        debugPrint('❌ Error string: ${e.toString()}');
+        Logger.debug('❌ Technician registration error: $e');
+        Logger.debug('❌ Error type: ${e.runtimeType}');
+        Logger.debug('❌ Error string: ${e.toString()}');
         
         String errorMessage = AuthErrorHandler.getErrorMessage(e);
         

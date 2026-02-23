@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import '../config/supabase_config.dart';
 import 'supabase_auth_storage.dart';
+import '../utils/logger.dart';
 
 class SupabaseService {
   static SupabaseClient? _client;
@@ -15,7 +16,7 @@ class SupabaseService {
         try {
           _client = Supabase.instance.client;
           _initialized = true;
-          debugPrint('✅ Promoted to Supabase.instance.client');
+          Logger.debug('✅ Promoted to Supabase.instance.client');
         } catch (_) {
           // Keep fallback client if Supabase.instance is still unavailable
         }
@@ -27,30 +28,30 @@ class SupabaseService {
     try {
       _client = Supabase.instance.client;
       _initialized = true;
-      debugPrint('✅ Using Supabase.instance.client');
-      debugPrint('🔍 Config URL: ${SupabaseConfig.url}');
-      debugPrint('✅ Supabase client initialized with URL: ${SupabaseConfig.url}');
+      Logger.debug('✅ Using Supabase.instance.client');
+      Logger.debug('🔍 Config URL: ${SupabaseConfig.url}');
+      Logger.debug('✅ Supabase client initialized with URL: ${SupabaseConfig.url}');
       
       return _client!;
     } catch (e) {
-      debugPrint('⚠️ Supabase.instance not available, creating client directly...');
-      debugPrint('⚠️ Error: $e');
+      Logger.debug('⚠️ Supabase.instance not available, creating client directly...');
+      Logger.debug('⚠️ Error: $e');
       // Create client directly as fallback (no session persistence)
       try {
-        debugPrint('🔍 Creating client with URL: ${SupabaseConfig.url}');
+        Logger.debug('🔍 Creating client with URL: ${SupabaseConfig.url}');
         _client = SupabaseClient(
           SupabaseConfig.url,
           SupabaseConfig.anonKey,
           authOptions: SupabaseAuthStorageFactory.createAuthOptions(),
         );
         _initialized = false; // Mark as not fully initialized
-        debugPrint('✅ Supabase client created directly');
-        debugPrint('✅ Client created with URL: ${SupabaseConfig.url}');
-        debugPrint('✅ Client created successfully - basic functionality available');
+        Logger.debug('✅ Supabase client created directly');
+        Logger.debug('✅ Client created with URL: ${SupabaseConfig.url}');
+        Logger.debug('✅ Client created successfully - basic functionality available');
         
         return _client!;
       } catch (createError) {
-        debugPrint('❌ Failed to create Supabase client: $createError');
+        Logger.debug('❌ Failed to create Supabase client: $createError');
         // Re-throw to surface the error
         rethrow;
       }
@@ -67,27 +68,27 @@ class SupabaseService {
     
     for (int i = 0; i < retries; i++) {
       try {
-        debugPrint('🔍 Testing Supabase connection (attempt ${i + 1}/$retries)...');
-        debugPrint('🔍 Supabase URL: ${SupabaseConfig.url}');
+        Logger.debug('🔍 Testing Supabase connection (attempt ${i + 1}/$retries)...');
+        Logger.debug('🔍 Supabase URL: ${SupabaseConfig.url}');
         
         // Test connection by checking if we can access auth endpoint
         // This is safer than querying tables which might not exist or have permissions
         try {
           // Just check if auth is accessible - this doesn't require any specific permissions
           final session = client.auth.currentSession;
-          debugPrint('✅ Supabase client accessible - connection appears to be working');
+          Logger.debug('✅ Supabase client accessible - connection appears to be working');
           // If we can access the client, assume connection is working
           // The actual login will test the real connection
           return true;
         } catch (authError) {
-          debugPrint('❌ Auth check failed: $authError');
+          Logger.debug('❌ Auth check failed: $authError');
           // If even auth check fails, connection is definitely broken
           throw authError;
         }
       } catch (e) {
         final errorString = e.toString().toLowerCase();
-        debugPrint('❌ Supabase connection test failed (attempt ${i + 1}/$retries): $e');
-        debugPrint('❌ Error type: ${e.runtimeType}');
+        Logger.debug('❌ Supabase connection test failed (attempt ${i + 1}/$retries): $e');
+        Logger.debug('❌ Error type: ${e.runtimeType}');
         
         // Check if it's a network/connection error
         if (errorString.contains('connection') || 
@@ -97,17 +98,17 @@ class SupabaseService {
             errorString.contains('failed host lookup') ||
             errorString.contains('unreachable') ||
             errorString.contains('requested path is invalid')) {
-          debugPrint('⚠️ Network/connection error detected');
+          Logger.debug('⚠️ Network/connection error detected');
           if (i < retries - 1) {
-            debugPrint('⏳ Retrying in ${(i + 1) * 2} seconds...');
+            Logger.debug('⏳ Retrying in ${(i + 1) * 2} seconds...');
             await Future.delayed(Duration(seconds: (i + 1) * 2));
           } else {
-            debugPrint('❌ All connection attempts failed - cannot reach Supabase server');
+            Logger.debug('❌ All connection attempts failed - cannot reach Supabase server');
             return false;
           }
         } else {
           // Other error - might be a configuration issue
-          debugPrint('⚠️ Non-network error: $e');
+          Logger.debug('⚠️ Non-network error: $e');
           // For non-network errors, still return false to be safe
           return false;
         }
@@ -121,11 +122,11 @@ class SupabaseService {
     try {
       final isConnected = await testConnection(retries: retries);
       if (!isConnected) {
-        debugPrint('⚠️ Cannot connect to database. Please check your internet connection.');
+        Logger.debug('⚠️ Cannot connect to database. Please check your internet connection.');
       }
       return isConnected;
     } catch (e) {
-      debugPrint('❌ Error checking connection: $e');
+      Logger.debug('❌ Error checking connection: $e');
       return false;
     }
   }

@@ -27,6 +27,7 @@ import 'edit_tool_screen.dart';
 import 'tools_screen.dart';
 import 'image_viewer_screen.dart';
 import 'tool_history_screen.dart';
+import '../utils/logger.dart';
 
 class ToolDetailScreen extends StatefulWidget {
   final Tool tool;
@@ -1619,7 +1620,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           ownerEmail = userResponse['email'] as String;
         }
       } catch (e) {
-        debugPrint('Could not fetch owner email: $e');
+        Logger.debug('Could not fetch owner email: $e');
       }
       
       // Tool requests from holders (badged tools) only go to the tool holder, not admins
@@ -1645,8 +1646,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             'owner_id': ownerId,
           },
         });
-        debugPrint('✅ Created technician notification for tool request');
-        debugPrint('✅ Notification sent to technician: $ownerId');
+        Logger.debug('✅ Created technician notification for tool request');
+        Logger.debug('✅ Notification sent to technician: $ownerId');
         
         // Send push notification to the tool holder
         try {
@@ -1661,17 +1662,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             },
           );
           if (pushSuccess) {
-            debugPrint('✅ Push notification sent successfully to tool holder: $ownerId');
+            Logger.debug('✅ Push notification sent successfully to tool holder: $ownerId');
           } else {
-            debugPrint('⚠️ Push notification returned false for tool holder: $ownerId');
+            Logger.debug('⚠️ Push notification returned false for tool holder: $ownerId');
           }
         } catch (pushError, stackTrace) {
-          debugPrint('❌ Exception sending push notification to tool holder: $pushError');
-          debugPrint('❌ Stack trace: $stackTrace');
+          Logger.debug('❌ Exception sending push notification to tool holder: $pushError');
+          Logger.debug('❌ Stack trace: $stackTrace');
         }
       } catch (e) {
-        debugPrint('❌ Failed to create technician notification: $e');
-        debugPrint('❌ Error details: ${e.toString()}');
+        Logger.debug('❌ Failed to create technician notification: $e');
+        Logger.debug('❌ Error details: ${e.toString()}');
         // Still show success message even if notification fails
       }
       
@@ -1682,7 +1683,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         );
       }
     } catch (e) {
-      debugPrint('Error sending tool request: $e');
+      Logger.debug('Error sending tool request: $e');
       if (mounted) {
         AuthErrorHandler.showErrorSnackBar(
           context,
@@ -1810,7 +1811,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 // Do NOT call loadTools() here - it can trigger session refresh/401
                 // and log the user out. removeToolFromList already updated local state.
               } catch (e) {
-                debugPrint('❌ Error deleting tool: $e');
+                Logger.debug('❌ Error deleting tool: $e');
                 
                 if (mounted) {
                   String errorMessage = 'Failed to delete tool. ';
@@ -1841,7 +1842,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     _isLoading = false;
                   });
                 }
-                debugPrint('🔧 Finally block - cleaning up');
+                Logger.debug('🔧 Finally block - cleaning up');
               }
               },
               child: Text('Delete', style: TextStyle(color: Colors.red)),

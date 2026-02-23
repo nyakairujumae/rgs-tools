@@ -8,6 +8,8 @@ import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../models/admin_position.dart';
 import 'add_admin_screen.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class AdminManagementScreen extends StatefulWidget {
   const AdminManagementScreen({super.key});
@@ -48,7 +50,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         _canManageAdmins = canManageAdmins;
       });
     } catch (e) {
-      debugPrint('❌ Error loading admin permissions: $e');
+      Logger.debug('❌ Error loading admin permissions: $e');
     }
   }
 
@@ -215,7 +217,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Admins'),
+        title: Text(AppLocalizations.of(context).adminManagement_title),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
         elevation: 0,

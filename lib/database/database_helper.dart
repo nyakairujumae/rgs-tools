@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../utils/logger.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -19,83 +20,94 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future _createDB(Database db, int version) async {
-    // Tools table
+    // Tools table — matches Supabase schema with TEXT UUIDs
     await db.execute('''
       CREATE TABLE tools (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
         brand TEXT,
         model TEXT,
-        serial_number TEXT UNIQUE,
+        serial_number TEXT,
         purchase_date TEXT,
         purchase_price REAL,
         current_value REAL,
-        condition TEXT CHECK(condition IN ('Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair')),
+        condition TEXT NOT NULL,
         location TEXT,
         assigned_to TEXT,
-        status TEXT CHECK(status IN ('Available', 'In Use', 'Maintenance', 'Retired')) DEFAULT 'Available',
+        status TEXT NOT NULL DEFAULT 'Available',
+        tool_type TEXT NOT NULL DEFAULT 'inventory',
         image_path TEXT,
         notes TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT,
+        updated_at TEXT
       )
     ''');
 
-    // Technicians table
+    // Technicians table — matches Supabase schema
     await db.execute('''
       CREATE TABLE technicians (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
         name TEXT NOT NULL,
-        employee_id TEXT UNIQUE,
+        employee_id TEXT,
         phone TEXT,
         email TEXT,
         department TEXT,
         hire_date TEXT,
-        status TEXT CHECK(status IN ('Active', 'Inactive')) DEFAULT 'Active',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        status TEXT NOT NULL DEFAULT 'Active',
+        profile_picture_url TEXT,
+        created_at TEXT
       )
     ''');
 
-    // Tool usage history
+    // Sync queue — stores offline mutations to replay when online
     await db.execute('''
-      CREATE TABLE tool_usage (
+      CREATE TABLE sync_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tool_id INTEGER,
-        technician_id INTEGER,
-        check_out_date TEXT,
-        check_in_date TEXT,
-        notes TEXT,
-        FOREIGN KEY (tool_id) REFERENCES tools (id),
-        FOREIGN KEY (technician_id) REFERENCES technicians (id)
+        table_name TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        record_id TEXT,
+        data TEXT NOT NULL,
+        created_at TEXT NOT NULL
       )
     ''');
 
-    // Maintenance records
+    // Cache metadata — tracks last sync time per table
     await db.execute('''
-      CREATE TABLE maintenance (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tool_id INTEGER,
-        maintenance_type TEXT,
-        maintenance_date TEXT,
-        next_maintenance_date TEXT,
-        cost REAL,
-        description TEXT,
-        performed_by TEXT,
-        FOREIGN KEY (tool_id) REFERENCES tools (id)
+      CREATE TABLE cache_metadata (
+        table_name TEXT PRIMARY KEY,
+        last_sync_at TEXT NOT NULL
       )
     ''');
+
+    Logger.debug('Created SQLite database v$version');
   }
 
-  Future close() async {
-    final db = await instance.database;
-    db.close();
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    Logger.debug('Upgrading SQLite database from v$oldVersion to v$newVersion');
+    if (oldVersion < 2) {
+      // Drop old v1 tables (INTEGER PKs, wrong schema) and recreate
+      await db.execute('DROP TABLE IF EXISTS tool_usage');
+      await db.execute('DROP TABLE IF EXISTS maintenance');
+      await db.execute('DROP TABLE IF EXISTS technicians');
+      await db.execute('DROP TABLE IF EXISTS tools');
+      await _createDB(db, newVersion);
+    }
+  }
+
+  Future<void> close() async {
+    final db = _database;
+    if (db != null) {
+      await db.close();
+      _database = null;
+    }
   }
 }
-

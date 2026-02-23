@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'firebase_messaging_stub.dart';
+import '../utils/logger.dart';
 
 /// Stub implementation for web - all methods are no-ops
 class FirebaseMessagingService {
   static String? get fcmToken => null;
   
   static Future<void> initialize() async {
-    debugPrint('🌐 Web platform - Firebase Messaging not available');
+    Logger.debug('🌐 Web platform - Firebase Messaging not available');
   }
   
   static Future<void> sendTokenToServer(String token, String userId) async {

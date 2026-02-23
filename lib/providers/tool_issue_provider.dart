@@ -4,6 +4,7 @@ import '../services/supabase_service.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../services/push_notification_service.dart';
+import '../utils/logger.dart';
 
 class ToolIssueProvider with ChangeNotifier {
   List<ToolIssue> _issues = [];
@@ -66,7 +67,7 @@ class ToolIssueProvider with ChangeNotifier {
       } else {
         _error = 'Failed to load issues: $e';
       }
-      debugPrint('Error loading tool issues: $e');
+      Logger.debug('Error loading tool issues: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -107,7 +108,7 @@ class ToolIssueProvider with ChangeNotifier {
               technicianEmail = userResponse['email'] as String;
             }
           } catch (e) {
-            debugPrint('Could not fetch technician email: $e');
+            Logger.debug('Could not fetch technician email: $e');
           }
         }
 
@@ -130,7 +131,7 @@ class ToolIssueProvider with ChangeNotifier {
           },
         );
         
-        debugPrint('✅ Created notification for tool issue: ${newIssue.id}');
+        Logger.debug('✅ Created notification for tool issue: ${newIssue.id}');
         
         // Send push notification to admins
         try {
@@ -144,17 +145,17 @@ class ToolIssueProvider with ChangeNotifier {
               'tool_id': issue.toolId,
             },
           );
-          debugPrint('✅ Push notification sent to admins for tool issue');
+          Logger.debug('✅ Push notification sent to admins for tool issue');
         } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification for tool issue: $pushError');
+          Logger.debug('⚠️ Could not send push notification for tool issue: $pushError');
         }
       } catch (notificationError) {
         // Don't fail the issue creation if notification fails
-        debugPrint('⚠️ Failed to create notification for tool issue: $notificationError');
+        Logger.debug('⚠️ Failed to create notification for tool issue: $notificationError');
       }
     } catch (e) {
       _error = 'Failed to add issue: $e';
-      debugPrint('Error adding tool issue: $e');
+      Logger.debug('Error adding tool issue: $e');
       rethrow;
     }
   }
@@ -176,7 +177,7 @@ class ToolIssueProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to update issue: $e';
-      debugPrint('Error updating tool issue: $e');
+      Logger.debug('Error updating tool issue: $e');
       rethrow;
     }
   }
@@ -192,7 +193,7 @@ class ToolIssueProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _error = 'Failed to delete issue: $e';
-      debugPrint('Error deleting tool issue: $e');
+      Logger.debug('Error deleting tool issue: $e');
       rethrow;
     }
   }
@@ -210,7 +211,7 @@ class ToolIssueProvider with ChangeNotifier {
       await updateIssue(updatedIssue);
     } catch (e) {
       _error = 'Failed to resolve issue: $e';
-      debugPrint('Error resolving tool issue: $e');
+      Logger.debug('Error resolving tool issue: $e');
       rethrow;
     }
   }
@@ -226,7 +227,7 @@ class ToolIssueProvider with ChangeNotifier {
       await updateIssue(updatedIssue);
     } catch (e) {
       _error = 'Failed to assign issue: $e';
-      debugPrint('Error assigning tool issue: $e');
+      Logger.debug('Error assigning tool issue: $e');
       rethrow;
     }
   }

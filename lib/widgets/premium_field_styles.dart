@@ -147,7 +147,7 @@ class PremiumFieldStyles {
       hintStyle: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: theme.colorScheme.onSurface.withOpacity(0.45),
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
       ),
       border: InputBorder.none,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -155,7 +155,7 @@ class PremiumFieldStyles {
   }
 
   static Widget dropdownIcon(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurface.withOpacity(0.45);
+    final color = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return Icon(
       Icons.keyboard_arrow_down_rounded,
       size: 20,

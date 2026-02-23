@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+import '../utils/logger.dart';
 
 class UserProfileService {
   /// Get user profile data
@@ -13,7 +14,7 @@ class UserProfileService {
       
       return response;
     } catch (e) {
-      print('Error getting user profile: $e');
+      Logger.debug('Error getting user profile: $e');
       return null;
     }
   }
@@ -64,7 +65,7 @@ class UserProfileService {
 
       return response == true;
     } catch (e) {
-      print('Error updating user profile: $e');
+      Logger.debug('Error updating user profile: $e');
       return false;
     }
   }
@@ -79,7 +80,7 @@ class UserProfileService {
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting all users: $e');
+      Logger.debug('Error getting all users: $e');
       return [];
     }
   }
@@ -93,7 +94,7 @@ class UserProfileService {
       
       return response;
     } catch (e) {
-      print('Error getting user stats: $e');
+      Logger.debug('Error getting user stats: $e');
       return null;
     }
   }
@@ -108,7 +109,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error updating user role: $e');
+      Logger.debug('Error updating user role: $e');
       return false;
     }
   }
@@ -123,7 +124,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error deactivating user: $e');
+      Logger.debug('Error deactivating user: $e');
       return false;
     }
   }
@@ -138,7 +139,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error activating user: $e');
+      Logger.debug('Error activating user: $e');
       return false;
     }
   }
@@ -154,7 +155,7 @@ class UserProfileService {
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error searching users: $e');
+      Logger.debug('Error searching users: $e');
       return [];
     }
   }
@@ -170,7 +171,7 @@ class UserProfileService {
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting users by department: $e');
+      Logger.debug('Error getting users by department: $e');
       return [];
     }
   }
@@ -186,7 +187,7 @@ class UserProfileService {
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting users by role: $e');
+      Logger.debug('Error getting users by role: $e');
       return [];
     }
   }

@@ -16,6 +16,8 @@ import '../../widgets/common/themed_text_field.dart';
 import '../../widgets/common/themed_button.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'auth_error_screen.dart';
+import '../../utils/logger.dart';
+import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -288,8 +290,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: null,
                       fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                          debugPrint('❌ Error loading logo: $error');
-                          debugPrint('❌ Logo asset path: $logoAsset');
+                          Logger.debug('❌ Error loading logo: $error');
+                          Logger.debug('❌ Logo asset path: $logoAsset');
                           return const SizedBox.shrink();
                         },
                       ),
@@ -307,18 +309,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           ThemedTextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                              label: 'Email',
-                            hint: 'Enter your email',
+                              label: AppLocalizations.of(context).login_emailLabel,
+                            hint: AppLocalizations.of(context).login_emailHint,
                               prefixIcon: Icons.email_outlined,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
+                                return AppLocalizations.of(context).validation_emailRequired;
                               }
                               if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                                return AppLocalizations.of(context).validation_emailInvalid;
                               }
                               if (!AppConfig.isEmailDomainAllowed(value)) {
-                                return 'Email domain not allowed. Use @mekar.ae or other approved domains';
+                                return AppLocalizations.of(context).login_emailDomainNotAllowed;
                               }
                               return null;
                             },
@@ -329,8 +331,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ThemedTextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                              label: 'Password',
-                            hint: 'Enter your password',
+                              label: AppLocalizations.of(context).login_passwordLabel,
+                            hint: AppLocalizations.of(context).login_passwordHint,
                               prefixIcon: Icons.lock_outline,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -348,10 +350,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
+                                return AppLocalizations.of(context).validation_passwordRequired;
                               }
                               if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                                return AppLocalizations.of(context).validation_passwordMinLength;
                               }
                               return null;
                             },
@@ -366,9 +368,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               return ThemedButton(
                                 onPressed: authProvider.isLoading ? null : _handleLogin,
                                 isLoading: authProvider.isLoading,
-                                child: const Text(
-                                          'Sign In',
-                                          style: TextStyle(
+                                child: Text(
+                                          AppLocalizations.of(context).login_signInButton,
+                                          style: const TextStyle(
                                     fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             letterSpacing: 0.5,
@@ -477,11 +479,11 @@ class _LoginScreenState extends State<LoginScreen> {
               defaultTargetPlatform == TargetPlatform.linux);
       
       if (kIsWeb) {
-        debugPrint('🌐 Web platform detected - using real Supabase authentication');
+        Logger.debug('🌐 Web platform detected - using real Supabase authentication');
       } else if (isDesktopPlatform) {
-        debugPrint('🖥️ Desktop platform detected - using real Supabase authentication');
+        Logger.debug('🖥️ Desktop platform detected - using real Supabase authentication');
       } else {
-        debugPrint('📱 Mobile platform detected - using real Supabase authentication');
+        Logger.debug('📱 Mobile platform detected - using real Supabase authentication');
       }
       
       final authProvider = context.read<AuthProvider>();
@@ -580,14 +582,42 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    if (resolvedRole == null || resolvedRole.isEmpty) {
-      if (isAppleProvider) {
-        await authProvider.assignRoleToOAuthUser(UserRole.technician);
-        resolvedRole = UserRole.technician.value;
-      } else {
-        Navigator.pushReplacementNamed(context, '/role-selection');
-        return;
+    // If no role by id, check by email - same email may be registered via email/password
+    // (OAuth creates a different auth identity than email signup)
+    if ((resolvedRole == null || resolvedRole.isEmpty) && session.user.email != null && session.user.email!.isNotEmpty) {
+      try {
+        final existingByEmail = await SupabaseService.client
+            .from('users')
+            .select('id, role')
+            .eq('email', session.user.email!.toLowerCase().trim())
+            .maybeSingle();
+        if (existingByEmail != null) {
+          // Email already registered - different auth identity. Ask to use email sign-in.
+          await authProvider.signOut();
+          if (mounted) {
+            AuthErrorHandler.showErrorSnackBar(
+              context,
+              'This email is already registered. Please sign in with your email and password.',
+            );
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+          return;
+        }
+      } catch (_) {
+        // Continue to role selection on error
       }
+    }
+
+    if (resolvedRole == null || resolvedRole.isEmpty) {
+      // Not registered - must create account first. Redirect to role selection.
+      if (mounted) {
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Create an account to continue with your ${isAppleProvider ? "Apple" : "Google"} ID',
+        );
+        Navigator.pushReplacementNamed(context, '/role-selection');
+      }
+      return;
     }
 
     final hasProfile = await _ensureProfileLoaded(authProvider);

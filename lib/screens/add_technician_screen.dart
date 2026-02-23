@@ -14,6 +14,7 @@ import '../utils/name_formatter.dart';
 import '../config/app_config.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
+import '../utils/logger.dart';
 
 class AddTechnicianScreen extends StatefulWidget {
   final Technician? technician;
@@ -402,7 +403,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                                   fontWeight: FontWeight.w500,
                                   color: _hireDate != null
                                       ? theme.colorScheme.onSurface
-                                      : theme.colorScheme.onSurface.withOpacity(0.45),
+                                      : theme.colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                             ),
@@ -499,15 +500,15 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
         String? userId;
         if (technician.email != null && technician.email!.isNotEmpty) {
           try {
-            debugPrint('🔍 Creating auth account for admin-added technician: ${technician.email}');
+            Logger.debug('🔍 Creating auth account for admin-added technician: ${technician.email}');
             userId = await authProvider.createTechnicianAuthAccount(
               email: technician.email!,
               name: formattedName,
               department: technician.department,
             );
-            debugPrint('✅ Auth account created with user_id: $userId');
+            Logger.debug('✅ Auth account created with user_id: $userId');
           } catch (e) {
-            debugPrint('⚠️ Error creating auth account: $e');
+            Logger.debug('⚠️ Error creating auth account: $e');
             final errorMessage = e.toString();
             // If email already exists, try to get existing user_id
             if (errorMessage.contains('already registered')) {
@@ -520,10 +521,10 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     .maybeSingle();
                 if (userRecord != null) {
                   userId = userRecord['id'] as String;
-                  debugPrint('✅ Found existing user_id: $userId');
+                  Logger.debug('✅ Found existing user_id: $userId');
                 }
               } catch (findError) {
-                debugPrint('⚠️ Could not find existing user: $findError');
+                Logger.debug('⚠️ Could not find existing user: $findError');
               }
             } else {
               // Re-throw if it's a different error
@@ -824,7 +825,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
       }
       return null;
     } catch (e) {
-      debugPrint('Error uploading profile image: $e');
+      Logger.debug('Error uploading profile image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

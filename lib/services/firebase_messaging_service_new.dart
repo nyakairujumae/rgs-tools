@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'supabase_service.dart';
+import '../utils/logger.dart';
 
 /// Clean Firebase Messaging Service - Fresh Implementation
 class FirebaseMessagingService {
@@ -26,15 +27,15 @@ class FirebaseMessagingService {
   /// Call this after Firebase.initializeApp() completes
   static Future<void> initialize() async {
     try {
-      debugPrint('🔥 [FCM] Starting initialization...');
+      Logger.debug('🔥 [FCM] Starting initialization...');
       
       // Verify Firebase is initialized
       if (Firebase.apps.isEmpty) {
-        debugPrint('❌ [FCM] Firebase not initialized. Call Firebase.initializeApp() first.');
+        Logger.debug('❌ [FCM] Firebase not initialized. Call Firebase.initializeApp() first.');
         return;
       }
       
-      debugPrint('✅ [FCM] Firebase is initialized');
+      Logger.debug('✅ [FCM] Firebase is initialized');
       
       // Initialize local notifications
       await _initializeLocalNotifications();
@@ -44,7 +45,7 @@ class FirebaseMessagingService {
       
       if (permission.authorizationStatus == AuthorizationStatus.authorized ||
           permission.authorizationStatus == AuthorizationStatus.provisional) {
-        debugPrint('✅ [FCM] Notification permission granted');
+        Logger.debug('✅ [FCM] Notification permission granted');
         
         // Get FCM token
         await _getFCMToken();
@@ -55,13 +56,13 @@ class FirebaseMessagingService {
         // Subscribe to topics
         await _subscribeToTopics();
         
-        debugPrint('✅ [FCM] Initialization complete');
+        Logger.debug('✅ [FCM] Initialization complete');
       } else {
-        debugPrint('❌ [FCM] Notification permission denied');
+        Logger.debug('❌ [FCM] Notification permission denied');
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Initialization error: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] Initialization error: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
@@ -98,9 +99,9 @@ class FirebaseMessagingService {
           AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.createNotificationChannel(androidChannel);
       
-      debugPrint('✅ [FCM] Local notifications initialized');
+      Logger.debug('✅ [FCM] Local notifications initialized');
     } catch (e) {
-      debugPrint('❌ [FCM] Local notifications init error: $e');
+      Logger.debug('❌ [FCM] Local notifications init error: $e');
     }
   }
 
@@ -123,7 +124,7 @@ class FirebaseMessagingService {
       _fcmToken = await _messaging.getToken();
       
       if (_fcmToken != null) {
-        debugPrint('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
+        Logger.debug('✅ [FCM] Token obtained: ${_fcmToken!.substring(0, 20)}...');
         
         // Save token locally
         final prefs = await SharedPreferences.getInstance();
@@ -134,16 +135,16 @@ class FirebaseMessagingService {
         
         // Listen for token refresh
         _messaging.onTokenRefresh.listen((newToken) async {
-          debugPrint('🔄 [FCM] Token refreshed');
+          Logger.debug('🔄 [FCM] Token refreshed');
           _fcmToken = newToken;
           await prefs.setString('fcm_token', newToken);
           await _sendTokenToServer(newToken);
         });
       } else {
-        debugPrint('⚠️ [FCM] FCM token is null');
+        Logger.debug('⚠️ [FCM] FCM token is null');
       }
     } catch (e) {
-      debugPrint('❌ [FCM] Error getting token: $e');
+      Logger.debug('❌ [FCM] Error getting token: $e');
     }
   }
 
@@ -152,7 +153,7 @@ class FirebaseMessagingService {
     try {
       final user = SupabaseService.client.auth.currentUser;
       if (user == null) {
-        debugPrint('⚠️ [FCM] No user logged in, skipping token save');
+        Logger.debug('⚠️ [FCM] No user logged in, skipping token save');
         return;
       }
       
@@ -164,9 +165,9 @@ class FirebaseMessagingService {
             'updated_at': DateTime.now().toIso8601String(),
           });
       
-      debugPrint('✅ [FCM] Token saved to Supabase');
+      Logger.debug('✅ [FCM] Token saved to Supabase');
     } catch (e) {
-      debugPrint('❌ [FCM] Error saving token: $e');
+      Logger.debug('❌ [FCM] Error saving token: $e');
     }
   }
 
@@ -174,7 +175,7 @@ class FirebaseMessagingService {
   static void _setupMessageHandlers() {
     // Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      debugPrint('📱 [FCM] Foreground message received: ${message.notification?.title}');
+      Logger.debug('📱 [FCM] Foreground message received: ${message.notification?.title}');
       
       // Show local notification
       await _showLocalNotification(message);
@@ -185,14 +186,14 @@ class FirebaseMessagingService {
     
     // Background messages (when app is in background)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('📱 [FCM] App opened from notification: ${message.notification?.title}');
+      Logger.debug('📱 [FCM] App opened from notification: ${message.notification?.title}');
       // Handle navigation if needed
     });
     
     // Check if app was opened from terminated state
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        debugPrint('📱 [FCM] App opened from terminated state: ${message.notification?.title}');
+        Logger.debug('📱 [FCM] App opened from terminated state: ${message.notification?.title}');
         // Handle navigation if needed
       }
     });
@@ -231,15 +232,15 @@ class FirebaseMessagingService {
         details,
       );
       
-      debugPrint('✅ [FCM] Local notification shown');
+      Logger.debug('✅ [FCM] Local notification shown');
     } catch (e) {
-      debugPrint('❌ [FCM] Error showing notification: $e');
+      Logger.debug('❌ [FCM] Error showing notification: $e');
     }
   }
 
   /// Handle notification tap
   static void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('📱 [FCM] Notification tapped: ${response.id}');
+    Logger.debug('📱 [FCM] Notification tapped: ${response.id}');
     // Handle navigation if needed
   }
 
@@ -252,9 +253,9 @@ class FirebaseMessagingService {
       await prefs.setInt('badge_count', badgeCount);
       
       await FlutterAppBadger.updateBadgeCount(badgeCount);
-      debugPrint('✅ [FCM] Badge updated: $badgeCount');
+      Logger.debug('✅ [FCM] Badge updated: $badgeCount');
     } catch (e) {
-      debugPrint('❌ [FCM] Error updating badge: $e');
+      Logger.debug('❌ [FCM] Error updating badge: $e');
     }
   }
 
@@ -264,9 +265,9 @@ class FirebaseMessagingService {
       await FlutterAppBadger.removeBadge();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('badge_count', 0);
-      debugPrint('✅ [FCM] Badge cleared');
+      Logger.debug('✅ [FCM] Badge cleared');
     } catch (e) {
-      debugPrint('❌ [FCM] Error clearing badge: $e');
+      Logger.debug('❌ [FCM] Error clearing badge: $e');
     }
   }
 
@@ -276,9 +277,9 @@ class FirebaseMessagingService {
       await _messaging.subscribeToTopic('admin');
       await _messaging.subscribeToTopic('new_registration');
       await _messaging.subscribeToTopic('tool_issues');
-      debugPrint('✅ [FCM] Subscribed to topics');
+      Logger.debug('✅ [FCM] Subscribed to topics');
     } catch (e) {
-      debugPrint('❌ [FCM] Error subscribing to topics: $e');
+      Logger.debug('❌ [FCM] Error subscribing to topics: $e');
     }
   }
 
@@ -292,9 +293,9 @@ class FirebaseMessagingService {
             'fcm_token': token,
             'updated_at': DateTime.now().toIso8601String(),
           });
-      debugPrint('✅ [FCM] Token sent to server');
+      Logger.debug('✅ [FCM] Token sent to server');
     } catch (e) {
-      debugPrint('❌ [FCM] Error sending token: $e');
+      Logger.debug('❌ [FCM] Error sending token: $e');
     }
   }
 }
@@ -303,7 +304,7 @@ class FirebaseMessagingService {
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint('📱 [FCM] Background message: ${message.notification?.title}');
+  Logger.debug('📱 [FCM] Background message: ${message.notification?.title}');
   
   // Update badge
   try {
@@ -313,7 +314,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await prefs.setInt('badge_count', badgeCount);
     await FlutterAppBadger.updateBadgeCount(badgeCount);
   } catch (e) {
-    debugPrint('❌ [FCM] Error updating badge in background: $e');
+    Logger.debug('❌ [FCM] Error updating badge in background: $e');
   }
 }
 

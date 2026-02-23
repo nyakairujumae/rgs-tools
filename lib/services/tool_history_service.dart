@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/tool_history.dart';
 import 'supabase_service.dart';
 import 'user_name_service.dart';
+import '../utils/logger.dart';
 
 /// Service for recording and fetching tool movement history.
 class ToolHistoryService {
@@ -42,9 +43,9 @@ class ToolHistoryService {
         'notes': notes,
         'metadata': metadata,
       });
-      debugPrint('✅ Tool history recorded: $action for $toolName');
+      Logger.debug('✅ Tool history recorded: $action for $toolName');
     } catch (e) {
-      debugPrint('⚠️ Failed to record tool history: $e');
+      Logger.debug('⚠️ Failed to record tool history: $e');
       // Don't rethrow - history is non-critical; tool update already succeeded
     }
   }
@@ -61,7 +62,7 @@ class ToolHistoryService {
           .map((e) => ToolHistory.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList();
     } catch (e) {
-      debugPrint('❌ Error fetching tool history: $e');
+      Logger.debug('❌ Error fetching tool history: $e');
       return [];
     }
   }
@@ -95,7 +96,7 @@ class ToolHistoryService {
           .map((e) => ToolHistory.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList();
     } catch (e) {
-      debugPrint('❌ Error fetching all tool history: $e');
+      Logger.debug('❌ Error fetching all tool history: $e');
       return [];
     }
   }

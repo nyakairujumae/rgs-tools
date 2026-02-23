@@ -20,6 +20,7 @@ import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import 'tool_detail_screen.dart';
 import '../services/push_notification_service.dart';
+import '../utils/logger.dart';
 
 class SharedToolsScreen extends StatefulWidget {
   const SharedToolsScreen({super.key});
@@ -130,99 +131,30 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                         _selectedCategory == 'Category' &&
                         _searchQuery.isEmpty);
 
-                    if (isOffline && !toolProvider.isLoading) {
-                      // Show offline skeleton when offline
-                      return OfflineToolGridSkeleton(
-                        itemCount: 6,
-                        crossAxisCount: 2,
-                        message: 'You are offline. Showing cached shared tools.',
-                      );
-                    }
-
-                    if (toolProvider.isLoading) {
-                      return const ToolCardGridSkeleton(
-                        itemCount: 6,
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10.0,
-                        mainAxisSpacing: 12.0,
-                        childAspectRatio: 0.75,
-                      );
-                    }
-
-                    if (tools.isEmpty) {
-                      return Consumer<AuthProvider>(
-                        builder: (context, authProvider, child) {
-                          final isAdmin =
-                              authProvider.userRole == UserRole.admin;
-                          return EmptyState(
-                            icon: Icons.share,
-                            title: !hasActiveFilters
-                                ? 'No Shared Tools'
-                                : 'No Tools Found',
-                            subtitle: !hasActiveFilters
-                                ? (isAdmin
-                                    ? 'Go to All Tools to mark tools as "Shared" so they appear here'
-                                    : 'No shared tools available. Contact your admin to share tools.')
-                                : 'Try adjusting your filters or search terms',
-                            actionText: isAdmin ? 'Go to Tools' : null,
-                            onAction: isAdmin
-                                ? () {
-                                    Navigator.pushNamedAndRemoveUntil(
-                                      context,
-                                      '/admin',
-                                      (route) => false,
-                                      arguments: {'initialTab': 1},
-                                    );
-                                  }
-                                : null,
-                          );
-                        },
-                      );
-                    }
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isDesktop = ResponsiveHelper.isDesktop(context);
-                        final screenWidth = constraints.maxWidth;
-                        
-                        int crossAxisCount = 2;
-                        double crossAxisSpacing = 10.0;
-                        double mainAxisSpacing = 12.0;
-                        double childAspectRatio = 0.75;
-                        double padding = 16.0;
-                        
-                        if (isDesktop) {
-                          if (screenWidth > 1600) {
-                            crossAxisCount = 6;
-                          } else if (screenWidth > 1200) {
-                            crossAxisCount = 5;
-                          } else if (screenWidth > 900) {
-                            crossAxisCount = 4;
-                          } else {
-                            crossAxisCount = 3;
-                          }
-                          crossAxisSpacing = 8.0;
-                          mainAxisSpacing = 8.0;
-                          childAspectRatio = 0.85;
-                          padding = 20.0;
-                        }
-                        
-                        return GridView.builder(
-                          padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: crossAxisSpacing,
-                            mainAxisSpacing: mainAxisSpacing,
-                            childAspectRatio: childAspectRatio,
+                    return Column(
+                      children: [
+                        if (isOffline)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Offline — showing cached data',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                              ],
+                            ),
                           ),
-                          itemCount: tools.length,
-                          itemBuilder: (context, index) {
-                            final tool = tools[index];
-                            return _buildToolCard(tool, technicianProvider);
-                          },
-                        );
-                      },
+                        Expanded(child: _buildSharedToolsContent(context, toolProvider, technicianProvider, tools, isOffline, hasActiveFilters)),
+                      ],
                     );
                   },
                 ),
@@ -231,6 +163,97 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSharedToolsContent(
+    BuildContext context,
+    SupabaseToolProvider toolProvider,
+    SupabaseTechnicianProvider technicianProvider,
+    List<Tool> tools,
+    bool isOffline,
+    bool hasActiveFilters,
+  ) {
+    if (toolProvider.isLoading) {
+      return const ToolCardGridSkeleton(
+        itemCount: 6,
+        crossAxisCount: 2,
+        crossAxisSpacing: 10.0,
+        mainAxisSpacing: 12.0,
+        childAspectRatio: 0.75,
+      );
+    }
+
+    if (tools.isEmpty) {
+      return Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          final isAdmin = authProvider.userRole == UserRole.admin;
+          return EmptyState(
+            icon: Icons.share,
+            title: !hasActiveFilters ? 'No Shared Tools' : 'No Tools Found',
+            subtitle: !hasActiveFilters
+                ? (isAdmin
+                    ? 'Go to All Tools to mark tools as "Shared" so they appear here'
+                    : 'No shared tools available. Contact your admin to share tools.')
+                : 'Try adjusting your filters or search terms',
+            actionText: isAdmin ? 'Go to Tools' : null,
+            onAction: isAdmin
+                ? () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/admin',
+                      (route) => false,
+                      arguments: {'initialTab': 1},
+                    );
+                  }
+                : null,
+          );
+        },
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = ResponsiveHelper.isDesktop(context);
+        final screenWidth = constraints.maxWidth;
+
+        int crossAxisCount = 2;
+        double crossAxisSpacing = 10.0;
+        double mainAxisSpacing = 12.0;
+        double childAspectRatio = 0.75;
+        double padding = 16.0;
+
+        if (isDesktop) {
+          if (screenWidth > 1600) {
+            crossAxisCount = 6;
+          } else if (screenWidth > 1200) {
+            crossAxisCount = 5;
+          } else if (screenWidth > 900) {
+            crossAxisCount = 4;
+          } else {
+            crossAxisCount = 3;
+          }
+          crossAxisSpacing = 8.0;
+          mainAxisSpacing = 8.0;
+          childAspectRatio = 0.85;
+          padding = 20.0;
+        }
+
+        return GridView.builder(
+          padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: crossAxisSpacing,
+            mainAxisSpacing: mainAxisSpacing,
+            childAspectRatio: childAspectRatio,
+          ),
+          itemCount: tools.length,
+          itemBuilder: (context, index) {
+            final tool = tools[index];
+            return _buildToolCard(tool, technicianProvider);
+          },
+        );
+      },
     );
   }
 
@@ -1009,7 +1032,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           ownerEmail = userResponse['email'] as String;
         }
       } catch (e) {
-        debugPrint('Could not fetch owner email: $e');
+        Logger.debug('Could not fetch owner email: $e');
       }
       
       // Tool requests from holders (badged tools) only go to the tool holder, not admins
@@ -1035,8 +1058,8 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             'owner_id': ownerId,
           },
         });
-        debugPrint('✅ Created technician notification for tool request');
-        debugPrint('✅ Notification sent to technician: $ownerId');
+        Logger.debug('✅ Created technician notification for tool request');
+        Logger.debug('✅ Notification sent to technician: $ownerId');
         
         // Send push notification to the tool owner
         try {
@@ -1051,17 +1074,17 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
             },
           );
           if (pushSuccess) {
-            debugPrint('✅ Push notification sent successfully to tool owner: $ownerId');
+            Logger.debug('✅ Push notification sent successfully to tool owner: $ownerId');
           } else {
-            debugPrint('⚠️ Push notification returned false for tool owner: $ownerId');
+            Logger.debug('⚠️ Push notification returned false for tool owner: $ownerId');
           }
         } catch (pushError, stackTrace) {
-          debugPrint('❌ Exception sending push notification to tool owner: $pushError');
-          debugPrint('❌ Stack trace: $stackTrace');
+          Logger.debug('❌ Exception sending push notification to tool owner: $pushError');
+          Logger.debug('❌ Stack trace: $stackTrace');
         }
       } catch (e) {
-        debugPrint('❌ Failed to create technician notification: $e');
-        debugPrint('❌ Error details: ${e.toString()}');
+        Logger.debug('❌ Failed to create technician notification: $e');
+        Logger.debug('❌ Error details: ${e.toString()}');
         // Still show success message even if notification fails
       }
       
@@ -1075,7 +1098,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Error sending tool request: $e');
+      Logger.debug('Error sending tool request: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
