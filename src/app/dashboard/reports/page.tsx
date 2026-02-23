@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { generatePDF, generateCSV, generateExcel, type ReportType, type ReportData } from '@/lib/reports/generate-report'
 import { cn } from '@/lib/utils'
@@ -33,11 +33,11 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState<'pdf' | 'csv' | 'excel' | null>(null)
   const [data, setData] = useState<ReportData | null>(null)
   const [loadingData, setLoadingData] = useState(false)
+  const generateRef = useRef<HTMLDivElement>(null)
 
-  // Fetch data when a report is selected
   useEffect(() => {
     if (!selected) return
-    if (data) return // already loaded
+    if (data) return
 
     const fetchData = async () => {
       setLoadingData(true)
@@ -67,11 +67,18 @@ export default function ReportsPage() {
     fetchData()
   }, [selected, data])
 
+  useEffect(() => {
+    if (selected && generateRef.current) {
+      setTimeout(() => {
+        generateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 100)
+    }
+  }, [selected])
+
   const handleGenerate = async (format: 'pdf' | 'csv' | 'excel') => {
     if (!selected || !data) return
     setGenerating(format)
 
-    // Small delay to show spinner
     await new Promise((r) => setTimeout(r, 100))
 
     try {
@@ -99,34 +106,34 @@ export default function ReportsPage() {
   const selectedReport = reportTypes.find((r) => r.id === selected)
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-4 md:space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
         <p className="text-sm text-muted-foreground">Generate and export reports</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {reportTypes.map((report) => (
           <button
             key={report.id}
             onClick={() => setSelected(report.id)}
             className={cn(
-              'bg-card border rounded-xl p-5 text-left hover:border-primary/30 transition-colors',
+              'bg-card border rounded-xl p-3 md:p-5 text-left hover:border-primary/30 transition-colors',
               selected === report.id ? 'border-primary ring-1 ring-primary/20' : 'border-border'
             )}
           >
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground mb-2 md:mb-3">
               {report.icon}
             </div>
-            <h3 className="font-medium text-sm">{report.label}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{report.description}</p>
+            <h3 className="font-medium text-xs md:text-sm">{report.label}</h3>
+            <p className="text-[10px] md:text-xs text-muted-foreground mt-1 line-clamp-2">{report.description}</p>
           </button>
         ))}
       </div>
 
       {selected && (
-        <div className="bg-card border border-border rounded-xl p-6">
-          <h3 className="font-semibold mb-4">
+        <div ref={generateRef} className="bg-card border border-border rounded-xl p-4 md:p-6">
+          <h3 className="font-semibold text-sm md:text-base mb-4">
             Generate {selectedReport?.label}
           </h3>
 
@@ -137,14 +144,15 @@ export default function ReportsPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-end gap-4 flex-wrap">
+              {/* Date filters */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-input bg-transparent text-sm"
+                    className="w-full h-9 px-3 rounded-lg border border-input bg-transparent text-sm"
                   />
                 </div>
                 <div>
@@ -153,13 +161,17 @@ export default function ReportsPage() {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-input bg-transparent text-sm"
+                    className="w-full h-9 px-3 rounded-lg border border-input bg-transparent text-sm"
                   />
                 </div>
+              </div>
+
+              {/* Generate buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={() => handleGenerate('pdf')}
                   disabled={generating !== null}
-                  className="flex items-center gap-2 h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 h-10 sm:h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {generating === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   Generate PDF
@@ -167,7 +179,7 @@ export default function ReportsPage() {
                 <button
                   onClick={() => handleGenerate('excel')}
                   disabled={generating !== null}
-                  className="flex items-center gap-2 h-9 px-4 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 h-10 sm:h-9 px-4 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
                 >
                   {generating === 'excel' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                   Export Excel
@@ -175,7 +187,7 @@ export default function ReportsPage() {
                 <button
                   onClick={() => handleGenerate('csv')}
                   disabled={generating !== null}
-                  className="flex items-center gap-2 h-9 px-4 border border-input rounded-lg text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 h-10 sm:h-9 px-4 border border-input rounded-lg text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
                 >
                   {generating === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                   Export CSV
@@ -183,7 +195,7 @@ export default function ReportsPage() {
               </div>
 
               {data && (
-                <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span>{data.tools.length} tools</span>
                   <span>{data.technicians.length} technicians</span>
                   <span>{data.issues.length} issues</span>
