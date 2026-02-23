@@ -41,6 +41,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const supabase = createClient()
+    let debounceTimer: NodeJS.Timeout | null = null
+
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => fetchData(), 1000)
+    }
 
     const fetchData = async () => {
       try {
@@ -56,13 +62,13 @@ export default function DashboardPage() {
         }
 
         const [tools, issues, approvals, maintenance, certifications, recentHistory, pendingUsers] = await Promise.all([
-          safeQuery(supabase.from('tools').select('*')),
-          safeQuery(supabase.from('tool_issues').select('*')),
-          safeQuery(supabase.from('approval_workflows').select('*')),
-          safeQuery(supabase.from('maintenance_schedules').select('*')),
-          safeQuery(supabase.from('certifications').select('*')),
-          safeQuery(supabase.from('tool_history').select('*').order('timestamp', { ascending: false }).limit(10)),
-          safeQuery(supabase.from('pending_user_approvals').select('*').eq('status', 'pending')),
+          safeQuery(supabase.from('tools').select('id, name, status, current_value, purchase_price')),
+          safeQuery(supabase.from('tool_issues').select('id, status, priority, tool_name, issue_type, description')),
+          safeQuery(supabase.from('approval_workflows').select('id, status')),
+          safeQuery(supabase.from('maintenance_schedules').select('id, status, tool_name, maintenance_type')),
+          safeQuery(supabase.from('certifications').select('id, status')),
+          safeQuery(supabase.from('tool_history').select('id, action, tool_name, description, timestamp').order('timestamp', { ascending: false }).limit(10)),
+          safeQuery(supabase.from('pending_user_approvals').select('id, full_name, status').eq('status', 'pending')),
         ])
 
         setData({
@@ -93,22 +99,76 @@ export default function DashboardPage() {
 
     const channel = supabase
       .channel('dashboard-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_history' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_issues' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_workflows' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_user_approvals' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_history' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_issues' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_workflows' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_user_approvals' }, debouncedFetch)
       .subscribe()
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
       supabase.removeChannel(channel)
     }
   }, [])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-4 md:space-y-6 animate-pulse">
+        <div>
+          <div className="h-7 w-64 bg-muted rounded" />
+          <div className="h-4 w-80 bg-muted rounded mt-2" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-3 md:p-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 w-20 bg-muted rounded" />
+                  <div className="h-7 w-12 bg-muted rounded" />
+                  <div className="h-3 w-24 bg-muted rounded" />
+                </div>
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-muted rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-3 md:p-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 w-20 bg-muted rounded" />
+                  <div className="h-6 w-10 bg-muted rounded" />
+                  <div className="h-3 w-24 bg-muted rounded" />
+                </div>
+                <div className="w-8 h-8 bg-muted rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl">
+              <div className="px-4 md:px-5 py-4 border-b border-border">
+                <div className="h-4 w-32 bg-muted rounded" />
+              </div>
+              <div className="space-y-0">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <div key={j} className="px-4 md:px-5 py-3 border-b border-border last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-muted rounded-full" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-3.5 w-36 bg-muted rounded" />
+                        <div className="h-3 w-48 bg-muted rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

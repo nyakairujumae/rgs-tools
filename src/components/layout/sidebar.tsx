@@ -24,6 +24,7 @@ import {
   Sun,
   LogOut,
   X,
+  Share2,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -37,6 +38,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Tools', href: '/dashboard/tools', icon: <Wrench className="w-5 h-5" /> },
+  { label: 'Shared Tools', href: '/dashboard/shared-tools', icon: <Share2 className="w-5 h-5" /> },
   { label: 'Technicians', href: '/dashboard/technicians', icon: <Users className="w-5 h-5" /> },
   { label: 'Issues', href: '/dashboard/issues', icon: <AlertTriangle className="w-5 h-5" /> },
   { label: 'Approvals', href: '/dashboard/approvals', icon: <CheckSquare className="w-5 h-5" /> },

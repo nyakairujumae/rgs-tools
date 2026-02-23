@@ -23,11 +23,17 @@ import {
   LayoutGrid,
   List,
   Camera,
+  Share2,
+  Package,
+  ArrowLeftRight,
+  KeyRound,
 } from 'lucide-react'
 import { deleteTool as deleteToolAction } from '@/lib/supabase/actions'
 import { AddToolDialog } from '@/components/tools/add-tool-dialog'
 import { EditToolDialog } from '@/components/tools/edit-tool-dialog'
 import { AssignToolDialog } from '@/components/tools/assign-tool-dialog'
+import { ReassignToolDialog } from '@/components/tools/reassign-tool-dialog'
+import { ReturnToolDialog } from '@/components/tools/return-tool-dialog'
 import type { Tool, Technician } from '@/lib/types/database'
 
 type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'condition' | 'current_value'
@@ -48,6 +54,8 @@ export default function ToolsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editTool, setEditTool] = useState<Tool | null>(null)
   const [assignToolTarget, setAssignToolTarget] = useState<Tool | null>(null)
+  const [reassignToolTarget, setReassignToolTarget] = useState<Tool | null>(null)
+  const [returnToolTarget, setReturnToolTarget] = useState<Tool | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -163,6 +171,32 @@ export default function ToolsPage() {
     const success = await deleteToolAction(id)
     if (success) {
       setTools((prev) => prev.filter((t) => t.id !== id))
+    }
+    setActionMenuId(null)
+  }
+
+  const toggleToolType = async (tool: Tool) => {
+    const supabase = createClient()
+    const newType = tool.tool_type === 'shared' ? 'inventory' : 'shared'
+    const { error } = await supabase
+      .from('tools')
+      .update({ tool_type: newType, updated_at: new Date().toISOString() })
+      .eq('id', tool.id)
+    if (!error) {
+      setTools((prev) =>
+        prev.map((t) => (t.id === tool.id ? { ...t, tool_type: newType } : t))
+      )
+      await supabase.from('tool_history').insert({
+        tool_id: tool.id,
+        tool_name: tool.name,
+        action: newType === 'shared' ? 'Marked as Shared' : 'Marked as Inventory',
+        description: `${tool.name} converted to ${newType} tool`,
+        old_value: tool.tool_type,
+        new_value: newType,
+        performed_by: 'Admin',
+        performed_by_role: 'admin',
+        timestamp: new Date().toISOString(),
+      })
     }
     setActionMenuId(null)
   }
@@ -430,6 +464,11 @@ export default function ToolsPage() {
                           <Link href={`/dashboard/tools/${tool.id}`} className="font-medium hover:text-primary transition-colors">
                             {tool.name}
                           </Link>
+                          {tool.tool_type === 'shared' && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-500/10 text-violet-600 text-[10px] font-medium rounded">
+                              <Share2 className="w-2.5 h-2.5" /> Shared
+                            </span>
+                          )}
                           {tool.model && (
                             <p className="text-xs text-muted-foreground">{tool.model}</p>
                           )}
@@ -470,6 +509,31 @@ export default function ToolsPage() {
                           >
                             <UserPlus className="w-3.5 h-3.5" /> Assign
                           </button>
+                          <button
+                            onClick={() => toggleToolType(tool)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                          >
+                            {tool.tool_type === 'shared'
+                              ? <><Package className="w-3.5 h-3.5" /> Make Inventory</>
+                              : <><Share2 className="w-3.5 h-3.5" /> Make Shared</>
+                            }
+                          </button>
+                          {tool.assigned_to && (
+                            <>
+                              <button
+                                onClick={() => { setReassignToolTarget(tool); setActionMenuId(null) }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                              >
+                                <ArrowLeftRight className="w-3.5 h-3.5" /> Reassign
+                              </button>
+                              <button
+                                onClick={() => { setReturnToolTarget(tool); setActionMenuId(null) }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                              >
+                                <KeyRound className="w-3.5 h-3.5" /> Return
+                              </button>
+                            </>
+                          )}
                           <div className="border-t border-border my-1" />
                           <button
                             onClick={() => handleDelete(tool.id)}
@@ -521,6 +585,30 @@ export default function ToolsPage() {
           onSuccess={(updated) => {
             setTools((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
             setAssignToolTarget(null)
+          }}
+        />
+      )}
+
+      {reassignToolTarget && (
+        <ReassignToolDialog
+          tool={reassignToolTarget}
+          open={!!reassignToolTarget}
+          onClose={() => setReassignToolTarget(null)}
+          onSuccess={(updated) => {
+            setTools((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+            setReassignToolTarget(null)
+          }}
+        />
+      )}
+
+      {returnToolTarget && (
+        <ReturnToolDialog
+          tool={returnToolTarget}
+          open={!!returnToolTarget}
+          onClose={() => setReturnToolTarget(null)}
+          onSuccess={(updated) => {
+            setTools((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+            setReturnToolTarget(null)
           }}
         />
       )}

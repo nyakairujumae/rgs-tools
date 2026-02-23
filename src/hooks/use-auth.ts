@@ -36,37 +36,36 @@ export function useAuth() {
     }
   }
 
+  const loadProfile = async (user: any) => {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+    // Fetch position concurrently with background session validation
+    const [position] = await Promise.all([
+      fetchPosition(profile?.position_id),
+      supabase.auth.getUser().catch(() => null),
+    ])
+    setState({ user, profile, position, loading: false })
+  }
+
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        const position = await fetchPosition(profile?.position_id)
-        setState({ user, profile, position, loading: false })
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        await loadProfile(session.user)
       } else {
         setState({ user: null, profile: null, position: null, loading: false })
       }
     }
 
-    getUser()
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          const position = await fetchPosition(profile?.position_id)
-          setState({ user: session.user, profile, position, loading: false })
+          await loadProfile(session.user)
         } else {
           setState({ user: null, profile: null, position: null, loading: false })
         }
