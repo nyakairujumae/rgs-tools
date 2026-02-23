@@ -547,12 +547,12 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                 ),
               ],
             ),
-            backgroundColor: AppTheme.secondaryColor, // AppTheme.secondaryColor
-            behavior: SnackBarBehavior.fixed,
+            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+            behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero,
+              borderRadius: BorderRadius.circular(12),
             ),
-            margin: EdgeInsets.zero,
+            margin: EdgeInsets.all(16),
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             duration: const Duration(seconds: 3),
             dismissDirection: DismissDirection.horizontal,

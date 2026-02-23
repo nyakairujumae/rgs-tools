@@ -13,7 +13,6 @@ import '../utils/responsive_helper.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import 'barcode_scanner_screen.dart';
-import '../utils/logger.dart';
 
 class AddToolScreen extends StatefulWidget {
   final bool isFromMyTools;
@@ -113,6 +112,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
     );
   }
 
+  @override
   @override
   void initState() {
     super.initState();
@@ -1112,7 +1112,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                   fontWeight: FontWeight.w500,
                   color: _purchaseDate != null
                       ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                      : theme.colorScheme.onSurface.withOpacity(0.45),
                 ),
               ),
             ),
@@ -1187,7 +1187,6 @@ class _AddToolScreenState extends State<AddToolScreen> {
       // Now upload images if selected and update the tool with image URLs
       if (_selectedImages.isNotEmpty && addedTool.id != null) {
         List<String> uploadedImageUrls = [];
-        List<String> localImagePaths = [];
         
         for (var imageFile in _selectedImages) {
           try {
@@ -1233,13 +1232,13 @@ class _AddToolScreenState extends State<AddToolScreen> {
         }
       }
 
-      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
-      // and log the user out. Local state is already correct (addTool adds to list).
+      // Reload tools to refresh all screens
+      await context.read<SupabaseToolProvider>().loadTools();
 
-      Logger.debug('✅ Admin tool added - ID: ${addedTool.id}');
-      Logger.debug(
+      debugPrint('✅ Admin tool added - ID: ${addedTool.id}');
+      debugPrint(
           '✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
-      Logger.debug('✅ AssignedTo: ${addedTool.assignedTo}');
+      debugPrint('✅ AssignedTo: ${addedTool.assignedTo}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1286,26 +1285,21 @@ class _AddToolScreenState extends State<AddToolScreen> {
               ],
             ),
             backgroundColor: AppTheme.secondaryColor,
-            behavior: SnackBarBehavior.fixed,
+            behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero,
+              borderRadius: BorderRadius.circular(12),
             ),
-            margin: EdgeInsets.zero,
+            margin: EdgeInsets.all(16),
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             duration: const Duration(seconds: 3),
             dismissDirection: DismissDirection.horizontal,
           ),
         );
-        // Delay pop so snackbar has time to render before route is removed
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.pop(context);
-          }
-        });
+        Navigator.pop(context);
       }
     } catch (e) {
-      Logger.debug('❌ Error in _handleSave: $e');
-      Logger.debug('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Error in _handleSave: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       if (mounted) {
         // Show detailed error message
         final errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -1546,7 +1540,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1659,21 +1653,6 @@ class _AddToolScreenState extends State<AddToolScreen> {
       return imageFile.path;
     } catch (e) {
       throw Exception('Failed to save image: $e');
-    }
-  }
-
-  Future<String> _saveImageLocally(File imageFile, String toolId) async {
-    try {
-      // Create a unique filename for local storage
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = imageFile.path.split('.').last;
-      final fileName = 'tool_${toolId}_$timestamp.$extension';
-
-      // For now, just return the original path
-      // In a real app, you'd copy to a persistent directory
-      return imageFile.path;
-    } catch (e) {
-      throw Exception('Failed to save image locally: $e');
     }
   }
 
