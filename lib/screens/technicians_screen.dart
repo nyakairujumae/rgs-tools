@@ -356,13 +356,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                          SizedBox(width: 8),
+                          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context).common_offlineBanner,
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                         ],
                       ),

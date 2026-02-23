@@ -629,6 +629,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
       case NotificationType.issueReport:
         targetScreen = const ToolIssuesScreen();
         break;
+      case NotificationType.toolAssignment:
       case NotificationType.userApproved:
       case NotificationType.general:
         return false;

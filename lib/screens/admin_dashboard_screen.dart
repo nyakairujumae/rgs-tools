@@ -31,7 +31,6 @@ class DashboardScreen extends StatelessWidget {
   final Function(String) onNavigateToToolsWithFilter;
   static const double _cardRadiusValue = 12; // Apple/Jobber-style web (matches global theme)
   static const double _mobileCardRadiusValue = 16; // Keep mobile rounded
-  static const Color AppTheme.secondaryColor = Color(0xFF2E7D32);
   static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
   static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
   

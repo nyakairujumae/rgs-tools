@@ -878,7 +878,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               ],
             ),
             onPressed: () => _showNotifications(context),
-            tooltip: 'Notifications',
           ),
         ),
         shape: const RoundedRectangleBorder(
@@ -955,7 +954,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
         ],
       ),
-    ));
+    )));
   }
 
   void _showNotifications(BuildContext context) async {
@@ -1476,6 +1475,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         data != null &&
         (data['owner_id']?.toString() == authProvider.userId);
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
+    final isToolReleasedForCurrentUser = type == 'tool_released' &&
+        data != null &&
+        (data['requester_id']?.toString() == authProvider.userId);
     
     showDialog(
       context: context,
@@ -1756,6 +1758,90 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         AuthErrorHandler.showErrorSnackBar(
           context,
           'Failed to release tool: ${e.toString()}',
+        );
+      }
+    }
+  }
+
+  Future<void> _acceptReleasedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final authProvider = context.read<AuthProvider>();
+    final userName = authProvider.userFullName ?? 'Technician';
+
+    if (toolId == null) {
+      if (context.mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Missing tool information. Cannot accept.',
+        );
+      }
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client
+            .from('tools')
+            .select()
+            .eq('id', toolId)
+            .maybeSingle();
+        if (res != null) {
+          existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+        }
+      }
+      if (existingTool == null) {
+        if (context.mounted) {
+          AuthErrorHandler.showErrorSnackBar(
+            context,
+            'Tool not found. It may have been removed.',
+          );
+        }
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(
+        assignedTo: authProvider.userId,
+        status: 'In Use',
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId,
+        toolName: toolName,
+        action: ToolHistoryActions.acceptedReleasedTool,
+        description: '$userName accepted the released $toolName',
+        oldValue: data['released_by_id']?.toString(),
+        newValue: authProvider.userId,
+        performedById: authProvider.userId,
+        performedByName: userName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'released_by_id': data['released_by_id'], 'released_by_name': data['released_by_name']},
+      );
+
+      await toolProvider.loadTools();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$toolName accepted successfully.'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AuthErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to accept tool: ${e.toString()}',
         );
       }
     }
