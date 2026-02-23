@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
@@ -370,7 +371,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   void _viewToolDetails(Tool tool) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => ToolDetailScreen(tool: tool),
       ),
     );

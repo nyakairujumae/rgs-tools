@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:io' show Platform;
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -795,7 +796,7 @@ class FirebaseMessagingService {
             break;
         }
         if (targetScreen != null) {
-          navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
+          navigator.push(CupertinoPageRoute(builder: (_) => targetScreen!));
           return;
         }
       }
@@ -840,7 +841,7 @@ class FirebaseMessagingService {
         if (userRole == 'admin') {
           // Navigate to admin notification center (separate screen)
           navigator.push(
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => const AdminNotificationScreen(),
             ),
           );

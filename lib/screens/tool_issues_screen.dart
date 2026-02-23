@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../models/tool_issue.dart';
@@ -221,7 +222,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                CupertinoPageRoute(
                   builder: (context) => const AddToolIssueScreen(),
                 ),
               );

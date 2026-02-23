@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -1116,7 +1117,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.blue,
           () => Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.toolsInventory,
                 timePeriod: widget.timePeriod,
@@ -1132,7 +1133,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.green,
           () => Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.toolAssignments,
                 timePeriod: widget.timePeriod,
@@ -1148,7 +1149,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.orange,
           () => Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.technicianSummary,
                 timePeriod: widget.timePeriod,
@@ -1164,7 +1165,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.purple,
           () => Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.financialSummary,
                 timePeriod: widget.timePeriod,

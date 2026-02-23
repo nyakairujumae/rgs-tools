@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -137,7 +138,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       TextEditingController controller, String fieldName) async {
     final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => const BarcodeScannerScreen(),
       ),
     );

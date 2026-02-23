@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../models/approval_workflow.dart';
 import '../providers/approval_workflows_provider.dart';
@@ -681,7 +682,7 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
   void _showCreateRequestDialog() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => _CreateRequestDialog(
           onRequestCreated: (workflow) {
             // Add the new workflow to the list

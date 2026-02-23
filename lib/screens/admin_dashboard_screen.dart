@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -240,7 +241,7 @@ class DashboardScreen extends StatelessWidget {
                                   context,
                                   () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    CupertinoPageRoute(
                                       builder: (context) => ReportDetailScreen(
                                         reportType: ReportType.financialSummary,
                                         timePeriod: 'Last 30 Days',
@@ -262,7 +263,7 @@ class DashboardScreen extends StatelessWidget {
                                   context,
                                   () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(
+                                    CupertinoPageRoute(
                                       builder: (context) => const MaintenanceScreen(),
                                     ),
                                   ),
@@ -299,7 +300,7 @@ class DashboardScreen extends StatelessWidget {
                             AppTheme.primaryColor,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const AddToolScreen(),
                               ),
                             ),
@@ -314,7 +315,7 @@ class DashboardScreen extends StatelessWidget {
                             AppTheme.secondaryColor,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const ToolsScreen(isSelectionMode: true),
                               ),
                             ),
@@ -336,7 +337,7 @@ class DashboardScreen extends StatelessWidget {
                                 Colors.blue,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (context) =>
                                         const AdminApprovalScreen(),
                                   ),
@@ -355,7 +356,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.purple,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const ReportsScreen(),
                               ),
                             ),
@@ -374,7 +375,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.red,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const ToolIssuesScreen(),
                               ),
                             ),
@@ -389,7 +390,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.amber,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) =>
                                     const ApprovalWorkflowsScreen(),
                               ),
@@ -409,7 +410,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.teal,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const MaintenanceScreen(),
                               ),
                             ),
@@ -424,7 +425,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.indigo,
                             () => Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => const AllToolHistoryScreen(),
                               ),
                             ),
@@ -507,7 +508,7 @@ class DashboardScreen extends StatelessWidget {
                   color: AppTheme.primaryColor,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    CupertinoPageRoute(
                       builder: (context) => ReportDetailScreen(
                         reportType: ReportType.financialSummary,
                         timePeriod: 'Last 30 Days',
@@ -524,7 +525,7 @@ class DashboardScreen extends StatelessWidget {
                   color: AppTheme.errorColor,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    CupertinoPageRoute(
                       builder: (context) => const MaintenanceScreen(),
                     ),
                   ),
@@ -817,7 +818,7 @@ class DashboardScreen extends StatelessWidget {
             'Add Tool',
             Icons.add_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AddToolScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -827,7 +828,7 @@ class DashboardScreen extends StatelessWidget {
             AppTheme.secondaryColor,
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)),
+              CupertinoPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)),
             ),
             showDivider: true,
           ),
@@ -837,7 +838,7 @@ class DashboardScreen extends StatelessWidget {
               'Authorize Users',
               Icons.verified_user_rounded,
               AppTheme.primaryColor,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
+              () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AdminApprovalScreen())),
               showDivider: true,
               badgeCount: provider.pendingCount,
             ),
@@ -847,7 +848,7 @@ class DashboardScreen extends StatelessWidget {
             'Reports',
             Icons.analytics_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -855,7 +856,7 @@ class DashboardScreen extends StatelessWidget {
             'Tool Issues',
             Icons.report_problem_rounded,
             AppTheme.errorColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -863,7 +864,7 @@ class DashboardScreen extends StatelessWidget {
             'Approvals',
             Icons.task_alt_rounded,
             AppTheme.warningColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -871,7 +872,7 @@ class DashboardScreen extends StatelessWidget {
             'Maintenance Schedule',
             Icons.schedule_rounded,
             AppTheme.secondaryColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -879,7 +880,7 @@ class DashboardScreen extends StatelessWidget {
             'Tool History',
             Icons.history_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen())),
             showDivider: false,
           ),
         ],
@@ -1010,7 +1011,7 @@ class DashboardScreen extends StatelessWidget {
             accentColor: AppTheme.primaryColor,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
+              CupertinoPageRoute(
                 builder: (context) => ReportDetailScreen(
                   reportType: ReportType.financialSummary,
                   timePeriod: 'Last 30 Days',
@@ -1028,7 +1029,7 @@ class DashboardScreen extends StatelessWidget {
             accentColor: AppTheme.errorColor,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
+              CupertinoPageRoute(
                 builder: (context) => const MaintenanceScreen(),
               ),
             ),
@@ -1303,10 +1304,10 @@ class DashboardScreen extends StatelessWidget {
       runSpacing: 12,
       children: [
         _buildB2BQuickAction(context, 'Add Tool', Icons.add, AppTheme.primaryColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const AddToolScreen()));
         }),
         _buildB2BQuickAction(context, 'Assign Tool', Icons.person_add, AppTheme.secondaryColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)));
         }),
         Consumer<PendingApprovalsProvider>(
           builder: (context, provider, _) => _buildB2BQuickAction(
@@ -1314,24 +1315,24 @@ class DashboardScreen extends StatelessWidget {
             'Authorize Users',
             Icons.verified_user,
             AppTheme.primaryColor,
-            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
+            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AdminApprovalScreen())),
             badgeCount: provider.pendingCount,
           ),
         ),
         _buildB2BQuickAction(context, 'Reports', Icons.analytics, AppTheme.primaryColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen()));
         }),
         _buildB2BQuickAction(context, 'Tool Issues', Icons.report_problem, AppTheme.errorColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen()));
         }),
         _buildB2BQuickAction(context, 'Approvals', Icons.approval, AppTheme.warningColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
         }),
         _buildB2BQuickAction(context, 'Maintenance Schedule', Icons.schedule, AppTheme.secondaryColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen()));
         }),
         _buildB2BQuickAction(context, 'Tool History', Icons.history, AppTheme.primaryColor, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
+          Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen()));
         }),
       ],
     );

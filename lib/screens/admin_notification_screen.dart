@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
@@ -632,7 +633,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return false;
     }
     if (targetScreen != null) {
-      navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
+      navigator.push(CupertinoPageRoute(builder: (_) => targetScreen!));
       return true;
     }
     return false;

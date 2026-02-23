@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
@@ -279,7 +280,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   void _navigate(BuildContext context, Widget screen) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => screen),
+      CupertinoPageRoute(builder: (_) => screen),
     );
   }
   

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
@@ -101,7 +102,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         await authProvider.signOut();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
+                            CupertinoPageRoute(
                                 builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
@@ -110,7 +111,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         // Silent error handling
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
+                            CupertinoPageRoute(
                                 builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
@@ -348,7 +349,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (context) =>
                                         const AdminNotificationScreen(),
                                   ),
@@ -588,23 +589,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildSidebarRouteItem(context, 'Reports', Icons.analytics_outlined, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
+                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Maintenance', Icons.handyman_outlined, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
+                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Approvals', Icons.approval_outlined, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Tool Issues', Icons.report_problem_outlined, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
+                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Tool History', Icons.history, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
+                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen()));
                 }),
               ],
             ),
@@ -624,7 +625,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AdminNotificationScreen()),
+                    CupertinoPageRoute(builder: (context) => const AdminNotificationScreen()),
                   );
                 },
                 badge: notificationProvider.unreadCount,
@@ -910,7 +911,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (_) => const TechnicianMyToolsScreen(),
                                   ),
                                 );
@@ -929,7 +930,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                   if (!parentContext.mounted) return;
                                   Navigator.of(parentContext)
                                       .push(
-                                        MaterialPageRoute(
+                                        CupertinoPageRoute(
                                           builder: (_) => const AdminManagementScreen(),
                                         ),
                                       )
@@ -954,7 +955,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 );
@@ -1356,7 +1357,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
+          CupertinoPageRoute(
             builder: (context) => const RoleSelectionScreen(),
             settings: const RouteSettings(name: '/role-selection'),
           ),
@@ -1370,7 +1371,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         try {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => const RoleSelectionScreen(),
               settings: const RouteSettings(name: '/role-selection'),
             ),

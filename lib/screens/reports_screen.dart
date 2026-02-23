@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
@@ -478,7 +479,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       // Navigate directly to the full report detail screen
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        CupertinoPageRoute(
                           builder: (context) => ReportDetailScreen(
                             reportType: selectedType,
                             timePeriod: _selectedPeriod,
@@ -890,7 +891,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1056,7 +1057,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1193,7 +1194,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1343,7 +1344,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1507,7 +1508,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1673,7 +1674,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1836,7 +1837,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -2031,7 +2032,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -2227,7 +2228,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                CupertinoPageRoute(
                   builder: (context) => ReportDetailScreen(
                     reportType: reportType,
                     timePeriod: _selectedPeriod,

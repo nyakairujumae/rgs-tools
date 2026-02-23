@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -364,7 +365,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 );
@@ -779,7 +780,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       if (mounted) {
         // Use pushAndRemoveUntil with error handling
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
+          CupertinoPageRoute(
             builder: (context) => const RoleSelectionScreen(),
             settings: const RouteSettings(name: '/role-selection'),
           ),
@@ -793,7 +794,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       if (mounted) {
         try {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => const RoleSelectionScreen(),
               settings: const RouteSettings(name: '/role-selection'),
             ),
@@ -919,7 +920,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
             // Check In button - navigate to CheckinScreen
             Navigator.push(
               context,
-              MaterialPageRoute(
+              CupertinoPageRoute(
                 builder: (context) => const CheckinScreen(),
               ),
             );
@@ -1839,7 +1840,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   ) async {
     final added = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => authProvider.isAdmin
             ? const AddToolScreen(isFromMyTools: true)
             : const TechnicianAddToolScreen(),
@@ -2183,7 +2184,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          CupertinoPageRoute(
                             builder: (context) => const SharedToolsScreen(),
                           ),
                         );
@@ -2275,7 +2276,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          CupertinoPageRoute(
                             builder: (context) => const TechnicianMyToolsScreen(),
                           ),
                         );

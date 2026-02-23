@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import '../utils/file_helper.dart' if (dart.library.html) '../utils/file_helper_stub.dart';
@@ -705,7 +706,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => TechniciansScreen(),
                                 settings: RouteSettings(
                                   arguments: {
@@ -798,7 +799,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           // In selection mode, navigate to instances screen for individual selection
           Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ToolInstancesScreen(
                 toolGroup: toolGroup,
                 isSelectionMode: true,
@@ -815,7 +816,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           // Normal mode: show all instances
           Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ToolInstancesScreen(toolGroup: toolGroup),
             ),
           );
@@ -1073,7 +1074,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: InkWell(
                         onTap: () {
                           if (widget.isSelectionMode) {
-                            Navigator.push(context, MaterialPageRoute(
+                            Navigator.push(context, CupertinoPageRoute(
                               builder: (context) => ToolInstancesScreen(
                                 toolGroup: toolGroup,
                                 isSelectionMode: true,
@@ -1084,7 +1085,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ),
                             ));
                           } else {
-                            Navigator.push(context, MaterialPageRoute(
+                            Navigator.push(context, CupertinoPageRoute(
                               builder: (context) => ToolInstancesScreen(toolGroup: toolGroup),
                             ));
                           }

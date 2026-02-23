@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/theme_extensions.dart';
 
-/// ChatGPT-style themed elevated button
+
+/// Premium themed elevated button with scale-on-press micro-interaction
 /// Automatically applies the global theme styling
-/// 
+///
 /// Usage:
 /// ```dart
 /// ThemedButton(
 ///   onPressed: () {},
 ///   child: Text('Submit'),
 /// )
-/// 
+///
 /// // With loading state
 /// ThemedButton(
 ///   onPressed: isLoading ? null : _handleSubmit,
@@ -19,7 +19,7 @@ import '../../theme/theme_extensions.dart';
 ///   child: Text('Submit'),
 /// )
 /// ```
-class ThemedButton extends StatelessWidget {
+class ThemedButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final Widget child;
   final bool isLoading;
@@ -38,31 +38,88 @@ class ThemedButton extends StatelessWidget {
   });
 
   @override
+  State<ThemedButton> createState() => _ThemedButtonState();
+}
+
+class _ThemedButtonState extends State<ThemedButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      reverseDuration: const Duration(milliseconds: 150),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _enabled => widget.onPressed != null && !widget.isLoading;
+
+  void _onTapDown(TapDownDetails _) {
+    if (_enabled) _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails _) {
+    if (_enabled) _controller.reverse();
+  }
+
+  void _onTapCancel() {
+    if (_enabled) _controller.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height ?? 52,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppTheme.secondaryColor, // Green accent
-          foregroundColor: Colors.white,
-          elevation: 0, // No hard shadow
-          side: BorderSide.none, // No border - clean edges
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
-          ),
-          padding: padding ?? const EdgeInsets.symmetric(vertical: 14),
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (context, child) => Transform.scale(
+          scale: _scale.value,
+          child: child,
         ),
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : child,
+        child: SizedBox(
+          height: widget.height ?? 52,
+          child: ElevatedButton(
+            onPressed: widget.isLoading ? null : widget.onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  widget.backgroundColor ?? AppTheme.secondaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: widget.padding ??
+                  const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: widget.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : widget.child,
+          ),
+        ),
       ),
     );
   }
@@ -86,9 +143,9 @@ class ThemedTextButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: textColor ?? AppTheme.secondaryColor, // Green accent text
+        foregroundColor: textColor ?? AppTheme.secondaryColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+          borderRadius: BorderRadius.circular(14),
         ),
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
@@ -120,7 +177,7 @@ class ThemedOutlinedButton extends StatelessWidget {
         foregroundColor: textColor ?? AppTheme.secondaryColor,
         side: BorderSide(color: borderColor ?? AppTheme.secondaryColor),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+          borderRadius: BorderRadius.circular(14),
         ),
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
@@ -128,4 +185,3 @@ class ThemedOutlinedButton extends StatelessWidget {
     );
   }
 }
-

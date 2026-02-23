@@ -1,28 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../theme/theme_extensions.dart';
 
-/// ChatGPT-style themed card widget
+/// Premium themed card widget with scale-on-press micro-interaction
 /// Automatically applies the global theme styling
-/// 
+///
 /// Usage:
 /// ```dart
 /// ThemedCard(
 ///   child: Text('Content'),
 /// )
-/// 
-/// // With custom padding
+///
+/// // With tap handler (adds scale animation)
 /// ThemedCard(
-///   padding: EdgeInsets.all(16),
+///   onTap: () => Navigator.push(...),
 ///   child: Column(...),
 /// )
-/// 
-/// // With custom radius (16-20px recommended)
-/// ThemedCard(
-///   radius: 20,
-///   child: ...
-/// )
 /// ```
-class ThemedCard extends StatelessWidget {
+class ThemedCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
@@ -41,26 +35,70 @@ class ThemedCard extends StatelessWidget {
   });
 
   @override
+  State<ThemedCard> createState() => _ThemedCardState();
+}
+
+class _ThemedCardState extends State<ThemedCard>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+  Animation<double>? _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.onTap != null) {
+      _controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 80),
+        reverseDuration: const Duration(milliseconds: 120),
+      );
+      _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+        CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => _controller?.forward();
+  void _onTapUp(TapUpDetails _) => _controller?.reverse();
+  void _onTapCancel() => _controller?.reverse();
+
+  @override
   Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(widget.radius ?? 16);
     final decoration = BoxDecoration(
-      color: color ?? context.cardBackground, // #F5F5F5
-      borderRadius: BorderRadius.circular(radius ?? 16), // ChatGPT-style: 16-20px
-      border: Border.all(color: context.cardBorder, width: 1), // #E5E5E5
-      boxShadow: context.cardShadows, // Ultra-soft shadow (0.04 opacity)
+      color: widget.color ?? context.cardBackground,
+      borderRadius: borderRadius,
+      border: Border.all(color: context.cardBorder, width: 1),
+      boxShadow: context.cardShadows,
     );
 
     Widget content = Container(
       decoration: decoration,
-      padding: padding,
-      margin: margin,
-      child: child,
+      padding: widget.padding,
+      margin: widget.margin,
+      child: widget.child,
     );
 
-    if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius ?? 16),
-        child: content,
+    if (widget.onTap != null) {
+      content = GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: _scale!,
+          builder: (context, child) => Transform.scale(
+            scale: _scale!.value,
+            child: child,
+          ),
+          child: content,
+        ),
       );
     }
 
@@ -101,13 +139,12 @@ class ThemedContainer extends StatelessWidget {
       padding: padding,
       margin: margin,
       decoration: BoxDecoration(
-        color: color ?? context.cardBackground, // #F5F5F5
-        borderRadius: BorderRadius.circular(radius ?? 16), // ChatGPT-style: 16-20px
-        border: Border.all(color: context.cardBorder, width: 1), // #E5E5E5
-        boxShadow: context.cardShadows, // Ultra-soft shadow (0.04 opacity)
+        color: color ?? context.cardBackground,
+        borderRadius: BorderRadius.circular(radius ?? 16),
+        border: Border.all(color: context.cardBorder, width: 1),
+        boxShadow: context.cardShadows,
       ),
       child: child,
     );
   }
 }
-

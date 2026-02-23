@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -508,7 +509,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) =>
                   TechnicianDetailScreen(technician: technician),
             ),
@@ -660,7 +661,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) =>
                   TechnicianDetailScreen(technician: technician),
             ),
@@ -1001,7 +1002,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   void _showAddTechnicianDialog() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => const AddTechnicianScreen(),
       ),
     );
@@ -1010,7 +1011,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   void _showEditTechnicianDialog(Technician technician) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => AddTechnicianScreen(technician: technician),
       ),
     );

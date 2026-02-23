@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -329,7 +330,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          CupertinoPageRoute(
                             builder: (context) => TechniciansScreen(),
                             settings: RouteSettings(
                               arguments: {
@@ -422,7 +423,7 @@ class _ToolInstancesScreenState extends State<ToolInstancesScreen> {
             : () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  CupertinoPageRoute(
                     builder: (context) => ToolDetailScreen(tool: tool),
                   ),
                 );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
@@ -448,7 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateAfterLogin(AuthProvider authProvider) {
-    final route = MaterialPageRoute(
+    final route = CupertinoPageRoute(
       builder: (_) => authProvider.isAdmin
           ? const AdminHomeScreen()
           : const TechnicianHomeScreen(),

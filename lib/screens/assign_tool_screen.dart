@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/tool.dart';
@@ -224,7 +225,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                             ? () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                     builder: (context) => TechniciansScreen(),
                                     settings: RouteSettings(
                                       arguments: {'selectedTools': _selectedTools.toList()},

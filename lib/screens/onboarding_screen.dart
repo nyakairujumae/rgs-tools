@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -314,7 +315,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) {
           if (authProvider.isAdmin) {
             return AdminHomeScreenErrorBoundary(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -511,7 +512,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              CupertinoPageRoute(
                                 builder: (context) => ImageViewerScreen(
                                   imageUrls: imageUrls,
                                   initialIndex: _currentImageIndex,
@@ -531,7 +532,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            CupertinoPageRoute(
                               builder: (context) => ImageViewerScreen(
                                 imageUrls: imageUrls,
                                 initialIndex: _currentImageIndex,
@@ -777,7 +778,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    CupertinoPageRoute(
                       builder: (context) => PermanentAssignmentScreen(tool: _currentTool),
                     ),
                   );
@@ -791,7 +792,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    CupertinoPageRoute(
                       builder: (context) => ReassignToolScreen(tool: _currentTool),
                     ),
                   );
@@ -914,7 +915,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      CupertinoPageRoute(
                         builder: (context) => TemporaryReturnScreen(tool: _currentTool),
                       ),
                     );
@@ -1077,7 +1078,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   void _editTool() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => EditToolScreen(tool: _currentTool),
       ),
     ).then((updatedTool) {
@@ -1700,7 +1701,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   void _viewHistory() {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (context) => ToolHistoryScreen(
           toolId: _currentTool.id!,
           toolName: _currentTool.name,

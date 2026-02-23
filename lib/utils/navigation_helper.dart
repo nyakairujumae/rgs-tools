@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 /// Helper class for safe navigation operations
 class NavigationHelper {
@@ -24,7 +25,7 @@ class NavigationHelper {
       // No route to pop, navigate to fallback
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        CupertinoPageRoute(
           builder: (context) => fallbackScreen,
           settings: RouteSettings(name: fallbackRouteName),
         ),
