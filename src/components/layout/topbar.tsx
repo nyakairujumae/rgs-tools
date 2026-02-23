@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { Bell, X } from 'lucide-react'
+import { Bell, X, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn, timeAgo } from '@/lib/utils'
 import type { AdminNotification } from '@/lib/types/database'
@@ -21,7 +21,11 @@ const routeLabels: Record<string, string> = {
   '/dashboard/settings': 'Settings',
 }
 
-export function Topbar() {
+interface TopbarProps {
+  onMenuToggle: () => void
+}
+
+export function Topbar({ onMenuToggle }: TopbarProps) {
   const pathname = usePathname()
   const [notifications, setNotifications] = useState<AdminNotification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -29,14 +33,12 @@ export function Topbar() {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length
 
-  // Build breadcrumbs
   const segments = pathname.split('/').filter(Boolean)
   const breadcrumbs = segments.map((_, i) => {
     const path = '/' + segments.slice(0, i + 1).join('/')
     return { label: routeLabels[path] || segments[i], path }
   }).filter((b) => b.label !== 'dashboard' || b.path === '/dashboard')
 
-  // Fetch notifications
   useEffect(() => {
     const supabase = createClient()
     const fetchNotifications = async () => {
@@ -51,7 +53,6 @@ export function Topbar() {
 
     fetchNotifications()
 
-    // Real-time subscription
     const channel = supabase
       .channel('admin-notifications')
       .on(
@@ -68,7 +69,6 @@ export function Topbar() {
     }
   }, [])
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -99,24 +99,34 @@ export function Topbar() {
   }
 
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm">
-        {breadcrumbs.map((crumb, i) => (
-          <span key={crumb.path} className="flex items-center gap-1.5">
-            {i > 0 && <span className="text-muted-foreground">/</span>}
-            <span
-              className={cn(
-                i === breadcrumbs.length - 1
-                  ? 'font-medium text-foreground'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {crumb.label}
+    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:px-6 shrink-0">
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
+        <button
+          onClick={onMenuToggle}
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent transition-colors md:hidden"
+        >
+          <Menu className="w-5 h-5 text-muted-foreground" />
+        </button>
+
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-1.5 text-sm">
+          {breadcrumbs.map((crumb, i) => (
+            <span key={crumb.path} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground">/</span>}
+              <span
+                className={cn(
+                  i === breadcrumbs.length - 1
+                    ? 'font-medium text-foreground'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {crumb.label}
+              </span>
             </span>
-          </span>
-        ))}
-      </nav>
+          ))}
+        </nav>
+      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2" ref={dropdownRef}>
@@ -132,9 +142,8 @@ export function Topbar() {
           )}
         </button>
 
-        {/* Notifications dropdown */}
         {showNotifications && (
-          <div className="absolute right-6 top-14 w-[380px] bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-4 md:right-6 top-14 w-[calc(100vw-2rem)] max-w-[380px] bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="text-sm font-semibold">Notifications</span>
               <div className="flex items-center gap-2">

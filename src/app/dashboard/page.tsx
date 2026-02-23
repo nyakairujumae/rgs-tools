@@ -44,7 +44,6 @@ export default function DashboardPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch each independently so one failure doesn't block all
         const safeQuery = async <T,>(query: PromiseLike<{ data: T | null; error: any }>): Promise<T | null> => {
           try {
             const { data, error } = await query
@@ -92,7 +91,6 @@ export default function DashboardPage() {
 
     fetchData()
 
-    // Real-time subscriptions so changes from mobile/other sources appear
     const channel = supabase
       .channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, () => fetchData())
@@ -137,10 +135,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
           {greeting()}, {profile?.full_name?.split(' ')[0] || 'Admin'}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -149,7 +147,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <KPICard
           label="Total Tools"
           value={totalTools}
@@ -185,7 +183,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <KPICard
           label="Pending Approvals"
           value={pendingApprovals}
@@ -234,10 +232,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Activity */}
         <div className="bg-card border border-border rounded-xl">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center justify-between px-4 md:px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold">Recent Activity</h2>
             <Link href="/dashboard/history" className="text-xs text-primary hover:underline flex items-center gap-1">
               View All <ArrowRight className="w-3 h-3" />
@@ -250,7 +248,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               data.recentHistory.slice(0, 6).map((h) => (
-                <div key={h.id} className="px-5 py-3 flex items-start gap-3">
+                <div key={h.id} className="px-4 md:px-5 py-3 flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
                     <Wrench className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
@@ -260,11 +258,11 @@ export default function DashboardPage() {
                       {' '}
                       <span className="text-muted-foreground">{h.tool_name}</span>
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                       {h.description}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">
                     {timeAgo(h.timestamp)}
                   </span>
                 </div>
@@ -275,28 +273,26 @@ export default function DashboardPage() {
 
         {/* Needs Attention */}
         <div className="bg-card border border-border rounded-xl">
-          <div className="px-5 py-4 border-b border-border">
+          <div className="px-4 md:px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold">Needs Attention</h2>
           </div>
           <div className="divide-y divide-border">
-            {/* Critical Issues */}
             {data.issues
               .filter((i) => (i.priority === 'Critical' || i.priority === 'High') && i.status !== 'Closed')
               .slice(0, 3)
               .map((issue) => (
-                <div key={issue.id} className="px-5 py-3 flex items-center gap-3">
+                <div key={issue.id} className="px-4 md:px-5 py-3 flex items-center gap-3">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{issue.tool_name}</p>
-                    <p className="text-xs text-muted-foreground">{issue.issue_type} - {issue.description.slice(0, 60)}</p>
+                    <p className="text-xs text-muted-foreground truncate">{issue.issue_type} - {issue.description.slice(0, 60)}</p>
                   </div>
                   <PriorityBadge priority={issue.priority} />
                 </div>
               ))}
 
-            {/* Pending User Approvals */}
             {data.pendingUsers.slice(0, 2).map((user) => (
-              <div key={user.id} className="px-5 py-3 flex items-center gap-3">
+              <div key={user.id} className="px-4 md:px-5 py-3 flex items-center gap-3">
                 <Users className="w-4 h-4 text-amber-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{user.full_name}</p>
@@ -306,12 +302,11 @@ export default function DashboardPage() {
               </div>
             ))}
 
-            {/* Overdue Maintenance */}
             {data.maintenance
               .filter((m) => m.status === 'Overdue')
               .slice(0, 2)
               .map((m) => (
-                <div key={m.id} className="px-5 py-3 flex items-center gap-3">
+                <div key={m.id} className="px-4 md:px-5 py-3 flex items-center gap-3">
                   <ClipboardList className="w-4 h-4 text-red-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{m.tool_name}</p>
@@ -359,19 +354,19 @@ function KPICard({
   return (
     <Link
       href={href}
-      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
+      className="bg-card border border-border rounded-xl p-3 md:p-4 hover:border-primary/30 transition-colors group"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
             {label}
           </p>
-          <p className={`font-semibold mt-1 ${small ? 'text-xl' : 'text-2xl'} ${isText ? 'text-lg' : ''}`}>
+          <p className={`font-semibold mt-1 ${small ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'} ${isText ? 'text-sm md:text-lg' : ''} truncate`}>
             {value}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 truncate">{subtitle}</p>
         </div>
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconColor}`}>
+        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center shrink-0 ${iconColor}`}>
           {icon}
         </div>
       </div>
@@ -383,10 +378,10 @@ function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNod
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg hover:border-primary/30 hover:bg-accent/50 transition-colors text-sm font-medium"
+      className="flex items-center gap-2 px-3 md:px-4 py-2.5 bg-card border border-border rounded-lg hover:border-primary/30 hover:bg-accent/50 transition-colors text-sm font-medium"
     >
-      <span className="text-primary">{icon}</span>
-      {label}
+      <span className="text-primary shrink-0">{icon}</span>
+      <span className="truncate">{label}</span>
     </Link>
   )
 }
