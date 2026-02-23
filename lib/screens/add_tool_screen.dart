@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -138,7 +137,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
       TextEditingController controller, String fieldName) async {
     final result = await Navigator.push<String>(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => const BarcodeScannerScreen(),
       ),
     );
@@ -417,7 +416,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                   tooltip: 'Generate Model Number',
                                   onPressed: _generateModelNumber,
                                   padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                  constraints: const BoxConstraints(),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.qr_code_scanner,
@@ -426,7 +425,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                                   onPressed: () => _scanBarcode(
                                       _modelController, 'Model number'),
                                   padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                  constraints: const BoxConstraints(),
                                 ),
                               ],
                             ),
@@ -479,7 +478,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             tooltip: 'Generate Unique ID',
                             onPressed: _generateToolId,
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                           IconButton(
                             icon: const Icon(Icons.qr_code_scanner,
@@ -488,7 +487,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             onPressed: () => _scanBarcode(
                                 _serialNumberController, 'Serial number'),
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
@@ -741,14 +740,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             tooltip: 'Generate Model Number',
                             onPressed: _generateModelNumber,
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                           IconButton(
                             icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.green),
                             tooltip: 'Scan Model Number',
                             onPressed: () => _scanBarcode(_modelController, 'Model number'),
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
@@ -764,14 +763,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             tooltip: 'Generate Unique ID',
                             onPressed: _generateToolId,
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                           IconButton(
                             icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.green),
                             tooltip: 'Scan Serial Number',
                             onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),

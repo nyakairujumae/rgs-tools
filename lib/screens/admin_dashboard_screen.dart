@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -31,6 +30,7 @@ class DashboardScreen extends StatelessWidget {
   final Function(String) onNavigateToToolsWithFilter;
   static const double _cardRadiusValue = 12; // Apple/Jobber-style web (matches global theme)
   static const double _mobileCardRadiusValue = 16; // Keep mobile rounded
+  static const Color _dashboardGreen = Color(0xFF2E7D32);
   static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
   static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
   
@@ -217,13 +217,13 @@ class DashboardScreen extends StatelessWidget {
                                   'Technicians',
                                   Text(
                                     technicians.length.toString(),
-                                    style: statValueStyle.copyWith(color: AppTheme.secondaryColor),
+                                    style: statValueStyle.copyWith(color: _dashboardGreen),
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Icons.people,
-                                  AppTheme.secondaryColor,
+                                  _dashboardGreen,
                                   context,
                                   () => onNavigateToTab(3),
                                 ),
@@ -240,7 +240,7 @@ class DashboardScreen extends StatelessWidget {
                                   context,
                                   () => Navigator.push(
                                     context,
-                                    CupertinoPageRoute(
+                                    MaterialPageRoute(
                                       builder: (context) => ReportDetailScreen(
                                         reportType: ReportType.financialSummary,
                                         timePeriod: 'Last 30 Days',
@@ -262,7 +262,7 @@ class DashboardScreen extends StatelessWidget {
                                   context,
                                   () => Navigator.push(
                                     context,
-                                    CupertinoPageRoute(
+                                    MaterialPageRoute(
                                       builder: (context) => const MaintenanceScreen(),
                                     ),
                                   ),
@@ -299,7 +299,7 @@ class DashboardScreen extends StatelessWidget {
                             AppTheme.primaryColor,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const AddToolScreen(),
                               ),
                             ),
@@ -311,10 +311,10 @@ class DashboardScreen extends StatelessWidget {
                           child: _buildQuickActionCard(
                             'Assign Tool',
                             Icons.person_add,
-                            AppTheme.secondaryColor,
+                            _dashboardGreen,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const ToolsScreen(isSelectionMode: true),
                               ),
                             ),
@@ -336,7 +336,7 @@ class DashboardScreen extends StatelessWidget {
                                 Colors.blue,
                                 () => Navigator.push(
                                   context,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (context) =>
                                         const AdminApprovalScreen(),
                                   ),
@@ -355,7 +355,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.purple,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const ReportsScreen(),
                               ),
                             ),
@@ -374,7 +374,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.red,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const ToolIssuesScreen(),
                               ),
                             ),
@@ -389,7 +389,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.amber,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) =>
                                     const ApprovalWorkflowsScreen(),
                               ),
@@ -409,7 +409,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.teal,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const MaintenanceScreen(),
                               ),
                             ),
@@ -424,7 +424,7 @@ class DashboardScreen extends StatelessWidget {
                             Colors.indigo,
                             () => Navigator.push(
                               context,
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const AllToolHistoryScreen(),
                               ),
                             ),
@@ -507,7 +507,7 @@ class DashboardScreen extends StatelessWidget {
                   color: AppTheme.primaryColor,
                   onTap: () => Navigator.push(
                     context,
-                    CupertinoPageRoute(
+                    MaterialPageRoute(
                       builder: (context) => ReportDetailScreen(
                         reportType: ReportType.financialSummary,
                         timePeriod: 'Last 30 Days',
@@ -524,7 +524,7 @@ class DashboardScreen extends StatelessWidget {
                   color: AppTheme.errorColor,
                   onTap: () => Navigator.push(
                     context,
-                    CupertinoPageRoute(
+                    MaterialPageRoute(
                       builder: (context) => const MaintenanceScreen(),
                     ),
                   ),
@@ -817,7 +817,7 @@ class DashboardScreen extends StatelessWidget {
             'Add Tool',
             Icons.add_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AddToolScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -827,7 +827,7 @@ class DashboardScreen extends StatelessWidget {
             AppTheme.secondaryColor,
             () => Navigator.push(
               context,
-              CupertinoPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)),
+              MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)),
             ),
             showDivider: true,
           ),
@@ -837,7 +837,7 @@ class DashboardScreen extends StatelessWidget {
               'Authorize Users',
               Icons.verified_user_rounded,
               AppTheme.primaryColor,
-              () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AdminApprovalScreen())),
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
               showDivider: true,
               badgeCount: provider.pendingCount,
             ),
@@ -847,7 +847,7 @@ class DashboardScreen extends StatelessWidget {
             'Reports',
             Icons.analytics_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -855,7 +855,7 @@ class DashboardScreen extends StatelessWidget {
             'Tool Issues',
             Icons.report_problem_rounded,
             AppTheme.errorColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -863,7 +863,7 @@ class DashboardScreen extends StatelessWidget {
             'Approvals',
             Icons.task_alt_rounded,
             AppTheme.warningColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -871,7 +871,7 @@ class DashboardScreen extends StatelessWidget {
             'Maintenance Schedule',
             Icons.schedule_rounded,
             AppTheme.secondaryColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen())),
             showDivider: true,
           ),
           _buildWebActionRow(
@@ -879,7 +879,7 @@ class DashboardScreen extends StatelessWidget {
             'Tool History',
             Icons.history_rounded,
             AppTheme.primaryColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen())),
             showDivider: false,
           ),
         ],
@@ -1010,7 +1010,7 @@ class DashboardScreen extends StatelessWidget {
             accentColor: AppTheme.primaryColor,
             onTap: () => Navigator.push(
               context,
-              CupertinoPageRoute(
+              MaterialPageRoute(
                 builder: (context) => ReportDetailScreen(
                   reportType: ReportType.financialSummary,
                   timePeriod: 'Last 30 Days',
@@ -1028,7 +1028,7 @@ class DashboardScreen extends StatelessWidget {
             accentColor: AppTheme.errorColor,
             onTap: () => Navigator.push(
               context,
-              CupertinoPageRoute(
+              MaterialPageRoute(
                 builder: (context) => const MaintenanceScreen(),
               ),
             ),
@@ -1153,13 +1153,13 @@ class DashboardScreen extends StatelessWidget {
             width: ResponsiveHelper.getResponsiveIconSize(context, 52),
             height: ResponsiveHelper.getResponsiveIconSize(context, 52),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+              color: _dashboardGreen.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(context.borderRadiusLarge),
             ),
             child: Center(
               child: Icon(
                 Icons.admin_panel_settings,
-                color: AppTheme.secondaryColor,
+                color: _dashboardGreen,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 26),
               ),
             ),
@@ -1281,7 +1281,7 @@ class DashboardScreen extends StatelessWidget {
               _buildStatusItem(
                 'Available',
                 availableCount.toString(),
-                AppTheme.secondaryColor,
+                _dashboardGreen,
                 context,
               ),
               _buildStatusItem(
@@ -1303,10 +1303,10 @@ class DashboardScreen extends StatelessWidget {
       runSpacing: 12,
       children: [
         _buildB2BQuickAction(context, 'Add Tool', Icons.add, AppTheme.primaryColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const AddToolScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AddToolScreen()));
         }),
         _buildB2BQuickAction(context, 'Assign Tool', Icons.person_add, AppTheme.secondaryColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsScreen(isSelectionMode: true)));
         }),
         Consumer<PendingApprovalsProvider>(
           builder: (context, provider, _) => _buildB2BQuickAction(
@@ -1314,24 +1314,24 @@ class DashboardScreen extends StatelessWidget {
             'Authorize Users',
             Icons.verified_user,
             AppTheme.primaryColor,
-            () => Navigator.push(context, CupertinoPageRoute(builder: (_) => const AdminApprovalScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminApprovalScreen())),
             badgeCount: provider.pendingCount,
           ),
         ),
         _buildB2BQuickAction(context, 'Reports', Icons.analytics, AppTheme.primaryColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
         }),
         _buildB2BQuickAction(context, 'Tool Issues', Icons.report_problem, AppTheme.errorColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
         }),
         _buildB2BQuickAction(context, 'Approvals', Icons.approval, AppTheme.warningColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
         }),
         _buildB2BQuickAction(context, 'Maintenance Schedule', Icons.schedule, AppTheme.secondaryColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
         }),
         _buildB2BQuickAction(context, 'Tool History', Icons.history, AppTheme.primaryColor, () {
-          Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
         }),
       ],
     );
@@ -1726,22 +1726,12 @@ class DashboardScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: isWebLayout
-            ? context.cardDecoration
-            : context.cardDecoration.copyWith(
-                border: Border(
-                  left: BorderSide(color: color, width: 3.5),
-                  top: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
-                  right: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
-                  bottom: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
-                ),
-              ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: verticalPadding,
-          ),
-          child: isWebLayout
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
+        decoration: context.cardDecoration,
+        child: isWebLayout
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1774,42 +1764,42 @@ class DashboardScreen extends StatelessWidget {
                 ],
               )
             : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Expanded(
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: valueWidget,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                  ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       iconBadge,
                       SizedBox(
-                        width: ResponsiveHelper.getResponsiveSpacing(context, 8),
+                        width: ResponsiveHelper.getResponsiveSpacing(context, 6),
                       ),
                       Flexible(
                         child: Text(
                           title,
                           style: titleStyle,
+                          textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 10),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: valueWidget,
-                      ),
-                    ),
-                  ),
                 ],
               ),
-        ),
       ),
     );
   }
@@ -2123,7 +2113,7 @@ class DashboardScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppTheme.badgeColor,
+                              color: const Color(0xFFEF4444),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(

@@ -192,5 +192,4 @@ class ToolHistoryActions {
   static const String badged = 'Badged';
   static const String releasedBadge = 'Released Badge';
   static const String releasedToRequester = 'Released to Requester';
-  static const String acceptedReleasedTool = 'Accepted Released Tool';
 }

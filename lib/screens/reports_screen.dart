@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
@@ -479,7 +478,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       // Navigate directly to the full report detail screen
                       Navigator.push(
                         context,
-                        CupertinoPageRoute(
+                        MaterialPageRoute(
                           builder: (context) => ReportDetailScreen(
                             reportType: selectedType,
                             timePeriod: _selectedPeriod,
@@ -807,7 +806,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               reportInfo['description'] as String,
               style: TextStyle(
                 fontSize: 13,
-                color: context.placeholderIcon,
+                color: Colors.grey[400],
                 height: 1.4,
               ),
             ),
@@ -891,7 +890,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1057,7 +1056,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1097,7 +1096,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${assignedTools.length - 15} more assignments',
                 style: TextStyle(
-                  color: context.secondaryTextColor,
+                  color: Colors.grey[600],
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -1194,7 +1193,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1237,7 +1236,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${technicians.length - 15} more technicians',
                 style: TextStyle(
-                  color: context.secondaryTextColor,
+                  color: Colors.grey[600],
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -1284,7 +1283,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   '${tech.department ?? "No Department"} • ${tech.status}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: context.secondaryTextColor,
+                    color: Colors.grey[600],
                   ),
                 ),
                 if (tech.email != null && tech.email!.isNotEmpty)
@@ -1292,7 +1291,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     tech.email!,
                       style: TextStyle(
                       fontSize: 12,
-                      color: context.hintTextColor,
+                      color: Colors.grey[500],
                       ),
                     ),
                   ],
@@ -1318,7 +1317,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   'tools',
                   style: TextStyle(
                     fontSize: 11,
-                    color: context.secondaryTextColor,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -1344,7 +1343,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1460,7 +1459,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: context.placeholderIcon,
+              color: Colors.grey[400],
             ),
           ),
           Text(
@@ -1508,7 +1507,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1674,7 +1673,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1837,7 +1836,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -1968,7 +1967,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Text(
                 '... and ${issues.length - 15} more issues',
                 style: TextStyle(
-                  color: context.secondaryTextColor,
+                  color: Colors.grey[600],
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
                 ),
@@ -2032,7 +2031,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  CupertinoPageRoute(
+                  MaterialPageRoute(
                     builder: (context) => ReportDetailScreen(
                       reportType: _selectedReportType,
                       timePeriod: _selectedPeriod,
@@ -2228,7 +2227,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? () {
               Navigator.push(
                 context,
-                CupertinoPageRoute(
+                MaterialPageRoute(
                   builder: (context) => ReportDetailScreen(
                     reportType: reportType,
                     timePeriod: _selectedPeriod,
@@ -2277,7 +2276,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             Icon(
               reportType != null ? Icons.arrow_forward_ios : Icons.check_circle,
-              color: reportType != null ? context.placeholderIcon : Colors.green,
+              color: reportType != null ? Colors.grey[400] : Colors.green,
               size: reportType != null ? 16 : 24,
             ),
           ],
@@ -2346,7 +2345,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           subtitle,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-            color: context.secondaryTextColor,
+            color: Colors.grey[600],
           ),
         ),
       ],

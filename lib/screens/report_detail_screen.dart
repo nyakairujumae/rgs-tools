@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -454,7 +453,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               Icon(
                 Icons.warning_amber_rounded,
                 size: 64,
-                color: context.placeholderIcon,
+                color: Colors.grey[400],
               ),
               const SizedBox(height: 16),
               Text(
@@ -507,7 +506,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 Icon(
                 Icons.check_circle_outline,
                   size: 64,
-                  color: context.placeholderIcon,
+                  color: Colors.grey[400],
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -1117,7 +1116,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.blue,
           () => Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.toolsInventory,
                 timePeriod: widget.timePeriod,
@@ -1133,7 +1132,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.green,
           () => Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.toolAssignments,
                 timePeriod: widget.timePeriod,
@@ -1149,7 +1148,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.orange,
           () => Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.technicianSummary,
                 timePeriod: widget.timePeriod,
@@ -1165,7 +1164,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Colors.purple,
           () => Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => ReportDetailScreen(
                 reportType: ReportType.financialSummary,
                 timePeriod: widget.timePeriod,
@@ -1265,7 +1264,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           subtitle,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-            color: context.secondaryTextColor,
+            color: Colors.grey[600],
           ),
         ),
       ],
@@ -1558,7 +1557,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   'tools',
                   style: TextStyle(
                     fontSize: 11,
-                    color: context.secondaryTextColor,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],

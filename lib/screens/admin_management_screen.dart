@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/admin_position_service.dart';
@@ -87,7 +86,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   Future<void> _openAddAdmin() async {
     await Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (_) => const AddAdminScreen(),
       ),
     );
@@ -98,7 +97,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   Future<void> _openEditAdmin(Map<String, dynamic> admin) async {
     await Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (_) => AddAdminScreen(existingAdmin: admin),
       ),
     );

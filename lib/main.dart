@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, kDebugMode;
 import 'dart:io' show Platform;
 import 'config/app_config.dart';
@@ -519,7 +518,7 @@ class ErrorBoundary extends StatelessWidget {
                         // Try to navigate to login screen using root navigator after frame
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (context) => const RoleSelectionScreen(),
                               settings: const RouteSettings(name: '/role-selection'),
                             ),
@@ -853,7 +852,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _navigatorKey.currentState?.pushReplacement(
-        CupertinoPageRoute(
+        MaterialPageRoute(
           builder: (_) => const AuthErrorScreen(
             title: 'Profile Unavailable',
             message:
@@ -1250,7 +1249,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               
               // Handle root route - use the initial route we determined
               if (settings.name == '/' || settings.name == null) {
-                return CupertinoPageRoute(
+                return MaterialPageRoute(
                   builder: (context) => initialRoute,
                   settings: settings,
                 );
@@ -1310,7 +1309,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                   if (type == 'signup') {
                     Logger.debug('✅ Signup email confirmation detected');
                     
-                    return CupertinoPageRoute(
+                    return MaterialPageRoute(
                       builder: (context) {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
@@ -1620,7 +1619,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                     final accessToken = params['access_token'];
                     final refreshToken = params['refresh_token'];
                     
-                    return CupertinoPageRoute(
+                    return MaterialPageRoute(
                       builder: (context) => ResetPasswordScreen(
                         accessToken: accessToken,
                         refreshToken: refreshToken,
@@ -1637,7 +1636,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                     Logger.debug('🔐 Query parameters: ${uri.queryParameters}');
                     
                     // Process the session and navigate directly to home - no role selection
-                    return CupertinoPageRoute(
+                    return MaterialPageRoute(
                       builder: (context) {
                         // Process the session when the route is built
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -1844,7 +1843,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                           )
                         : <String, String>{},
                   );
-                return CupertinoPageRoute(
+                return MaterialPageRoute(
                   builder: (context) => ResetPasswordScreen(
                     accessToken: params['access_token'],
                     refreshToken: params['refresh_token'],
@@ -1855,7 +1854,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                 );
               }
 
-              return CupertinoPageRoute(
+              return MaterialPageRoute(
                 builder: (context) => const RoleSelectionScreen(),
                 settings: const RouteSettings(name: '/role-selection'),
               );
@@ -1863,7 +1862,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             onUnknownRoute: (settings) {
               // Fallback for any unhandled routes
               Logger.debug('⚠️ Unknown route (onUnknownRoute): ${settings.name}');
-              return CupertinoPageRoute(
+              return MaterialPageRoute(
                 builder: (context) => const RoleSelectionScreen(),
                 settings: RouteSettings(name: '/role-selection'),
               );

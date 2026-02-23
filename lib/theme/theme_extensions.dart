@@ -195,18 +195,6 @@ extension ThemeColorExtension on BuildContext {
 
   /// Get secondary text color (for subtle text like "Forgot Password")
   Color get secondaryTextColor => AppTheme.getSecondaryTextColor(this);
-
-  /// Get divider color (theme-aware)
-  Color get dividerColor => AppTheme.getDividerColor(this);
-
-  /// Get hint/caption text color (lighter than secondary)
-  Color get hintTextColor => AppTheme.getHintTextColor(this);
-
-  /// Get placeholder background (for image placeholders, empty states)
-  Color get placeholderBackground => AppTheme.getPlaceholderBackground(this);
-
-  /// Get placeholder icon color
-  Color get placeholderIcon => AppTheme.getPlaceholderIcon(this);
 }
 
 /// Reusable status badge widget — colored pill with icon + text

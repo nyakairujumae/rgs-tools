@@ -180,13 +180,13 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
                             Icon(
                               Icons.people_outline,
                               size: 80,
-                              color: context.placeholderIcon,
+                              color: Colors.grey[400],
                             ),
                             SizedBox(height: 16),
                             Text(
                               _searchQuery.isEmpty ? 'No users found' : 'No users match your search',
                               style: AppTheme.heading3.copyWith(
-                                color: context.placeholderIcon,
+                                color: Colors.grey[400],
                               ),
                             ),
                             SizedBox(height: 8),
@@ -195,7 +195,7 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
                                   ? 'Users will appear here once they register'
                                   : 'Try a different search term',
                               style: AppTheme.bodyMedium.copyWith(
-                                color: context.hintTextColor,
+                                color: Colors.grey[500],
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -286,7 +286,7 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
                                         Text(
                                           user['email'] ?? '',
                                           style: TextStyle(
-                                            color: context.placeholderIcon,
+                                            color: Colors.grey[400],
                                             fontSize: 14,
                                           ),
                                         ),
@@ -393,7 +393,7 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
         ),
         content: Text(
           'Are you sure you want to change ${user['full_name'] ?? 'this user'}\'s role from ${currentRole.displayName} to ${newRole.displayName}?',
-          style: AppTheme.bodyMedium.copyWith(color: context.dividerColor),
+          style: AppTheme.bodyMedium.copyWith(color: Colors.grey[300]),
         ),
         actions: [
           TextButton(

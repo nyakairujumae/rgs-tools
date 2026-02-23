@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -356,13 +355,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
+                      child: const Row(
                         children: [
-                          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                          const SizedBox(width: 8),
+                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context).common_offlineBanner,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                         ],
                       ),
@@ -509,7 +508,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         } else {
           Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) =>
                   TechnicianDetailScreen(technician: technician),
             ),
@@ -661,7 +660,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         } else {
           Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) =>
                   TechnicianDetailScreen(technician: technician),
             ),
@@ -1002,7 +1001,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   void _showAddTechnicianDialog() {
     Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => const AddTechnicianScreen(),
       ),
     );
@@ -1011,7 +1010,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
   void _showEditTechnicianDialog(Technician technician) {
     Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => AddTechnicianScreen(technician: technician),
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -1137,7 +1136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showTermsOfService() {
     Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => const TermsOfServiceScreen(),
       ),
     );

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
@@ -102,7 +101,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         await authProvider.signOut();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                                 builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
@@ -111,7 +110,7 @@ class AdminHomeScreenErrorBoundary extends StatelessWidget {
                         // Silent error handling
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                                 builder: (context) => const LoginScreen()),
                             (route) => false,
                           );
@@ -345,12 +344,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                           children: [
                             IconButton(
                               icon: const Icon(Icons.notifications_outlined),
-                              tooltip: 'Notifications',
-                              visualDensity: VisualDensity.standard,
+                              visualDensity: VisualDensity.compact,
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (context) =>
                                         const AdminNotificationScreen(),
                                   ),
@@ -367,7 +365,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.badgeColor,
+                                    color: const Color(0xFFF28B82),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: Colors.white,
@@ -590,23 +588,23 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildSidebarRouteItem(context, 'Reports', Icons.analytics_outlined, () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ReportsScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Maintenance', Icons.handyman_outlined, () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const MaintenanceScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Approvals', Icons.approval_outlined, () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ApprovalWorkflowsScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Tool Issues', Icons.report_problem_outlined, () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const ToolIssuesScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolIssuesScreen()));
                 }),
                 const SizedBox(height: 2),
                 _buildSidebarRouteItem(context, 'Tool History', Icons.history, () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (_) => const AllToolHistoryScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AllToolHistoryScreen()));
                 }),
               ],
             ),
@@ -626,7 +624,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 onTap: () {
                   Navigator.push(
                     context,
-                    CupertinoPageRoute(builder: (context) => const AdminNotificationScreen()),
+                    MaterialPageRoute(builder: (context) => const AdminNotificationScreen()),
                   );
                 },
                 badge: notificationProvider.unreadCount,
@@ -705,22 +703,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
-        borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? primary.withValues(alpha: 0.10) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isSelected
-                ? Border(left: BorderSide(color: primary, width: 3))
-                : null,
+            color: isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
             children: [
               Icon(
                 isSelected ? selectedIcon : icon,
                 size: 20,
-                color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -773,7 +767,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppTheme.badgeColor,
+                    color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -912,7 +906,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (_) => const TechnicianMyToolsScreen(),
                                   ),
                                 );
@@ -931,7 +925,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                   if (!parentContext.mounted) return;
                                   Navigator.of(parentContext)
                                       .push(
-                                        CupertinoPageRoute(
+                                        MaterialPageRoute(
                                           builder: (_) => const AdminManagementScreen(),
                                         ),
                                       )
@@ -956,7 +950,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 );
@@ -1358,7 +1352,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          CupertinoPageRoute(
+          MaterialPageRoute(
             builder: (context) => const RoleSelectionScreen(),
             settings: const RouteSettings(name: '/role-selection'),
           ),
@@ -1372,7 +1366,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         try {
           Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => const RoleSelectionScreen(),
               settings: const RouteSettings(name: '/role-selection'),
             ),

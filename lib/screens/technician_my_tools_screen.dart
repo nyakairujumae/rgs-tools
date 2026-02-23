@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -59,7 +58,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     
     final added = await Navigator.push<bool>(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => isAdmin 
             ? const AddToolScreen(isFromMyTools: true) 
             : const TechnicianAddToolScreen(),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../theme/theme_extensions.dart';
 import '../providers/auth_provider.dart';
 import 'admin_home_screen.dart';
 import 'technician_home_screen.dart';
@@ -167,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Expanded(
             child: LinearProgressIndicator(
               value: (_currentPage + 1) / _pages.length,
-              backgroundColor: context.placeholderBackground,
+              backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
           ),
@@ -316,7 +314,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     Navigator.of(context).pushReplacement(
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) {
           if (authProvider.isAdmin) {
             return AdminHomeScreenErrorBoundary(

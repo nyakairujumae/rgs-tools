@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../models/tool.dart';
@@ -70,7 +69,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       child: Icon(
                         Icons.build,
                         size: 64,
-                        color: context.placeholderIcon,
+                        color: Colors.grey[400],
                       ),
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
@@ -79,7 +78,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                         fontWeight: FontWeight.w600,
-                        color: context.secondaryTextColor,
+                        color: Colors.grey[700],
                       ),
                     ),
                     SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
@@ -87,7 +86,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       'Add some tools first to assign them',
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                        color: context.secondaryTextColor,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
@@ -137,7 +136,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               style: TextStyle(
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                                 fontWeight: FontWeight.w600,
-                                color: Theme.of(context).textTheme.bodyLarge!.color!,
+                                color: Colors.grey[800],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -147,7 +146,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               'Tap tools to select them, then tap "Assign" to continue',
                               style: TextStyle(
                                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                color: context.secondaryTextColor,
+                                color: Colors.grey[600],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -206,7 +205,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                               colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withOpacity(0.85)],
                             )
                           : null,
-                      color: _selectedTools.isEmpty ? context.dividerColor : null,
+                      color: _selectedTools.isEmpty ? Colors.grey[300] : null,
                       borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 28)),
                       boxShadow: _selectedTools.isNotEmpty
                           ? [
@@ -225,7 +224,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                             ? () {
                                 Navigator.push(
                                   context,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (context) => TechniciansScreen(),
                                     settings: RouteSettings(
                                       arguments: {'selectedTools': _selectedTools.toList()},
@@ -367,7 +366,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       color: isSelected ? AppTheme.secondaryColor : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AppTheme.secondaryColor : context.dividerColor,
+                        color: isSelected ? AppTheme.secondaryColor : Colors.grey[300]!,
                         width: 2,
                       ),
                       boxShadow: [
@@ -404,7 +403,7 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    color: Theme.of(context).textTheme.bodyLarge!.color!,
+                    color: Colors.grey[800],
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -442,14 +441,14 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
           Icon(
             Icons.build,
             size: ResponsiveHelper.getResponsiveIconSize(context, 40),
-            color: context.placeholderIcon,
+            color: Colors.grey[400],
           ),
           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 10),
-              color: context.hintTextColor,
+              color: Colors.grey[500],
             ),
           ),
         ],

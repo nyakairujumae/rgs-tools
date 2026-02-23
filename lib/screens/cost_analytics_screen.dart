@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
-import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 
 class CostAnalyticsScreen extends StatefulWidget {
@@ -276,7 +275,7 @@ class _CostAnalyticsScreenState extends State<CostAnalyticsScreen> {
                     SizedBox(height: 4),
                     LinearProgressIndicator(
                       value: percentage.isFinite ? (percentage / 100).clamp(0.0, 1.0) : 0.0,
-                      backgroundColor: context.placeholderBackground,
+                      backgroundColor: Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _getCategoryColor(entry.key),
                       ),

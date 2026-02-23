@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../theme/theme_extensions.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
@@ -615,7 +614,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             child: Text(
               label,
               style: TextStyle(
-                color: context.secondaryTextColor,
+                color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
               ),
@@ -779,7 +778,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             ThemedButton(
               onPressed: canSubmit ? _performCheckin : null,
               isLoading: _isSaving,
-              backgroundColor: canSubmit ? AppTheme.secondaryColor : context.placeholderIcon,
+              backgroundColor: canSubmit ? Colors.green.shade600 : Colors.grey.shade400,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -693,7 +692,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await authProvider.signOut();
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          CupertinoPageRoute(
+          MaterialPageRoute(
             builder: (_) => const AuthErrorScreen(
               title: 'Profile Unavailable',
               message:

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_role.dart';
@@ -128,7 +127,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
           // Navigate to technician home screen
           Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(builder: (context) => const TechnicianHomeScreen()),
+            MaterialPageRoute(builder: (context) => const TechnicianHomeScreen()),
             (route) => false,
           );
           
@@ -499,7 +498,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          CupertinoPageRoute(
+          MaterialPageRoute(
             builder: (context) => const LoginScreen(),
           ),
           (route) => false,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
@@ -57,7 +56,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    tooltip: 'Back',
                     icon: Icon(
                       Icons.chevron_left,
                       size: 28,
@@ -562,14 +560,14 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               'Name: ${notification.technicianName}',
               style: TextStyle(
                 fontSize: 13,
-                color: context.secondaryTextColor,
+                color: Colors.grey[600],
               ),
             ),
             Text(
               'Email: ${notification.technicianEmail}',
               style: TextStyle(
                 fontSize: 13,
-                color: context.secondaryTextColor,
+                color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 8),
@@ -577,7 +575,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               'Time: ${_formatTimestamp(notification.timestamp)}',
               style: TextStyle(
                 fontSize: 12,
-                color: context.hintTextColor,
+                color: Colors.grey[500],
               ),
             ),
           ],
@@ -629,13 +627,12 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
       case NotificationType.issueReport:
         targetScreen = const ToolIssuesScreen();
         break;
-      case NotificationType.toolAssignment:
       case NotificationType.userApproved:
       case NotificationType.general:
         return false;
     }
     if (targetScreen != null) {
-      navigator.push(CupertinoPageRoute(builder: (_) => targetScreen!));
+      navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
       return true;
     }
     return false;

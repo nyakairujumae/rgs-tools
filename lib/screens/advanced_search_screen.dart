@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
-import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/responsive_helper.dart';
@@ -717,7 +715,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                             '${tool.brand ?? 'Unknown'} • ${tool.category}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: context.secondaryTextColor,
+                              color: Colors.grey[600],
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -797,7 +795,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
         ),
-        color: context.placeholderBackground,
+        color: Colors.grey[200],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -805,14 +803,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
           Icon(
             Icons.build,
             size: 40,
-            color: context.placeholderIcon,
+            color: Colors.grey[400],
           ),
           SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: context.hintTextColor,
+              color: Colors.grey[500],
             ),
           ),
         ],
@@ -940,7 +938,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   void _viewToolDetails(Tool tool) {
     Navigator.push(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => ToolDetailScreen(tool: tool),
       ),
     );

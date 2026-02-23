@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -365,7 +364,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                                 Navigator.of(sheetContext).pop();
                                 Navigator.push(
                                   parentContext,
-                                  CupertinoPageRoute(
+                                  MaterialPageRoute(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 );
@@ -780,7 +779,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       if (mounted) {
         // Use pushAndRemoveUntil with error handling
         Navigator.of(context).pushAndRemoveUntil(
-          CupertinoPageRoute(
+          MaterialPageRoute(
             builder: (context) => const RoleSelectionScreen(),
             settings: const RouteSettings(name: '/role-selection'),
           ),
@@ -794,7 +793,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       if (mounted) {
         try {
           Navigator.of(context).pushAndRemoveUntil(
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => const RoleSelectionScreen(),
               settings: const RouteSettings(name: '/role-selection'),
             ),
@@ -844,7 +843,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: IconButton(
-            tooltip: 'Notifications',
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_outlined, size: 24),
@@ -878,6 +876,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               ],
             ),
             onPressed: () => _showNotifications(context),
+            tooltip: 'Notifications',
           ),
         ),
         shape: const RoundedRectangleBorder(
@@ -893,7 +892,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               final isDisabled = authProvider.isLoggingOut;
               return IconButton(
                 icon: const Icon(Icons.account_circle, size: 24),
-                tooltip: 'Profile',
                 onPressed: isDisabled
                     ? null
                     : () => _showProfileBottomSheet(context, authProvider),
@@ -921,7 +919,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
             // Check In button - navigate to CheckinScreen
             Navigator.push(
               context,
-              CupertinoPageRoute(
+              MaterialPageRoute(
                 builder: (context) => const CheckinScreen(),
               ),
             );
@@ -954,7 +952,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
         ],
       ),
-    )));
+    ));
   }
 
   void _showNotifications(BuildContext context) async {
@@ -1475,9 +1473,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         data != null &&
         (data['owner_id']?.toString() == authProvider.userId);
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
-    final isToolReleasedForCurrentUser = type == 'tool_released' &&
-        data != null &&
-        (data['requester_id']?.toString() == authProvider.userId);
     
     showDialog(
       context: context,
@@ -1763,90 +1758,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     }
   }
 
-  Future<void> _acceptReleasedTool(
-    BuildContext context,
-    Map<String, dynamic> data,
-    Map<String, dynamic> notification,
-  ) async {
-    final toolId = data['tool_id']?.toString();
-    final toolName = data['tool_name']?.toString() ?? 'Tool';
-    final authProvider = context.read<AuthProvider>();
-    final userName = authProvider.userFullName ?? 'Technician';
-
-    if (toolId == null) {
-      if (context.mounted) {
-        AuthErrorHandler.showErrorSnackBar(
-          context,
-          'Missing tool information. Cannot accept.',
-        );
-      }
-      return;
-    }
-
-    try {
-      final toolProvider = context.read<SupabaseToolProvider>();
-      Tool? existingTool = toolProvider.getToolById(toolId);
-      if (existingTool == null) {
-        final res = await SupabaseService.client
-            .from('tools')
-            .select()
-            .eq('id', toolId)
-            .maybeSingle();
-        if (res != null) {
-          existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
-        }
-      }
-      if (existingTool == null) {
-        if (context.mounted) {
-          AuthErrorHandler.showErrorSnackBar(
-            context,
-            'Tool not found. It may have been removed.',
-          );
-        }
-        return;
-      }
-
-      final updatedTool = existingTool.copyWith(
-        assignedTo: authProvider.userId,
-        status: 'In Use',
-        updatedAt: DateTime.now().toIso8601String(),
-      );
-      await toolProvider.updateTool(updatedTool);
-
-      await ToolHistoryService.record(
-        toolId: toolId,
-        toolName: toolName,
-        action: ToolHistoryActions.acceptedReleasedTool,
-        description: '$userName accepted the released $toolName',
-        oldValue: data['released_by_id']?.toString(),
-        newValue: authProvider.userId,
-        performedById: authProvider.userId,
-        performedByName: userName,
-        performedByRole: authProvider.userRole?.name ?? 'technician',
-        metadata: {'released_by_id': data['released_by_id'], 'released_by_name': data['released_by_name']},
-      );
-
-      await toolProvider.loadTools();
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$toolName accepted successfully.'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AuthErrorHandler.showErrorSnackBar(
-          context,
-          'Failed to accept tool: ${e.toString()}',
-        );
-      }
-    }
-  }
-
   Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon) {
     final theme = Theme.of(context);
     return Padding(
@@ -1928,7 +1839,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   ) async {
     final added = await Navigator.push<bool>(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => authProvider.isAdmin
             ? const AddToolScreen(isFromMyTools: true)
             : const TechnicianAddToolScreen(),
@@ -2272,7 +2183,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          CupertinoPageRoute(
+                          MaterialPageRoute(
                             builder: (context) => const SharedToolsScreen(),
                           ),
                         );
@@ -2364,7 +2275,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          CupertinoPageRoute(
+                          MaterialPageRoute(
                             builder: (context) => const TechnicianMyToolsScreen(),
                           ),
                         );

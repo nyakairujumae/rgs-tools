@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
@@ -61,7 +60,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   ) async {
     final added = await Navigator.push<bool>(
       context,
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (context) => authProvider.isAdmin
             ? const AddToolScreen(isFromMyTools: true)
             : const TechnicianAddToolScreen(),
@@ -405,7 +404,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          CupertinoPageRoute(
+                          MaterialPageRoute(
                             builder: (context) => const SharedToolsScreen(),
                           ),
                         );
@@ -497,7 +496,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          CupertinoPageRoute(
+                          MaterialPageRoute(
                             builder: (context) => const TechnicianMyToolsScreen(),
                           ),
                         );

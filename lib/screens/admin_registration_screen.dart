@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../config/app_config.dart';
 import '../providers/auth_provider.dart';
@@ -348,7 +347,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                             onPressed: () {
                               Navigator.pushReplacement(
                                 context,
-                                CupertinoPageRoute(
+                                MaterialPageRoute(
                                   builder: (context) => const LoginScreen(),
                                 ),
                               );
@@ -436,7 +435,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           // Navigate to admin home screen
           Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => const AdminHomeScreen(),
             ),
             (route) => false,
@@ -451,7 +450,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           // Navigate back to login screen
           Navigator.pushReplacement(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (context) => const LoginScreen(),
             ),
           );

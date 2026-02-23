@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -397,7 +396,7 @@ class _TechnicianRegistrationScreenState
                       onTap: () {
                         Navigator.pushReplacement(
                           context,
-                          CupertinoPageRoute(
+                          MaterialPageRoute(
                             builder: (context) => const LoginScreen(),
                           ),
                         );
@@ -528,7 +527,7 @@ class _TechnicianRegistrationScreenState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: context.dividerColor,
+                    color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

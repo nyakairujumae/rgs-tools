@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../models/tool.dart';
@@ -249,7 +248,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
         Container(
           height: 300,
           decoration: BoxDecoration(
-            border: Border.all(color: context.dividerColor),
+            border: Border.all(color: Colors.grey[300]!),
             borderRadius: BorderRadius.circular(8),
           ),
           child: ListView.builder(

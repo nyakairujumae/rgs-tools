@@ -320,7 +320,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: context.placeholderBackground,
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
