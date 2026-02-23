@@ -7,11 +7,11 @@ class UserProfileService {
   static Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('id', userId)
           .single();
-      
+
       return response;
     } catch (e) {
       Logger.debug('Error getting user profile: $e');
@@ -74,7 +74,7 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .order('created_at', ascending: false);
       
@@ -147,10 +147,18 @@ class UserProfileService {
   /// Search users
   static Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
+      // Sanitize query to prevent PostgREST filter injection
+      final sanitized = query
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_')
+          .replaceAll(',', '')
+          .replaceAll('(', '')
+          .replaceAll(')', '');
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
-          .or('full_name.ilike.%$query%,email.ilike.%$query%,employee_id.ilike.%$query%')
+          .or('full_name.ilike.%$sanitized%,email.ilike.%$sanitized%,employee_id.ilike.%$sanitized%')
           .order('created_at', ascending: false);
       
       return List<Map<String, dynamic>>.from(response);
@@ -164,7 +172,7 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getUsersByDepartment(String department) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('department', department)
           .order('full_name', ascending: true);
@@ -180,7 +188,7 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('role', role)
           .order('full_name', ascending: true);

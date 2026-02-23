@@ -261,9 +261,9 @@ class SupabaseToolProvider with ChangeNotifier {
   Future<void> assignTool(
       String toolId, String technicianId, String assignmentType) async {
     try {
-      // Update tool status and assigned_to field
+      // Set status to Pending Acceptance until the technician accepts
       await SupabaseService.client.from('tools').update(
-          {'status': 'Assigned', 'assigned_to': technicianId}).eq('id', toolId);
+          {'status': 'Pending Acceptance', 'assigned_to': technicianId}).eq('id', toolId);
 
       // Try to create assignment record (optional - table may not exist)
       try {
@@ -271,11 +271,9 @@ class SupabaseToolProvider with ChangeNotifier {
           'tool_id': toolId,
           'technician_id': technicianId,
           'assignment_type': assignmentType,
-          'status': 'Active'
+          'status': 'Pending'
         });
       } catch (assignmentsError) {
-        // Assignments table doesn't exist, but that's okay
-        // The tool assignment is already done via the tools table
         Logger.debug(
             'Assignments table not found, skipping assignment record: $assignmentsError');
       }
@@ -285,13 +283,55 @@ class SupabaseToolProvider with ChangeNotifier {
       if (index != -1) {
         _tools[index] = Tool.fromMap({
           ..._tools[index].toMap(),
-          'status': 'Assigned',
+          'status': 'Pending Acceptance',
           'assigned_to': technicianId
         });
         notifyListeners();
       }
     } catch (e) {
       Logger.debug('Error assigning tool: $e');
+      rethrow;
+    }
+  }
+
+  /// Technician accepts a pending tool assignment
+  Future<void> acceptAssignment(String toolId) async {
+    try {
+      await SupabaseService.client
+          .from('tools')
+          .update({'status': 'Assigned'})
+          .eq('id', toolId);
+
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({..._tools[index].toMap(), 'status': 'Assigned'});
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error accepting assignment: $e');
+      rethrow;
+    }
+  }
+
+  /// Technician declines a pending tool assignment
+  Future<void> declineAssignment(String toolId) async {
+    try {
+      await SupabaseService.client
+          .from('tools')
+          .update({'status': 'Available', 'assigned_to': null})
+          .eq('id', toolId);
+
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({
+          ..._tools[index].toMap(),
+          'status': 'Available',
+          'assigned_to': null,
+        });
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error declining assignment: $e');
       rethrow;
     }
   }

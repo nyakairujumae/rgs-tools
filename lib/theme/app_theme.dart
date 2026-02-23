@@ -1,5 +1,6 @@
   import 'package:flutter/foundation.dart';
   import 'package:flutter/material.dart';
+  import 'package:flutter/services.dart';
 
 /// Centralized theme configuration for RGS TOOLS
 /// Follows user preferences for white background and black text
@@ -318,6 +319,11 @@ class AppTheme {
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.white,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
         titleTextStyle: TextStyle(
           color: Color(0xFF1A1A1A),
           fontSize: 18,
@@ -539,6 +545,11 @@ class AppTheme {
         foregroundColor: Color(0xFFF0F6FC), // Slightly off-white
         elevation: 0,
         centerTitle: true,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.black,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
         titleTextStyle: TextStyle(
           color: Color(0xFFF0F6FC),
           fontSize: 20,

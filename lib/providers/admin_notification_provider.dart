@@ -306,6 +306,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Access Request';
       case NotificationType.toolRequest:
         return 'Tool Request';
+      case NotificationType.toolAssignment:
+        return 'Tool Assignment Declined';
       case NotificationType.maintenanceRequest:
         return 'Maintenance Request';
       case NotificationType.issueReport:
@@ -323,6 +325,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Technician $technicianName needs to access the RGS app';
       case NotificationType.toolRequest:
         return 'Technician $technicianName requested a tool';
+      case NotificationType.toolAssignment:
+        return 'Technician $technicianName declined a tool assignment';
       case NotificationType.maintenanceRequest:
         return 'Technician $technicianName requested maintenance for a tool';
       case NotificationType.issueReport:

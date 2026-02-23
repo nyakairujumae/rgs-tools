@@ -446,6 +446,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Icons.login;
       case NotificationType.toolRequest:
         return Icons.build;
+      case NotificationType.toolAssignment:
+        return Icons.assignment_ind;
       case NotificationType.maintenanceRequest:
         return Icons.build_circle;
       case NotificationType.issueReport:
@@ -463,6 +465,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Colors.blue;
       case NotificationType.toolRequest:
         return Colors.green;
+      case NotificationType.toolAssignment:
+        return Colors.orange;
       case NotificationType.maintenanceRequest:
         return Colors.orange;
       case NotificationType.issueReport:

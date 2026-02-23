@@ -1234,8 +1234,8 @@ class _AddToolScreenState extends State<AddToolScreen> {
         }
       }
 
-      // Reload tools to refresh all screens
-      await context.read<SupabaseToolProvider>().loadTools();
+      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
+      // and log the user out. Local state is already correct (addTool adds to list).
 
       Logger.debug('✅ Admin tool added - ID: ${addedTool.id}');
       Logger.debug(

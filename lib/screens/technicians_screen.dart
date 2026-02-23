@@ -1200,8 +1200,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         );
       }
 
-      // Refresh tools to get updated data
-      await toolProvider.loadTools();
+      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
+      // and log the user out. Local state is already correct (updated by assignTool).
 
       // Close loading dialog
       Navigator.pop(context);

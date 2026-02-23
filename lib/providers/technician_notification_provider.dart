@@ -91,10 +91,40 @@ class TechnicianNotificationProvider extends ChangeNotifier {
     }
   }
 
-  /// Add a new notification
+  /// Add a new notification to local state
   void addNotification(TechnicianNotification notification) {
     _notifications.insert(0, notification); // Add to beginning
     notifyListeners();
+  }
+
+  /// Send a tool assignment notification to a technician
+  Future<void> sendToolAssignmentNotification({
+    required String technicianUserId,
+    required String toolId,
+    required String toolName,
+    required String assignedByName,
+    required String assignmentType,
+  }) async {
+    try {
+      await SupabaseService.client.from('technician_notifications').insert({
+        'user_id': technicianUserId,
+        'title': 'Tool Assigned to You',
+        'message': '$assignedByName assigned "$toolName" to you. Please accept or decline.',
+        'type': 'tool_assigned',
+        'is_read': false,
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': {
+          'tool_id': toolId,
+          'tool_name': toolName,
+          'assigned_by_name': assignedByName,
+          'assignment_type': assignmentType,
+        },
+      });
+      debugPrint('✅ [TechnicianNotifications] Tool assignment notification sent to $technicianUserId');
+    } catch (e) {
+      debugPrint('❌ [TechnicianNotifications] Error sending assignment notification: $e');
+      rethrow;
+    }
   }
 
   /// Mark notification as read

@@ -9,6 +9,8 @@ import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/logger.dart';
+import '../theme/theme_extensions.dart';
+import '../widgets/common/themed_button.dart';
 
 class ReassignToolScreen extends StatefulWidget {
   final Tool tool;
@@ -33,395 +35,290 @@ class _ReassignToolScreenState extends State<ReassignToolScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Reassign: ${widget.tool.name}',
           style: TextStyle(
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: theme.textTheme.bodyLarge?.color,
           ),
         ),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradientFor(context),
-        ),
-        child: Consumer<SupabaseTechnicianProvider>(
+      body: Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             final technicians = technicianProvider.getActiveTechniciansSync();
             
-            return Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    ResponsiveHelper.getResponsiveSpacing(context, 16),
-                    ResponsiveHelper.getResponsiveSpacing(context, 16),
-                    ResponsiveHelper.getResponsiveSpacing(context, 16),
-                    ResponsiveHelper.getResponsiveSpacing(context, 100), // Add bottom padding for floating button
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  // Current Assignment Info
-                  Container(
-                    width: double.infinity,
-                    padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [Colors.orange.withOpacity(0.2), Colors.orange.withOpacity(0.1)]
-                            : [Colors.orange.shade50, Colors.orange.shade100],
-                      ),
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Current Assignment
+                  Card(
+                    color: theme.cardTheme.color ?? context.cardBackground,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: ResponsiveHelper.getResponsivePadding(context, all: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                              ),
-                              child: Icon(
-                                Icons.info_outline,
-                                color: Colors.orange,
-                                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                              ),
-                            ),
-                            SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                            Text(
-                              'Current Assignment',
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                        Consumer<SupabaseTechnicianProvider>(
-                          builder: (context, technicianProvider, child) {
-                            final technicianName = technicianProvider.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
-                            return Text(
-                              'Currently assigned to: $technicianName',
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                color: theme.textTheme.bodyLarge?.color,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                  // Tool Info
-                  Container(
-                    width: double.infinity,
-                    padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradientFor(context),
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: ResponsiveHelper.getResponsiveIconSize(context, 56),
-                          height: ResponsiveHelper.getResponsiveIconSize(context, 56),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.blue.shade600, Colors.blue.shade700],
-                            ),
-                            borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                          ),
-                          child: Icon(
-                            Icons.build,
-                            color: Colors.white,
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 28),
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
+                              Icon(Icons.person_outline, color: AppTheme.primaryColor, size: 20),
+                              const SizedBox(width: 8),
                               Text(
-                                widget.tool.name,
+                                'Current Assignment',
                                 style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                   color: theme.textTheme.bodyLarge?.color,
-                                ),
-                              ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                              Text(
-                                '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                  color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Consumer<SupabaseTechnicianProvider>(
+                            builder: (context, tp, _) {
+                              final name = tp.getTechnicianNameById(widget.tool.assignedTo) ?? 'Unknown';
+                              return Text(
+                                'Currently assigned to: $name',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                  const SizedBox(height: 16),
 
-                  // New Technician Selection
+                  // Tool Info
+                  Card(
+                    color: theme.cardTheme.color ?? context.cardBackground,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.build, color: AppTheme.primaryColor, size: 24),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.tool.name,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.textTheme.bodyLarge?.color,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${widget.tool.category} • ${widget.tool.brand ?? 'Unknown'}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.textTheme.bodySmall?.color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Assign to New Technician
                   Text(
                     'Assign to New Technician',
                     style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                  const SizedBox(height: 12),
                   
                   if (technicians.isEmpty)
                     Container(
                       width: double.infinity,
-                      padding: ResponsiveHelper.getResponsivePadding(context, all: 20),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        color: context.cardBackground,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
                       ),
-                      child: Center(
-                        child: Text(
-                          'No active technicians available',
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                            color: theme.textTheme.bodySmall?.color,
-                          ),
+                      child: Text(
+                        'No active technicians available',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     )
                   else
                     Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.cardGradientFor(context),
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 24)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        color: context.cardBackground,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
                       ),
                       child: Column(
                         children: technicians.map((technician) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: theme.dividerColor.withOpacity(0.1),
-                                  width: 1,
-                                ),
+                          final isSelected = _selectedTechnicians.contains(technician);
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedTechnicians.remove(technician);
+                                } else {
+                                  _selectedTechnicians.add(technician);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              decoration: BoxDecoration(
+                                border: technicians.indexOf(technician) < technicians.length - 1
+                                    ? Border(
+                                        bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                                      )
+                                    : null,
                               ),
-                            ),
-                            child: CheckboxListTile(
-                              title: Text(
-                                technician.name,
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.textTheme.bodyLarge?.color,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                                    size: 22,
+                                    color: isSelected ? AppTheme.secondaryColor : theme.dividerColor,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          technician.name,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            color: theme.textTheme.bodyLarge?.color,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${technician.department ?? 'No Department'} • ${technician.employeeId ?? 'No ID'}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: theme.textTheme.bodySmall?.color,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              subtitle: Text(
-                                '${technician.department ?? 'No Department'} • ${technician.employeeId ?? 'No ID'}',
-                                style: TextStyle(
-                                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                              value: _selectedTechnicians.contains(technician),
-                              activeColor: Colors.blue,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _selectedTechnicians.add(technician);
-                                  } else {
-                                    _selectedTechnicians.remove(technician);
-                                  }
-                                });
-                              },
                             ),
                           );
                         }).toList(),
                       ),
                     ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                  const SizedBox(height: 24),
 
                   // Reassignment Notes
                   Text(
                     'Reassignment Notes (Optional)',
                     style: TextStyle(
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.cardGradientFor(context),
-                      borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _notesController,
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                    decoration: InputDecoration(
+                      hintText: 'Add any notes about this reassignment...',
+                      hintStyle: TextStyle(color: theme.textTheme.bodySmall?.color),
+                      filled: true,
+                      fillColor: context.cardBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
                     ),
-                    child: TextField(
-                      controller: _notesController,
-                      style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Add any notes about this reassignment...',
-                        hintStyle: TextStyle(
-                          color: theme.textTheme.bodySmall?.color,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        contentPadding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-                      ),
-                      maxLines: 3,
-                    ),
+                    maxLines: 3,
                   ),
-                    ],
-                  ),
-                ),
-                // Floating Reassign Button
-                Positioned(
-                  left: ResponsiveHelper.getResponsiveSpacing(context, 16),
-                  right: ResponsiveHelper.getResponsiveSpacing(context, 16),
-                  bottom: ResponsiveHelper.getResponsiveSpacing(context, 16),
-                  child: SafeArea(
-                    child: Container(
-                      height: ResponsiveHelper.getResponsiveSpacing(context, 56),
-                      decoration: BoxDecoration(
-                        gradient: _selectedTechnicians.isNotEmpty && !_isLoading
-                            ? LinearGradient(
-                                colors: [Colors.orange.shade600, Colors.orange.shade700],
-                              )
-                            : null,
-                        color: _selectedTechnicians.isEmpty || _isLoading
-                            ? Colors.grey.withOpacity(0.3)
-                            : null,
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                        boxShadow: _selectedTechnicians.isNotEmpty && !_isLoading
-                            ? [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _selectedTechnicians.isNotEmpty && !_isLoading
-                              ? _reassignTool
-                              : null,
-                          borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 16)),
-                          child: Container(
-                            alignment: Alignment.center,
-                            child: _isLoading
-                                ? SizedBox(
-                                    width: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                                    height: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.swap_horiz,
-                                        color: Colors.white,
-                                        size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                                      Text(
-                                        _selectedTechnicians.length == 1
-                                            ? 'Reassign Tool'
-                                            : 'Reassign to ${_selectedTechnicians.length} Users',
-                                        style: TextStyle(
-                                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                  const SizedBox(height: 24),
+
+                  // Reassign Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ThemedButton(
+                      onPressed: (_selectedTechnicians.isNotEmpty && !_isLoading) ? _reassignTool : null,
+                      isLoading: _isLoading,
+                      backgroundColor: AppTheme.primaryColor,
+                      child: Text(
+                        _selectedTechnicians.isEmpty
+                            ? 'Select a technician'
+                            : _selectedTechnicians.length == 1
+                                ? 'Reassign Tool'
+                                : 'Reassign to ${_selectedTechnicians.length} Users',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                ],
+              ),
             );
           },
         ),
-      ),
     );
   }
 

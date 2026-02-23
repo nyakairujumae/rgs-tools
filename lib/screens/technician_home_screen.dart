@@ -966,6 +966,30 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       ),
     ),
     );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlayStyle = isDark
+        ? SystemUiOverlayStyle.light.copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.black,
+          )
+        : SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.white,
+            systemNavigationBarColor: Colors.white,
+          );
+
+    final bgColor = isDark ? Colors.black : Colors.white;
+
+    final child = Theme.of(context).platform == TargetPlatform.android
+        ? homeScaffold
+        : ColoredBox(
+            color: bgColor,
+            child: SafeArea(child: homeScaffold),
+          );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: child,
+    );
   }
 
   void _showNotifications(BuildContext context) async {
@@ -1425,6 +1449,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         return Icons.login;
       case 'tool_request':
         return Icons.build;
+      case 'tool_assignment':
+        return Icons.assignment_ind;
       case 'maintenance_request':
         return Icons.build_circle;
       case 'issue_report':
@@ -1443,6 +1469,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         return Colors.blue;
       case 'tool_request':
         return Colors.green;
+      case 'tool_assignment':
+        return AppTheme.secondaryColor;
       case 'maintenance_request':
         return Colors.orange;
       case 'issue_report':
@@ -1482,6 +1510,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         data != null &&
         (data['owner_id']?.toString() == authProvider.userId);
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
+    final isToolAssignment = type == 'tool_assignment' && data != null && data['tool_id'] != null;
     
     showDialog(
       context: context,
@@ -1566,6 +1595,20 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                     data['requester_email'].toString(),
                     Icons.email,
                   ),
+                if (data['assigned_by_name'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Assigned by',
+                    data['assigned_by_name'].toString(),
+                    Icons.admin_panel_settings,
+                  ),
+                if (data['assignment_type'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Assignment',
+                    data['assignment_type'].toString(),
+                    Icons.category,
+                  ),
               ],
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
               Divider(color: Colors.grey.withValues(alpha: 0.2)),
@@ -1622,22 +1665,54 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               ),
               child: const Text('View'),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+          if (isToolAssignment) ...[
+            TextButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _declineAssignment(context, data!, notification);
+              },
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('Decline'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
             ),
-            child: Text(
-              'Close',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                fontWeight: FontWeight.w600,
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _acceptAssignment(context, data!, notification);
+              },
+              icon: const Icon(Icons.check_circle_outline, size: 18),
+              label: const Text('Accept'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
             ),
-          ),
+          ],
+          if (!isToolAssignment)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.secondaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: Text(
+                'Close',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1668,6 +1743,94 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         break;
       default:
         break;
+    }
+  }
+
+  Future<void> _acceptAssignment(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    if (toolId == null) return;
+
+    try {
+      await context.read<SupabaseToolProvider>().acceptAssignment(toolId);
+
+      final notificationId = notification['id']?.toString();
+      if (notificationId != null) {
+        await context.read<TechnicianNotificationProvider>().markAsRead(notificationId);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('You accepted "$toolName"'),
+            backgroundColor: AppTheme.secondaryColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _declineAssignment(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    if (toolId == null) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final technicianName = authProvider.userFullName ?? 'Technician';
+    final technicianEmail = authProvider.user?.email ?? '';
+
+    try {
+      await context.read<SupabaseToolProvider>().declineAssignment(toolId);
+
+      final notificationId = notification['id']?.toString();
+      if (notificationId != null) {
+        await context.read<TechnicianNotificationProvider>().markAsRead(notificationId);
+      }
+
+      // Notify the admin that the technician declined
+      if (context.mounted) {
+        try {
+          await context.read<AdminNotificationProvider>().createNotification(
+            technicianName: technicianName,
+            technicianEmail: technicianEmail,
+            type: NotificationType.toolAssignment,
+            title: 'Tool Assignment Declined',
+            message: '$technicianName declined the assignment of "$toolName".',
+            data: {'tool_id': toolId, 'tool_name': toolName},
+          );
+        } catch (_) {
+          // Non-critical — don't surface this to the technician
+        }
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('You declined "$toolName"'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

@@ -23,6 +23,7 @@ import '../services/tool_history_service.dart';
 import '../models/tool_history.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
+import 'permanent_assignment_screen.dart';
 import 'edit_tool_screen.dart';
 import 'tools_screen.dart';
 import 'image_viewer_screen.dart';
@@ -777,7 +778,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ToolsScreen(isSelectionMode: true),
+                      builder: (context) => PermanentAssignmentScreen(tool: _currentTool),
                     ),
                   );
                 },
@@ -1187,15 +1188,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         textColor: textColor,
         iconColor: AppTheme.secondaryColor, // Use app green
       ),
-      _buildMenuDivider(),
-      _buildMenuItem(
-        value: 'delete',
-        icon: Icons.delete_outline,
-        label: 'Delete Tool',
-        textColor: Colors.red,
-        iconColor: Colors.red,
-        fontWeight: FontWeight.w600,
-      ),
+      // Hide Delete Tool for technicians - admins only
+      if (!isTechnician) ...[
+        _buildMenuDivider(),
+        _buildMenuItem(
+          value: 'delete',
+          icon: Icons.delete_outline,
+          label: 'Delete Tool',
+          textColor: Colors.red,
+          iconColor: Colors.red,
+          fontWeight: FontWeight.w600,
+        ),
+      ],
     ];
   }
 
@@ -1706,6 +1710,20 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   void _deleteTool() {
+    // Block technicians from deleting tools
+    final authProvider = context.read<AuthProvider>();
+    final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
+    if (isTechnician) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only admins can delete tools.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     // Check if tool is currently assigned
     if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null) {
       ScaffoldMessenger.of(context).showSnackBar(

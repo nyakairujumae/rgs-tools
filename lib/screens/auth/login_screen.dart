@@ -31,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSigningIn = false;
   static const Duration _authTimeout = Duration(seconds: 15);
   static const Duration _profileTimeout = Duration(seconds: 10);
 
@@ -363,21 +364,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(height: context.spacingLarge + context.spacingSmall), // 24px
                           
                           // Sign In button
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, child) {
-                              return ThemedButton(
-                                onPressed: authProvider.isLoading ? null : _handleLogin,
-                                isLoading: authProvider.isLoading,
-                                child: Text(
-                                          AppLocalizations.of(context).login_signInButton,
-                                          style: const TextStyle(
-                                    fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.5,
-                                        ),
-                                ),
-                              );
-                            },
+                          ThemedButton(
+                            onPressed: _isSigningIn ? null : _handleLogin,
+                            isLoading: _isSigningIn,
+                            child: Text(
+                                      AppLocalizations.of(context).login_signInButton,
+                                      style: const TextStyle(
+                                fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                    ),
+                            ),
                           ),
                           
                           // Spacing ~24px below Sign In button
@@ -471,6 +468,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isSigningIn = true);
+
     try {
       // All platforms (Web, Desktop, Mobile) use real Supabase authentication
       final isDesktopPlatform = !kIsWeb &&
@@ -543,6 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       context.read<AuthProvider>().resetLoadingState(reason: 'email-error');
       if (mounted) {
+        setState(() => _isSigningIn = false);
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
