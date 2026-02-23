@@ -56,12 +56,12 @@ extension ThemeColorExtension on BuildContext {
   double get borderRadiusLarge => AppTheme.borderRadiusLarge;
   double get borderRadiusXLarge => AppTheme.borderRadiusXLarge;
   
-  /// Apple / Jobber-style card decoration
-  /// Use this for all cards, containers, list tiles, tool widgets, and form surfaces
-  /// Clean border-driven style with very subtle web shadow
+  /// Premium card decoration — Jobber / ServiceTitan style
+  /// Provides visible depth on mobile via shadows, border-driven on web
   /// Automatically adapts to light/dark theme
   BoxDecoration get cardDecoration {
     final isWebPlatform = ResponsiveHelper.isWeb;
+    final isDark = Theme.of(this).brightness == Brightness.dark;
     return BoxDecoration(
       color: cardBackground,
       borderRadius: BorderRadius.circular(
@@ -80,7 +80,16 @@ extension ThemeColorExtension on BuildContext {
                 offset: const Offset(0, 1),
               ),
             ]
-          : [],
+          : isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
     );
   }
   
@@ -156,9 +165,76 @@ extension ThemeColorExtension on BuildContext {
     );
   }
   
+  /// Elevated card decoration — for primary/hero cards with more depth
+  BoxDecoration get elevatedCardDecoration {
+    final isDark = Theme.of(this).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: cardBackground,
+      borderRadius: BorderRadius.circular(
+        ResponsiveHelper.getCardBorderRadius(this),
+      ),
+      border: Border.all(
+        color: AppTheme.getCardBorderSubtle(this),
+        width: 0.5,
+      ),
+      boxShadow: isDark
+          ? []
+          : [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 24,
+                spreadRadius: 0,
+                offset: const Offset(0, 8),
+              ),
+            ],
+    );
+  }
+
   /// Get icon button background color (for social login buttons)
   Color get iconButtonBackground => AppTheme.getIconButtonBackground(this);
-  
+
   /// Get secondary text color (for subtle text like "Forgot Password")
   Color get secondaryTextColor => AppTheme.getSecondaryTextColor(this);
+}
+
+/// Reusable status badge widget — colored pill with icon + text
+class StatusBadge extends StatelessWidget {
+  final String status;
+  final double fontSize;
+  final EdgeInsetsGeometry? padding;
+
+  const StatusBadge({
+    super.key,
+    required this.status,
+    this.fontSize = 12,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppTheme.statusBadgeBackground(status);
+    final icon = AppTheme.statusBadgeIcon(status);
+    return Container(
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: fontSize + 2, color: color),
+          const SizedBox(width: 4),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

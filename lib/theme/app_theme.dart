@@ -65,15 +65,70 @@ class AppTheme {
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusXLarge = 20.0;
   
-  // Shadow constants
+  // Shadow constants — premium depth
   static BoxShadow get softShadow => BoxShadow(
-    color: Colors.black.withOpacity(0.08), // Soft shadow for depth
-    blurRadius: 12,
+    color: Colors.black.withOpacity(0.10),
+    blurRadius: 20,
     spreadRadius: 0,
-    offset: const Offset(0, 2),
+    offset: const Offset(0, 6),
   );
-  
+
+  static BoxShadow get elevatedShadow => BoxShadow(
+    color: Colors.black.withOpacity(0.14),
+    blurRadius: 28,
+    spreadRadius: 0,
+    offset: const Offset(0, 10),
+  );
+
   static List<BoxShadow> get cardShadows => [softShadow];
+
+  // Notification badge color — unified across app
+  static const Color badgeColor = Color(0xFFEF4444);
+
+  // Status badge helpers
+  static Color statusBadgeBackground(String status) {
+    switch (status.toLowerCase()) {
+      case 'available':
+        return const Color(0xFF059669);
+      case 'in use':
+      case 'assigned':
+      case 'pending acceptance':
+        return const Color(0xFF2563EB);
+      case 'maintenance':
+      case 'needs maintenance':
+        return const Color(0xFFF59E0B);
+      case 'retired':
+      case 'decommissioned':
+        return const Color(0xFF6B7280);
+      case 'lost':
+      case 'damaged':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
+  static IconData statusBadgeIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'available':
+        return Icons.check_circle_outline;
+      case 'in use':
+      case 'assigned':
+      case 'pending acceptance':
+        return Icons.person_outline;
+      case 'maintenance':
+      case 'needs maintenance':
+        return Icons.build_outlined;
+      case 'retired':
+      case 'decommissioned':
+        return Icons.archive_outlined;
+      case 'lost':
+      case 'damaged':
+        return Icons.warning_amber_outlined;
+      default:
+        return Icons.info_outline;
+    }
+  }
 
   static List<BoxShadow> getCardShadows(BuildContext context) {
     if (!kIsWeb) {

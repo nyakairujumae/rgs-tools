@@ -58,35 +58,40 @@ class _LoginScreenState extends State<LoginScreen> {
           required Widget icon,
           required String label,
         }) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: context.iconButtonBackground,
-                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                  ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: isLoading ? null : onPressed,
-                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    child: Center(child: icon),
+          return Expanded(
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: context.iconButtonBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: context.cardBorder,
+                  width: 0.5,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isLoading ? null : onPressed,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(width: 10),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: context.secondaryTextColor,
-                    ),
-                  ),
-                ],
+            ),
           );
         }
 
@@ -132,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ];
 
         if (showAppleSignIn) {
-          buttons.add(SizedBox(width: context.spacingLarge + context.spacingSmall)); // 20px
+          buttons.add(const SizedBox(width: 12));
           buttons.add(
             buildIconButton(
               onPressed: () async {
@@ -208,9 +213,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final cardBackground = context.cardBackground;
     final cardBorder = context.cardBorder;
     final cardShadow = BoxShadow(
-      color: isDarkMode ? Colors.black54 : Colors.black12,
-      blurRadius: isDarkMode ? 30 : 24,
-      offset: Offset(0, isDarkMode ? 20 : 16),
+      color: isDarkMode ? Colors.black54 : Colors.black.withOpacity(0.12),
+      blurRadius: isDarkMode ? 30 : 32,
+      offset: Offset(0, isDarkMode ? 20 : 14),
     );
     final initialRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
     final showDeepLinkBanner = initialRoute.contains('auth/callback') ||
@@ -218,8 +223,11 @@ class _LoginScreenState extends State<LoginScreen> {
         initialRoute.contains('code=');
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.authBackgroundGradientFor(context),
+        ),
+        child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -327,8 +335,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           
-                          // Password field - tight spacing (~12px)
-                          SizedBox(height: context.spacingMedium), // ~12px
+                          // Password field
+                          const SizedBox(height: 18),
                           ThemedTextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
@@ -461,6 +469,7 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           },
         ),
+      ),
       ),
     );
   }

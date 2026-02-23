@@ -70,6 +70,7 @@ SUPABASE_*.sql
 !SUPABASE_RECREATE_ALL_TABLES.sql
 
 # Android keystore files (sensitive signing information)
+keystore/
 android/keystore.properties
 android/keystore/*.jks
 android/keystore/*.keystore
