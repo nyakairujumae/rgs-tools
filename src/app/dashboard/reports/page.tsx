@@ -14,13 +14,17 @@ import {
   DollarSign,
   Calendar,
   Loader2,
+  Gauge,
+  Shield,
 } from 'lucide-react'
-import type { Tool, ToolIssue, ToolHistory, Technician, ApprovalWorkflow } from '@/lib/types/database'
+import type { Tool, ToolIssue, ToolHistory, Technician, ApprovalWorkflow, Certification, MaintenanceSchedule } from '@/lib/types/database'
 
 const reportTypes: { id: ReportType; label: string; description: string; icon: React.ReactNode }[] = [
   { id: 'inventory', label: 'Tools Inventory', description: 'Complete inventory with status, location, condition, and value', icon: <Wrench className="w-5 h-5" /> },
   { id: 'assignments', label: 'Tool Assignments', description: 'Who has what tools, assignment dates, and locations', icon: <Users className="w-5 h-5" /> },
   { id: 'issues', label: 'Tool Issues', description: 'Open/closed issues, priorities, and resolution costs', icon: <AlertTriangle className="w-5 h-5" /> },
+  { id: 'calibration', label: 'Calibration Report', description: 'Calibration certificates, expiry tracking, and scheduled calibrations', icon: <Gauge className="w-5 h-5" /> },
+  { id: 'compliance', label: 'Compliance & Certification', description: 'All certifications, compliance rates, and expiring certificates', icon: <Shield className="w-5 h-5" /> },
   { id: 'financial', label: 'Financial Summary', description: 'Total tool value, expenditures, and investment overview', icon: <DollarSign className="w-5 h-5" /> },
   { id: 'comprehensive', label: 'Comprehensive Report', description: 'Full report: inventory, assignments, technicians, financials, approvals, history', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'history', label: 'Audit Trail', description: 'Complete history of all tool movements and changes', icon: <Calendar className="w-5 h-5" /> },
@@ -52,15 +56,17 @@ export default function ReportsPage() {
         }
       }
 
-      const [tools, issues, history, technicians, approvals] = await Promise.all([
+      const [tools, issues, history, technicians, approvals, certifications, maintenanceSchedules] = await Promise.all([
         safe<Tool[]>(supabase.from('tools').select('*')),
         safe<ToolIssue[]>(supabase.from('tool_issues').select('*')),
         safe<ToolHistory[]>(supabase.from('tool_history').select('*').order('timestamp', { ascending: false })),
         safe<Technician[]>(supabase.from('technicians').select('*')),
         safe<ApprovalWorkflow[]>(supabase.from('approval_workflows').select('*')),
+        safe<Certification[]>(supabase.from('certifications').select('*').order('expiry_date', { ascending: true })),
+        safe<MaintenanceSchedule[]>(supabase.from('maintenance_schedules').select('*').order('scheduled_date', { ascending: true })),
       ])
 
-      setData({ tools, issues, history, technicians, approvals })
+      setData({ tools, issues, history, technicians, approvals, certifications, maintenanceSchedules })
       setLoadingData(false)
     }
 
@@ -112,7 +118,7 @@ export default function ReportsPage() {
         <p className="text-sm text-muted-foreground">Generate and export reports</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {reportTypes.map((report) => (
           <button
             key={report.id}
@@ -199,7 +205,8 @@ export default function ReportsPage() {
                   <span>{data.tools.length} tools</span>
                   <span>{data.technicians.length} technicians</span>
                   <span>{data.issues.length} issues</span>
-                  <span>{data.approvals.length} approvals</span>
+                  <span>{data.certifications.length} certifications</span>
+                  <span>{data.maintenanceSchedules.length} schedules</span>
                   <span>{data.history.length} history records</span>
                 </div>
               )}

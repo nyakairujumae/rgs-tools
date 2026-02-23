@@ -1,9 +1,9 @@
 import { format } from 'date-fns'
-import type { Tool, ToolIssue, ToolHistory, Technician, ApprovalWorkflow } from '../types/database'
+import type { Tool, ToolIssue, ToolHistory, Technician, ApprovalWorkflow, Certification, MaintenanceSchedule } from '../types/database'
 
 // ── Types ──
 
-export type ReportType = 'inventory' | 'assignments' | 'issues' | 'financial' | 'comprehensive' | 'history'
+export type ReportType = 'inventory' | 'assignments' | 'issues' | 'financial' | 'comprehensive' | 'history' | 'calibration' | 'compliance'
 
 export interface ReportData {
   tools: Tool[]
@@ -11,6 +11,8 @@ export interface ReportData {
   history: ToolHistory[]
   technicians: Technician[]
   approvals: ApprovalWorkflow[]
+  certifications: Certification[]
+  maintenanceSchedules: MaintenanceSchedule[]
 }
 
 interface ReportOptions {
@@ -50,6 +52,11 @@ function getTechName(userId: string | undefined, technicians: Technician[]): str
   if (!userId) return ''
   const tech = technicians.find((t) => t.user_id === userId || t.id === userId)
   return tech?.name || userId
+}
+
+
+function daysUntil(dateStr: string): number {
+  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
 // ── Color palette (matching mobile: blueGrey scheme) ──
@@ -323,6 +330,163 @@ async function generateHistoryPDF(opts: ReportOptions) {
   return doc
 }
 
+
+async function generateCalibrationPDF(opts: ReportOptions) {
+  const { jsPDF, autoTable } = await loadJsPDF()
+  const doc = new jsPDF('l')
+  const { certifications, maintenanceSchedules, tools } = opts.data
+
+  const calibrationCerts = filterByDate(
+    certifications.filter((c) => c.certification_type === 'Calibration Certificate'),
+    'issue_date', opts.dateFrom, opts.dateTo
+  )
+  const calibrationSchedules = maintenanceSchedules.filter((s) => s.maintenance_type === 'Calibration')
+
+  let y = addReportHeader(doc, 'Calibration Report', opts.dateFrom, opts.dateTo)
+
+  y = addSectionTitle(doc, y, 'Calibration Overview')
+  const valid = calibrationCerts.filter((c) => c.status === 'Valid').length
+  const expiringSoon = calibrationCerts.filter((c) => c.status === 'Expiring Soon').length
+  const expired = calibrationCerts.filter((c) => c.status === 'Expired').length
+  const toolsWithCal = new Set(calibrationCerts.map((c) => c.tool_id)).size
+  const toolsWithout = tools.length - toolsWithCal
+
+  y = smallTable(doc, autoTable, y,
+    ['Metric', 'Value'],
+    [
+      ['Total Calibration Certificates', String(calibrationCerts.length)],
+      ['Valid', String(valid)],
+      ['Expiring Soon', String(expiringSoon)],
+      ['Expired', String(expired)],
+      ['Tools With Calibration', String(toolsWithCal)],
+      ['Tools Without Calibration', String(toolsWithout)],
+      ['Scheduled Calibrations', String(calibrationSchedules.filter((s) => s.status === 'Scheduled').length)],
+    ],
+    { headerColor: COLORS.headerBg }
+  )
+
+  y = ensureSpace(doc, y, 60)
+  y = addSectionTitle(doc, y, 'Calibration Certificates')
+  y = addSubtitle(doc, y, `${calibrationCerts.length} certificates`)
+
+  if (calibrationCerts.length > 0) {
+    y = dataTable(doc, autoTable, y,
+      ['Tool', 'Certificate #', 'Authority', 'Inspector', 'Issue Date', 'Expiry Date', 'Days Left', 'Status'],
+      calibrationCerts.map((c) => {
+        const days = daysUntil(c.expiry_date)
+        return [
+          c.tool_name, c.certification_number, c.issuing_authority,
+          c.inspector_name || '', fmt(c.issue_date), fmt(c.expiry_date),
+          days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`,
+          c.status,
+        ]
+      })
+    )
+  }
+
+  const scheduled = calibrationSchedules.filter((s) => s.status === 'Scheduled' || s.status === 'Overdue')
+  if (scheduled.length > 0) {
+    y = ensureSpace(doc, y, 60)
+    y = addSectionTitle(doc, y, 'Upcoming / Overdue Calibrations')
+    y = addSubtitle(doc, y, `${scheduled.length} scheduled`)
+
+    y = dataTable(doc, autoTable, y,
+      ['Tool', 'Scheduled Date', 'Priority', 'Status', 'Assigned To', 'Notes'],
+      scheduled.map((s) => [
+        s.tool_name, fmt(s.scheduled_date), s.priority, s.status,
+        s.assigned_to || '', s.notes || '',
+      ]),
+      { headerColor: COLORS.headerBgLight }
+    )
+  }
+
+  return doc
+}
+
+async function generateCompliancePDF(opts: ReportOptions) {
+  const { jsPDF, autoTable } = await loadJsPDF()
+  const doc = new jsPDF('l')
+  const { certifications } = opts.data
+
+  const certs = filterByDate(certifications, 'issue_date', opts.dateFrom, opts.dateTo)
+
+  let y = addReportHeader(doc, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo)
+
+  y = addSectionTitle(doc, y, 'Compliance Overview')
+  const valid = certs.filter((c) => c.status === 'Valid').length
+  const expiringSoon = certs.filter((c) => c.status === 'Expiring Soon').length
+  const expired = certs.filter((c) => c.status === 'Expired').length
+  const revoked = certs.filter((c) => c.status === 'Revoked').length
+
+  const typeCounts: Record<string, number> = {}
+  certs.forEach((c) => { typeCounts[c.certification_type] = (typeCounts[c.certification_type] || 0) + 1 })
+
+  y = smallTable(doc, autoTable, y,
+    ['Metric', 'Value'],
+    [
+      ['Total Certifications', String(certs.length)],
+      ['Valid', String(valid)],
+      ['Expiring Soon', String(expiringSoon)],
+      ['Expired', String(expired)],
+      ['Revoked', String(revoked)],
+      ['Compliance Rate', certs.length > 0 ? `${Math.round((valid / certs.length) * 100)}%` : 'N/A'],
+    ],
+    { headerColor: COLORS.headerBg }
+  )
+
+  if (Object.keys(typeCounts).length > 0) {
+    y = addSubSectionTitle(doc, y, 'By Certification Type')
+    y = smallTable(doc, autoTable, y,
+      ['Certification Type', 'Count'],
+      Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, c]) => [t, String(c)]),
+      { headerColor: COLORS.headerBgLight }
+    )
+  }
+
+  y = ensureSpace(doc, y, 60)
+  y = addSectionTitle(doc, y, 'All Certifications')
+  y = addSubtitle(doc, y, `${certs.length} total certificates`)
+
+  if (certs.length > 0) {
+    y = dataTable(doc, autoTable, y,
+      ['Tool', 'Type', 'Certificate #', 'Authority', 'Inspector', 'Issue Date', 'Expiry Date', 'Days Left', 'Status'],
+      certs.map((c) => {
+        const days = daysUntil(c.expiry_date)
+        return [
+          c.tool_name, c.certification_type, c.certification_number,
+          c.issuing_authority, c.inspector_name || '',
+          fmt(c.issue_date), fmt(c.expiry_date),
+          days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`,
+          c.status,
+        ]
+      })
+    )
+  }
+
+  const atRisk = certs.filter((c) => c.status === 'Expiring Soon' || c.status === 'Expired')
+  if (atRisk.length > 0) {
+    y = ensureSpace(doc, y, 60)
+    y = addSectionTitle(doc, y, 'Attention Required')
+    y = addSubtitle(doc, y, `${atRisk.length} certificates expiring or expired`)
+
+    y = dataTable(doc, autoTable, y,
+      ['Tool', 'Type', 'Certificate #', 'Expiry Date', 'Days', 'Status'],
+      atRisk.map((c) => {
+        const days = daysUntil(c.expiry_date)
+        return [
+          c.tool_name, c.certification_type, c.certification_number,
+          fmt(c.expiry_date),
+          days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left`,
+          c.status,
+        ]
+      }),
+      { headerColor: [183, 28, 28] }
+    )
+  }
+
+  return doc
+}
+
 async function generateComprehensivePDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l') // landscape for wide tables
@@ -547,6 +711,43 @@ function generateComprehensiveCSV(opts: ReportOptions): string {
   return generateInventoryCSV(opts)
 }
 
+
+function generateCalibrationCSV(opts: ReportOptions): string {
+  const certs = filterByDate(
+    opts.data.certifications.filter((c) => c.certification_type === 'Calibration Certificate'),
+    'issue_date', opts.dateFrom, opts.dateTo
+  )
+  return toCsv(
+    ['Tool', 'Certificate #', 'Authority', 'Inspector', 'Issue Date', 'Expiry Date', 'Days Left', 'Status', 'Notes'],
+    certs.map((c) => {
+      const days = daysUntil(c.expiry_date)
+      return [
+        c.tool_name, c.certification_number, c.issuing_authority,
+        c.inspector_name || '', fmt(c.issue_date), fmt(c.expiry_date),
+        days < 0 ? `${Math.abs(days)} overdue` : String(days),
+        c.status, c.notes || '',
+      ]
+    })
+  )
+}
+
+function generateComplianceCSV(opts: ReportOptions): string {
+  const certs = filterByDate(opts.data.certifications, 'issue_date', opts.dateFrom, opts.dateTo)
+  return toCsv(
+    ['Tool', 'Type', 'Certificate #', 'Authority', 'Inspector', 'Issue Date', 'Expiry Date', 'Days Left', 'Status', 'Location', 'Notes'],
+    certs.map((c) => {
+      const days = daysUntil(c.expiry_date)
+      return [
+        c.tool_name, c.certification_type, c.certification_number,
+        c.issuing_authority, c.inspector_name || '',
+        fmt(c.issue_date), fmt(c.expiry_date),
+        days < 0 ? `${Math.abs(days)} overdue` : String(days),
+        c.status, c.location || '', c.notes || '',
+      ]
+    })
+  )
+}
+
 // ── Excel Generators (dynamic import) ──
 
 async function loadExcelJS() {
@@ -745,6 +946,112 @@ async function generateHistoryExcel(opts: ReportOptions) {
   return wb
 }
 
+
+async function generateCalibrationExcel(opts: ReportOptions) {
+  const ExcelJS = await loadExcelJS()
+  const wb = new ExcelJS.Workbook()
+  const { certifications, maintenanceSchedules } = opts.data
+
+  const calibrationCerts = filterByDate(
+    certifications.filter((c) => c.certification_type === 'Calibration Certificate'),
+    'issue_date', opts.dateFrom, opts.dateTo
+  )
+
+  const sheet = wb.addWorksheet('Calibration Certificates')
+  sheet.columns = [
+    { header: 'Tool', key: 'tool', width: 22 },
+    { header: 'Certificate #', key: 'cert_no', width: 20 },
+    { header: 'Authority', key: 'authority', width: 20 },
+    { header: 'Inspector', key: 'inspector', width: 18 },
+    { header: 'Issue Date', key: 'issue', width: 14 },
+    { header: 'Expiry Date', key: 'expiry', width: 14 },
+    { header: 'Days Left', key: 'days', width: 14 },
+    { header: 'Status', key: 'status', width: 14 },
+    { header: 'Notes', key: 'notes', width: 25 },
+  ]
+  calibrationCerts.forEach((c) => {
+    const days = daysUntil(c.expiry_date)
+    sheet.addRow({
+      tool: c.tool_name, cert_no: c.certification_number, authority: c.issuing_authority,
+      inspector: c.inspector_name || '', issue: fmt(c.issue_date), expiry: fmt(c.expiry_date),
+      days: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`,
+      status: c.status, notes: c.notes || '',
+    })
+  })
+  addExcelHeader(sheet, 'Calibration Report', opts.dateFrom, opts.dateTo)
+  styleHeader(sheet, undefined, 6)
+
+  const schedSheet = wb.addWorksheet('Scheduled Calibrations')
+  const calibrationSchedules = maintenanceSchedules.filter((s) => s.maintenance_type === 'Calibration')
+  schedSheet.columns = [
+    { header: 'Tool', key: 'tool', width: 22 },
+    { header: 'Scheduled Date', key: 'date', width: 16 },
+    { header: 'Priority', key: 'priority', width: 12 },
+    { header: 'Status', key: 'status', width: 14 },
+    { header: 'Assigned To', key: 'assigned', width: 18 },
+    { header: 'Notes', key: 'notes', width: 30 },
+  ]
+  calibrationSchedules.forEach((s) => schedSheet.addRow({
+    tool: s.tool_name, date: fmt(s.scheduled_date), priority: s.priority,
+    status: s.status, assigned: s.assigned_to || '', notes: s.notes || '',
+  }))
+  addExcelHeader(schedSheet, 'Scheduled Calibrations', opts.dateFrom, opts.dateTo)
+  styleHeader(schedSheet, undefined, 6)
+
+  return wb
+}
+
+async function generateComplianceExcel(opts: ReportOptions) {
+  const ExcelJS = await loadExcelJS()
+  const wb = new ExcelJS.Workbook()
+  const certs = filterByDate(opts.data.certifications, 'issue_date', opts.dateFrom, opts.dateTo)
+
+  const summarySheet = wb.addWorksheet('Summary')
+  summarySheet.columns = [{ header: 'Metric', key: 'metric', width: 25 }, { header: 'Value', key: 'value', width: 20 }]
+  const valid = certs.filter((c) => c.status === 'Valid').length
+  const expiring = certs.filter((c) => c.status === 'Expiring Soon').length
+  const expired = certs.filter((c) => c.status === 'Expired').length
+  const revoked = certs.filter((c) => c.status === 'Revoked').length
+  summarySheet.addRows([
+    { metric: 'Total Certifications', value: certs.length },
+    { metric: 'Valid', value: valid },
+    { metric: 'Expiring Soon', value: expiring },
+    { metric: 'Expired', value: expired },
+    { metric: 'Revoked', value: revoked },
+    { metric: 'Compliance Rate', value: certs.length > 0 ? `${Math.round((valid / certs.length) * 100)}%` : 'N/A' },
+  ])
+  addExcelHeader(summarySheet, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo)
+  styleHeader(summarySheet, undefined, 6)
+
+  const sheet = wb.addWorksheet('All Certifications')
+  sheet.columns = [
+    { header: 'Tool', key: 'tool', width: 22 },
+    { header: 'Type', key: 'type', width: 22 },
+    { header: 'Certificate #', key: 'cert_no', width: 20 },
+    { header: 'Authority', key: 'authority', width: 20 },
+    { header: 'Inspector', key: 'inspector', width: 18 },
+    { header: 'Issue Date', key: 'issue', width: 14 },
+    { header: 'Expiry Date', key: 'expiry', width: 14 },
+    { header: 'Days Left', key: 'days', width: 14 },
+    { header: 'Status', key: 'status', width: 14 },
+    { header: 'Location', key: 'location', width: 18 },
+  ]
+  certs.forEach((c) => {
+    const days = daysUntil(c.expiry_date)
+    sheet.addRow({
+      tool: c.tool_name, type: c.certification_type, cert_no: c.certification_number,
+      authority: c.issuing_authority, inspector: c.inspector_name || '',
+      issue: fmt(c.issue_date), expiry: fmt(c.expiry_date),
+      days: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`,
+      status: c.status, location: c.location || '',
+    })
+  })
+  addExcelHeader(sheet, 'All Certifications', opts.dateFrom, opts.dateTo)
+  styleHeader(sheet, undefined, 6)
+
+  return wb
+}
+
 async function generateComprehensiveExcel(opts: ReportOptions) {
   const ExcelJS = await loadExcelJS()
   const wb = new ExcelJS.Workbook()
@@ -921,6 +1228,8 @@ export async function generateExcel(opts: ReportOptions): Promise<void> {
     financial: generateFinancialExcel,
     comprehensive: generateComprehensiveExcel,
     history: generateHistoryExcel,
+    calibration: generateCalibrationExcel,
+    compliance: generateComplianceExcel,
   }
 
   const wb = await generators[opts.type](opts)
@@ -936,6 +1245,8 @@ export async function generatePDF(opts: ReportOptions): Promise<void> {
     financial: generateFinancialPDF,
     comprehensive: generateComprehensivePDF,
     history: generateHistoryPDF,
+    calibration: generateCalibrationPDF,
+    compliance: generateCompliancePDF,
   }
 
   const doc = await generators[opts.type](opts)
@@ -951,6 +1262,8 @@ export function generateCSV(opts: ReportOptions): void {
     financial: generateFinancialCSV,
     comprehensive: generateComprehensiveCSV,
     history: generateHistoryCSV,
+    calibration: generateCalibrationCSV,
+    compliance: generateComplianceCSV,
   }
 
   const csv = generators[opts.type](opts)
