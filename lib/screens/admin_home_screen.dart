@@ -365,7 +365,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF28B82),
+                                    color: AppTheme.badgeColor,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: Colors.white,
@@ -703,18 +703,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            color: isSelected ? primary.withValues(alpha: 0.10) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? Border(left: BorderSide(color: primary, width: 3))
+                : null,
           ),
           child: Row(
             children: [
               Icon(
                 isSelected ? selectedIcon : icon,
                 size: 20,
-                color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: isSelected ? primary : theme.colorScheme.onSurface.withValues(alpha: 0.55),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -767,7 +771,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
+                    color: AppTheme.badgeColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(

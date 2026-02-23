@@ -30,7 +30,7 @@ class DashboardScreen extends StatelessWidget {
   final Function(String) onNavigateToToolsWithFilter;
   static const double _cardRadiusValue = 12; // Apple/Jobber-style web (matches global theme)
   static const double _mobileCardRadiusValue = 16; // Keep mobile rounded
-  static const Color _dashboardGreen = Color(0xFF2E7D32);
+  static const Color AppTheme.secondaryColor = Color(0xFF2E7D32);
   static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
   static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
   
@@ -217,13 +217,13 @@ class DashboardScreen extends StatelessWidget {
                                   'Technicians',
                                   Text(
                                     technicians.length.toString(),
-                                    style: statValueStyle.copyWith(color: _dashboardGreen),
+                                    style: statValueStyle.copyWith(color: AppTheme.secondaryColor),
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Icons.people,
-                                  _dashboardGreen,
+                                  AppTheme.secondaryColor,
                                   context,
                                   () => onNavigateToTab(3),
                                 ),
@@ -311,7 +311,7 @@ class DashboardScreen extends StatelessWidget {
                           child: _buildQuickActionCard(
                             'Assign Tool',
                             Icons.person_add,
-                            _dashboardGreen,
+                            AppTheme.secondaryColor,
                             () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -1153,13 +1153,13 @@ class DashboardScreen extends StatelessWidget {
             width: ResponsiveHelper.getResponsiveIconSize(context, 52),
             height: ResponsiveHelper.getResponsiveIconSize(context, 52),
             decoration: BoxDecoration(
-              color: _dashboardGreen.withValues(alpha: 0.12),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(context.borderRadiusLarge),
             ),
             child: Center(
               child: Icon(
                 Icons.admin_panel_settings,
-                color: _dashboardGreen,
+                color: AppTheme.secondaryColor,
                 size: ResponsiveHelper.getResponsiveIconSize(context, 26),
               ),
             ),
@@ -1281,7 +1281,7 @@ class DashboardScreen extends StatelessWidget {
               _buildStatusItem(
                 'Available',
                 availableCount.toString(),
-                _dashboardGreen,
+                AppTheme.secondaryColor,
                 context,
               ),
               _buildStatusItem(
@@ -1726,12 +1726,22 @@ class DashboardScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: verticalPadding,
-        ),
-        decoration: context.cardDecoration,
-        child: isWebLayout
+        decoration: isWebLayout
+            ? context.cardDecoration
+            : context.cardDecoration.copyWith(
+                border: Border(
+                  left: BorderSide(color: color, width: 3.5),
+                  top: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
+                  right: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
+                  bottom: BorderSide(color: AppTheme.getCardBorderSubtle(context), width: 0.5),
+                ),
+              ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
+          ),
+          child: isWebLayout
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1764,42 +1774,42 @@ class DashboardScreen extends StatelessWidget {
                 ],
               )
             : Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: valueWidget,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: ResponsiveHelper.getResponsiveSpacing(context, 8),
-                  ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       iconBadge,
                       SizedBox(
-                        width: ResponsiveHelper.getResponsiveSpacing(context, 6),
+                        width: ResponsiveHelper.getResponsiveSpacing(context, 8),
                       ),
                       Flexible(
                         child: Text(
                           title,
                           style: titleStyle,
-                          textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
+                  SizedBox(
+                    height: ResponsiveHelper.getResponsiveSpacing(context, 10),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: valueWidget,
+                      ),
+                    ),
+                  ),
                 ],
               ),
+        ),
       ),
     );
   }
@@ -2113,7 +2123,7 @@ class DashboardScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444),
+                              color: AppTheme.badgeColor,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
