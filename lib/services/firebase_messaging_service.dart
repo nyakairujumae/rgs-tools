@@ -767,9 +767,10 @@ class FirebaseMessagingService {
     _navigateToNotificationCenter();
   }
 
-  /// Navigate to screen based on notification type (shared logic)
+  /// Navigate to the appropriate screen based on notification type.
+  /// Fetches the user role from DB if not available in metadata.
   static void _navigateByType(String? type) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final navigator = globalNavigatorKey.currentState;
       if (navigator == null) {
         _navigateToNotificationCenter();
@@ -777,7 +778,24 @@ class FirebaseMessagingService {
       }
       final currentUser = SupabaseService.client.auth.currentUser;
       if (currentUser == null) return;
-      final userRole = currentUser.userMetadata?['role'] as String?;
+
+      // Try metadata first, fall back to DB query for reliability
+      String? userRole = currentUser.userMetadata?['role'] as String?;
+      if (userRole == null) {
+        try {
+          final record = await SupabaseService.client
+              .from('users')
+              .select('role')
+              .eq('id', currentUser.id)
+              .maybeSingle();
+          userRole = record?['role'] as String?;
+        } catch (e) {
+          Logger.debug('⚠️ [FCM] Could not fetch user role from DB: $e');
+        }
+      }
+
+      Logger.debug('📱 [FCM] Navigating by type: $type, role: $userRole');
+
       if (userRole == 'admin') {
         Widget? targetScreen;
         switch (type) {
@@ -796,13 +814,28 @@ class FirebaseMessagingService {
         }
         if (targetScreen != null) {
           navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
+          Logger.debug('✅ [FCM] Admin navigated to specific screen for type: $type');
           return;
         }
-      }
-      if (userRole == 'technician' && type == 'user_approved') {
-        navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+        // Admin types without a specific screen → notification center
+        _navigateToNotificationCenter();
         return;
       }
+
+      if (userRole == 'technician') {
+        if (type == 'user_approved') {
+          // Newly approved — just open home, no notification needed
+          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+          Logger.debug('✅ [FCM] Technician navigated to home (user_approved)');
+        } else {
+          // All other types → open notification center so they can act on it
+          TechnicianHomeScreen.openNotificationsOnLoad = true;
+          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
+          Logger.debug('✅ [FCM] Technician: set openNotificationsOnLoad for type: $type');
+        }
+        return;
+      }
+
       _navigateToNotificationCenter();
     });
   }
@@ -814,31 +847,43 @@ class FirebaseMessagingService {
     _navigateByType(type);
   }
   
-  /// Navigate to the appropriate notification center based on user role
+  /// Navigate to the appropriate notification center based on user role.
+  /// Admin → pushes AdminNotificationScreen directly.
+  /// Technician → navigates to home and auto-opens the notification bottom sheet.
   static void _navigateToNotificationCenter() {
     Logger.debug('📱 [FCM] Navigating to notification center...');
-    
-    // Use post-frame callback to ensure we're not in the middle of a build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final navigator = globalNavigatorKey.currentState;
       if (navigator == null) {
         Logger.debug('⚠️ [FCM] Navigator not available, cannot navigate');
         return;
       }
-      
+
       try {
-        // Check user role from Supabase
         final currentUser = SupabaseService.client.auth.currentUser;
         if (currentUser == null) {
           Logger.debug('⚠️ [FCM] No user logged in, cannot navigate to notifications');
           return;
         }
-        
-        final userRole = currentUser.userMetadata?['role'] as String?;
+
+        // Try metadata first, fall back to DB
+        String? userRole = currentUser.userMetadata?['role'] as String?;
+        if (userRole == null) {
+          try {
+            final record = await SupabaseService.client
+                .from('users')
+                .select('role')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+            userRole = record?['role'] as String?;
+          } catch (e) {
+            Logger.debug('⚠️ [FCM] Could not fetch role for notification center nav: $e');
+          }
+        }
         Logger.debug('📱 [FCM] User role: $userRole');
-        
+
         if (userRole == 'admin') {
-          // Navigate to admin notification center (separate screen)
           navigator.push(
             MaterialPageRoute(
               builder: (context) => const AdminNotificationScreen(),
@@ -846,10 +891,10 @@ class FirebaseMessagingService {
           );
           Logger.debug('✅ [FCM] Navigated to Admin Notification Center');
         } else if (userRole == 'technician') {
-          // For technicians, just go to home - they have a notification bell there
-          // The notification badge will show and they can tap to see notifications
+          // Set flag so TechnicianHomeScreen auto-opens the notification sheet
+          TechnicianHomeScreen.openNotificationsOnLoad = true;
           navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
-          Logger.debug('✅ [FCM] Navigated to Technician Home');
+          Logger.debug('✅ [FCM] Navigated to Technician Home → notification center will auto-open');
         } else {
           Logger.debug('⚠️ [FCM] Unknown user role: $userRole');
         }
@@ -859,14 +904,23 @@ class FirebaseMessagingService {
     });
   }
 
-  /// Update app badge (increment by 1)
+  /// Update app badge by syncing with actual unread count from database.
+  /// Falls back to increment if DB sync fails (e.g. no auth session).
   static Future<void> _updateBadge() async {
     try {
-      await BadgeService.incrementBadge();
+      // Sync with database to get the real unread count
+      await BadgeService.syncBadgeWithDatabase(null);
       final badgeCount = await BadgeService.getBadgeCount();
-      Logger.debug('✅ [FCM] Badge updated to: $badgeCount');
+      Logger.debug('✅ [FCM] Badge synced with database: $badgeCount');
     } catch (e) {
-      Logger.debug('❌ [FCM] Error updating badge: $e');
+      // Fallback: increment by 1 if DB sync fails (e.g. background/no session)
+      try {
+        await BadgeService.incrementBadge();
+        final badgeCount = await BadgeService.getBadgeCount();
+        Logger.debug('✅ [FCM] Badge incremented (fallback): $badgeCount');
+      } catch (e2) {
+        Logger.debug('❌ [FCM] Error updating badge: $e2');
+      }
     }
   }
 
@@ -1033,8 +1087,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(androidChannel);
     
-    // Update badge (increment by 1)
-    await BadgeService.incrementBadge();
+    // Update badge — try to sync with DB for accurate count, fallback to increment
+    try {
+      await BadgeService.syncBadgeWithDatabase(null);
+    } catch (_) {
+      await BadgeService.incrementBadge();
+    }
     final badgeCount = await BadgeService.getBadgeCount();
     
     // CRITICAL RULE: Check if message has notification payload

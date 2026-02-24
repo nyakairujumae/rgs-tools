@@ -168,6 +168,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LastRouteService.saveLastRoute('/admin');
+      // Eagerly load notifications first so the badge shows immediately
+      _loadNotificationsWithRetry();
       _loadData();
       _loadInviteAdminData();
       // Refresh notifications every 30 seconds to update badges in real-time
@@ -181,6 +183,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   }
 
 
+  /// Load notifications eagerly with a retry if the initial attempt fails
+  /// (e.g. session not yet restored). This ensures the badge shows on startup.
+  Future<void> _loadNotificationsWithRetry() async {
+    if (_isDisposed) return;
+    final notifProvider = context.read<AdminNotificationProvider>();
+    await notifProvider.loadNotifications(skipIfLoading: false);
+
+    // If the load returned empty (possible session not ready), retry after 2s
+    if (notifProvider.notifications.isEmpty && notifProvider.error != null) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted && !_isDisposed) {
+        await notifProvider.loadNotifications(skipIfLoading: false);
+      }
+    }
+  }
+
   Future<void> _loadData() async {
     if (_isDisposed) return;
 
@@ -191,6 +209,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         toolProvider.loadTools(),
         techProvider.loadTechnicians(),
         context.read<PendingApprovalsProvider>().loadPendingApprovals(),
+        // Notifications are loaded eagerly in _loadNotificationsWithRetry,
+        // but also included here so they refresh on app resume via _loadData
         context.read<AdminNotificationProvider>().loadNotifications(),
       ]);
       // Subscribe to realtime after initial load

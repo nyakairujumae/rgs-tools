@@ -482,7 +482,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
-    if (difference.inMinutes < 1) {
+    // Handle negative difference (clock skew or future timestamp)
+    if (difference.isNegative || difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';

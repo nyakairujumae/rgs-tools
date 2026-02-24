@@ -42,6 +42,10 @@ import '../widgets/common/loading_widget.dart';
 class TechnicianHomeScreen extends StatefulWidget {
   const TechnicianHomeScreen({super.key});
 
+  /// Set to true before navigating here from a push notification tap so the
+  /// notification center (bottom sheet) auto-opens once the screen is ready.
+  static bool openNotificationsOnLoad = false;
+
   @override
   State<TechnicianHomeScreen> createState() => _TechnicianHomeScreenState();
 }
@@ -53,6 +57,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   bool _isDisposed = false;
   int _notificationRefreshKey = 0;
   late final List<Widget> _screens;
+  TechnicianNotificationProvider? _notificationProviderRef;
 
   @override
   void initState() {
@@ -78,25 +83,40 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       LastRouteService.saveLastRoute('/technician');
+
+      // Refresh badge count immediately — don't wait for provider to finish loading
+      _refreshUnreadCount();
+
+      // Listen to notification provider for real-time badge updates
+      _notificationProviderRef = context.read<TechnicianNotificationProvider>();
+      _notificationProviderRef!.addListener(_onNotificationProviderChanged);
+
       context.read<SupabaseToolProvider>().loadTools();
       context.read<SupabaseTechnicianProvider>().loadTechnicians();
       // Load notifications from provider (will set up realtime subscription)
       await context.read<TechnicianNotificationProvider>().loadNotifications();
       // Sync badge with database when screen initializes (like admin section)
       await BadgeService.syncBadgeWithDatabase(context);
+      // Refresh again after provider finishes for accuracy
       _refreshUnreadCount();
+
+      // Auto-open notification center if launched from a push notification tap
+      if (TechnicianHomeScreen.openNotificationsOnLoad) {
+        TechnicianHomeScreen.openNotificationsOnLoad = false;
+        // Small delay to let the screen settle before presenting the sheet
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (mounted && !_isDisposed) {
+          _showNotifications(context);
+        }
+      }
+
       // Refresh unread count and sync badge every 30 seconds (like admin section)
-      // Note: Tools are refreshed via pull-to-refresh or when user returns to screen
-      // No automatic tools refresh to avoid unnecessary page refreshes
       _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted && !_isDisposed) {
           _refreshUnreadCount();
-          // Also sync badge periodically to ensure it stays updated
           BadgeService.syncBadgeWithDatabase(context).catchError((e) {
             debugPrint('⚠️ Error syncing badge: $e');
           });
-          // Removed automatic tools refresh - causes unnecessary page refreshes
-          // Tools can be refreshed manually via pull-to-refresh or when screen becomes visible
         }
       });
     });
@@ -105,13 +125,19 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && !_isDisposed && mounted) {
+      // Auto-open notification center if triggered from a background notification tap
+      if (TechnicianHomeScreen.openNotificationsOnLoad) {
+        TechnicianHomeScreen.openNotificationsOnLoad = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_isDisposed) _showNotifications(context);
+        });
+      }
       // Sync badge when app comes back to foreground (like admin section)
       BadgeService.syncBadgeWithDatabase(context).catchError((e) {
         debugPrint('⚠️ Error syncing badge on resume: $e');
       });
       _refreshUnreadCount();
       // Refresh tools only when app resumes (user returns to app)
-      // This is less frequent than every 30 seconds and only when needed
       context.read<SupabaseToolProvider>().loadTools().catchError((e) {
         debugPrint('⚠️ Error refreshing tools on resume: $e');
       });
@@ -121,9 +147,19 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _notificationProviderRef?.removeListener(_onNotificationProviderChanged);
     _isDisposed = true;
     _notificationRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  /// Called when the TechnicianNotificationProvider changes (new notification, mark read, etc.)
+  void _onNotificationProviderChanged() {
+    if (mounted && !_isDisposed) {
+      // Use the provider's count for the technician_notifications portion,
+      // then refresh the full count (which includes admin_notifications too)
+      _refreshUnreadCount();
+    }
   }
 
   Future<void> _refreshUnreadCount() async {
@@ -133,8 +169,10 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       setState(() {
         _unreadNotificationCount = count;
       });
-      // Sync badge with database count
-      await BadgeService.syncBadgeWithDatabase(context);
+      // Sync OS badge with database count
+      BadgeService.updateBadge(count).catchError((e) {
+        debugPrint('⚠️ Error updating badge: $e');
+      });
     }
   }
 
@@ -1257,7 +1295,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final title = notification['title'] as String? ?? 'Notification';
     final message = notification['message'] as String? ?? '';
     final timestamp = notification['timestamp'] != null
-        ? DateTime.parse(notification['timestamp'].toString())
+        ? _parseTimestampValue(notification['timestamp'])
         : DateTime.now();
     final isRead = notification['is_read'] as bool? ?? false;
     final type = notification['type'] as String? ?? 'general';
@@ -1442,11 +1480,26 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     }
   }
 
+  /// Parse a timestamp value from Supabase, handling UTC correctly.
+  DateTime _parseTimestampValue(dynamic value) {
+    if (value == null) return DateTime.now();
+    final parsed = DateTime.tryParse(value.toString());
+    if (parsed == null) return DateTime.now();
+    if (parsed.isUtc) return parsed.toLocal();
+    // No timezone info — Supabase stores in UTC, so force UTC then convert
+    return DateTime.utc(
+      parsed.year, parsed.month, parsed.day,
+      parsed.hour, parsed.minute, parsed.second,
+      parsed.millisecond, parsed.microsecond,
+    ).toLocal();
+  }
+
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
-    if (difference.inMinutes < 1) {
+    // Handle negative difference (clock skew or future timestamp)
+    if (difference.isNegative || difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';
@@ -1462,7 +1515,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final title = notification['title'] as String? ?? 'Notification';
     final message = notification['message'] as String? ?? '';
     final timestamp = notification['timestamp'] != null
-        ? DateTime.parse(notification['timestamp'].toString())
+        ? _parseTimestampValue(notification['timestamp'])
         : DateTime.now();
     final type = notification['type'] as String? ?? 'general';
     final rawData = notification['data'];
@@ -1650,7 +1703,21 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 ),
               ),
             ),
-          if (isToolReleasedForCurrentUser)
+          if (isToolReleasedForCurrentUser) ...[
+            TextButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _declineReleasedTool(context, data!, notification);
+              },
+              icon: const Icon(Icons.cancel, size: 18),
+              label: const Text('Decline'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
             FilledButton.icon(
               onPressed: () async {
                 Navigator.pop(dialogContext);
@@ -1666,7 +1733,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 ),
               ),
             ),
-          if (!isToolAssignedForCurrentUser)
+          ],
+          if (!isToolAssignedForCurrentUser && !isToolReleasedForCurrentUser)
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               style: TextButton.styleFrom(
@@ -1733,18 +1801,18 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         return;
       }
 
-      final updatedTool = existingTool.copyWith(
-        assignedTo: requesterId,
-        status: 'In Use',
-        updatedAt: DateTime.now().toIso8601String(),
-      );
-      await toolProvider.updateTool(updatedTool);
+      // Set status to Pending Acceptance — requester must accept before tool is assigned
+      await SupabaseService.client.from('tools').update({
+        'status': 'Pending Acceptance',
+        'assigned_to': requesterId,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', toolId);
 
       await ToolHistoryService.record(
         toolId: toolId,
         toolName: toolName,
         action: ToolHistoryActions.releasedToRequester,
-        description: '$holderName released the $toolName to $requesterName',
+        description: '$holderName offered $toolName to $requesterName (pending acceptance)',
         oldValue: authProvider.userId,
         newValue: requesterId,
         performedById: authProvider.userId,
@@ -1759,8 +1827,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
       await SupabaseService.client.from('technician_notifications').insert({
         'user_id': requesterId,
-        'title': 'Tool Released to You: $toolName',
-        'message': '$holderName has released the $toolName to you. You now have this tool.',
+        'title': 'Tool Offered to You: $toolName',
+        'message': '$holderName wants to release the $toolName to you. Tap to accept or decline.',
         'type': 'tool_released',
         'is_read': false,
         'timestamp': DateTime.now().toIso8601String(),
@@ -1775,8 +1843,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       try {
         await PushNotificationService.sendToUser(
           userId: requesterId,
-          title: 'Tool Released to You: $toolName',
-          body: '$holderName has released the $toolName to you.',
+          title: 'Tool Offered to You: $toolName',
+          body: '$holderName wants to release the $toolName to you. Tap to accept or decline.',
           data: {
             'type': 'tool_released',
             'tool_id': toolId,
@@ -1788,7 +1856,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$toolName released to $requesterName. They and other technicians will now see they have it.'),
+            content: Text('Release offer sent to $requesterName. Waiting for their acceptance.'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
           ),
@@ -1843,9 +1911,9 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
       await ToolHistoryService.record(
         toolId: toolId, toolName: toolName,
-        action: ToolHistoryActions.releasedToRequester,
+        action: ToolHistoryActions.acceptedAssignment,
         description: '$currentUserName accepted the $toolName (released by $releasedByName)',
-        oldValue: null, newValue: currentUserId,
+        oldValue: 'Pending Acceptance', newValue: 'In Use',
         performedById: currentUserId, performedByName: currentUserName,
         performedByRole: authProvider.userRole?.name ?? 'technician',
         metadata: {'released_by_name': releasedByName, 'released_by_id': data['released_by_id']?.toString()},
@@ -1854,6 +1922,36 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       await toolProvider.loadTools();
       UserNameService.clearCacheForUser(currentUserId);
 
+      // Notify the holder that requester accepted
+      final releasedById = data['released_by_id']?.toString();
+      if (releasedById != null) {
+        try {
+          await SupabaseService.client.from('technician_notifications').insert({
+            'user_id': releasedById,
+            'title': 'Release Accepted: $toolName',
+            'message': '$currentUserName has accepted the $toolName. The tool is now assigned to them.',
+            'type': 'tool_released',
+            'is_read': false,
+            'timestamp': DateTime.now().toIso8601String(),
+            'data': {
+              'tool_id': toolId,
+              'tool_name': toolName,
+              'accepted_by_id': currentUserId,
+              'accepted_by_name': currentUserName,
+            },
+          });
+        } catch (_) {}
+
+        try {
+          await PushNotificationService.sendToUser(
+            userId: releasedById,
+            title: 'Release Accepted: $toolName',
+            body: '$currentUserName has accepted the $toolName.',
+            data: {'type': 'tool_released', 'tool_id': toolId, 'tool_name': toolName},
+          );
+        } catch (_) {}
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
@@ -1861,6 +1959,79 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       }
     } catch (e) {
       if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to accept tool: ${e.toString()}');
+    }
+  }
+
+  Future<void> _declineReleasedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final releasedByName = data['released_by_name']?.toString() ?? 'A technician';
+    final releasedById = data['released_by_id']?.toString();
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      await toolProvider.declineAssignment(toolId);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.declinedAssignment,
+        description: '$currentUserName declined the release of $toolName (offered by $releasedByName)',
+        oldValue: 'Pending Acceptance', newValue: 'Available',
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'released_by_name': releasedByName, 'released_by_id': releasedById},
+      );
+
+      await toolProvider.loadTools();
+
+      // Notify the holder that requester declined
+      if (releasedById != null) {
+        try {
+          await SupabaseService.client.from('technician_notifications').insert({
+            'user_id': releasedById,
+            'title': 'Release Declined: $toolName',
+            'message': '$currentUserName has declined the $toolName. The tool is now available.',
+            'type': 'tool_released',
+            'is_read': false,
+            'timestamp': DateTime.now().toIso8601String(),
+            'data': {
+              'tool_id': toolId,
+              'tool_name': toolName,
+              'declined_by_id': currentUserId,
+              'declined_by_name': currentUserName,
+            },
+          });
+        } catch (_) {}
+
+        try {
+          await PushNotificationService.sendToUser(
+            userId: releasedById,
+            title: 'Release Declined: $toolName',
+            body: '$currentUserName has declined the $toolName. It is now available.',
+            data: {'type': 'tool_released', 'tool_id': toolId, 'tool_name': toolName},
+          );
+        } catch (_) {}
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You declined the $toolName. It is now available.'), backgroundColor: Colors.orange, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to decline tool: ${e.toString()}');
     }
   }
 

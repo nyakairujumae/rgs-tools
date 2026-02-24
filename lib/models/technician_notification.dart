@@ -28,12 +28,28 @@ class TechnicianNotification {
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       type: NotificationType.fromString(json['type'] ?? 'general'),
-      timestamp: json['timestamp'] != null 
-          ? DateTime.parse(json['timestamp'].toString())
-          : DateTime.now(),
+      timestamp: _parseTimestamp(json['timestamp']),
       isRead: json['is_read'] ?? false,
       data: json['data'],
     );
+  }
+
+  /// Parse timestamp from Supabase, handling UTC correctly.
+  /// Supabase stores timestamps in UTC. If the string includes timezone info
+  /// (e.g. +00:00), DateTime.parse creates a UTC DateTime. If not, we treat
+  /// the value as UTC since that's what Supabase uses internally.
+  static DateTime _parseTimestamp(dynamic value) {
+    if (value == null) return DateTime.now();
+    final parsed = DateTime.tryParse(value.toString());
+    if (parsed == null) return DateTime.now();
+    if (parsed.isUtc) {
+      return parsed.toLocal();
+    }
+    return DateTime.utc(
+      parsed.year, parsed.month, parsed.day,
+      parsed.hour, parsed.minute, parsed.second,
+      parsed.millisecond, parsed.microsecond,
+    ).toLocal();
   }
 
   Map<String, dynamic> toJson() {
