@@ -5,10 +5,12 @@ import 'package:shimmer/shimmer.dart';
 
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/technician.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
+import '../services/push_notification_service.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import 'add_technician_screen.dart';
@@ -205,13 +207,31 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                    child: Text(
-                      AppLocalizations.of(context).technicians_title,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                    child: Row(
+                      children: [
+                        if (_selectedTools != null) ...[
+                          IconButton(
+                            icon: Icon(
+                              Icons.chevron_left,
+                              size: 28,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                            splashRadius: 24,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          AppLocalizations.of(context).technicians_title,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -355,13 +375,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                          SizedBox(width: 8),
+                          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context).common_offlineBanner,
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                         ],
                       ),
@@ -382,7 +402,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withValues(alpha: 0.55),
+                                      .withValues(alpha: 0.3),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -454,7 +474,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       : 'Select Technicians First'),
                   backgroundColor: _selectedTechnicians.isNotEmpty
                       ? Colors.green
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 )
               : Padding(
                   padding: const EdgeInsets.only(right: 16, bottom: 16),
@@ -1091,96 +1111,75 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
       // Assign each tool to each selected technician
       List<String> failedAssignments = [];
+      final authProvider = context.read<AuthProvider>();
+      final adminName = authProvider.userFullName ?? 'Admin';
 
       for (final toolId in _selectedTools!) {
         for (final technician in technicians) {
-          if (technician.email != null && technician.email!.isNotEmpty) {
-            // Look up the user ID - check approval status first, then users table
+          // Use technician.userId directly — no email-based lookups needed
+          final userId = technician.userId;
+
+          if (userId == null || userId.isEmpty) {
+            failedAssignments.add(technician.name);
+            Logger.debug(
+                '⚠️ No linked user account for technician: ${technician.name}');
+            continue;
+          }
+
+          try {
+            Logger.debug('🔧 Assigning tool $toolId to userId: $userId');
+            await toolProvider.assignTool(toolId, userId, 'Permanent');
+
+            final tool = toolProvider.getToolById(toolId);
+            final toolName = tool?.name ?? 'Tool';
+
+            // Send in-app notification to technician
             try {
-              final technicianEmail = technician.email!.trim();
-              Logger.debug(
-                  '🔍 Looking up user for technician: ${technician.name}');
-              Logger.debug('   Technician email: "$technicianEmail"');
-
-              String? userId;
-
-              // First, check if there's an approved pending approval record (this has the user_id)
-              final approvalRecord = await SupabaseService.client
-                  .from('pending_user_approvals')
-                  .select('user_id, status')
-                  .eq('email', technicianEmail)
-                  .eq('status', 'approved')
-                  .order('created_at', ascending: false)
-                  .limit(1)
-                  .maybeSingle();
-
-              if (approvalRecord != null && approvalRecord['user_id'] != null) {
-                userId = approvalRecord['user_id'] as String;
-                Logger.debug('   ✅ Found user ID from approval record: $userId');
-              } else {
-                // If no approval record, try to find user in users table
-                Logger.debug(
-                    '   No approval record found, checking users table...');
-                var userResponse = await SupabaseService.client
-                    .from('users')
-                    .select('id, email')
-                    .ilike('email', technicianEmail)
-                    .maybeSingle();
-
-                // If not found with ilike, try fetching all and matching
-                if (userResponse == null) {
-                  Logger.debug(
-                      '   No direct match found, searching all users...');
-                  final allUsers = await SupabaseService.client
-                      .from('users')
-                      .select('id, email');
-
-                  Logger.debug(
-                      '   Found ${(allUsers as List).length} total users');
-                  for (var user in allUsers as List) {
-                    final userEmail =
-                        (user['email'] as String?)?.toLowerCase() ?? '';
-                    if (userEmail == technicianEmail.toLowerCase()) {
-                      userResponse = user;
-                      Logger.debug('   ✅ Found matching user: ${user['id']}');
-                      break;
-                    }
-                  }
-                } else {
-                  Logger.debug('   ✅ Found user: ${userResponse['id']}');
-                }
-
-                if (userResponse != null && userResponse['id'] != null) {
-                  userId = userResponse['id'] as String;
-                }
-              }
-
-              if (userId != null) {
-                // Use the user ID (from auth.users/users table) as the assigned_to value
-                await toolProvider.assignTool(
-                  toolId,
-                  userId,
-                  'Permanent',
-                );
-              } else {
-                // No user account found - technician needs to register and be approved first
-                failedAssignments.add(technician.name);
-                Logger.debug(
-                    '⚠️ No user account found for technician: ${technician.name} (${technician.email})');
-                Logger.debug(
-                    '   Technician must register in the app and be approved by admin first.');
-              }
+              await SupabaseService.client.from('technician_notifications').insert({
+                'user_id': userId,
+                'title': 'Tool Assigned to You',
+                'message': '$adminName assigned "$toolName" to you. Please accept or decline.',
+                'type': 'tool_assigned',
+                'is_read': false,
+                'timestamp': DateTime.now().toIso8601String(),
+                'data': {
+                  'tool_id': toolId,
+                  'tool_name': toolName,
+                  'assigned_by_name': adminName,
+                  'assignment_type': 'Permanent',
+                },
+              });
             } catch (e) {
-              Logger.debug(
-                  'Error looking up user for technician ${technician.name}: $e');
-              failedAssignments.add(technician.name);
+              Logger.debug('Error sending in-app notification: $e');
             }
-          } else {
-            Logger.debug('⚠️ Technician ${technician.name} has no email address');
+
+            // Send push notification (fire-and-forget)
+            try {
+              await PushNotificationService.sendToUser(
+                userId: userId,
+                title: 'Tool Assigned to You',
+                body: '$adminName assigned "$toolName" to you. Please accept or decline.',
+                data: {
+                  'type': 'tool_assigned',
+                  'tool_id': toolId,
+                  'tool_name': toolName,
+                },
+              );
+            } catch (_) {}
+          } catch (e) {
+            Logger.debug('Error assigning tool to ${technician.name}: $e');
             failedAssignments.add(technician.name);
           }
         }
       }
+
+      // Refresh tools to get updated data
+      await toolProvider.loadTools();
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
 
       // Show consolidated error message if any assignments failed
       if (failedAssignments.isNotEmpty) {
@@ -1198,32 +1197,29 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             duration: Duration(seconds: 5),
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully assigned ${_selectedTools!.length} tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} technician${_selectedTechnicians.length > 1 ? 's' : ''}',
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
 
-      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
-      // and log the user out. Local state is already correct (updated by assignTool).
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Successfully assigned ${_selectedTools!.length} tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} technician${_selectedTechnicians.length > 1 ? 's' : ''}',
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
+      // Navigate back to admin dashboard (Tools tab)
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/admin',
+        (route) => false,
+        arguments: {'initialTab': 1},
       );
-
-      // Navigate back to admin dashboard
-      Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
+      if (!mounted) return;
       // Close loading dialog
       Navigator.pop(context);
 
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error assigning tools: $e'),

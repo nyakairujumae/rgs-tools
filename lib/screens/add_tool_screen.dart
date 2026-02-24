@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/auth_provider.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
 import '../models/tool.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
@@ -1196,39 +1198,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
               uploadedImageUrls.add(imageUrl);
             }
           } catch (e) {
-            // If Supabase upload fails, fall back to local storage
-            try {
-              final localImagePath =
-                  await _saveImageLocally(imageFile, addedTool.id!);
-              localImagePaths.add(localImagePath);
-            } catch (e2) {
-              // Skip this image if both fail
-            }
+            debugPrint('⚠️ Image upload failed: $e');
           }
         }
         
-        // Combine all image URLs
-        final allImageUrls = [...uploadedImageUrls, ...localImagePaths];
-        
-        if (allImageUrls.isNotEmpty) {
-          // Store as JSON array if multiple images, single string if one image
-          final imagePathValue = allImageUrls.length > 1
-              ? allImageUrls.join(',') // For now, use comma-separated. Later can use JSON
-              : allImageUrls.first;
+        if (uploadedImageUrls.isNotEmpty) {
+          final imagePathValue = uploadedImageUrls.length > 1
+              ? uploadedImageUrls.join(',')
+              : uploadedImageUrls.first;
           
           final updatedTool = addedTool.copyWith(imagePath: imagePathValue);
           await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-          
-          if (mounted && localImagePaths.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    'Tool saved with ${allImageUrls.length} image(s). Some images saved locally.'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
         }
       }
 
@@ -1239,6 +1219,29 @@ class _AddToolScreenState extends State<AddToolScreen> {
       debugPrint(
           '✅ Tool type: ${addedTool.toolType}, Status: ${addedTool.status}');
       debugPrint('✅ AssignedTo: ${addedTool.assignedTo}');
+
+      // Save admin notification for the tool added event
+      if (mounted) {
+        final adminName = context.read<AuthProvider>().userFullName ?? 'Admin';
+        final adminEmail = context.read<AuthProvider>().userEmail ?? '';
+        try {
+          await context.read<AdminNotificationProvider>().createNotification(
+            technicianName: adminName,
+            technicianEmail: adminEmail,
+            type: NotificationType.general,
+            title: 'New Tool Added',
+            message: '$adminName added "${_nameController.text.trim().toUpperCase()}" to inventory.',
+            data: {
+              'tool_id': addedTool.id,
+              'tool_name': addedTool.name,
+              'category': addedTool.category,
+              'action': 'tool_added',
+            },
+          );
+        } catch (e) {
+          debugPrint('⚠️ Failed to create tool-added notification: $e');
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1253,32 +1256,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Tool added successfully!',
+                    '${_nameController.text.trim().toUpperCase()} added successfully!',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    Navigator.pop(context); // Close add tool screen
-                    _navigateToAllTools(context);
-                  },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'View All Tools',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ),
@@ -1295,7 +1277,12 @@ class _AddToolScreenState extends State<AddToolScreen> {
             dismissDirection: DismissDirection.horizontal,
           ),
         );
-        Navigator.pop(context);
+        // Navigate to the Tools tab
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/admin',
+          (route) => false,
+          arguments: {'initialTab': 1},
+        );
       }
     } catch (e) {
       debugPrint('❌ Error in _handleSave: $e');

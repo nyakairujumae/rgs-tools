@@ -145,6 +145,10 @@ class ToolHistory {
         return 'Badge Released';
       case 'Released to Requester':
         return 'Released to Requester';
+      case 'Accepted Assignment':
+        return 'Assignment Accepted';
+      case 'Declined Assignment':
+        return 'Assignment Declined';
       default:
         return action;
     }
@@ -192,4 +196,6 @@ class ToolHistoryActions {
   static const String badged = 'Badged';
   static const String releasedBadge = 'Released Badge';
   static const String releasedToRequester = 'Released to Requester';
+  static const String acceptedAssignment = 'Accepted Assignment';
+  static const String declinedAssignment = 'Declined Assignment';
 }

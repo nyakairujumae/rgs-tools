@@ -71,25 +71,7 @@ extension ThemeColorExtension on BuildContext {
         color: AppTheme.getCardBorderSubtle(this),
         width: isWebPlatform ? 1.0 : 0.5,
       ),
-      boxShadow: isWebPlatform
-          ? [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: const Offset(0, 1),
-              ),
-            ]
-          : isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+      boxShadow: [],
     );
   }
   
@@ -105,14 +87,7 @@ extension ThemeColorExtension on BuildContext {
             : const Color(0xFFE5E5EA),
         width: 1,
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-          blurRadius: 10,
-          spreadRadius: 0,
-          offset: const Offset(0, 1),
-        ),
-      ],
+      boxShadow: [],
     );
   }
   

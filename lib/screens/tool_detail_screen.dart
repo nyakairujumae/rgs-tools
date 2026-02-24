@@ -773,7 +773,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               _buildFilledActionButton(
                 label: 'Assign to Technician',
                 icon: Icons.person_add,
-                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.85)],
+                colors: [AppTheme.secondaryColor, AppTheme.secondaryColor.withValues(alpha: 0.85)],
                 onTap: () {
                   Navigator.push(
                     context,

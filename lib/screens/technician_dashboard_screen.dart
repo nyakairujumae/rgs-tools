@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/connectivity_provider.dart';
 import '../providers/technician_notification_provider.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
@@ -319,7 +320,17 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         
         return Container(
           color: context.scaffoldBackground,
+          child: RefreshIndicator(
+          color: const Color(0xFF2E7D32),
+          strokeWidth: 2.5,
+          onRefresh: () async {
+            await Future.wait([
+              toolProvider.loadTools(),
+              context.read<ConnectivityProvider>().recheckConnectivity(),
+            ]);
+          },
           child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -584,6 +595,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   ],
                 ),
               ),
+        ),
         );
       },
     );
@@ -1376,7 +1388,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final baseColor = isDarkMode 
-        ? Colors.grey[800]!.withValues(alpha: 0.55)
+        ? Colors.grey[800]!.withValues(alpha: 0.3)
         : Colors.grey[300]!;
     final highlightColor = isDarkMode 
         ? Colors.grey[700]!.withValues(alpha: 0.5)

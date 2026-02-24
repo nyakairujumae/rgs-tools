@@ -224,9 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
     
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.authBackgroundGradientFor(context),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

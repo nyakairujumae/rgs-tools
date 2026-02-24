@@ -90,7 +90,18 @@ class DashboardScreen extends StatelessWidget {
         final screenWidth = MediaQuery.of(context).size.width;
         final contentPadding = isWideLayout ? (screenWidth > 1600 ? 48.0 : 32.0) : horizontalPadding;
 
-        return SingleChildScrollView(
+        return RefreshIndicator(
+          color: const Color(0xFF2E7D32),
+          strokeWidth: 2.5,
+          onRefresh: () async {
+            await Future.wait<void>([
+              toolProvider.loadTools(),
+              technicianProvider.loadTechnicians(),
+              connectivityProvider.recheckConnectivity(),
+            ]);
+          },
+          child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
             contentPadding,
             topPadding,
@@ -438,6 +449,7 @@ class DashboardScreen extends StatelessWidget {
                   ],  // end else (mobile Key Metrics + Quick Actions)
                 ],
               ),
+        ),
         );
       },
     );
@@ -2009,7 +2021,7 @@ class DashboardScreen extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 14,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                   ],
                 )
@@ -2131,7 +2143,7 @@ class DashboardScreen extends StatelessWidget {
                         Icon(
                           Icons.arrow_forward_ios_rounded,
                           size: 14,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                       ],
                     )

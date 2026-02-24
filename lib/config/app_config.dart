@@ -104,6 +104,7 @@ class AppConfig {
   static const List<String> allowedAdminDomains = [
     '@royalgulf.ae',
     '@mekar.ae',
+    '@gmail.com',
   ];
 
   // Validate email format - returns true if email format is valid
