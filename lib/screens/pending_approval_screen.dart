@@ -11,6 +11,8 @@ import 'technician_home_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/themed_button.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
   const PendingApprovalScreen({super.key});
@@ -113,7 +115,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
       
       if (isApproved == true && mounted) {
         // User is approved! Reload their role and navigate to technician home
-        debugPrint('✅ User approved! Navigating to technician home...');
+        Logger.debug('✅ User approved! Navigating to technician home...');
         
         // Reload user role to ensure it's updated
         await authProvider.initialize();
@@ -140,7 +142,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error checking approval status: $e');
+      Logger.debug('Error checking approval status: $e');
     }
   }
   
@@ -173,7 +175,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
         await _checkApprovalAndNavigate();
       }
     } catch (e) {
-      debugPrint('Error loading approval status: $e');
+      Logger.debug('Error loading approval status: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -245,7 +247,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       
                       // Title
                       Text(
-                        isRejected ? 'Account Approval Rejected' : 'Account Pending Approval',
+                        isRejected ? AppLocalizations.of(context).pendingApproval_titleRejected : AppLocalizations.of(context).pendingApproval_titlePending,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
@@ -257,9 +259,9 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                       
                       // Description
                       Text(
-                        isRejected 
-                          ? 'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.'
-                          : 'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.',
+                        isRejected
+                          ? AppLocalizations.of(context).pendingApproval_descriptionRejected
+                          : AppLocalizations.of(context).pendingApproval_descriptionPending,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 14,
@@ -277,7 +279,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                           borderRadius: BorderRadius.circular(context.borderRadiusMedium),
                           border: Border.all(
                             color: (isRejected ? Colors.red : Colors.orange)
-                                .withValues(alpha: 0.3),
+                                .withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -370,7 +372,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                                   color: Colors.red.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(context.borderRadiusSmall),
                                   border: Border.all(
-                                    color: Colors.red.withValues(alpha: 0.3),
+                                    color: Colors.red.withValues(alpha: 0.55),
                                   ),
                                 ),
                                 child: Row(

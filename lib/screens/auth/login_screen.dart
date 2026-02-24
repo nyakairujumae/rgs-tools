@@ -16,6 +16,8 @@ import '../../widgets/common/themed_text_field.dart';
 import '../../widgets/common/themed_button.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'auth_error_screen.dart';
+import '../../utils/logger.dart';
+import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSigningIn = false;
   static const Duration _authTimeout = Duration(seconds: 15);
   static const Duration _profileTimeout = Duration(seconds: 10);
 
@@ -55,35 +58,40 @@ class _LoginScreenState extends State<LoginScreen> {
           required Widget icon,
           required String label,
         }) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: context.iconButtonBackground,
-                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                  ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: isLoading ? null : onPressed,
-                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    child: Center(child: icon),
+          return Expanded(
+            child: Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: context.iconButtonBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: context.cardBorder,
+                  width: 0.5,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isLoading ? null : onPressed,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(width: 10),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: context.secondaryTextColor,
-                    ),
-                  ),
-                ],
+            ),
           );
         }
 
@@ -129,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ];
 
         if (showAppleSignIn) {
-          buttons.add(SizedBox(width: context.spacingLarge + context.spacingSmall)); // 20px
+          buttons.add(const SizedBox(width: 12));
           buttons.add(
             buildIconButton(
               onPressed: () async {
@@ -205,9 +213,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final cardBackground = context.cardBackground;
     final cardBorder = context.cardBorder;
     final cardShadow = BoxShadow(
-      color: isDarkMode ? Colors.black54 : Colors.black12,
-      blurRadius: isDarkMode ? 30 : 24,
-      offset: Offset(0, isDarkMode ? 20 : 16),
+      color: isDarkMode ? Colors.black54 : Colors.black.withOpacity(0.12),
+      blurRadius: isDarkMode ? 30 : 32,
+      offset: Offset(0, isDarkMode ? 20 : 14),
     );
     final initialRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
     final showDeepLinkBanner = initialRoute.contains('auth/callback') ||
@@ -215,8 +223,9 @@ class _LoginScreenState extends State<LoginScreen> {
         initialRoute.contains('code=');
     
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -288,8 +297,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: null,
                       fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                          debugPrint('❌ Error loading logo: $error');
-                          debugPrint('❌ Logo asset path: $logoAsset');
+                          Logger.debug('❌ Error loading logo: $error');
+                          Logger.debug('❌ Logo asset path: $logoAsset');
                           return const SizedBox.shrink();
                         },
                       ),
@@ -307,30 +316,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           ThemedTextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                              label: 'Email',
-                            hint: 'Enter your email',
+                              label: AppLocalizations.of(context).login_emailLabel,
+                            hint: AppLocalizations.of(context).login_emailHint,
                               prefixIcon: Icons.email_outlined,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
+                                return AppLocalizations.of(context).validation_emailRequired;
                               }
                               if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                                return AppLocalizations.of(context).validation_emailInvalid;
                               }
                               if (!AppConfig.isEmailDomainAllowed(value)) {
-                                return 'Email domain not allowed. Use @mekar.ae or other approved domains';
+                                return AppLocalizations.of(context).login_emailDomainNotAllowed;
                               }
                               return null;
                             },
                           ),
                           
-                          // Password field - tight spacing (~12px)
-                          SizedBox(height: context.spacingMedium), // ~12px
+                          // Password field
+                          const SizedBox(height: 18),
                           ThemedTextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                              label: 'Password',
-                            hint: 'Enter your password',
+                              label: AppLocalizations.of(context).login_passwordLabel,
+                            hint: AppLocalizations.of(context).login_passwordHint,
                               prefixIcon: Icons.lock_outline,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -348,10 +357,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
+                                return AppLocalizations.of(context).validation_passwordRequired;
                               }
                               if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                                return AppLocalizations.of(context).validation_passwordMinLength;
                               }
                               return null;
                             },
@@ -361,21 +370,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(height: context.spacingLarge + context.spacingSmall), // 24px
                           
                           // Sign In button
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, child) {
-                              return ThemedButton(
-                                onPressed: authProvider.isLoading ? null : _handleLogin,
-                                isLoading: authProvider.isLoading,
-                                child: const Text(
-                                          'Sign In',
-                                          style: TextStyle(
-                                    fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.5,
-                                        ),
-                                ),
-                              );
-                            },
+                          ThemedButton(
+                            onPressed: _isSigningIn ? null : _handleLogin,
+                            isLoading: _isSigningIn,
+                            child: Text(
+                                      AppLocalizations.of(context).login_signInButton,
+                                      style: const TextStyle(
+                                fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                    ),
+                            ),
                           ),
                           
                           // Spacing ~24px below Sign In button
@@ -463,11 +468,14 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
       ),
+      ),
     );
   }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSigningIn = true);
 
     try {
       // All platforms (Web, Desktop, Mobile) use real Supabase authentication
@@ -477,11 +485,11 @@ class _LoginScreenState extends State<LoginScreen> {
               defaultTargetPlatform == TargetPlatform.linux);
       
       if (kIsWeb) {
-        debugPrint('🌐 Web platform detected - using real Supabase authentication');
+        Logger.debug('🌐 Web platform detected - using real Supabase authentication');
       } else if (isDesktopPlatform) {
-        debugPrint('🖥️ Desktop platform detected - using real Supabase authentication');
+        Logger.debug('🖥️ Desktop platform detected - using real Supabase authentication');
       } else {
-        debugPrint('📱 Mobile platform detected - using real Supabase authentication');
+        Logger.debug('📱 Mobile platform detected - using real Supabase authentication');
       }
       
       final authProvider = context.read<AuthProvider>();
@@ -541,6 +549,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       context.read<AuthProvider>().resetLoadingState(reason: 'email-error');
       if (mounted) {
+        setState(() => _isSigningIn = false);
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
       }
@@ -580,14 +589,42 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    if (resolvedRole == null || resolvedRole.isEmpty) {
-      if (isAppleProvider) {
-        await authProvider.assignRoleToOAuthUser(UserRole.technician);
-        resolvedRole = UserRole.technician.value;
-      } else {
-        Navigator.pushReplacementNamed(context, '/role-selection');
-        return;
+    // If no role by id, check by email - same email may be registered via email/password
+    // (OAuth creates a different auth identity than email signup)
+    if ((resolvedRole == null || resolvedRole.isEmpty) && session.user.email != null && session.user.email!.isNotEmpty) {
+      try {
+        final existingByEmail = await SupabaseService.client
+            .from('users')
+            .select('id, role')
+            .eq('email', session.user.email!.toLowerCase().trim())
+            .maybeSingle();
+        if (existingByEmail != null) {
+          // Email already registered - different auth identity. Ask to use email sign-in.
+          await authProvider.signOut();
+          if (mounted) {
+            AuthErrorHandler.showErrorSnackBar(
+              context,
+              'This email is already registered. Please sign in with your email and password.',
+            );
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+          return;
+        }
+      } catch (_) {
+        // Continue to role selection on error
       }
+    }
+
+    if (resolvedRole == null || resolvedRole.isEmpty) {
+      // Not registered - must create account first. Redirect to role selection.
+      if (mounted) {
+        AuthErrorHandler.showSuccessSnackBar(
+          context,
+          'Create an account to continue with your ${isAppleProvider ? "Apple" : "Google"} ID',
+        );
+        Navigator.pushReplacementNamed(context, '/role-selection');
+      }
+      return;
     }
 
     final hasProfile = await _ensureProfileLoaded(authProvider);

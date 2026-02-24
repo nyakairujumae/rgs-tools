@@ -1,42 +1,110 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/user_name_service.dart';
+import '../services/local_cache_service.dart';
+import '../services/connectivity_service.dart';
+import '../utils/logger.dart';
 
 class SupabaseToolProvider with ChangeNotifier {
   List<Tool> _tools = [];
   bool _isLoading = false;
+  RealtimeChannel? _realtimeChannel;
+  final LocalCacheService _cache = LocalCacheService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   List<Tool> get tools => _tools;
   bool get isLoading => _isLoading;
+
+  /// Subscribe to realtime changes on the tools table
+  void subscribeToRealtime() {
+    _realtimeChannel?.unsubscribe();
+    _realtimeChannel = SupabaseService.client
+        .channel('tools_realtime')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'tools',
+          callback: (payload) {
+            Logger.debug('🔄 [Realtime] Tools table changed: ${payload.eventType}');
+            loadTools();
+          },
+        )
+        .subscribe();
+    Logger.debug('✅ [Realtime] Subscribed to tools table');
+  }
+
+  /// Unsubscribe from realtime
+  void unsubscribeFromRealtime() {
+    _realtimeChannel?.unsubscribe();
+    _realtimeChannel = null;
+  }
 
   Future<void> loadTools() async {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final response =
-          await SupabaseService.client.from('tools').select().order('name');
+    final isOnline = _connectivity.isOnline;
 
-      _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
-      debugPrint('✅ Loaded ${_tools.length} tools from database');
-    } catch (e) {
-      debugPrint('❌ Error loading tools: $e');
-      // Don't clear tools on error - keep existing data
-      // This prevents showing empty state if there's a temporary network issue
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    if (isOnline) {
+      try {
+        final response = await SupabaseService.client
+            .from('tools')
+            .select()
+            .order('name')
+            .limit(1000);
+
+        _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
+        Logger.debug('✅ Loaded ${_tools.length} tools from Supabase');
+
+        // Cache to SQLite in the background (mobile only)
+        if (!kIsWeb) {
+          unawaited(_cache.cacheTools(_tools));
+        }
+      } catch (e) {
+        Logger.debug('❌ Error loading tools from Supabase: $e');
+        // Network error — fall back to cache
+        if (!kIsWeb) {
+          _tools = await _cache.getCachedTools();
+          Logger.debug('📦 Loaded ${_tools.length} tools from SQLite cache (network error fallback)');
+        }
+      }
+    } else {
+      // Offline — load from cache
+      if (!kIsWeb) {
+        _tools = await _cache.getCachedTools();
+        Logger.debug('📦 Loaded ${_tools.length} tools from SQLite cache (offline)');
+      }
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<Tool> addTool(Tool tool) async {
+    final validationError = tool.validate();
+    if (validationError != null) throw Exception(validationError);
+
+    // Offline path: queue and optimistically update local state
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final tempId = 'offline_${DateTime.now().millisecondsSinceEpoch}';
+      final offlineTool = tool.copyWith(id: tempId);
+      _tools.add(offlineTool);
+      notifyListeners();
+      await _cache.cacheSingleTool(offlineTool);
+      await _cache.queueOperation('tools', 'insert', tool.toMap(), recordId: tempId);
+      Logger.debug('📦 Tool queued for sync (offline): $tempId');
+      return offlineTool;
+    }
+
     try {
       final toolMap = tool.toMap();
-      debugPrint('🔍 Attempting to add tool with data: $toolMap');
-      
+      Logger.debug('🔍 Attempting to add tool with data: $toolMap');
+
       final response = await SupabaseService.client
           .from('tools')
           .insert(toolMap)
@@ -46,11 +114,13 @@ class SupabaseToolProvider with ChangeNotifier {
       final createdTool = Tool.fromMap(response);
       _tools.add(createdTool);
       notifyListeners();
-      debugPrint('✅ Tool added successfully: ${createdTool.id}');
-      
-      // Send push notification to admins about new tool (non-blocking)
-      try {
-        await PushNotificationService.sendToAdmins(
+      Logger.debug('✅ Tool added successfully: ${createdTool.id}');
+
+      if (!kIsWeb) unawaited(_cache.cacheSingleTool(createdTool));
+
+      // Fire-and-forget: send push notification (don't block add flow)
+      unawaited(
+        PushNotificationService.sendToAdmins(
           fromUserId: null, // System notification
           title: 'New Tool Added',
           body: '${tool.name} has been added to the inventory',
@@ -59,18 +129,16 @@ class SupabaseToolProvider with ChangeNotifier {
             'tool_id': createdTool.id,
             'tool_name': tool.name,
           },
-        );
-        debugPrint('✅ Push notification sent to admins for new tool');
-      } catch (pushError) {
-        debugPrint('⚠️ Could not send push notification for new tool: $pushError');
-      }
-      
+        ).then((_) => Logger.debug('✅ Push notification sent to admins for new tool'))
+         .catchError((e) => Logger.debug('⚠️ Could not send push notification for new tool: $e')),
+      );
+
       return createdTool;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error adding tool: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Stack trace: $stackTrace');
-      
+      Logger.debug('❌ Error adding tool: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Stack trace: $stackTrace');
+
       // Provide more detailed error information
       String errorMessage = 'Failed to add tool';
       if (e.toString().contains('permission denied') || e.toString().contains('PGRST301')) {
@@ -84,17 +152,33 @@ class SupabaseToolProvider with ChangeNotifier {
       } else {
         errorMessage = 'Error adding tool: ${e.toString()}';
       }
-      
+
       throw Exception(errorMessage);
     }
   }
 
   Future<void> updateTool(Tool tool) async {
+    final validationError = tool.validate();
+    if (validationError != null) throw Exception(validationError);
+
+    // Offline path
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final index = _tools.indexWhere((t) => t.id == tool.id);
+      if (index != -1) {
+        _tools[index] = tool;
+        notifyListeners();
+      }
+      await _cache.cacheSingleTool(tool);
+      await _cache.queueOperation('tools', 'update', tool.toMap(), recordId: tool.id);
+      Logger.debug('📦 Tool update queued for sync (offline): ${tool.id}');
+      return;
+    }
+
     try {
       final updateMap = tool.toMap();
-      debugPrint('🔧 [UpdateTool] Updating tool ${tool.id} with data: $updateMap');
-      debugPrint('   - assignedTo: ${tool.assignedTo}');
-      
+      Logger.debug('🔧 [UpdateTool] Updating tool ${tool.id} with data: $updateMap');
+      Logger.debug('   - assignedTo: ${tool.assignedTo}');
+
       await SupabaseService.client
           .from('tools')
           .update(updateMap)
@@ -106,11 +190,10 @@ class SupabaseToolProvider with ChangeNotifier {
           .select()
           .eq('id', tool.id!)
           .single();
-      
+
       final updatedTool = Tool.fromMap(updatedResponse);
-      debugPrint('✅ [UpdateTool] Tool updated. Database assignedTo: ${updatedTool.assignedTo}');
-      
-      // Clear name cache for the assigned user so fresh data is fetched when other users view the tool
+      Logger.debug('✅ [UpdateTool] Tool updated. Database assignedTo: ${updatedTool.assignedTo}');
+
       if (updatedTool.assignedTo != null) {
         UserNameService.clearCacheForUser(updatedTool.assignedTo!);
       }
@@ -120,32 +203,37 @@ class SupabaseToolProvider with ChangeNotifier {
         _tools[index] = updatedTool;
         notifyListeners();
       }
+
+      if (!kIsWeb) unawaited(_cache.cacheSingleTool(updatedTool));
     } catch (e) {
-      debugPrint('❌ [UpdateTool] Error updating tool: $e');
+      Logger.debug('❌ [UpdateTool] Error updating tool: $e');
       rethrow;
     }
   }
 
   Future<void> deleteTool(String toolId) async {
-    try {
-      debugPrint('🗑️ Provider: Deleting tool from database: $toolId');
-
-      // Delete from database
-      await SupabaseService.client.from('tools').delete().eq('id', toolId);
-
-      debugPrint('✅ Provider: Tool deleted from database');
-
-      // Update local state
+    // Offline path
+    if (!_connectivity.isOnline && !kIsWeb) {
       _tools.removeWhere((tool) => tool.id == toolId);
-      debugPrint(
-          '✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
-
-      // Do NOT call loadTools() - it can trigger session refresh on marginal JWT
-      // and log the user out. Local state is already correct.
       notifyListeners();
-      debugPrint('✅ Provider: Notified listeners after reload');
+      await _cache.removeCachedTool(toolId);
+      await _cache.queueOperation('tools', 'delete', {}, recordId: toolId);
+      Logger.debug('📦 Tool delete queued for sync (offline): $toolId');
+      return;
+    }
+
+    try {
+      Logger.debug('🗑️ Provider: Deleting tool from database: $toolId');
+      await SupabaseService.client.from('tools').delete().eq('id', toolId);
+      Logger.debug('✅ Provider: Tool deleted from database');
+
+      _tools.removeWhere((tool) => tool.id == toolId);
+      Logger.debug('✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
+      notifyListeners();
+
+      if (!kIsWeb) unawaited(_cache.removeCachedTool(toolId));
     } catch (e) {
-      debugPrint('❌ Provider: Error deleting tool: $e');
+      Logger.debug('❌ Provider: Error deleting tool: $e');
       rethrow;
     }
   }
@@ -173,9 +261,9 @@ class SupabaseToolProvider with ChangeNotifier {
   Future<void> assignTool(
       String toolId, String technicianId, String assignmentType) async {
     try {
-      // Update tool status and assigned_to field
+      // Set status to Pending Acceptance until the technician accepts
       await SupabaseService.client.from('tools').update(
-          {'status': 'Assigned', 'assigned_to': technicianId}).eq('id', toolId);
+          {'status': 'Pending Acceptance', 'assigned_to': technicianId}).eq('id', toolId);
 
       // Try to create assignment record (optional - table may not exist)
       try {
@@ -183,12 +271,10 @@ class SupabaseToolProvider with ChangeNotifier {
           'tool_id': toolId,
           'technician_id': technicianId,
           'assignment_type': assignmentType,
-          'status': 'Active'
+          'status': 'Pending'
         });
       } catch (assignmentsError) {
-        // Assignments table doesn't exist, but that's okay
-        // The tool assignment is already done via the tools table
-        debugPrint(
+        Logger.debug(
             'Assignments table not found, skipping assignment record: $assignmentsError');
       }
 
@@ -197,13 +283,55 @@ class SupabaseToolProvider with ChangeNotifier {
       if (index != -1) {
         _tools[index] = Tool.fromMap({
           ..._tools[index].toMap(),
-          'status': 'Assigned',
+          'status': 'Pending Acceptance',
           'assigned_to': technicianId
         });
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error assigning tool: $e');
+      Logger.debug('Error assigning tool: $e');
+      rethrow;
+    }
+  }
+
+  /// Technician accepts a pending tool assignment
+  Future<void> acceptAssignment(String toolId) async {
+    try {
+      await SupabaseService.client
+          .from('tools')
+          .update({'status': 'Assigned'})
+          .eq('id', toolId);
+
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({..._tools[index].toMap(), 'status': 'Assigned'});
+        notifyListeners();
+      }
+    } catch (e) {
+      Logger.debug('Error accepting assignment: $e');
+      rethrow;
+    }
+  }
+
+  /// Technician declines a pending tool assignment
+  Future<void> declineAssignment(String toolId) async {
+    try {
+      await SupabaseService.client
+          .from('tools')
+          .update({'status': 'Available', 'assigned_to': null})
+          .eq('id', toolId);
+
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({
+          ..._tools[index].toMap(),
+          'status': 'Available',
+          'assigned_to': null,
+        });
+        notifyListeners();
+      }
+    } catch (e) {
+      Logger.debug('Error declining assignment: $e');
       rethrow;
     }
   }
@@ -227,7 +355,7 @@ class SupabaseToolProvider with ChangeNotifier {
       } catch (assignmentsError) {
         // Assignments table doesn't exist, but that's okay
         // The tool return is already done via the tools table
-        debugPrint(
+        Logger.debug(
             'Assignments table not found, skipping assignment update: $assignmentsError');
       }
 
@@ -242,7 +370,7 @@ class SupabaseToolProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error returning tool: $e');
+      Logger.debug('Error returning tool: $e');
       rethrow;
     }
   }

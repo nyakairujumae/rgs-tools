@@ -6,6 +6,8 @@ import '../../utils/auth_error_handler.dart';
 import '../../utils/responsive_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gotrue/gotrue.dart';
+import '../../utils/logger.dart';
+import '../../l10n/app_localizations.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? accessToken;
@@ -68,14 +70,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         final tokenHash = params['token'];
         final code = params['code'];
         final type = params['type'];
-        debugPrint('🔐 Reset deep link params: type=$type hasToken=${tokenHash != null}');
+        Logger.debug('🔐 Reset deep link params: type=$type hasToken=${tokenHash != null}');
         if (code != null) {
-          debugPrint('🔐 Exchanging code for session');
+          Logger.debug('🔐 Exchanging code for session');
           await Supabase.instance.client.auth.exchangeCodeForSession(code);
           return;
         }
         if (tokenHash != null && (type == 'invite' || type == 'recovery')) {
-          debugPrint('🔐 Verifying OTP from deep link type=$type');
+          Logger.debug('🔐 Verifying OTP from deep link type=$type');
           await Supabase.instance.client.auth.verifyOTP(
             tokenHash: tokenHash,
             type: type == 'invite' ? OtpType.invite : OtpType.recovery,
@@ -88,7 +90,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         }
         return;
       } catch (e) {
-        debugPrint('❌ Failed to set session from deep link: $e');
+        Logger.debug('❌ Failed to set session from deep link: $e');
         if (showErrors && mounted) {
           final errorMessage = AuthErrorHandler.getErrorMessage(e);
           AuthErrorHandler.showErrorSnackBar(context, errorMessage);
@@ -101,7 +103,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Supabase setSession now takes a single refresh token argument
       await Supabase.instance.client.auth.setSession(token);
     } catch (e) {
-      debugPrint('❌ Failed to set session for password reset: $e');
+      Logger.debug('❌ Failed to set session for password reset: $e');
       if (showErrors && mounted) {
         final errorMessage = AuthErrorHandler.getErrorMessage(e);
         AuthErrorHandler.showErrorSnackBar(context, errorMessage);
@@ -166,7 +168,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Password set successfully! Redirecting...',
+                  AppLocalizations.of(context).resetPassword_successMessage,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -270,7 +272,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Text(
-                    'Reset Password',
+                    AppLocalizations.of(context).resetPassword_title,
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 32),
                       fontWeight: FontWeight.bold,
@@ -279,7 +281,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                   Text(
-                    'Enter your new password below',
+                    AppLocalizations.of(context).resetPassword_subtitle,
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -306,7 +308,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
                       decoration: InputDecoration(
-                        labelText: 'New Password',
+                        labelText: AppLocalizations.of(context).resetPassword_newPasswordLabel,
                         labelStyle: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
@@ -335,7 +337,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -344,7 +346,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -385,7 +387,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                       ),
                       decoration: InputDecoration(
-                        labelText: 'Confirm New Password',
+                        labelText: AppLocalizations.of(context).resetPassword_confirmLabel,
                         labelStyle: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
@@ -414,7 +416,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -423,7 +425,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                           ),
                           borderSide: BorderSide(
-                            color: colorScheme.onSurface.withValues(alpha: 0.3),
+                            color: colorScheme.onSurface.withValues(alpha: 0.55),
                             width: 1,
                           ),
                         ),
@@ -482,7 +484,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 ),
                               )
                             : Text(
-                                'Reset Password',
+                                AppLocalizations.of(context).resetPassword_button,
                                 style: TextStyle(
                                   fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                                   fontWeight: FontWeight.w600,
@@ -510,7 +512,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                       ),
                       child: Text(
-                        '← Back to Login',
+                        AppLocalizations.of(context).resetPassword_backToLogin,
                         style: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),

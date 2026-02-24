@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
-import 'package:intl/intl.dart';
 import '../models/tool_history.dart';
 import '../services/tool_history_service.dart';
+import '../services/user_name_service.dart';
 import '../services/report_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
-import '../widgets/common/loading_widget.dart';
 import '../widgets/common/empty_state.dart';
-import '../utils/responsive_helper.dart';
+import '../widgets/common/loading_widget.dart';
+import '../utils/auth_error_handler.dart';
 
 class AllToolHistoryScreen extends StatefulWidget {
   const AllToolHistoryScreen({super.key});
@@ -18,12 +18,10 @@ class AllToolHistoryScreen extends StatefulWidget {
 }
 
 class _AllToolHistoryScreenState extends State<AllToolHistoryScreen> {
-  List<ToolHistory> _historyItems = [];
-  bool _isLoading = false;
+  String _selectedFilter = 'All';
+  bool _isLoading = true;
   bool _isExporting = false;
-  String _actionFilter = '';
-  DateTime? _startDate;
-  DateTime? _endDate;
+  List<ToolHistory> _historyItems = [];
 
   @override
   void initState() {
@@ -34,12 +32,7 @@ class _AllToolHistoryScreenState extends State<AllToolHistoryScreen> {
   Future<void> _loadHistory() async {
     setState(() => _isLoading = true);
     try {
-      final items = await ToolHistoryService.getAllHistory(
-        actionFilter: _actionFilter.isEmpty ? null : _actionFilter,
-        startDate: _startDate,
-        endDate: _endDate,
-        limit: 200,
-      );
+      final items = await ToolHistoryService.getAllHistory();
       if (mounted) {
         setState(() {
           _historyItems = items;
@@ -58,31 +51,18 @@ class _AllToolHistoryScreenState extends State<AllToolHistoryScreen> {
     try {
       final file = await ReportService.generateToolMovementHistoryReport(
         historyItems: _historyItems,
-        startDate: _startDate,
-        endDate: _endDate,
       );
       if (mounted) {
         setState(() => _isExporting = false);
-        final path = file.path;
-        await OpenFile.open(path);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Report saved to $path'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        }
+        AuthErrorHandler.showSuccessSnackBar(context, 'Report exported successfully');
+        try {
+          await OpenFile.open(file.path);
+        } catch (_) {}
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isExporting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export failed: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        AuthErrorHandler.showErrorSnackBar(context, 'Error exporting report: $e');
       }
     }
   }
@@ -93,152 +73,106 @@ class _AllToolHistoryScreenState extends State<AllToolHistoryScreen> {
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
       appBar: AppBar(
-        title: const Text('Tool Movement History'),
-        backgroundColor: context.scaffoldBackground,
+        title: const Text('Tool History'),
+        backgroundColor: context.appBarBackground,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: _isLoading ? null : _loadHistory,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-          ),
-          TextButton.icon(
-            onPressed: _isExporting || _historyItems.isEmpty ? null : _exportReport,
             icon: _isExporting
                 ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.onPrimary),
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.secondaryColor),
+                    ),
                   )
-                : const Icon(Icons.download, size: 20),
-            label: const Text('Generate Report'),
+                : const Icon(Icons.download_rounded),
+            onPressed: _isExporting ? null : _exportReport,
+            tooltip: 'Export Report',
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildFilters(),
+          _buildFilterChips(),
           Expanded(
             child: _isLoading
                 ? const Center(child: LoadingWidget())
-                : RefreshIndicator(
-                    onRefresh: _loadHistory,
-                    color: AppTheme.secondaryColor,
-                    child: _historyItems.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            padding: ResponsiveHelper.getResponsivePadding(context, horizontal: 16, vertical: 12),
-                            itemCount: _historyItems.length,
-                            itemBuilder: (context, index) => _buildHistoryCard(_historyItems[index]),
-                          ),
-                  ),
+                : _buildHistoryList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilters() {
-    final actions = [
-      '',
-      ToolHistoryActions.badged,
-      ToolHistoryActions.releasedBadge,
-      ToolHistoryActions.releasedToRequester,
-      ToolHistoryActions.assigned,
-      ToolHistoryActions.returned,
-      ToolHistoryActions.maintenance,
-      ToolHistoryActions.updated,
-    ];
-    final theme = Theme.of(context);
-    return Container(
+  Widget _buildFilterChips() {
+    final filters = ['All', 'Recent', 'Assignments', 'Maintenance', 'Updates'];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Row(
-        children: [
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: _actionFilter.isEmpty ? '' : _actionFilter,
-              decoration: InputDecoration(
-                labelText: 'Action',
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.colorScheme.outline),
-                ),
-              ),
-              items: [
-                const DropdownMenuItem(value: '', child: Text('All Actions')),
-                ...actions.where((a) => a.isNotEmpty).map((a) => DropdownMenuItem(
-                      value: a,
-                      child: Text(a),
-                    )),
-              ],
-              onChanged: (v) {
-                setState(() {
-                  _actionFilter = v ?? '';
-                  _loadHistory();
-                });
-              },
+        children: filters.map((f) {
+          final isSelected = _selectedFilter == f;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(f),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _selectedFilter = f),
+              selectedColor: AppTheme.secondaryColor.withOpacity(0.2),
+              checkmarkColor: AppTheme.secondaryColor,
             ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: AppTheme.secondaryColor),
-            onPressed: () async {
-              final range = await showDateRangePicker(
-                context: context,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-                initialDateRange: _startDate != null && _endDate != null
-                    ? DateTimeRange(start: _startDate!, end: _endDate!)
-                    : DateTimeRange(
-                        start: DateTime.now().subtract(const Duration(days: 30)),
-                        end: DateTime.now(),
-                      ),
-              );
-              if (range != null && mounted) {
-                setState(() {
-                  _startDate = range.start;
-                  _endDate = range.end;
-                  _loadHistory();
-                });
-              }
-            },
-            icon: const Icon(Icons.date_range, size: 18),
-            label: Text(_startDate != null ? '${DateFormat('MMM d').format(_startDate!)} - ${DateFormat('MMM d').format(_endDate!)}' : 'Date Range'),
-          ),
-          if (_startDate != null)
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _startDate = null;
-                  _endDate = null;
-                  _loadHistory();
-                });
-              },
-              icon: const Icon(Icons.clear),
-              tooltip: 'Clear date filter',
-            ),
-        ],
+          );
+        }).toList(),
       ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    final filteredItems = _filterHistoryItems(_historyItems);
+    if (filteredItems.isEmpty) {
+      return _buildEmptyState();
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredItems.length,
+      itemBuilder: (context, index) => _buildHistoryCard(filteredItems[index]),
     );
   }
 
   Widget _buildEmptyState() {
-    return EmptyState(
-      title: 'No History Available',
-      subtitle: 'No tool movement history found. History is recorded when tools are badged, released, assigned, or updated.',
-      icon: Icons.history,
-    );
+    String title;
+    String subtitle;
+    IconData icon;
+    switch (_selectedFilter) {
+      case 'Recent':
+        title = 'No Recent Activity';
+        subtitle = 'No recent changes across all tools';
+        icon = Icons.schedule;
+        break;
+      case 'Assignments':
+        title = 'No Assignment History';
+        subtitle = 'No assignment records found';
+        icon = Icons.person_add;
+        break;
+      case 'Maintenance':
+        title = 'No Maintenance History';
+        subtitle = 'No maintenance records found';
+        icon = Icons.build;
+        break;
+      case 'Updates':
+        title = 'No Update History';
+        subtitle = 'No update records found';
+        icon = Icons.edit;
+        break;
+      default:
+        title = 'No History Available';
+        subtitle = 'No history records found';
+        icon = Icons.history;
+    }
+    return EmptyState(title: title, subtitle: subtitle, icon: icon);
   }
 
   Widget _buildHistoryCard(ToolHistory item) {
@@ -247,60 +181,251 @@ class _AllToolHistoryScreenState extends State<AllToolHistoryScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: context.cardDecoration,
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getActionColor(context, item.action).withValues(alpha: 0.15),
-          child: Icon(_getActionIcon(item.action), color: _getActionColor(context, item.action), size: 22),
-        ),
-        title: Text(
-          item.actionDisplayName,
-          style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
-        ),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.toolName, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
-            Text(item.description, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-            if (item.performedBy != null)
-              Text('by ${item.performedBy}', style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _getActionColor(item.action).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    _getActionIcon(item.action),
+                    color: _getActionColor(item.action),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.actionDisplayName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        '${item.toolName} • ${item.timeAgo}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (item.isRecent)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.successColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Recent',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.successColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              item.description,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            if (item.oldValue != null && item.newValue != null) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'From: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildValueDisplay(context, item.oldValue!, theme.colorScheme.onSurface),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_forward, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'To: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildValueDisplay(context, item.newValue!, AppTheme.primaryColor),
+                        ),
+                      ],
+                    ),
+                  ],
+                  ),
+                ),
+              ),
+            ],
+            if (item.performedBy != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.person_outline, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                  const SizedBox(width: 4),
+                  Text(
+                    item.performedBy!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ),
-        trailing: Text(
-          item.timeAgo,
-          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
         ),
       ),
     );
   }
 
-  Color _getActionColor(BuildContext context, String action) {
-    final theme = Theme.of(context);
+  Widget _buildValueDisplay(BuildContext context, String value, Color textColor) {
+    final isUuid = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(value.trim());
+    if (!isUuid) {
+      return Text(
+        value,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+    return FutureBuilder<String>(
+      future: UserNameService.getUserName(value),
+      builder: (context, snapshot) {
+        final display = snapshot.hasData ? snapshot.data! : value;
+        return Text(
+          display,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        );
+      },
+    );
+  }
+
+  List<ToolHistory> _filterHistoryItems(List<ToolHistory> items) {
+    switch (_selectedFilter) {
+      case 'Recent':
+        return items.where((item) => item.isRecent).toList();
+      case 'Assignments':
+        return items.where((item) =>
+            item.action == ToolHistoryActions.assigned ||
+            item.action == ToolHistoryActions.returned ||
+            item.action == ToolHistoryActions.transferred ||
+            item.action == ToolHistoryActions.badged ||
+            item.action == ToolHistoryActions.releasedBadge ||
+            item.action == ToolHistoryActions.releasedToRequester).toList();
+      case 'Maintenance':
+        return items.where((item) => item.action == ToolHistoryActions.maintenance).toList();
+      case 'Updates':
+        return items.where((item) =>
+            item.action == ToolHistoryActions.updated ||
+            item.action == ToolHistoryActions.statusChanged ||
+            item.action == ToolHistoryActions.conditionChanged ||
+            item.action == ToolHistoryActions.valueUpdated ||
+            item.action == ToolHistoryActions.notesUpdated).toList();
+      default:
+        return items;
+    }
+  }
+
+  Color _getActionColor(String action) {
     switch (action) {
-      case ToolHistoryActions.badged:
+      case ToolHistoryActions.created:
+        return AppTheme.successColor;
       case ToolHistoryActions.assigned:
+      case ToolHistoryActions.badged:
         return AppTheme.primaryColor;
+      case ToolHistoryActions.returned:
       case ToolHistoryActions.releasedBadge:
       case ToolHistoryActions.releasedToRequester:
-      case ToolHistoryActions.returned:
         return AppTheme.secondaryColor;
       case ToolHistoryActions.maintenance:
         return AppTheme.warningColor;
+      case ToolHistoryActions.updated:
+        return AppTheme.accentColor;
+      case ToolHistoryActions.deleted:
+        return AppTheme.errorColor;
       default:
-        return theme.colorScheme.onSurface.withValues(alpha: 0.5);
+        return AppTheme.textSecondary;
     }
   }
 
   IconData _getActionIcon(String action) {
     switch (action) {
-      case ToolHistoryActions.badged:
+      case ToolHistoryActions.created:
+        return Icons.add_circle;
       case ToolHistoryActions.assigned:
+      case ToolHistoryActions.badged:
         return Icons.person_add;
+      case ToolHistoryActions.returned:
       case ToolHistoryActions.releasedBadge:
       case ToolHistoryActions.releasedToRequester:
-      case ToolHistoryActions.returned:
         return Icons.assignment_return;
       case ToolHistoryActions.maintenance:
         return Icons.build;
+      case ToolHistoryActions.updated:
+        return Icons.edit;
+      case ToolHistoryActions.deleted:
+        return Icons.delete;
+      case ToolHistoryActions.transferred:
+        return Icons.swap_horiz;
+      case ToolHistoryActions.statusChanged:
+        return Icons.toggle_on;
+      case ToolHistoryActions.locationChanged:
+        return Icons.location_on;
+      case ToolHistoryActions.conditionChanged:
+        return Icons.construction;
+      case ToolHistoryActions.valueUpdated:
+        return Icons.attach_money;
+      case ToolHistoryActions.imageAdded:
+        return Icons.image;
+      case ToolHistoryActions.notesUpdated:
+        return Icons.note;
       default:
         return Icons.history;
     }

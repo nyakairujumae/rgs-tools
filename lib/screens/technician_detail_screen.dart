@@ -12,6 +12,8 @@ import '../theme/theme_extensions.dart';
 import '../utils/auth_error_handler.dart';
 import 'add_technician_screen.dart';
 import 'technicians_screen.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class TechnicianDetailScreen extends StatefulWidget {
   final Technician technician;
@@ -114,7 +116,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Edit Technician',
+                            AppLocalizations.of(context).technicianDetail_editTechnician,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
@@ -140,7 +142,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Delete Technician',
+                            AppLocalizations.of(context).technicianDetail_deleteTechnician,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -176,10 +178,10 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
-          tabs: const [
-            Tab(text: 'Profile'),
-            Tab(text: 'Tools'),
-            Tab(text: 'Issues'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).technicianDetail_profile),
+            Tab(text: AppLocalizations.of(context).technicianDetail_tools),
+            Tab(text: AppLocalizations.of(context).technicianDetail_issues),
           ],
             ),
           ),
@@ -208,31 +210,31 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
           
           // Contact Information
           _buildInfoCard(
-            title: 'Contact Information',
+            title: AppLocalizations.of(context).technicianDetail_contactInfo,
             icon: Icons.contact_phone,
             children: [
-              _buildInfoRow(Icons.badge, 'Employee ID', widget.technician.employeeId),
-              _buildInfoRow(Icons.phone, 'Phone', widget.technician.phone),
-              _buildInfoRow(Icons.email, 'Email', widget.technician.email),
+              _buildInfoRow(Icons.badge, AppLocalizations.of(context).technicianDetail_employeeId, widget.technician.employeeId),
+              _buildInfoRow(Icons.phone, AppLocalizations.of(context).common_phone, widget.technician.phone),
+              _buildInfoRow(Icons.email, AppLocalizations.of(context).common_email, widget.technician.email),
             ],
           ),
           SizedBox(height: 16),
           
           // Employment Details
           _buildInfoCard(
-            title: 'Employment Details',
+            title: AppLocalizations.of(context).technicianDetail_employmentDetails,
             icon: Icons.work,
             children: [
-              _buildInfoRow(Icons.business, 'Department', widget.technician.department),
-              _buildInfoRow(Icons.calendar_today, 'Hire Date', widget.technician.hireDate),
-              _buildInfoRow(Icons.access_time, 'Created', widget.technician.createdAt),
+              _buildInfoRow(Icons.business, AppLocalizations.of(context).technicianDetail_department, widget.technician.department),
+              _buildInfoRow(Icons.calendar_today, AppLocalizations.of(context).technicianDetail_hireDate, widget.technician.hireDate),
+              _buildInfoRow(Icons.access_time, AppLocalizations.of(context).technicianDetail_created, widget.technician.createdAt),
             ],
           ),
           SizedBox(height: 16),
           
           // Status Information
           _buildInfoCard(
-            title: 'Status Information',
+            title: AppLocalizations.of(context).technicianDetail_statusInfo,
             icon: Icons.info,
             children: [
               _buildStatusRow(),
@@ -278,8 +280,8 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        debugPrint('❌ Error loading profile picture for ${widget.technician.name}: $error');
-                        debugPrint('❌ URL: ${widget.technician.profilePictureUrl}');
+                        Logger.debug('❌ Error loading profile picture for ${widget.technician.name}: $error');
+                        Logger.debug('❌ URL: ${widget.technician.profilePictureUrl}');
                         return Center(
                           child: Text(
                             widget.technician.name.isNotEmpty ? widget.technician.name[0].toUpperCase() : '?',
@@ -498,14 +500,14 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'No tools assigned',
+                  AppLocalizations.of(context).technicianDetail_noTools,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'This technician has no tools assigned to them',
+                  AppLocalizations.of(context).technicianDetail_noToolsDesc,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -586,7 +588,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 trailing: Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
                 ),
                 onTap: () {
                   // Navigate to tool detail screen
@@ -621,14 +623,14 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'No issues reported',
+                  AppLocalizations.of(context).technicianDetail_noIssues,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'This technician has not reported any tool issues',
+                  AppLocalizations.of(context).technicianDetail_noIssuesDesc,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -854,7 +856,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
       // Close loading dialog if still open
       if (mounted) Navigator.pop(context);
       
-      debugPrint('Error checking assigned tools: $e');
+      Logger.debug('Error checking assigned tools: $e');
       // If query fails, continue with deletion attempt
       // The database will enforce constraints if tools actually exist
     }
@@ -885,7 +887,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
               ),
               const SizedBox(width: 12),
               Text(
-                'Delete Technician',
+                AppLocalizations.of(context).technicianDetail_deleteTechnician,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
@@ -906,7 +908,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
               ),
               const SizedBox(height: 16),
               Text(
-                'This will permanently delete:',
+                AppLocalizations.of(context).technicianDetail_deleteWarning,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -914,13 +916,13 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
               ),
               const SizedBox(height: 8),
               Text(
-                '• The technician record',
+                AppLocalizations.of(context).technicianDetail_deleteLine1,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               Text(
-                '• All associated data',
+                AppLocalizations.of(context).technicianDetail_deleteLine2,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
@@ -937,7 +939,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                   ),
                 ),
                 child: Text(
-                  'This action cannot be undone!',
+                  AppLocalizations.of(context).technicianDetail_deleteCannotUndo,
                   style: TextStyle(
                     color: Colors.red[700],
                     fontWeight: FontWeight.w600,
@@ -954,7 +956,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
               child: Text(
-                'Cancel',
+                AppLocalizations.of(context).common_cancel,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -983,7 +985,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                     );
                   });
                 } catch (e) {
-                  debugPrint('❌ Error deleting technician: $e');
+                  Logger.debug('❌ Error deleting technician: $e');
                   
                   if (mounted) {
                     String errorMessage = 'Failed to delete technician. ';

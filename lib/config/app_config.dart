@@ -74,7 +74,7 @@ class AppConfig {
   
   // Security configuration
   static bool get enableBiometricAuth => environment != 'development';
-  static Duration get sessionTimeout => const Duration(days: 30); // 30 days instead of 8 hours
+  static Duration get sessionTimeout => const Duration(hours: 4);
   static int get maxLoginAttempts => 5;
   
   // Performance configuration
@@ -97,25 +97,40 @@ class AppConfig {
   );
   static RegExp get phoneRegex => RegExp(r'^\+?[\d\s\-\(\)]+$');
   
-  // Allow all email domains - no restrictions
+  // Allow all email domains for general registration - no restrictions
   static List<String> get allowedEmailDomains => [];
-  
+
+  // Admin-only email domains (centralized — update this list to add/remove)
+  static const List<String> allowedAdminDomains = [
+    '@royalgulf.ae',
+    '@mekar.ae',
+    '@gmail.com',
+  ];
+
   // Validate email format - returns true if email format is valid
   static bool isValidEmailFormat(String email) {
     if (email.isEmpty) return false;
     return emailRegex.hasMatch(email.trim());
   }
-  
+
   // Check if email domain is allowed - always return true for any domain
   // But first validates the email format
   static bool isEmailDomainAllowed(String email) {
-    // First check if email format is valid
     if (!isValidEmailFormat(email)) {
       return false;
     }
-    // Allow any email domain - no restrictions (as long as format is valid)
     return true;
   }
+
+  // Check if an email is eligible for admin registration
+  static bool isAdminEmailDomain(String email) {
+    final lower = email.toLowerCase().trim();
+    return allowedAdminDomains.any((domain) => lower.endsWith(domain));
+  }
+
+  // Human-readable list for error messages
+  static String get adminDomainsDisplay =>
+      allowedAdminDomains.join(', ');
   
   // Export configuration
   static List<String> get supportedExportFormats => ['csv', 'pdf', 'excel'];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/approval_workflow.dart';
 import '../services/supabase_service.dart';
+import '../utils/logger.dart';
 
 class ApprovalWorkflowsProvider with ChangeNotifier {
   List<ApprovalWorkflow> _workflows = [];
@@ -21,39 +22,39 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('🔍 Loading approval workflows from database...');
+      Logger.debug('🔍 Loading approval workflows from database...');
       final response = await SupabaseService.client
           .from('approval_workflows')
           .select()
           .order('request_date', ascending: false);
 
-      debugPrint('🔍 Raw response from database: ${response.length} items');
+      Logger.debug('🔍 Raw response from database: ${response.length} items');
       
       _workflows = (response as List)
           .map((data) {
             try {
               return ApprovalWorkflow.fromMap(data);
             } catch (e) {
-              debugPrint('❌ Error parsing workflow: $e');
-              debugPrint('❌ Problematic data: $data');
+              Logger.debug('❌ Error parsing workflow: $e');
+              Logger.debug('❌ Problematic data: $data');
               rethrow;
             }
           })
           .toList();
 
-      debugPrint('✅ Loaded ${_workflows.length} approval workflows from database');
+      Logger.debug('✅ Loaded ${_workflows.length} approval workflows from database');
       if (_workflows.isNotEmpty) {
-        debugPrint('📊 Workflow types: ${_workflows.map((w) => w.requestType).toSet().join(", ")}');
-        debugPrint('📊 Workflow statuses: ${_workflows.map((w) => w.status).toSet().join(", ")}');
-        debugPrint('📊 Sample workflow IDs: ${_workflows.take(3).map((w) => w.id).join(", ")}');
+        Logger.debug('📊 Workflow types: ${_workflows.map((w) => w.requestType).toSet().join(", ")}');
+        Logger.debug('📊 Workflow statuses: ${_workflows.map((w) => w.status).toSet().join(", ")}');
+        Logger.debug('📊 Sample workflow IDs: ${_workflows.take(3).map((w) => w.id).join(", ")}');
       } else {
-        debugPrint('⚠️ No workflows found in database');
+        Logger.debug('⚠️ No workflows found in database');
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ Error loading approval workflows: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      Logger.debug('❌ Error loading approval workflows: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Stack trace: ${StackTrace.current}');
       // Keep existing workflows on error
     } finally {
       _isLoading = false;
@@ -64,7 +65,7 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
   Future<void> createWorkflow(ApprovalWorkflow workflow) async {
     try {
       final workflowMap = workflow.toMap(includeId: false);
-      debugPrint('🔍 Creating approval workflow with data: $workflowMap');
+      Logger.debug('🔍 Creating approval workflow with data: $workflowMap');
       
       final response = await SupabaseService.client
           .from('approval_workflows')
@@ -75,10 +76,10 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
       final newWorkflow = ApprovalWorkflow.fromMap(response);
       _workflows.insert(0, newWorkflow);
       notifyListeners();
-      debugPrint('✅ Created approval workflow: ${workflow.title} (ID: ${newWorkflow.id})');
+      Logger.debug('✅ Created approval workflow: ${workflow.title} (ID: ${newWorkflow.id})');
     } catch (e) {
-      debugPrint('❌ Error creating approval workflow: $e');
-      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      Logger.debug('❌ Error creating approval workflow: $e');
+      Logger.debug('❌ Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }
@@ -93,9 +94,9 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
 
       // Reload workflows to get updated data
       await loadWorkflows();
-      debugPrint('✅ Approved workflow: $workflowId');
+      Logger.debug('✅ Approved workflow: $workflowId');
     } catch (e) {
-      debugPrint('❌ Error approving workflow: $e');
+      Logger.debug('❌ Error approving workflow: $e');
       rethrow;
     }
   }
@@ -110,9 +111,9 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
 
       // Reload workflows to get updated data
       await loadWorkflows();
-      debugPrint('✅ Rejected workflow: $workflowId');
+      Logger.debug('✅ Rejected workflow: $workflowId');
     } catch (e) {
-      debugPrint('❌ Error rejecting workflow: $e');
+      Logger.debug('❌ Error rejecting workflow: $e');
       rethrow;
     }
   }
@@ -133,9 +134,9 @@ class ApprovalWorkflowsProvider with ChangeNotifier {
         _workflows[index] = workflow;
         notifyListeners();
       }
-      debugPrint('✅ Updated approval workflow: ${workflow.title}');
+      Logger.debug('✅ Updated approval workflow: ${workflow.title}');
     } catch (e) {
-      debugPrint('❌ Error updating approval workflow: $e');
+      Logger.debug('❌ Error updating approval workflow: $e');
       rethrow;
     }
   }

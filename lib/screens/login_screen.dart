@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
+import '../config/app_config.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../utils/responsive_helper.dart';
@@ -32,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  static const _adminDomains = ['@royalgulf.ae', '@mekar.ae'];
+  static List<String> get _adminDomains => AppConfig.allowedAdminDomains;
 
   @override
   Widget build(BuildContext context) {

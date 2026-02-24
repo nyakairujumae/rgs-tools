@@ -11,6 +11,8 @@ import '../utils/auth_error_handler.dart';
 import 'admin_registration_screen.dart';
 import 'auth/login_screen.dart';
 import 'technician_registration_screen.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -69,7 +71,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           children: [
                             _buildRoleButton(
                               context: context,
-                              label: isOAuthUser ? 'Continue as Admin' : 'Register as Admin',
+                              label: isOAuthUser ? AppLocalizations.of(context).roleSelection_continueAdmin : AppLocalizations.of(context).roleSelection_registerAdmin,
                               color: AppTheme.secondaryColor,
                               onTap: _isProcessing 
                                   ? () {} // Empty function when processing
@@ -84,7 +86,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                             const SizedBox(height: 16),
                             _buildRoleButton(
                               context: context,
-                              label: isOAuthUser ? 'Continue as Technician' : 'Register as Technician',
+                              label: isOAuthUser ? AppLocalizations.of(context).roleSelection_continueTechnician : AppLocalizations.of(context).roleSelection_registerTechnician,
                               color: theme.colorScheme.surface,
                               onTap: _isProcessing 
                                   ? () {} // Empty function when processing
@@ -139,8 +141,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             height: null,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              debugPrint('❌ Error loading logo: $error');
-              debugPrint('❌ Logo asset path: ${getThemeLogoAsset(theme.brightness)}');
+              Logger.debug('❌ Error loading logo: $error');
+              Logger.debug('❌ Logo asset path: ${getThemeLogoAsset(theme.brightness)}');
               return const SizedBox.shrink();
             },
           ),
@@ -158,7 +160,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ),
           ),
           child: Text(
-            'Tool Tracking • Assignments • Inventory',
+            AppLocalizations.of(context).roleSelection_subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -248,7 +250,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'Already have an account? ',
+          AppLocalizations.of(context).roleSelection_alreadyHaveAccount,
           style: TextStyle(
             fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -263,7 +265,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
           child: Text(
-            'Sign in',
+            AppLocalizations.of(context).roleSelection_signIn,
             style: TextStyle(
               fontSize: 14,
                   fontWeight: FontWeight.w600,

@@ -18,6 +18,7 @@ import '../widgets/common/loading_widget.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/logger.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final ReportType reportType;
@@ -190,7 +191,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           await OpenFile.open(file.path);
         } catch (e) {
           // File opening failed, but report was saved successfully
-          debugPrint('Could not open file: $e');
+          Logger.debug('Could not open file: $e');
         }
       }
     } catch (e) {
@@ -977,7 +978,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
+          color: color.withValues(alpha: 0.55),
           width: 0.5,
         ),
       ),

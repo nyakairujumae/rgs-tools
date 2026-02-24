@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../utils/responsive_helper.dart';
+import '../../utils/logger.dart';
+import '../../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -98,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     await Future.delayed(const Duration(milliseconds: 800));
-    debugPrint(
+    Logger.debug(
       '🔍 Technician registration complete - Role: ${authProvider.userRole.value}, '
       'isPendingApproval: ${authProvider.isPendingApproval}',
     );
@@ -145,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Check Your Email',
+                    AppLocalizations.of(context).register_checkYourEmail,
                     style: TextStyle(
                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
                       fontWeight: FontWeight.w700,
@@ -160,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'We\'ve sent a confirmation email to:',
+                  AppLocalizations.of(context).register_confirmationEmailSent,
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -184,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Please check your email and click the confirmation link to verify your account. After verification, your account will be pending admin approval.',
+                  AppLocalizations.of(context).register_confirmationInstructions,
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
@@ -198,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.55),
                       width: 1,
                     ),
                   ),
@@ -239,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 child: Text(
-                  'Go to Login',
+                  AppLocalizations.of(context).register_goToLogin,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                   ),
@@ -307,14 +309,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         border: OutlineInputBorder(
           borderRadius: borderRadius,
           borderSide: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.55),
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: borderRadius,
           borderSide: BorderSide(
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
+            color: colorScheme.onSurface.withValues(alpha: 0.55),
             width: 1,
           ),
         ),
@@ -382,7 +384,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                           Text(
-                            'Create your account to get started.',
+                            AppLocalizations.of(context).register_createAccount,
                             style: TextStyle(
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                               fontWeight: FontWeight.w500,
@@ -403,12 +405,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _nameController,
                       style: buildFieldTextStyle(16),
                       decoration: buildDecoration(
-                        label: 'Full Name',
+                        label: AppLocalizations.of(context).register_fullNameLabel,
                         icon: Icons.person_outline,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your full name';
+                          return AppLocalizations.of(context).validation_nameRequired;
                         }
                         return null;
                       },
@@ -422,19 +424,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       style: buildFieldTextStyle(16),
                       decoration: buildDecoration(
-                        label: 'Email',
+                        label: AppLocalizations.of(context).register_emailLabel,
                         icon: Icons.email_outlined,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return AppLocalizations.of(context).validation_emailRequired;
                         }
                         // Use AppConfig for consistent email validation
                         if (!AppConfig.isValidEmailFormat(value)) {
-                          return 'Please enter a valid email address (e.g., name@example.com)';
+                          return AppLocalizations.of(context).register_emailFormatValidation;
                         }
                         if (!AppConfig.isEmailDomainAllowed(value)) {
-                          return 'Email domain not allowed. Use @mekar.ae or other approved domains';
+                          return AppLocalizations.of(context).login_emailDomainNotAllowed;
                         }
                         return null;
                       },
@@ -448,7 +450,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _obscurePassword,
                       style: buildFieldTextStyle(16),
                       decoration: buildDecoration(
-                        label: 'Password',
+                        label: AppLocalizations.of(context).register_passwordLabel,
                         icon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -463,10 +465,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return AppLocalizations.of(context).validation_passwordRequired;
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return AppLocalizations.of(context).validation_passwordMinLength;
                         }
                         return null;
                       },
@@ -480,7 +482,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _obscureConfirmPassword,
                       style: buildFieldTextStyle(16),
                       decoration: buildDecoration(
-                        label: 'Confirm Password',
+                        label: AppLocalizations.of(context).register_confirmPasswordLabel,
                         icon: Icons.lock_outline,
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -495,10 +497,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
+                          return AppLocalizations.of(context).validation_passwordMismatch;
                         }
                         if (value != _passwordController.text) {
-                          return 'Passwords do not match';
+                          return AppLocalizations.of(context).validation_passwordMismatch;
                         }
                         return null;
                       },
@@ -513,14 +515,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.phone,
                         style: buildFieldTextStyle(16),
                         decoration: buildDecoration(
-                          label: 'Phone Number',
+                          label: AppLocalizations.of(context).register_phoneLabel,
                           icon: Icons.phone_outlined,
                         ),
                         validator: (value) {
                           if (!isTechnician) return null;
                           final trimmed = value?.trim() ?? '';
                           if (trimmed.isEmpty) {
-                            return 'Please enter your phone number';
+                            return AppLocalizations.of(context).validation_phoneRequired;
                           }
                           return null;
                         },
@@ -535,7 +537,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _departmentController,
                         style: buildFieldTextStyle(16),
                         decoration: buildDecoration(
-                          label: 'Department',
+                          label: AppLocalizations.of(context).register_departmentLabel,
                           icon: Icons.business_outlined,
                         ),
                         validator: (value) {
@@ -559,7 +561,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ResponsiveHelper.getResponsiveBorderRadius(context, 20),
                         ),
                         border: Border.all(
-                          color: colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: colorScheme.onSurface.withValues(alpha: 0.55),
                           width: 1,
                         ),
                       ),
@@ -567,7 +569,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         value: _selectedRole,
                         style: buildFieldTextStyle(16),
                         decoration: InputDecoration(
-                          labelText: 'Role',
+                          labelText: AppLocalizations.of(context).register_roleLabel,
                           labelStyle: TextStyle(
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
@@ -660,7 +662,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                   )
                                 : Text(
-                                    'Create Account',
+                                    AppLocalizations.of(context).register_createAccountButton,
                                     style: TextStyle(
                                       fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                                       fontWeight: FontWeight.w600,
@@ -685,7 +687,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       child: Text(
-                        'Already have an account? Sign In',
+                        AppLocalizations.of(context).register_signInLink,
                         style: TextStyle(
                           color: AppTheme.secondaryColor,
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
@@ -708,7 +710,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       child: Text(
-                        '← Back to Role Selection',
+                        AppLocalizations.of(context).register_backToRoleSelection,
                         style: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),

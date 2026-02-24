@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'supabase_service.dart';
 import 'push_notification_service.dart';
+import '../utils/logger.dart';
 
 /// Test service to diagnose push notification issues
 class PushNotificationTestService {
@@ -105,7 +106,7 @@ class PushNotificationTestService {
           continue;
         }
 
-        debugPrint('🧪 [Test] Testing push notification to ${platform ?? 'unknown'} token...');
+        Logger.debug('🧪 [Test] Testing push notification to ${platform ?? 'unknown'} token...');
         
         final success = await PushNotificationService.sendToToken(
           token: token,
@@ -118,7 +119,7 @@ class PushNotificationTestService {
         ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
-            debugPrint('⚠️ [Test] sendToToken timed out after 10 seconds');
+            Logger.debug('⚠️ [Test] sendToToken timed out after 10 seconds');
             return false;
           },
         );
@@ -172,7 +173,7 @@ class PushNotificationTestService {
     };
 
     try {
-      debugPrint('🧪 [Test] Testing Edge Function directly with token: ${token.substring(0, 20)}...');
+      Logger.debug('🧪 [Test] Testing Edge Function directly with token: ${token.substring(0, 20)}...');
 
       final response = await SupabaseService.client.functions.invoke(
         'send-push-notification',

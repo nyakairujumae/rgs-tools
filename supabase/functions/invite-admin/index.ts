@@ -10,6 +10,12 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
@@ -46,29 +52,32 @@ async function findUserIdByEmail(email: string): Promise<string | null> {
   return null;
 }
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests from browsers
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (!supabase) {
-    return new Response(
-      JSON.stringify({ error: "Server not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Server not configured" }, 500);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response(
-      JSON.stringify({ error: "Missing authorization" }),
-      { status: 401, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Missing authorization" }, 401);
   }
 
   const token = authHeader.replace("Bearer ", "");
   const { data: requesterData, error: requesterError } = await supabase.auth.getUser(token);
   if (requesterError || !requesterData?.user) {
-    return new Response(
-      JSON.stringify({ error: "Invalid session" }),
-      { status: 401, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Invalid session" }, 401);
   }
 
   const requesterId = requesterData.user.id;
@@ -79,17 +88,11 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (requesterProfileError || !requesterProfile) {
-    return new Response(
-      JSON.stringify({ error: "Requester profile not found" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Requester profile not found" }, 403);
   }
 
   if (requesterProfile.role !== "admin" || !requesterProfile.position_id) {
-    return new Response(
-      JSON.stringify({ error: "Not authorized to invite admins" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Not authorized to invite admins" }, 403);
   }
 
   const { data: permission } = await supabase
@@ -101,10 +104,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (!permission) {
-    return new Response(
-      JSON.stringify({ error: "Missing admin management permission" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Missing admin management permission" }, 403);
   }
 
   let payload: {
@@ -117,10 +117,7 @@ Deno.serve(async (req) => {
   try {
     payload = await req.json();
   } catch {
-    return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
   const email = payload.email?.trim();
@@ -129,10 +126,7 @@ Deno.serve(async (req) => {
   const status = payload.status?.trim() || "Pending Approval";
 
   if (!email || !fullName || !positionId) {
-    return new Response(
-      JSON.stringify({ error: "Missing required fields" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Missing required fields" }, 400);
   }
 
   const redirectTo = INVITE_REDIRECT_URL?.trim() || DEFAULT_REDIRECT_URL;
@@ -153,10 +147,7 @@ Deno.serve(async (req) => {
     if (message.toLowerCase().includes('already')) {
       userId = await findUserIdByEmail(email);
     } else {
-      return new Response(
-        JSON.stringify({ error: createError.message ?? "User creation failed" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+      return jsonResponse({ error: createError.message ?? "User creation failed" }, 400);
     }
   } else {
     userId = created.user?.id ?? null;
@@ -172,17 +163,11 @@ Deno.serve(async (req) => {
   );
 
   if (resetError) {
-    return new Response(
-      JSON.stringify({ error: resetError.message ?? "Failed to send reset email" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: resetError.message ?? "Failed to send reset email" }, 400);
   }
 
   if (!userId) {
-    return new Response(
-      JSON.stringify({ error: "User created but no user id returned" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "User created but no user id returned" }, 500);
   }
 
   const { error: upsertError } = await supabase
@@ -198,14 +183,8 @@ Deno.serve(async (req) => {
     }, { onConflict: "id" });
 
   if (upsertError) {
-    return new Response(
-      JSON.stringify({ error: `Invite created but user profile failed: ${upsertError.message}` }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: `Invite created but user profile failed: ${upsertError.message}` }, 500);
   }
 
-  return new Response(
-    JSON.stringify({ user_id: userId }),
-    { status: 200, headers: { "Content-Type": "application/json" } },
-  );
+  return jsonResponse({ user_id: userId });
 });

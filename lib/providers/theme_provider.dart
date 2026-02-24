@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
 class ThemeProvider with ChangeNotifier {
+  static const String _themeModeKey = 'theme_mode';
+
   ThemeMode _themeMode = ThemeMode.system;
   bool _isDarkMode = false;
 
-  ThemeMode get themeMode => ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _isDarkMode;
-  
+
   // Get the current theme data
   ThemeData get currentTheme => _isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
-  
+
   // Get theme mode display name
   String get themeModeDisplayName {
     switch (_themeMode) {
@@ -40,14 +43,25 @@ class ThemeProvider with ChangeNotifier {
     _listenToSystemBrightness();
   }
 
-  // Initialize theme: always follow device system
+  // Initialize theme from persisted preference or default to system
   Future<void> _initializeTheme() async {
-    _themeMode = ThemeMode.system;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_themeModeKey);
+      if (saved != null) {
+        _themeMode = ThemeMode.values.firstWhere(
+          (m) => m.name == saved,
+          orElse: () => ThemeMode.system,
+        );
+      }
+    } catch (_) {
+      _themeMode = ThemeMode.system;
+    }
     _updateDarkMode();
     notifyListeners();
   }
 
-  // Update dark mode from device system brightness
+  // Update dark mode based on current theme mode
   void _updateDarkMode() {
     switch (_themeMode) {
       case ThemeMode.light:
@@ -57,12 +71,10 @@ class ThemeProvider with ChangeNotifier {
         _isDarkMode = true;
         break;
       case ThemeMode.system:
-        // For system mode, check the current system brightness
         try {
           final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
           _isDarkMode = brightness == Brightness.dark;
-        } catch (e) {
-          // Fallback to light mode if there's an error
+        } catch (_) {
           _isDarkMode = false;
         }
         break;
@@ -71,23 +83,24 @@ class ThemeProvider with ChangeNotifier {
 
   // Listen to system brightness changes
   void _listenToSystemBrightness() {
-    // Use a more robust approach to listen to system brightness changes
     WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = () {
       if (_themeMode == ThemeMode.system) {
         _updateDarkMode();
         notifyListeners();
       }
     };
-    
-    // Also listen to app lifecycle changes to catch system theme changes
     WidgetsBinding.instance.addObserver(_AppLifecycleObserver(this));
   }
 
-  // Theme always follows device – user cannot override
+  // Set and persist theme mode
   Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = ThemeMode.system;
+    _themeMode = mode;
     _updateDarkMode();
     notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_themeModeKey, mode.name);
+    } catch (_) {}
   }
 
   // Force refresh theme (useful for debugging or manual refresh)
@@ -97,21 +110,16 @@ class ThemeProvider with ChangeNotifier {
   }
 
   Future<void> forceLightTheme() async {
-    _themeMode = ThemeMode.system;
-    _updateDarkMode();
-    notifyListeners();
+    await setThemeMode(ThemeMode.light);
   }
 
   Future<void> forceSystemTheme() async {
-    _themeMode = ThemeMode.system;
-    _updateDarkMode();
-    notifyListeners();
+    await setThemeMode(ThemeMode.system);
   }
 
   // Check if theme is properly initialized
-  bool get isInitialized => _themeMode != null;
+  bool get isInitialized => true;
 
-  // Dispose method to clean up observers
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(this));
@@ -122,9 +130,9 @@ class ThemeProvider with ChangeNotifier {
 // App lifecycle observer to catch system theme changes
 class _AppLifecycleObserver extends WidgetsBindingObserver {
   final ThemeProvider _themeProvider;
-  
+
   _AppLifecycleObserver(this._themeProvider);
-  
+
   @override
   void didChangePlatformBrightness() {
     if (_themeProvider._themeMode == ThemeMode.system) {

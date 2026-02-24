@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../utils/logger.dart';
 
 class DataExportService {
   static final DateFormat _fileNameFormat = DateFormat('yyyyMMdd_HHmmss');
@@ -69,11 +70,11 @@ class DataExportService {
       final file = File(filePath);
       await file.writeAsString(csvContent.toString());
       
-      debugPrint('✅ CSV export created: $filePath');
+      Logger.debug('✅ CSV export created: $filePath');
       return file;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error exporting data to CSV: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error exporting data to CSV: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -88,7 +89,7 @@ class DataExportService {
       
       return (response as List).cast<Map<String, dynamic>>();
     } catch (e) {
-      debugPrint('⚠️ Error fetching assigned tools: $e');
+      Logger.debug('⚠️ Error fetching assigned tools: $e');
       return [];
     }
   }
@@ -104,7 +105,7 @@ class DataExportService {
       
       return (response as List).cast<Map<String, dynamic>>();
     } catch (e) {
-      debugPrint('⚠️ Error fetching notifications: $e');
+      Logger.debug('⚠️ Error fetching notifications: $e');
       return [];
     }
   }
@@ -126,7 +127,7 @@ class DataExportService {
         }
         return directory;
       } catch (e) {
-        debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
+        Logger.debug('⚠️ Failed to get application documents directory, using temp directory: $e');
         final tempDir = Directory.systemTemp;
         final fallbackDir = Directory('${tempDir.path}/RGS_Exports');
         if (!await fallbackDir.exists()) {

@@ -1,19 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+import '../utils/logger.dart';
 
 class UserProfileService {
   /// Get user profile data
   static Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('id', userId)
           .single();
-      
+
       return response;
     } catch (e) {
-      print('Error getting user profile: $e');
+      Logger.debug('Error getting user profile: $e');
       return null;
     }
   }
@@ -64,7 +65,7 @@ class UserProfileService {
 
       return response == true;
     } catch (e) {
-      print('Error updating user profile: $e');
+      Logger.debug('Error updating user profile: $e');
       return false;
     }
   }
@@ -73,13 +74,13 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .order('created_at', ascending: false);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting all users: $e');
+      Logger.debug('Error getting all users: $e');
       return [];
     }
   }
@@ -93,7 +94,7 @@ class UserProfileService {
       
       return response;
     } catch (e) {
-      print('Error getting user stats: $e');
+      Logger.debug('Error getting user stats: $e');
       return null;
     }
   }
@@ -108,7 +109,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error updating user role: $e');
+      Logger.debug('Error updating user role: $e');
       return false;
     }
   }
@@ -123,7 +124,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error deactivating user: $e');
+      Logger.debug('Error deactivating user: $e');
       return false;
     }
   }
@@ -138,7 +139,7 @@ class UserProfileService {
       
       return true;
     } catch (e) {
-      print('Error activating user: $e');
+      Logger.debug('Error activating user: $e');
       return false;
     }
   }
@@ -146,15 +147,23 @@ class UserProfileService {
   /// Search users
   static Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
+      // Sanitize query to prevent PostgREST filter injection
+      final sanitized = query
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_')
+          .replaceAll(',', '')
+          .replaceAll('(', '')
+          .replaceAll(')', '');
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
-          .or('full_name.ilike.%$query%,email.ilike.%$query%,employee_id.ilike.%$query%')
+          .or('full_name.ilike.%$sanitized%,email.ilike.%$sanitized%,employee_id.ilike.%$sanitized%')
           .order('created_at', ascending: false);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error searching users: $e');
+      Logger.debug('Error searching users: $e');
       return [];
     }
   }
@@ -163,14 +172,14 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getUsersByDepartment(String department) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('department', department)
           .order('full_name', ascending: true);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting users by department: $e');
+      Logger.debug('Error getting users by department: $e');
       return [];
     }
   }
@@ -179,14 +188,14 @@ class UserProfileService {
   static Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
     try {
       final response = await SupabaseService.client
-          .from('user_dashboard')
+          .from('users')
           .select('*')
           .eq('role', role)
           .order('full_name', ascending: true);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('Error getting users by role: $e');
+      Logger.debug('Error getting users by role: $e');
       return [];
     }
   }

@@ -826,7 +826,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    final homeScaffold = Scaffold(
+    return Scaffold(
         backgroundColor: context.scaffoldBackground,
         appBar: (_selectedIndex == 1 || _selectedIndex == 2)
           ? null
@@ -900,7 +900,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ],
       ),
       body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: context.scaffoldBackground,
         child: IndexedStack(
         index: _selectedIndex,
         children: _screens,
@@ -951,11 +951,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
         ],
       ),
-      ),
-    );
-    return Theme.of(context).platform == TargetPlatform.android
-        ? homeScaffold
-        : SafeArea(child: homeScaffold);
+    ));
   }
 
   void _showNotifications(BuildContext context) async {
@@ -1422,6 +1418,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       case 'user_approved':
       case 'account_approved':
         return Icons.check_circle;
+      case 'tool_released':
+        return Icons.move_to_inbox;
       default:
         return Icons.notifications;
     }
@@ -1433,6 +1431,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         return Colors.blue;
       case 'tool_request':
         return Colors.green;
+      case 'tool_released':
+        return Colors.teal;
       case 'maintenance_request':
         return Colors.orange;
       case 'issue_report':
@@ -1465,12 +1465,15 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ? DateTime.parse(notification['timestamp'].toString())
         : DateTime.now();
     final type = notification['type'] as String? ?? 'general';
-    final data = notification['data'] as Map<String, dynamic>?;
+    final rawData = notification['data'];
+    final data = rawData is Map ? Map<String, dynamic>.from(rawData) : null;
     final notificationColor = _getNotificationColor(type);
     final authProvider = context.read<AuthProvider>();
     final isToolRequestForCurrentHolder = type == 'tool_request' &&
         data != null &&
         (data['owner_id']?.toString() == authProvider.userId);
+    final isToolReleasedForCurrentUser = type == 'tool_released' && data != null;
+    final isToolAssignedForCurrentUser = (type == 'tool_assigned' || type == 'tool_assignment') && data != null && data['tool_id'] != null;
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
     
     showDialog(
@@ -1549,6 +1552,13 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                     data['requester_name'].toString(),
                     Icons.person,
                   ),
+                if (data['released_by_name'] != null)
+                  _buildDetailRow(
+                    context,
+                    'Released by',
+                    data['released_by_name'].toString(),
+                    Icons.person_outline,
+                  ),
                 if (data['requester_email'] != null)
                   _buildDetailRow(
                     context,
@@ -1577,6 +1587,49 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                   ),
                 ],
               ),
+              // Accept/Decline buttons for tool assignment
+              if (isToolAssignedForCurrentUser) ...[
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          Navigator.pop(dialogContext);
+                          await _declineAssignedTool(context, data!, notification);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text('Decline', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () async {
+                          Navigator.pop(dialogContext);
+                          await _acceptAssignedTool(context, data!, notification);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -1597,22 +1650,39 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 ),
               ),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+          if (isToolReleasedForCurrentUser)
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _acceptReleasedTool(context, data!, notification);
+              },
+              icon: const Icon(Icons.check_circle, size: 18),
+              label: Text('Accept ${data?['tool_name'] ?? 'Tool'}'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
             ),
-            child: Text(
-              'Close',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                fontWeight: FontWeight.w600,
+          if (!isToolAssignedForCurrentUser)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.secondaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: Text(
+                'Close',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -1691,7 +1761,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         'user_id': requesterId,
         'title': 'Tool Released to You: $toolName',
         'message': '$holderName has released the $toolName to you. You now have this tool.',
-        'type': 'tool_assigned',
+        'type': 'tool_released',
         'is_read': false,
         'timestamp': DateTime.now().toIso8601String(),
         'data': {
@@ -1708,7 +1778,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           title: 'Tool Released to You: $toolName',
           body: '$holderName has released the $toolName to you.',
           data: {
-            'type': 'tool_assigned',
+            'type': 'tool_released',
             'tool_id': toolId,
             'tool_name': toolName,
           },
@@ -1731,6 +1801,195 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           'Failed to release tool: ${e.toString()}',
         );
       }
+    }
+  }
+
+  Future<void> _acceptReleasedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final releasedByName = data['released_by_name']?.toString() ?? 'A technician';
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client.from('tools').select().eq('id', toolId).maybeSingle();
+        if (res != null) existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+      }
+      if (existingTool == null) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Tool not found.');
+        return;
+      }
+
+      if (existingTool.assignedTo != null && existingTool.assignedTo!.isNotEmpty && existingTool.assignedTo != currentUserId) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'This tool has already been assigned to someone else.');
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(assignedTo: currentUserId, status: 'In Use', updatedAt: DateTime.now().toIso8601String());
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.releasedToRequester,
+        description: '$currentUserName accepted the $toolName (released by $releasedByName)',
+        oldValue: null, newValue: currentUserId,
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'released_by_name': releasedByName, 'released_by_id': data['released_by_id']?.toString()},
+      );
+
+      await toolProvider.loadTools();
+      UserNameService.clearCacheForUser(currentUserId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to accept tool: ${e.toString()}');
+    }
+  }
+
+  Future<void> _acceptAssignedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final assignedByName = data['assigned_by_name']?.toString() ?? 'Admin';
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      Tool? existingTool = toolProvider.getToolById(toolId);
+      if (existingTool == null) {
+        final res = await SupabaseService.client.from('tools').select().eq('id', toolId).maybeSingle();
+        if (res != null) existingTool = Tool.fromMap(Map<String, dynamic>.from(res as Map));
+      }
+      if (existingTool == null) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Tool not found.');
+        return;
+      }
+
+      if (existingTool.assignedTo != null && existingTool.assignedTo!.isNotEmpty && existingTool.assignedTo != currentUserId) {
+        if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'This tool has been reassigned to someone else.');
+        return;
+      }
+
+      final updatedTool = existingTool.copyWith(assignedTo: currentUserId, status: 'In Use', updatedAt: DateTime.now().toIso8601String());
+      await toolProvider.updateTool(updatedTool);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.acceptedAssignment,
+        description: '$currentUserName accepted tool assignment of $toolName (assigned by $assignedByName)',
+        oldValue: 'Pending Acceptance', newValue: 'In Use',
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'assigned_by_name': assignedByName, 'assigned_by_id': data['assigned_by_id']?.toString()},
+      );
+
+      await toolProvider.loadTools();
+      UserNameService.clearCacheForUser(currentUserId);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to accept tool: ${e.toString()}');
+    }
+  }
+
+  Future<void> _declineAssignedTool(
+    BuildContext context,
+    Map<String, dynamic> data,
+    Map<String, dynamic> notification,
+  ) async {
+    final toolId = data['tool_id']?.toString();
+    final toolName = data['tool_name']?.toString() ?? 'Tool';
+    final assignedByName = data['assigned_by_name']?.toString() ?? 'Admin';
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userId;
+    final currentUserName = authProvider.userFullName ?? 'A technician';
+
+    if (toolId == null || currentUserId == null) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Missing tool or user information.');
+      return;
+    }
+
+    try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      await toolProvider.declineAssignment(toolId);
+
+      await ToolHistoryService.record(
+        toolId: toolId, toolName: toolName,
+        action: ToolHistoryActions.declinedAssignment,
+        description: '$currentUserName declined tool assignment of $toolName (assigned by $assignedByName)',
+        oldValue: 'Pending Acceptance', newValue: 'Available',
+        performedById: currentUserId, performedByName: currentUserName,
+        performedByRole: authProvider.userRole?.name ?? 'technician',
+        metadata: {'assigned_by_name': assignedByName},
+      );
+
+      await toolProvider.loadTools();
+
+      // Notify admins
+      try {
+        await SupabaseService.client.rpc('create_admin_notification', params: {
+          'p_title': 'Assignment Declined: $toolName',
+          'p_message': '$currentUserName declined the assignment of $toolName.',
+          'p_type': 'tool_assignment',
+          'p_technician_name': currentUserName,
+          'p_technician_email': authProvider.userEmail ?? '',
+          'p_data': {
+            'tool_id': toolId,
+            'tool_name': toolName,
+            'technician_name': currentUserName,
+            'action': 'declined',
+          },
+        });
+      } catch (_) {}
+
+      try {
+        await PushNotificationService.sendToAdmins(
+          title: 'Assignment Declined: $toolName',
+          body: '$currentUserName declined the assignment of $toolName.',
+          data: {'type': 'tool_assignment', 'tool_id': toolId, 'tool_name': toolName},
+          fromUserId: currentUserId,
+        );
+      } catch (_) {}
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You declined the assignment of $toolName.'), backgroundColor: Colors.orange, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) AuthErrorHandler.showErrorSnackBar(context, 'Failed to decline tool: ${e.toString()}');
     }
   }
 
@@ -2669,7 +2928,6 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       }
     }
   }
-
 
   Widget _buildLatestCard(
       Tool tool, BuildContext context, List<dynamic> technicians, String? currentUserId) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
+import 'admin_dashboard_screen.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/pending_approvals_provider.dart';
@@ -15,6 +16,7 @@ import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/responsive_helper.dart';
+import '../screens_web/layouts/admin_web_layout.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/account_deletion_helper.dart';
 import 'package:shimmer/shimmer.dart';
@@ -50,6 +52,8 @@ import '../models/user_role.dart';
 import '../models/admin_position.dart';
 import '../services/admin_position_service.dart';
 import 'package:intl/intl.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final int initialTab;
@@ -181,14 +185,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     if (_isDisposed) return;
 
     try {
+      final toolProvider = context.read<SupabaseToolProvider>();
+      final techProvider = context.read<SupabaseTechnicianProvider>();
       await Future.wait([
-        context.read<SupabaseToolProvider>().loadTools(),
-        context.read<SupabaseTechnicianProvider>().loadTechnicians(),
+        toolProvider.loadTools(),
+        techProvider.loadTechnicians(),
         context.read<PendingApprovalsProvider>().loadPendingApprovals(),
         context.read<AdminNotificationProvider>().loadNotifications(),
       ]);
+      // Subscribe to realtime after initial load
+      toolProvider.subscribeToRealtime();
+      techProvider.subscribeToRealtime();
     } catch (e) {
-      debugPrint('Error loading admin data: $e');
+      Logger.debug('Error loading admin data: $e');
     }
   }
 
@@ -207,6 +216,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     _isDisposed = true;
     _inviteNameController.dispose();
     _inviteEmailController.dispose();
+    context.read<SupabaseToolProvider>().unsubscribeFromRealtime();
+    context.read<SupabaseTechnicianProvider>().unsubscribeFromRealtime();
     super.dispose();
   }
 
@@ -254,7 +265,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         await _loadPositions();
       }
     } catch (e) {
-      debugPrint('❌ Error loading admin invite data: $e');
+      Logger.debug('❌ Error loading admin invite data: $e');
     }
   }
 
@@ -273,7 +284,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         }
       });
     } catch (e) {
-      debugPrint('❌ Error loading admin positions: $e');
+      Logger.debug('❌ Error loading admin positions: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -301,6 +312,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
           _loadInviteAdminData();
         }
       });
+    }
+
+    // Intercept for desktop web - use web-optimized layout
+    if (ResponsiveHelper.isDesktopLayout(context)) {
+      return AdminWebLayout(initialRoute: _selectedIndex);
     }
 
     final isWebDesktop =
@@ -423,22 +439,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                         .colorScheme
                         .onSurface
                         .withValues(alpha: 0.5),
-                items: const [
+                items: [
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.dashboard),
-                    label: 'Dashboard',
+                    icon: const Icon(Icons.dashboard),
+                    label: AppLocalizations.of(context).adminHome_dashboard,
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.build),
-                    label: 'Tools',
+                    icon: const Icon(Icons.build),
+                    label: AppLocalizations.of(context).adminHome_tools,
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.share),
-                    label: 'Shared',
+                    icon: const Icon(Icons.share),
+                    label: AppLocalizations.of(context).adminHome_sharedTools,
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.people),
-                    label: 'Technicians',
+                    icon: const Icon(Icons.people),
+                    label: AppLocalizations.of(context).adminHome_technicians,
                   ),
                 ],
               ),
@@ -646,7 +662,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
-    const titles = ['Dashboard', 'Tools', 'Shared Tools', 'Technicians'];
+    final l10n = AppLocalizations.of(context);
+    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, l10n.adminHome_technicians];
     final title = titles[_selectedIndex.clamp(0, 3)];
     final today = DateFormat('MMM d, yyyy').format(DateTime.now());
 
@@ -862,7 +879,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                       width: 48,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1086,7 +1103,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                               child: Icon(
                                 Icons.edit_outlined,
                                 size: isDesktop ? 16 : 18,
-                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                color: theme.colorScheme.onSurface.withOpacity(0.55),
                               ),
                             ),
                           ),
@@ -1257,7 +1274,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
               Icon(
                 Icons.chevron_right,
                 size: isDesktop ? 18 : 20,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),
           ],
         ),
@@ -1353,8 +1370,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('Logout error: $e');
-      debugPrint('Stack trace: $stackTrace');
+      Logger.debug('Logout error: $e');
+      Logger.debug('Stack trace: $stackTrace');
       if (mounted) {
         try {
           Navigator.pushAndRemoveUntil(
@@ -1366,7 +1383,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             (route) => false,
           );
         } catch (navError) {
-          debugPrint('Navigation error during logout: $navError');
+          Logger.debug('Navigation error during logout: $navError');
         }
       }
     }

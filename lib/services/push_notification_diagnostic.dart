@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'supabase_service.dart';
 import 'push_notification_service.dart';
+import '../utils/logger.dart';
 
 /// Comprehensive diagnostic tool for push notifications
 /// Run this to identify exactly where push notifications are failing
@@ -9,7 +10,7 @@ class PushNotificationDiagnostic {
   static Future<Map<String, dynamic>> runDiagnostic() async {
     final results = <String, dynamic>{};
     
-    debugPrint('🔍 [Diagnostic] ========== STARTING PUSH NOTIFICATION DIAGNOSTIC ==========');
+    Logger.debug('🔍 [Diagnostic] ========== STARTING PUSH NOTIFICATION DIAGNOSTIC ==========');
     
     // 1. Check if user is logged in
     results['user_logged_in'] = await _checkUserLoggedIn();
@@ -26,15 +27,15 @@ class PushNotificationDiagnostic {
     // 5. Check admin users
     results['admin_users'] = await _checkAdminUsers();
     
-    debugPrint('🔍 [Diagnostic] ========== DIAGNOSTIC COMPLETE ==========');
-    debugPrint('🔍 [Diagnostic] Results: $results');
+    Logger.debug('🔍 [Diagnostic] ========== DIAGNOSTIC COMPLETE ==========');
+    Logger.debug('🔍 [Diagnostic] Results: $results');
     
     return results;
   }
   
   /// Check if user is logged in
   static Future<Map<String, dynamic>> _checkUserLoggedIn() async {
-    debugPrint('🔍 [Diagnostic] Checking if user is logged in...');
+    Logger.debug('🔍 [Diagnostic] Checking if user is logged in...');
     try {
       final user = SupabaseService.client.auth.currentUser;
       final session = SupabaseService.client.auth.currentSession;
@@ -47,19 +48,19 @@ class PushNotificationDiagnostic {
         'session_expired': session?.isExpired ?? false,
       };
       
-      debugPrint('🔍 [Diagnostic] User logged in: ${result['has_user']}');
-      debugPrint('🔍 [Diagnostic] Session exists: ${result['has_session']}');
+      Logger.debug('🔍 [Diagnostic] User logged in: ${result['has_user']}');
+      Logger.debug('🔍 [Diagnostic] Session exists: ${result['has_session']}');
       
       return result;
     } catch (e) {
-      debugPrint('❌ [Diagnostic] Error checking user: $e');
+      Logger.debug('❌ [Diagnostic] Error checking user: $e');
       return {'error': e.toString()};
     }
   }
   
   /// Check FCM tokens in database
   static Future<Map<String, dynamic>> _checkTokensInDatabase() async {
-    debugPrint('🔍 [Diagnostic] Checking FCM tokens in database...');
+    Logger.debug('🔍 [Diagnostic] Checking FCM tokens in database...');
     try {
       final user = SupabaseService.client.auth.currentUser;
       if (user == null) {
@@ -80,7 +81,7 @@ class PushNotificationDiagnostic {
             .select('user_id, platform')
             .limit(10);
       } catch (e) {
-        debugPrint('⚠️ [Diagnostic] Could not query all tokens (RLS may be blocking): $e');
+        Logger.debug('⚠️ [Diagnostic] Could not query all tokens (RLS may be blocking): $e');
       }
       
       final result = {
@@ -94,19 +95,19 @@ class PushNotificationDiagnostic {
         'can_query_all_tokens': allTokens.isNotEmpty || userTokens.isNotEmpty,
       };
       
-      debugPrint('🔍 [Diagnostic] User tokens: ${result['user_tokens_count']}');
-      debugPrint('🔍 [Diagnostic] All tokens in DB: ${result['all_tokens_count']}');
+      Logger.debug('🔍 [Diagnostic] User tokens: ${result['user_tokens_count']}');
+      Logger.debug('🔍 [Diagnostic] All tokens in DB: ${result['all_tokens_count']}');
       
       return result;
     } catch (e) {
-      debugPrint('❌ [Diagnostic] Error checking tokens: $e');
+      Logger.debug('❌ [Diagnostic] Error checking tokens: $e');
       return {'error': e.toString()};
     }
   }
   
   /// Check Edge Function deployment
   static Future<Map<String, dynamic>> _checkEdgeFunction() async {
-    debugPrint('🔍 [Diagnostic] Checking Edge Function...');
+    Logger.debug('🔍 [Diagnostic] Checking Edge Function...');
     try {
       // Try to invoke the Edge Function with a test payload
       final testToken = 'test_token_12345';
@@ -127,20 +128,20 @@ class PushNotificationDiagnostic {
       };
       
       if (response.status == 200) {
-        debugPrint('✅ [Diagnostic] Edge Function exists and responds');
+        Logger.debug('✅ [Diagnostic] Edge Function exists and responds');
       } else if (response.status == 404) {
-        debugPrint('❌ [Diagnostic] Edge Function NOT FOUND (404) - needs to be deployed');
+        Logger.debug('❌ [Diagnostic] Edge Function NOT FOUND (404) - needs to be deployed');
         result['error'] = 'Edge Function not deployed. Run: supabase functions deploy send-push-notification';
       } else if (response.status == 500) {
-        debugPrint('❌ [Diagnostic] Edge Function error (500) - check secrets');
+        Logger.debug('❌ [Diagnostic] Edge Function error (500) - check secrets');
         result['error'] = 'Edge Function error - check GOOGLE_PROJECT_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY secrets';
       } else {
-        debugPrint('⚠️ [Diagnostic] Edge Function returned status: ${response.status}');
+        Logger.debug('⚠️ [Diagnostic] Edge Function returned status: ${response.status}');
       }
       
       return result;
     } catch (e) {
-      debugPrint('❌ [Diagnostic] Error checking Edge Function: $e');
+      Logger.debug('❌ [Diagnostic] Error checking Edge Function: $e');
       
       // Check if it's a "function not found" error
       if (e.toString().contains('Function not found') || 
@@ -158,7 +159,7 @@ class PushNotificationDiagnostic {
   
   /// Test sending a notification
   static Future<Map<String, dynamic>> _testSendNotification() async {
-    debugPrint('🔍 [Diagnostic] Testing notification send...');
+    Logger.debug('🔍 [Diagnostic] Testing notification send...');
     try {
       final user = SupabaseService.client.auth.currentUser;
       if (user == null) {
@@ -180,14 +181,14 @@ class PushNotificationDiagnostic {
             : 'Test notification failed - check logs for details',
       };
     } catch (e) {
-      debugPrint('❌ [Diagnostic] Error testing notification: $e');
+      Logger.debug('❌ [Diagnostic] Error testing notification: $e');
       return {'error': e.toString()};
     }
   }
   
   /// Check admin users
   static Future<Map<String, dynamic>> _checkAdminUsers() async {
-    debugPrint('🔍 [Diagnostic] Checking admin users...');
+    Logger.debug('🔍 [Diagnostic] Checking admin users...');
     try {
       List<Map<String, dynamic>> admins = [];
       
@@ -196,10 +197,10 @@ class PushNotificationDiagnostic {
         final rpcResponse = await SupabaseService.client.rpc('get_admin_user_ids');
         if (rpcResponse != null && rpcResponse is List) {
           admins = List<Map<String, dynamic>>.from(rpcResponse);
-          debugPrint('✅ [Diagnostic] Found ${admins.length} admins via RPC');
+          Logger.debug('✅ [Diagnostic] Found ${admins.length} admins via RPC');
         }
       } catch (e) {
-        debugPrint('⚠️ [Diagnostic] RPC function failed: $e');
+        Logger.debug('⚠️ [Diagnostic] RPC function failed: $e');
         
         // Try direct query
         try {
@@ -207,9 +208,9 @@ class PushNotificationDiagnostic {
               .from('users')
               .select('id, email, role')
               .eq('role', 'admin');
-          debugPrint('✅ [Diagnostic] Found ${admins.length} admins via direct query');
+          Logger.debug('✅ [Diagnostic] Found ${admins.length} admins via direct query');
         } catch (e2) {
-          debugPrint('❌ [Diagnostic] Direct query also failed: $e2');
+          Logger.debug('❌ [Diagnostic] Direct query also failed: $e2');
         }
       }
       
@@ -244,33 +245,33 @@ class PushNotificationDiagnostic {
         'admins_with_tokens': adminsWithTokens.where((a) => a['has_tokens'] == true).length,
       };
     } catch (e) {
-      debugPrint('❌ [Diagnostic] Error checking admins: $e');
+      Logger.debug('❌ [Diagnostic] Error checking admins: $e');
       return {'error': e.toString()};
     }
   }
   
   /// Print diagnostic summary
   static void printSummary(Map<String, dynamic> results) {
-    debugPrint('\n');
-    debugPrint('📊 [Diagnostic] ========== SUMMARY ==========');
+    Logger.debug('\n');
+    Logger.debug('📊 [Diagnostic] ========== SUMMARY ==========');
     
     // User
     final user = results['user_logged_in'] as Map<String, dynamic>?;
     if (user != null) {
-      debugPrint('👤 User: ${user['has_user'] == true ? "✅ Logged in" : "❌ Not logged in"}');
+      Logger.debug('👤 User: ${user['has_user'] == true ? "✅ Logged in" : "❌ Not logged in"}');
       if (user['user_email'] != null) {
-        debugPrint('   Email: ${user['user_email']}');
+        Logger.debug('   Email: ${user['user_email']}');
       }
     }
     
     // Tokens
     final tokens = results['tokens_in_database'] as Map<String, dynamic>?;
     if (tokens != null) {
-      debugPrint('🔑 Tokens: ${tokens['user_tokens_count'] ?? 0} token(s) for current user');
+      Logger.debug('🔑 Tokens: ${tokens['user_tokens_count'] ?? 0} token(s) for current user');
       if (tokens['user_tokens'] != null) {
         final tokenList = tokens['user_tokens'] as List;
         for (final token in tokenList) {
-          debugPrint('   - ${token['platform']}: ${token['token_preview']}...');
+          Logger.debug('   - ${token['platform']}: ${token['token_preview']}...');
         }
       }
     }
@@ -279,43 +280,43 @@ class PushNotificationDiagnostic {
     final edgeFunction = results['edge_function'] as Map<String, dynamic>?;
     if (edgeFunction != null) {
       if (edgeFunction['function_exists'] == true) {
-        debugPrint('⚡ Edge Function: ✅ Deployed');
+        Logger.debug('⚡ Edge Function: ✅ Deployed');
         if (edgeFunction['status'] == 200) {
-          debugPrint('   Status: ✅ Working');
+          Logger.debug('   Status: ✅ Working');
         } else {
-          debugPrint('   Status: ❌ Error (${edgeFunction['status']})');
+          Logger.debug('   Status: ❌ Error (${edgeFunction['status']})');
           if (edgeFunction['error'] != null) {
-            debugPrint('   Error: ${edgeFunction['error']}');
+            Logger.debug('   Error: ${edgeFunction['error']}');
           }
         }
       } else {
-        debugPrint('⚡ Edge Function: ❌ NOT DEPLOYED');
-        debugPrint('   Action: Run: supabase functions deploy send-push-notification');
+        Logger.debug('⚡ Edge Function: ❌ NOT DEPLOYED');
+        Logger.debug('   Action: Run: supabase functions deploy send-push-notification');
       }
     }
     
     // Admin Users
     final admins = results['admin_users'] as Map<String, dynamic>?;
     if (admins != null) {
-      debugPrint('👥 Admins: ${admins['admin_count'] ?? 0} admin(s)');
-      debugPrint('   With tokens: ${admins['admins_with_tokens'] ?? 0}');
+      Logger.debug('👥 Admins: ${admins['admin_count'] ?? 0} admin(s)');
+      Logger.debug('   With tokens: ${admins['admins_with_tokens'] ?? 0}');
     }
     
     // Test Send
     final testSend = results['test_send'] as Map<String, dynamic>?;
     if (testSend != null) {
       if (testSend['success'] == true) {
-        debugPrint('📤 Test Send: ✅ Success');
+        Logger.debug('📤 Test Send: ✅ Success');
       } else {
-        debugPrint('📤 Test Send: ❌ Failed');
+        Logger.debug('📤 Test Send: ❌ Failed');
         if (testSend['error'] != null) {
-          debugPrint('   Error: ${testSend['error']}');
+          Logger.debug('   Error: ${testSend['error']}');
         }
       }
     }
     
-    debugPrint('📊 [Diagnostic] ============================');
-    debugPrint('\n');
+    Logger.debug('📊 [Diagnostic] ============================');
+    Logger.debug('\n');
   }
 }
 

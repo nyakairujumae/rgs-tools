@@ -8,12 +8,15 @@ import '../models/tool_group.dart';
 import 'tool_detail_screen.dart';
 import 'tool_instances_screen.dart';
 import 'technicians_screen.dart';
+import 'add_tool_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/logger.dart';
+import '../l10n/app_localizations.dart';
 
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
@@ -35,8 +38,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
   late String _selectedStatus;
   String _searchQuery = '';
   Set<String> _selectedTools = <String>{};
-  /// Web: false = grid (marketplace), true = list. Default grid like Shared Tools.
-  bool _webViewList = false;
+  /// false = grid (marketplace), true = list. Default grid like Shared Tools.
+  bool _isListView = false;
 
   @override
   void initState() {
@@ -71,7 +74,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         final tools = toolProvider.tools;
         final categories = ['Category', ...toolProvider.getCategories()];
 
-        debugPrint('🔍 Admin Tools Screen - Total tools: ${tools.length}');
+        Logger.debug('🔍 Admin Tools Screen - Total tools: ${tools.length}');
 
         // Filter tools based on search and filters
         final filteredTools = tools.where((tool) {
@@ -87,7 +90,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         // Group filtered tools by name + category + brand
         final toolGroups = ToolGroup.groupTools(filteredTools);
 
-        debugPrint(
+        Logger.debug(
             '🔍 Admin Tools Screen - Filtered tools: ${filteredTools.length}, Groups: ${toolGroups.length}');
         final theme = Theme.of(context);
 
@@ -164,7 +167,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Tools',
+                                AppLocalizations.of(context).tools_title,
                                 style: TextStyle(
                                   fontSize: kIsWeb ? 24 : 22,
                                   fontWeight: FontWeight.w700,
@@ -507,44 +510,46 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 ),
                               ),
                             ),
-                            // Web: grid/list view toggle
-                            if (kIsWeb) ...[
-                              const SizedBox(width: 12),
-                              Container(
-                                height: 40,
-                                decoration: context.cardDecoration.copyWith(
-                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                                  color: context.cardBackground,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.grid_view_rounded,
-                                        size: 20,
-                                        color: !_webViewList
-                                            ? AppTheme.primaryColor
-                                            : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                                      ),
-                                      onPressed: () => setState(() => _webViewList = false),
-                                      tooltip: 'Grid view',
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.view_list_rounded,
-                                        size: 20,
-                                        color: _webViewList
-                                            ? AppTheme.primaryColor
-                                            : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                                      ),
-                                      onPressed: () => setState(() => _webViewList = true),
-                                      tooltip: 'List view',
-                                    ),
-                                  ],
-                                ),
+                            const SizedBox(width: 12),
+                            // Grid/list view toggle
+                            Container(
+                              height: 40,
+                              decoration: context.cardDecoration.copyWith(
+                                borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                color: context.cardBackground,
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.grid_view_rounded,
+                                      size: 18,
+                                      color: !_isListView
+                                          ? AppTheme.secondaryColor
+                                          : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                    onPressed: () => setState(() => _isListView = false),
+                                    tooltip: 'Grid view',
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.view_list_rounded,
+                                      size: 18,
+                                      color: _isListView
+                                          ? AppTheme.secondaryColor
+                                          : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                    onPressed: () => setState(() => _isListView = true),
+                                    tooltip: 'List view',
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -556,17 +561,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: Consumer<ConnectivityProvider>(
                       builder: (context, connectivityProvider, _) {
                         final isOffline = !connectivityProvider.isOnline;
-                        
-                        if (isOffline && !toolProvider.isLoading) {
-                          // Show offline skeleton when offline
-                          return OfflineToolGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            message: 'You are offline. Showing cached data.',
-                          );
-                        }
-                        
-                        return toolProvider.isLoading
+
+                        return Column(
+                          children: [
+                            if (isOffline)
+                              _buildOfflineBanner(context),
+                            Expanded(
+                              child: toolProvider.isLoading
                         ? const ToolCardGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
@@ -574,43 +575,57 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             mainAxisSpacing: 12.0,
                             childAspectRatio: 0.75,
                           )
-                        : filteredTools.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.build_rounded,
-                                      size: kIsWeb ? 56 : 64,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.25),
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No tools found',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 17 : 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.45),
+                        : RefreshIndicator(
+                            color: const Color(0xFF2E7D32),
+                            strokeWidth: 2.5,
+                            onRefresh: () async {
+                              await toolProvider.loadTools();
+                            },
+                            child: filteredTools.isEmpty
+                            ? LayoutBuilder(
+                                builder: (context, constraints) => SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.build_rounded,
+                                            size: kIsWeb ? 56 : 64,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.25),
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'No tools found',
+                                            style: TextStyle(
+                                              fontSize: kIsWeb ? 17 : 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.45),
+                                            ),
+                                          ),
+                                          SizedBox(height: 6),
+                                          Text(
+                                            'Add your first tool to get started',
+                                            style: TextStyle(
+                                              fontSize: kIsWeb ? 14 : 14,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.4),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    SizedBox(height: 6),
-                                    Text(
-                                      'Add your first tool to get started',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 14 : 14,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.4),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               )
                             : LayoutBuilder(
@@ -620,7 +635,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   
                                   // Web desktop: grid (default) or list
                                   if (isDesktop) {
-                                    if (_webViewList) {
+                                    if (_isListView) {
                                       return _buildWebToolsTable(context, toolGroups);
                                     }
                                     // Grid view – marketplace style like Shared Tools
@@ -659,7 +674,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                     );
                                   }
                                   
-                                  // Mobile: card grid
+                                  // Mobile: list or grid
+                                  if (_isListView) {
+                                    return _buildMobileListView(context, toolGroups);
+                                  }
                                   return GridView.builder(
                                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                                     gridDelegate:
@@ -676,16 +694,33 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                     },
                                   );
                                 },
-                              );
-                                },
                               ),
+                          ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          floatingActionButton:
-              widget.isSelectionMode && _selectedTools.isNotEmpty
+          floatingActionButton: !widget.isSelectionMode
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddToolScreen(),
+                      ),
+                    );
+                  },
+                  backgroundColor: AppTheme.secondaryColor,
+                  elevation: 2,
+                  child: const Icon(Icons.add, color: Colors.white),
+                )
+              : _selectedTools.isNotEmpty
                   ? Container(
                       margin: EdgeInsets.all(context.spacingLarge),
                       decoration: BoxDecoration(
@@ -756,6 +791,28 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   : null,
         );
       },
+    );
+  }
+
+  Widget _buildOfflineBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            AppLocalizations.of(context).common_offlineBanner,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 
@@ -972,6 +1029,141 @@ class _ToolsScreenState extends State<ToolsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Mobile list view for tools
+  Widget _buildMobileListView(BuildContext context, List<ToolGroup> toolGroups) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+      itemCount: toolGroups.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final toolGroup = toolGroups[index];
+        final tool = toolGroup.representativeTool ?? toolGroup.instances.first;
+        final isSelected = widget.isSelectionMode &&
+            toolGroup.instances.any((t) => t.id != null && _selectedTools.contains(t.id!));
+
+        return InkWell(
+          onTap: () {
+            if (widget.isSelectionMode) {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => ToolInstancesScreen(
+                  toolGroup: toolGroup,
+                  isSelectionMode: true,
+                  selectedToolIds: _selectedTools,
+                  onSelectionChanged: (Set<String> selectedIds) {
+                    setState(() { _selectedTools = selectedIds; });
+                  },
+                ),
+              ));
+            } else {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => ToolInstancesScreen(toolGroup: toolGroup),
+              ));
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: context.cardDecoration.copyWith(
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(color: AppTheme.secondaryColor, width: 2)
+                  : context.cardDecoration.border,
+            ),
+            child: Row(
+              children: [
+                // Thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: tool.imagePath != null && tool.imagePath!.isNotEmpty
+                        ? (tool.imagePath!.startsWith('http') || kIsWeb
+                            ? Image.network(tool.imagePath!, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildListPlaceholder())
+                            : (() {
+                                final img = buildLocalFileImage(tool.imagePath!, fit: BoxFit.cover);
+                                return img ?? _buildListPlaceholder();
+                              })())
+                        : _buildListPlaceholder(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Info — takes all remaining space
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        toolGroup.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          toolGroup.category,
+                          if (toolGroup.brand != null) toolGroup.brand!,
+                        ].join(' · '),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Right side: qty + status + chevron (fixed / intrinsic)
+                if (toolGroup.totalCount > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : const Color(0xFFF5F5F7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '×${toolGroup.totalCount}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 105),
+                  child: _buildStatusPill(toolGroup.bestStatus),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1236,6 +1428,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
           color: textColor,
           letterSpacing: isWebLayout ? -0.1 : 0,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -1345,6 +1539,25 @@ class _ToolsScreenState extends State<ToolsScreen> {
     }
   }
 
+  /// Compact placeholder for list view (no text, smaller icon)
+  Widget _buildListPlaceholder() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF5F5F7),
+      ),
+      child: Icon(
+        Icons.build_rounded,
+        size: 20,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+      ),
+    );
+  }
+
   Widget _buildPlaceholderImage() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -1404,7 +1617,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 width: 48,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withOpacity(0.3),
+                  color: colorScheme.onSurface.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

@@ -7,10 +7,14 @@ import '../models/location.dart';
 import '../models/permanent_assignment.dart';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
+import '../providers/technician_notification_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/supabase_service.dart';
+import '../services/push_notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/status_chip.dart';
 import '../utils/error_handler.dart';
+import '../utils/logger.dart';
 
 class PermanentAssignmentScreen extends StatefulWidget {
   final Tool tool;
@@ -221,8 +225,8 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
         Consumer<SupabaseTechnicianProvider>(
           builder: (context, technicianProvider, child) {
             // Debug: Print technician count
-            debugPrint('Total technicians: ${technicianProvider.technicians.length}');
-            debugPrint('Technician provider loading: ${technicianProvider.isLoading}');
+            Logger.debug('Total technicians: ${technicianProvider.technicians.length}');
+            Logger.debug('Technician provider loading: ${technicianProvider.isLoading}');
             
             if (technicianProvider.isLoading) {
               return const Center(
@@ -237,7 +241,7 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
                 .where((tech) => tech.status == 'Active')
                 .toList();
 
-            debugPrint('Active technicians: ${activeTechnicians.length}');
+            Logger.debug('Active technicians: ${activeTechnicians.length}');
 
             if (activeTechnicians.isEmpty) {
               return Container(
@@ -569,51 +573,56 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
     });
 
     try {
-      // Update tool status and assignment using user ID (check approval record first, then users table)
-      if (_selectedTechnician!.email != null && _selectedTechnician!.email!.isNotEmpty) {
-        final technicianEmail = _selectedTechnician!.email!.trim();
-        String? userId;
-        
-        // First, check if there's an approved pending approval record (this has the user_id)
-        final approvalRecord = await SupabaseService.client
-            .from('pending_user_approvals')
-            .select('user_id, status')
-            .eq('email', technicianEmail)
-            .eq('status', 'approved')
-            .order('created_at', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        
-        if (approvalRecord != null && approvalRecord['user_id'] != null) {
-          userId = approvalRecord['user_id'] as String;
-        } else {
-          // If no approval record, try to find user in users table
-          final userResponse = await SupabaseService.client
-              .from('users')
-              .select('id')
-              .ilike('email', technicianEmail)
-              .maybeSingle();
-          
-          if (userResponse != null && userResponse['id'] != null) {
-            userId = userResponse['id'] as String;
-          }
-        }
-        
-        if (userId != null) {
-          await context.read<SupabaseToolProvider>().assignTool(
-            widget.tool.id!,
-            userId,
-            _assignmentType,
-          );
-        } else {
-          throw Exception('Could not find user account for ${_selectedTechnician!.name}. Please ensure they have registered and been approved by admin.');
-        }
-      } else {
-        throw Exception('Technician email is required');
+      // Use the auth user_id already stored on the Technician object (from technicians.user_id).
+      // This is the most reliable source — no email-based table lookups needed.
+      final userId = _selectedTechnician!.userId;
+
+      if (userId == null || userId.isEmpty) {
+        throw Exception(
+            'No linked account found for ${_selectedTechnician!.name}. '
+            'Please ensure they have registered and been approved.');
       }
 
-      // TODO: Create permanent assignment record in database
-      // This would typically be done through a service layer
+      Logger.debug('🔧 Assigning tool to userId: $userId');
+      await context.read<SupabaseToolProvider>().assignTool(
+        widget.tool.id!,
+        userId,
+        _assignmentType,
+      );
+
+      // Send in-app + push notification to the technician
+      final adminName = context.read<AuthProvider>().userFullName ?? 'Admin';
+      final notificationData = {
+        'tool_id': widget.tool.id!,
+        'tool_name': widget.tool.name,
+        'assigned_by_name': adminName,
+        'assignment_type': _assignmentType,
+      };
+
+      // In-app notification — let errors throw so we can see the actual failure
+      await SupabaseService.client.from('technician_notifications').insert({
+        'user_id': userId,
+        'title': 'Tool Assigned to You',
+        'message': '$adminName assigned "${widget.tool.name}" to you. Please accept or decline.',
+        'type': 'tool_assigned',
+        'is_read': false,
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': notificationData,
+      });
+      Logger.debug('✅ In-app notification inserted for technician $userId');
+
+      // Push notification
+      try {
+        await PushNotificationService.sendToUser(
+          userId: userId,
+          title: 'Tool Assigned to You',
+          body: '$adminName assigned "${widget.tool.name}" to you. Please accept or decline.',
+          data: {'type': 'tool_assigned', ...notificationData},
+        );
+        Logger.debug('✅ Push notification sent to technician $userId');
+      } catch (pushError) {
+        Logger.debug('⚠️ Push notification failed (non-blocking): $pushError');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -625,8 +634,6 @@ class _PermanentAssignmentScreenState extends State<PermanentAssignmentScreen> w
             duration: const Duration(seconds: 3),
           ),
         );
-        // Refresh tools to get updated data
-        await context.read<SupabaseToolProvider>().loadTools();
         Navigator.pop(context);
       }
     } catch (e) {

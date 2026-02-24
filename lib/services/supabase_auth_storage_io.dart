@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/logger.dart';
 
 const _documentsChannelName = 'com.rgs.app/documents_path';
 
@@ -113,7 +114,7 @@ class _FileStore {
         _cache = jsonDecode(contents) as Map<String, dynamic>;
       }
     } catch (e) {
-      debugPrint('⚠️ Failed to read $_documentsChannelName storage: $e');
+      Logger.debug('⚠️ Failed to read $_documentsChannelName storage: $e');
       _cache = {};
     }
 
@@ -127,19 +128,19 @@ class _FileStore {
     try {
       // Get application documents directory (persistent, survives app termination)
       final appDocDir = await getApplicationDocumentsDirectory();
-      debugPrint('✅ Using application documents directory: ${appDocDir.path}');
+      Logger.debug('✅ Using application documents directory: ${appDocDir.path}');
       
       // Create a subdirectory for Supabase session storage
       final supabaseDir = Directory(p.join(appDocDir.path, 'supabase_storage'));
       if (!await supabaseDir.exists()) {
         await supabaseDir.create(recursive: true);
-        debugPrint('✅ Created Supabase storage directory');
+        Logger.debug('✅ Created Supabase storage directory');
       }
       
       return supabaseDir;
     } catch (e) {
-      debugPrint('⚠️ Failed to get application documents directory: $e');
-      debugPrint('⚠️ Falling back to method channel...');
+      Logger.debug('⚠️ Failed to get application documents directory: $e');
+      Logger.debug('⚠️ Falling back to method channel...');
       
       // Fallback to method channel if path_provider fails
       final channelPath = await _tryGetDocumentsPathViaChannel();
@@ -148,12 +149,12 @@ class _FileStore {
         if (!await directory.exists()) {
           await directory.create(recursive: true);
         }
-        debugPrint('✅ Using method channel directory: ${directory.path}');
+        Logger.debug('✅ Using method channel directory: ${directory.path}');
         return directory;
       }
       
       // Last resort: use system temp (NOT recommended, but better than crashing)
-      debugPrint('⚠️ WARNING: Falling back to system temp directory (sessions may not persist)');
+      Logger.debug('⚠️ WARNING: Falling back to system temp directory (sessions may not persist)');
       final fallback =
           Directory(p.join(Directory.systemTemp.path, 'rgs_app_storage'));
       if (!await fallback.exists()) {
@@ -171,9 +172,9 @@ class _FileStore {
         return result;
       }
     } on PlatformException catch (e) {
-      debugPrint('⚠️ MethodChannel documents path failed: ${e.message}');
+      Logger.debug('⚠️ MethodChannel documents path failed: ${e.message}');
     } catch (e) {
-      debugPrint('⚠️ MethodChannel documents path error: $e');
+      Logger.debug('⚠️ MethodChannel documents path error: $e');
     }
     return null;
   }

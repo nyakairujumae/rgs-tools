@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, kDebugMode;
 import 'dart:io' show Platform;
+import 'config/app_config.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/theme_provider.dart';
+import 'providers/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
 
 // Import all the actual classes
@@ -38,6 +42,8 @@ import 'providers/technician_notification_provider.dart';
 import 'providers/approval_workflows_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'database/database_helper.dart';
+import 'services/local_cache_service.dart';
+import 'services/sync_service.dart';
 import 'config/supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'services/supabase_auth_storage.dart';
@@ -54,6 +60,7 @@ import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart'
     if (dart.library.html) 'services/firebase_messaging_stub.dart';
 import 'package:app_links/app_links.dart';
+import 'utils/logger.dart';
 
 // Note: Firebase Messaging is handled through FirebaseMessagingService which is stubbed on web
 bool _splashRemoved = false;
@@ -66,6 +73,13 @@ final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>()
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env file
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    Logger.debug('Warning: .env file not found, using compile-time environment');
+  }
 
   // Ensure status bar (clock, network, battery) is visible - not covered by app content
   if (!kIsWeb) {
@@ -86,34 +100,34 @@ void main() async {
     _cachedLastRoute = await LastRouteService.getLastRoute();
     
     if (isFirstLaunch) {
-      print('🚀 App starting (FIRST INSTALL) - will show splash screen');
+      Logger.debug('🚀 App starting (FIRST INSTALL) - will show splash screen');
       // CRITICAL: Save flag IMMEDIATELY before preserving splash
       // This ensures splash will never show again, even if app crashes
       await FirstLaunchService.markSplashShown();
-      print('✅ Splash flag saved - will never show again');
+      Logger.debug('✅ Splash flag saved - will never show again');
       
       // Only preserve native splash screen on first install
   FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-      print('🚀 Native splash preserved (first install only)');
+      Logger.debug('🚀 Native splash preserved (first install only)');
     } else {
       // Not first install - remove splash immediately
       FlutterNativeSplash.remove();
-      print('🚀 Skipping splash screen (already shown before)');
+      Logger.debug('🚀 Skipping splash screen (already shown before)');
     }
   } catch (e) {
     // If check fails, assume splash was shown (don't show again)
-    print('⚠️ Error checking splash status: $e - assuming splash was shown');
+    Logger.debug('⚠️ Error checking splash status: $e - assuming splash was shown');
     shouldShowSplash = false;
     FlutterNativeSplash.remove();
   }
 
-  print('🚀 App starting...');
+  Logger.debug('🚀 App starting...');
 
   // Add global error handling for mobile
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    print('Flutter Error: ${details.exception}');
-    print('Stack trace: ${details.stack}');
+    Logger.debug('Flutter Error: ${details.exception}');
+    Logger.debug('Stack trace: ${details.stack}');
   };
 
   // CRITICAL: Register background message handler BEFORE runApp()
@@ -126,9 +140,9 @@ void main() async {
       FirebaseMessaging.onBackgroundMessage(
         (message) => firebaseMessagingBackgroundHandler(message as dynamic),
       );
-      print('✅ Background message handler registered');
+      Logger.debug('✅ Background message handler registered');
     } catch (e) {
-      print('⚠️ Could not register background handler: $e');
+      Logger.debug('⚠️ Could not register background handler: $e');
     }
   }
 
@@ -138,16 +152,16 @@ void main() async {
     try {
       _initialDeepLink = await _appLinks.getInitialLink();
       if (_initialDeepLink != null) {
-        print('🔐 INITIAL DEEP LINK CAPTURED: $_initialDeepLink');
+        Logger.debug('🔐 INITIAL DEEP LINK CAPTURED: $_initialDeepLink');
       } else {
-        print('🔐 No initial deep link');
+        Logger.debug('🔐 No initial deep link');
       }
     } catch (e) {
-      print('⚠️ Could not get initial deep link: $e');
+      Logger.debug('⚠️ Could not get initial deep link: $e');
     }
   }
 
-  print('🚀 Starting app immediately - initialization will happen in background...');
+  Logger.debug('🚀 Starting app immediately - initialization will happen in background...');
   
   // Run the app IMMEDIATELY - don't wait for initialization
   runApp(HvacToolsManagerApp(
@@ -164,48 +178,48 @@ void main() async {
 /// Initialize all services in background after UI is shown
 /// This prevents blocking the splash screen and allows app to open quickly
 Future<void> _initializeServicesInBackground() async {
-  print('🔄 Starting background initialization...');
+  Logger.debug('🔄 Starting background initialization...');
 
   // Initialize Firebase (required before using any Firebase services)
   if (!kIsWeb) {
     try {
       // CRITICAL: Check if Firebase is already initialized (prevents duplicate initialization)
       if (Firebase.apps.isNotEmpty) {
-        print('⚠️ Firebase already initialized (${Firebase.apps.length} app(s))');
+        Logger.debug('⚠️ Firebase already initialized (${Firebase.apps.length} app(s))');
         for (final app in Firebase.apps) {
-          print('⚠️ Existing app: ${app.name}, Project: ${app.options.projectId}');
+          Logger.debug('⚠️ Existing app: ${app.name}, Project: ${app.options.projectId}');
         }
-        print('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
+        Logger.debug('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
       } else {
         // Initialize Firebase in background
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-        print('✅ Firebase initialized successfully (background)');
-        print('✅ Firebase project: ${Firebase.app().options.projectId}');
+        Logger.debug('✅ Firebase initialized successfully (background)');
+        Logger.debug('✅ Firebase project: ${Firebase.app().options.projectId}');
       }
     } catch (e, stackTrace) {
-      print('❌ Firebase initialization failed: $e');
-      print('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Firebase initialization failed: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
     }
   }
 
   // Initialize Supabase (works on web too)
   // CRITICAL: Initialize Supabase FIRST before other services
   // This ensures session persistence works correctly
-  print('🔄 Initializing Supabase in background (priority)...');
+  Logger.debug('🔄 Initializing Supabase in background (priority)...');
   bool supabaseInitialized = false;
   
   try {
       // Check if Supabase is already initialized
       try {
         Supabase.instance.client; // Check if initialized
-        print('✅ Supabase already initialized');
+        Logger.debug('✅ Supabase already initialized');
         supabaseInitialized = true;
       } catch (e) {
         // Not initialized yet, try to initialize it
-        print('🔍 Supabase not initialized, initializing now...');
-        print('🔍 Using bundle ID: com.rgs.app');
+        Logger.debug('🔍 Supabase not initialized, initializing now...');
+        Logger.debug('🔍 Using bundle ID: com.rgs.app');
         
         try {
           // Minimal delay to allow native plugins to initialize
@@ -221,44 +235,44 @@ Future<void> _initializeServicesInBackground() async {
               throw TimeoutException('Supabase initialization timed out');
             },
           );
-          print('✅ Supabase initialized successfully (background)');
+          Logger.debug('✅ Supabase initialized successfully (background)');
           supabaseInitialized = true;
         } on PlatformException catch (e) {
           // Handle shared_preferences channel errors
           if (e.code == 'channel-error' && (e.message?.contains('shared_preferences') == true || e.message?.contains('LegacyUserDefaultsApi') == true)) {
-            print('⚠️ Supabase initialization failed due to shared_preferences channel error');
-            print('⚠️ Error details: ${e.message}');
-            print('⚠️ This is a native plugin issue. Using fallback client (limited session persistence)...');
+            Logger.debug('⚠️ Supabase initialization failed due to shared_preferences channel error');
+            Logger.debug('⚠️ Error details: ${e.message}');
+            Logger.debug('⚠️ This is a native plugin issue. Using fallback client (limited session persistence)...');
             // Wait a bit and try fallback
             await Future.delayed(const Duration(milliseconds: 1000));
             // Use the fallback client from SupabaseService
             // This will create a direct client without full initialization
             try {
               SupabaseService.client; // Initialize fallback client
-              print('✅ Using fallback Supabase client (basic functionality available)');
+              Logger.debug('✅ Using fallback Supabase client (basic functionality available)');
               supabaseInitialized = true; // Mark as initialized even with fallback
             } catch (fallbackError) {
-              print('❌ Fallback client creation also failed: $fallbackError');
-              print('❌ Error type: ${fallbackError.runtimeType}');
+              Logger.debug('❌ Fallback client creation also failed: $fallbackError');
+              Logger.debug('❌ Error type: ${fallbackError.runtimeType}');
               supabaseInitialized = false;
             }
           } else {
-            print('❌ Supabase initialization failed with PlatformException: ${e.code} - ${e.message}');
+            Logger.debug('❌ Supabase initialization failed with PlatformException: ${e.code} - ${e.message}');
             rethrow; // Re-throw if it's a different error
           }
         } catch (e, stackTrace) {
           // Catch any other errors
-          print('❌ Supabase initialization failed: $e');
-          print('❌ Error type: ${e.runtimeType}');
-          print('❌ Stack trace: $stackTrace');
+          Logger.debug('❌ Supabase initialization failed: $e');
+          Logger.debug('❌ Error type: ${e.runtimeType}');
+          Logger.debug('❌ Stack trace: $stackTrace');
           // Try fallback even for other errors
           try {
             await Future.delayed(const Duration(milliseconds: 1000));
             SupabaseService.client; // Initialize fallback client
-            print('✅ Using fallback Supabase client after error');
+            Logger.debug('✅ Using fallback Supabase client after error');
             supabaseInitialized = true;
           } catch (fallbackError) {
-            print('❌ Fallback client creation failed: $fallbackError');
+            Logger.debug('❌ Fallback client creation failed: $fallbackError');
             supabaseInitialized = false;
           }
         }
@@ -280,32 +294,32 @@ Future<void> _initializeServicesInBackground() async {
               final event = data.event;
               final session = data.session;
               
-              print('🔐 Auth state changed: $event');
+              Logger.debug('🔐 Auth state changed: $event');
               
               if (session != null) {
-                print('✅ User logged in: ${session.user.email}');
-                print('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
-                print('✅ Role in metadata: ${session.user.userMetadata?['role']}');
+                Logger.debug('✅ User logged in: ${session.user.email}');
+                Logger.debug('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
+                Logger.debug('✅ Role in metadata: ${session.user.userMetadata?['role']}');
               }
 
               // Handle password recovery - the deep link will navigate to reset screen
               if (event == AuthChangeEvent.passwordRecovery && session != null) {
-                print('🔐 Password recovery detected - session available');
+                Logger.debug('🔐 Password recovery detected - session available');
                 // The reset password screen will handle the session via deep link
               }
               
               // CRITICAL: Handle email confirmation - navigate to appropriate screen
               // This fires when user confirms email via deep link
               if (event == AuthChangeEvent.signedIn && session != null && session.user.emailConfirmedAt != null) {
-                print('🔐 User signed in with confirmed email - checking role for navigation');
+                Logger.debug('🔐 User signed in with confirmed email - checking role for navigation');
                 
                 final user = session.user;
                 final roleFromMetadata = user.userMetadata?['role'] as String?;
-                print('🔐 Role from metadata: $roleFromMetadata');
+                Logger.debug('🔐 Role from metadata: $roleFromMetadata');
                 
                 // Check if this is an admin
                 if (roleFromMetadata == 'admin') {
-                  print('✅ Admin detected from auth state change - ensuring user record exists');
+                  Logger.debug('✅ Admin detected from auth state change - ensuring user record exists');
                   
                   // Ensure user record exists in users table
                   try {
@@ -316,7 +330,7 @@ Future<void> _initializeServicesInBackground() async {
                         .maybeSingle();
                     
                     if (existingRecord == null) {
-                      print('⚠️ Creating admin user record from auth state change...');
+                      Logger.debug('⚠️ Creating admin user record from auth state change...');
                       final positionId = user.userMetadata?['position_id'] as String?;
                       final fullName = user.userMetadata?['full_name'] as String? ?? 
                                       user.userMetadata?['name'] as String? ?? 
@@ -329,87 +343,95 @@ Future<void> _initializeServicesInBackground() async {
                         'role': 'admin',
                         if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
                       });
-                      print('✅ Admin user record created from auth state change');
+                      Logger.debug('✅ Admin user record created from auth state change');
                     }
                   } catch (e) {
-                    print('⚠️ Error ensuring admin user record: $e');
+                    Logger.debug('⚠️ Error ensuring admin user record: $e');
                   }
                 }
               }
             });
         } catch (e) {
-          print('⚠️ Could not set up auth state listener: $e');
+          Logger.debug('⚠️ Could not set up auth state listener: $e');
         }
       }
 
       if (supabaseInitialized && !kIsWeb) {
         try {
-          print('🔥 Starting Firebase Messaging initialization (background)...');
+          Logger.debug('🔥 Starting Firebase Messaging initialization (background)...');
           // Initialize Firebase Messaging Service after Supabase init to avoid fallback auth client usage
           await fcm_service.FirebaseMessagingService.initialize();
-          print('✅ Firebase Messaging initialized (background)');
+          Logger.debug('✅ Firebase Messaging initialized (background)');
           
           // Verify token was obtained
           final token = fcm_service.FirebaseMessagingService.fcmToken;
           if (token != null && token.isNotEmpty) {
-            print('✅ FCM token obtained: ${token.substring(0, 20)}...');
+            Logger.debug('✅ FCM token obtained: ${token.substring(0, 20)}...');
           } else {
-            print('⚠️ WARNING: FCM token is null after initialization');
-            print('⚠️ This may prevent push notifications from working');
-            print('⚠️ Check notification permissions and Firebase configuration');
+            Logger.debug('⚠️ WARNING: FCM token is null after initialization');
+            Logger.debug('⚠️ This may prevent push notifications from working');
+            Logger.debug('⚠️ Check notification permissions and Firebase configuration');
           }
         } catch (e, stackTrace) {
-          print('❌ Firebase Messaging initialization failed: $e');
-          print('❌ Error type: ${e.runtimeType}');
-          print('❌ Stack trace: $stackTrace');
+          Logger.debug('❌ Firebase Messaging initialization failed: $e');
+          Logger.debug('❌ Error type: ${e.runtimeType}');
+          Logger.debug('❌ Stack trace: $stackTrace');
         }
       } else {
         if (kIsWeb) {
-          print('⚠️ Skipping Firebase Messaging initialization (web platform)');
+          Logger.debug('⚠️ Skipping Firebase Messaging initialization (web platform)');
         } else if (!supabaseInitialized) {
-          print('⚠️ Skipping Firebase Messaging initialization (Supabase not initialized)');
+          Logger.debug('⚠️ Skipping Firebase Messaging initialization (Supabase not initialized)');
         }
       }
   } catch (supabaseError, stackTrace) {
-      print('❌ Supabase initialization failed: $supabaseError');
-      print('❌ Error type: ${supabaseError.runtimeType}');
-      print('❌ Stack trace: $stackTrace');
-      print('⚠️ App will continue but authentication features may not work properly');
-      print('⚠️ Please restart the app or check your internet connection');
+      Logger.debug('❌ Supabase initialization failed: $supabaseError');
+      Logger.debug('❌ Error type: ${supabaseError.runtimeType}');
+      Logger.debug('❌ Stack trace: $stackTrace');
+      Logger.debug('⚠️ App will continue but authentication features may not work properly');
+      Logger.debug('⚠️ Please restart the app or check your internet connection');
     }
 
-    // Initialize local database (for offline support) - skip on web
+    // Initialize local database and offline cache (skip on web)
     if (!kIsWeb) {
       try {
-        print('🔄 Initializing local database (background)...');
+        Logger.debug('🔄 Initializing local database (background)...');
         await DatabaseHelper.instance.database;
-        print('✅ Local database initialized successfully (background)');
+        Logger.debug('✅ Local database initialized successfully (background)');
+
+        // Initialize offline cache service
+        await LocalCacheService().initialize();
+        Logger.debug('✅ LocalCacheService initialized');
+
+        // Initialize sync service (processes queued offline mutations)
+        await SyncService().initialize();
+        Logger.debug('✅ SyncService initialized');
       } catch (e) {
-        print('⚠️ Database initialization failed: $e');
+        Logger.debug('⚠️ Database/cache initialization failed: $e');
         // Continue without local database
       }
 
       // Ensure image storage bucket exists (non-blocking)
-      print('🔄 Checking image storage bucket (background)...');
+      Logger.debug('🔄 Checking image storage bucket (background)...');
       try {
         await ImageUploadService.ensureBucketExists();
-        print('✅ Image storage bucket ready (background)');
+        Logger.debug('✅ Image storage bucket ready (background)');
       } catch (e) {
-        print('⚠️ Image storage bucket check failed (non-critical): $e');
+        Logger.debug('⚠️ Image storage bucket check failed (non-critical): $e');
         // Continue without failing - this is not critical for app startup
       }
 
       // Initialize session management for extended timeouts
-      print('🔄 Initializing session management (background)...');
+      Logger.debug('🔄 Initializing session management (background)...');
       try {
         // This will be handled by AuthProvider
-        print('✅ Session management ready for 30-day timeouts (background)');
+        Logger.debug('✅ Session management ready for 30-day timeouts (background)');
       } catch (e) {
-        print('⚠️ Session management initialization failed (non-critical): $e');
+        Logger.debug('⚠️ Session management initialization failed (non-critical): $e');
       }
     }
 
-  print('✅ Background initialization complete');
+  Logger.debug('✅ Background initialization complete');
 }
 
 bool _isSessionValid(Session? session) {
@@ -429,7 +451,7 @@ Future<void> _recoverSupabaseSession() async {
     final persistedSession =
         await SupabaseAuthStorageFactory.readPersistedSession();
     if (persistedSession == null || persistedSession.isEmpty) {
-      print('ℹ️ No persisted Supabase session found');
+      Logger.debug('ℹ️ No persisted Supabase session found');
       return;
     }
 
@@ -437,16 +459,16 @@ Future<void> _recoverSupabaseSession() async {
         await SupabaseService.client.auth.recoverSession(persistedSession);
     final recoveredSession = response.session;
     if (_isSessionValid(recoveredSession)) {
-      print('✅ Supabase session recovered');
+      Logger.debug('✅ Supabase session recovered');
     } else {
-      print('⚠️ Recovered session is invalid or expired');
+      Logger.debug('⚠️ Recovered session is invalid or expired');
       await SupabaseAuthStorageFactory.clearPersistedSession();
     }
   } on AuthException catch (e) {
-    print('⚠️ Supabase session recovery failed: ${e.message}');
+    Logger.debug('⚠️ Supabase session recovery failed: ${e.message}');
     await SupabaseAuthStorageFactory.clearPersistedSession();
   } catch (e) {
-    print('⚠️ Supabase session recovery error: $e');
+    Logger.debug('⚠️ Supabase session recovery error: $e');
   }
 }
 
@@ -784,7 +806,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
     // Listen for incoming deep links while app is running
     if (!kIsWeb) {
       _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-        print('🔐 DEEP LINK RECEIVED (while running): $uri');
+        Logger.debug('🔐 DEEP LINK RECEIVED (while running): $uri');
         _handleDeepLink(uri);
       });
     }
@@ -846,12 +868,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
 
   Future<void> _handleDeepLink(Uri uri) async {
     if (_isProcessingDeepLink) {
-      print('🔐 Already processing a deep link, ignoring');
+      Logger.debug('🔐 Already processing a deep link, ignoring');
       return;
     }
     
     _isProcessingDeepLink = true;
-    print('🔐 Processing deep link: $uri');
+    Logger.debug('🔐 Processing deep link: $uri');
     
     try {
       // Check if this is an auth callback
@@ -863,12 +885,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                             uriString.contains('type=recovery');
       
       if (!isAuthCallback) {
-        print('🔐 Not an auth callback, ignoring');
+        Logger.debug('🔐 Not an auth callback, ignoring');
         _isProcessingDeepLink = false;
         return;
       }
       
-      print('🔐 Auth callback detected, waiting for Supabase...');
+      Logger.debug('🔐 Auth callback detected, waiting for Supabase...');
       
       // Wait for Supabase to be initialized - max 2 seconds
       int waitAttempts = 0;
@@ -876,7 +898,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         await Future.delayed(const Duration(milliseconds: 100));
         waitAttempts++;
       }
-      print('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 100}ms)');
+      Logger.debug('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 100}ms)');
       
       // Extract parameters
       final params = <String, String>{};
@@ -886,7 +908,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           final fragment = uri.fragment.startsWith('?') ? uri.fragment.substring(1) : uri.fragment;
           params.addAll(Uri.splitQueryString(fragment));
         } catch (e) {
-          print('⚠️ Could not parse fragment: $e');
+          Logger.debug('⚠️ Could not parse fragment: $e');
         }
       }
       
@@ -896,13 +918,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       final accessToken = params['access_token'];
       final refreshToken = params['refresh_token'];
       
-      print('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}, refreshToken: ${refreshToken != null}');
+      Logger.debug('🔐 Params - type: $type, code: ${code != null}, token: ${token != null}, accessToken: ${accessToken != null}, refreshToken: ${refreshToken != null}');
       
       // IMPORTANT: Handle password reset (recovery) differently - don't auto-login
       // User needs to go to Reset Password screen to set their password first
       // The Reset Password screen is already rendered as initial route, so just mark as processed
       if (type == 'recovery') {
-        print('🔐 Password reset flow detected - Reset Password screen already shown');
+        Logger.debug('🔐 Password reset flow detected - Reset Password screen already shown');
         _deepLinkProcessed = true;
         _isProcessingDeepLink = false;
         // Don't navigate - the screen is already rendered as initialRoute
@@ -914,35 +936,35 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
       Session? session;
       
       try {
-        print('🔐 Using getSessionFromUrl to extract session...');
+        Logger.debug('🔐 Using getSessionFromUrl to extract session...');
         final response = await SupabaseService.client.auth.getSessionFromUrl(uri);
         session = response.session;
-        print('✅ getSessionFromUrl succeeded');
+        Logger.debug('✅ getSessionFromUrl succeeded');
       } catch (e) {
-        print('⚠️ getSessionFromUrl failed: $e');
+        Logger.debug('⚠️ getSessionFromUrl failed: $e');
         
         // Fallback: Try to set session directly if we have tokens
         if (accessToken != null) {
-          print('🔐 Fallback: Setting session from access token...');
+          Logger.debug('🔐 Fallback: Setting session from access token...');
           try {
             // For implicit flow, tokens come in fragment
             // We can set the session using the refresh token
             if (refreshToken != null) {
               final response = await SupabaseService.client.auth.setSession(refreshToken);
               session = response.session;
-              print('✅ setSession succeeded');
+              Logger.debug('✅ setSession succeeded');
             }
           } catch (e2) {
-            print('⚠️ setSession failed: $e2');
+            Logger.debug('⚠️ setSession failed: $e2');
           }
         }
       }
       
       if (session != null) {
-        print('✅ Session obtained from deep link!');
-        print('✅ User: ${session.user.email}');
-        print('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
-        print('✅ Role: ${session.user.userMetadata?['role']}');
+        Logger.debug('✅ Session obtained from deep link!');
+        Logger.debug('✅ User: ${session.user.email}');
+        Logger.debug('✅ Email confirmed: ${session.user.emailConfirmedAt != null}');
+        Logger.debug('✅ Role: ${session.user.userMetadata?['role']}');
         
         // Ensure admin user record exists
         final role = session.user.userMetadata?['role'] as String?;
@@ -957,7 +979,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                 .maybeSingle();
             
             if (existingRecord == null) {
-              print('🔐 Creating admin user record...');
+              Logger.debug('🔐 Creating admin user record...');
               final positionId = session.user.userMetadata?['position_id'] as String?;
               final fullName = session.user.userMetadata?['full_name'] as String? ?? 
                               session.user.userMetadata?['name'] as String? ?? 
@@ -970,10 +992,10 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                 'role': 'admin',
                 if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
               });
-              print('✅ Admin user record created');
+              Logger.debug('✅ Admin user record created');
             }
           } catch (e) {
-            print('⚠️ Error creating admin user record: $e');
+            Logger.debug('⚠️ Error creating admin user record: $e');
           }
         }
 
@@ -988,7 +1010,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         _deepLinkProcessed = true;
         
         // Navigate directly to the appropriate screen
-        print('✅ Navigating directly to home screen...');
+        Logger.debug('✅ Navigating directly to home screen...');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_navigatorKey.currentState != null) {
             _navigatorKey.currentState!.pushNamedAndRemoveUntil(
@@ -1000,15 +1022,15 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         
         setState(() {});
       } else {
-        print('❌ Could not obtain session from deep link');
+        Logger.debug('❌ Could not obtain session from deep link');
         // Still mark as processed to stop showing loading screen
         // User will be shown role selection screen
         _deepLinkProcessed = true;
         setState(() {});
       }
     } catch (e, stackTrace) {
-      print('❌ Error processing deep link: $e');
-      print('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error processing deep link: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
       // Mark as processed even on error to stop showing loading screen
       _deepLinkProcessed = true;
       setState(() {});
@@ -1026,7 +1048,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             final authProvider = AuthProvider();
             // Initialize in background - don't block UI
             authProvider.initialize().catchError((e) {
-              print('⚠️ Auth initialization error (non-blocking): $e');
+              Logger.debug('⚠️ Auth initialization error (non-blocking): $e');
             });
             return authProvider;
           },
@@ -1035,6 +1057,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => SupabaseToolProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseTechnicianProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => ToolIssueProvider()),
         ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
         ChangeNotifierProvider(create: (_) => RequestThreadProvider()),
@@ -1043,8 +1066,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseCertificationProvider()),
       ],
-      child: Consumer2<AuthProvider, ThemeProvider>(
-        builder: (context, authProvider, themeProvider, child) {
+      child: Consumer3<AuthProvider, ThemeProvider, LocaleProvider>(
+        builder: (context, authProvider, themeProvider, localeProvider, child) {
           // Remove custom error widget to prevent blank error screens on back navigation
           // Flutter will handle errors with its default behavior
           ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -1063,13 +1086,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             // Remove splash immediately - initialization happens in background
             WidgetsBinding.instance.addPostFrameCallback((_) {
             FlutterNativeSplash.remove();
-              print('✅ Native splash removed immediately');
+              Logger.debug('✅ Native splash removed immediately');
             });
           }
           
           // CRITICAL: Process initial deep link if we have one and haven't processed it yet
           if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
-            print('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
+            Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
             // Process in post frame callback to avoid setState during build
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _handleDeepLink(widget.initialDeepLink!);
@@ -1092,13 +1115,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             
             if (isPasswordReset) {
               // Password reset - go directly to reset password screen
-              print('🔐 Password reset deep link - going to Reset Password screen');
+              Logger.debug('🔐 Password reset deep link - going to Reset Password screen');
               initialRoute = ResetPasswordScreen(
                 deepLink: deepLinkString,
               );
             } else {
               // Email confirmation - show loading screen while processing
-              print('🔐 Email confirmation deep link - showing loading screen...');
+              Logger.debug('🔐 Email confirmation deep link - showing loading screen...');
               initialRoute = const _EmailConfirmationLoadingScreen();
             }
           } else if (_sessionEstablished || (hasSession && currentUser != null && currentUser.emailConfirmedAt != null)) {
@@ -1114,10 +1137,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               // Provider not initialized - check metadata and pending approval table
               final roleFromMetadata = currentUser?.userMetadata?['role'] as String?;
               final email = currentUser?.email ?? '';
-              isAdmin = roleFromMetadata == 'admin' || 
-                  email.endsWith('@royalgulf.ae') || 
-                  email.endsWith('@mekar.ae') || 
-                  email.endsWith('@gmail.com');
+              isAdmin = roleFromMetadata == 'admin' ||
+                  AppConfig.isAdminEmailDomain(email);
               
               // Check pending approval synchronously if possible
               if (!isAdmin) {
@@ -1162,14 +1183,17 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           // Show UI right away - initialization happens in background
           // The Consumer will rebuild when auth state changes
           final defaultRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
-          print('🔐 DEFAULT ROUTE FROM PLATFORM: "$defaultRoute"');
-          print('🔐 Has session: $hasSession, Current user: ${currentUser?.email}, Session established: $_sessionEstablished');
+          Logger.debug('🔐 DEFAULT ROUTE FROM PLATFORM: "$defaultRoute"');
+          Logger.debug('🔐 Has session: $hasSession, Current user: ${currentUser?.email}, Session established: $_sessionEstablished');
           return MaterialApp(
             navigatorKey: _navigatorKey,
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: localeProvider.locale,
             // Don't use home - let onGenerateRoute handle everything including deep links
             initialRoute: defaultRoute,
             builder: (context, child) {
@@ -1223,7 +1247,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               },
             },
             onGenerateRoute: (settings) {
-              print('🔐 onGenerateRoute called with: ${settings.name}');
+              Logger.debug('🔐 onGenerateRoute called with: ${settings.name}');
               
               // Handle root route - use the initial route we determined
               if (settings.name == '/' || settings.name == null) {
@@ -1237,7 +1261,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               // Check for various URL formats that Supabase might send
               if (settings.name != null) {
                 final uriString = settings.name!;
-                print('🔐 Checking deep link: $uriString');
+                Logger.debug('🔐 Checking deep link: $uriString');
                 
                 Map<String, String> extractParams(Uri uri) {
                   final params = <String, String>{};
@@ -1250,7 +1274,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                     try {
                       params.addAll(Uri.splitQueryString(fragment));
                     } catch (e) {
-                      print('⚠️ Could not parse fragment params: $e');
+                      Logger.debug('⚠️ Could not parse fragment params: $e');
                     }
                   }
 
@@ -1270,7 +1294,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       uriString.contains('email-confirmation');
                 
                 if (isAuthCallback) {
-                  print('🔐 Auth deep link detected: $uriString');
+                  Logger.debug('🔐 Auth deep link detected: $uriString');
                   final uri = Uri.parse(uriString);
                   final params = extractParams(uri);
                 
@@ -1280,33 +1304,33 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                   final code = params['code'];
                   final token = params['token'];
                   
-                  print('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, code: ${code != null ? "present" : "null"}, token: ${token != null ? "present" : "null"}');
+                  Logger.debug('🔐 URL parameters - type: $type, hasAccessToken: $hasAccessToken, code: ${code != null ? "present" : "null"}, token: ${token != null ? "present" : "null"}');
                   
                   // CRITICAL: Handle signup email confirmation
                   // Technicians go to pending approval, Admins auto-login
                   if (type == 'signup') {
-                    print('✅ Signup email confirmation detected');
+                    Logger.debug('✅ Signup email confirmation detected');
                     
                     return MaterialPageRoute(
                       builder: (context) {
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
-                            print('🔐 Processing signup email confirmation...');
-                            print('🔐 Full URI: $uri');
+                            Logger.debug('🔐 Processing signup email confirmation...');
+                            Logger.debug('🔐 Full URI: $uri');
                             
                             // CRITICAL: Wait for Supabase to be fully initialized
                             // This is necessary when app cold starts from deep link
-                            print('🔐 Waiting for Supabase to be initialized...');
+                            Logger.debug('🔐 Waiting for Supabase to be initialized...');
                             int waitAttempts = 0;
                             while (!SupabaseService.isInitialized && waitAttempts < 30) {
                               await Future.delayed(const Duration(milliseconds: 200));
                               waitAttempts++;
                             }
-                            print('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 200}ms)');
+                            Logger.debug('🔐 Supabase initialized: ${SupabaseService.isInitialized} (waited ${waitAttempts * 200}ms)');
                             
                             final existingSession = SupabaseService.client.auth.currentSession;
                             if (_isSessionValid(existingSession)) {
-                              print('✅ Existing session is valid - skipping confirmation exchange');
+                              Logger.debug('✅ Existing session is valid - skipping confirmation exchange');
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
                               await authProvider.initialize();
                               if (authProvider.isAdmin && context.mounted) {
@@ -1326,18 +1350,18 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                             final accessToken = params['access_token'];
                             final refreshToken = params['refresh_token'];
                             if (accessToken != null && refreshToken != null) {
-                              print('🔐 Tokens detected in URL - setting session from refresh token');
+                              Logger.debug('🔐 Tokens detected in URL - setting session from refresh token');
                               final setResponse = await SupabaseService.client.auth.setSession(
                                 refreshToken,
                               );
                               confirmedSession = setResponse.session;
                             } else if (code != null && !hasAccessToken) {
-                              print('🔐 Using exchangeCodeForSession with code parameter');
+                              Logger.debug('🔐 Using exchangeCodeForSession with code parameter');
                               final urlResponse = await SupabaseService.client.auth.exchangeCodeForSession(code);
                               confirmedSession = urlResponse.session;
                             } else if (token != null && !hasAccessToken) {
-                              print('🔐 Token detected in verification URL');
-                              print('🔄 Attempting to verify token via verifyOTP...');
+                              Logger.debug('🔐 Token detected in verification URL');
+                              Logger.debug('🔄 Attempting to verify token via verifyOTP...');
                               try {
                                 final verifyResponse = await SupabaseService.client.auth.verifyOTP(
                                   type: OtpType.signup,
@@ -1345,31 +1369,31 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 );
                                 confirmedSession = verifyResponse.session;
                                 if (confirmedSession == null) {
-                                  print('⚠️ verifyOTP returned null session');
-                                  print('🔄 Fallback: trying getSessionFromUrl...');
+                                  Logger.debug('⚠️ verifyOTP returned null session');
+                                  Logger.debug('🔄 Fallback: trying getSessionFromUrl...');
                                   final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                                   confirmedSession = urlResponse.session;
                                 }
                               } catch (verifyError) {
-                                print('❌ Token verification via verifyOTP failed: $verifyError');
-                                print('🔄 Fallback: trying getSessionFromUrl...');
+                                Logger.debug('❌ Token verification via verifyOTP failed: $verifyError');
+                                Logger.debug('🔄 Fallback: trying getSessionFromUrl...');
                                 try {
                                   final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                                   confirmedSession = urlResponse.session;
                                 } catch (e) {
-                                  print('❌ getSessionFromUrl also failed: $e');
+                                  Logger.debug('❌ getSessionFromUrl also failed: $e');
                                 }
                               }
                             } else {
-                              print('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
+                              Logger.debug('🔐 Using getSessionFromUrl (handles token/access_token parameters)');
                               final urlResponse = await SupabaseService.client.auth.getSessionFromUrl(uri);
                               confirmedSession = urlResponse.session;
                             }
                             
                             if (confirmedSession == null) {
-                              print('❌ No session created from email confirmation');
-                              print('❌ URI: $uri');
-                              print('❌ Params: code=$code, token=$token, type=$type');
+                              Logger.debug('❌ No session created from email confirmation');
+                              Logger.debug('❌ URI: $uri');
+                              Logger.debug('❌ Params: code=$code, token=$token, type=$type');
                               // If we have a token but no session, the redirect might not have happened
                               // Show error and route to login
                               if (context.mounted) {
@@ -1384,7 +1408,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               return;
                             }
                             
-                            print('✅ Email confirmed - session created: ${confirmedSession != null}');
+                            Logger.debug('✅ Email confirmed - session created: ${confirmedSession != null}');
                             
                             if (confirmedSession.user != null) {
                               final user = confirmedSession.user;
@@ -1394,12 +1418,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                               email.split('@')[0];
                               final userId = user.id;
                               
-                              print('✅ User details - Email: $email, Name: $fullName, ID: $userId');
+                              Logger.debug('✅ User details - Email: $email, Name: $fullName, ID: $userId');
                               
                               // CRITICAL: The session is already set by exchangeCodeForSession/getSessionFromUrl
                               // Verify it's set in Supabase
                               final currentSession = SupabaseService.client.auth.currentSession;
-                              print('✅ Current session: ${currentSession != null ? "Set (user: ${currentSession.user.email})" : "Not set"}');
+                              Logger.debug('✅ Current session: ${currentSession != null ? "Set (user: ${currentSession.user.email})" : "Not set"}');
                               
                               // Initialize auth provider first to ensure session is loaded
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -1416,7 +1440,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               
                               // Step 1: Check user metadata first (set during registration)
                               final roleFromMetadata = user.userMetadata?['role'] as String?;
-                              print('✅ Role from user metadata: $roleFromMetadata');
+                              Logger.debug('✅ Role from user metadata: $roleFromMetadata');
                               
                               // Step 2: Check database as secondary source
                               try {
@@ -1426,9 +1450,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                     .eq('id', userId)
                                     .maybeSingle();
                                 role = userRecord?['role'] as String?;
-                                print('✅ Role from database: $role');
+                                Logger.debug('✅ Role from database: $role');
                               } catch (e) {
-                                print('⚠️ Could not fetch role from database: $e');
+                                Logger.debug('⚠️ Could not fetch role from database: $e');
                               }
                               
                               // Step 3: Use metadata role if database role is null
@@ -1436,13 +1460,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               // record wasn't created (because no session during registration)
                               if (role == null && roleFromMetadata != null) {
                                 role = roleFromMetadata;
-                                print('✅ Using role from metadata (database had no record): $role');
+                                Logger.debug('✅ Using role from metadata (database had no record): $role');
                               }
                               
                               // Fallback to auth provider's role
                               if (role == null) {
                                 role = authProvider.userRole.value;
-                                print('✅ Using role from auth provider: $role');
+                                Logger.debug('✅ Using role from auth provider: $role');
                               }
                               
                               // Check if user is admin - admins should auto-login
@@ -1450,7 +1474,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               final isAdmin = role == 'admin' || authProvider.isAdmin;
                               
                               if (isAdmin) {
-                                print('✅ Admin email confirmation - auto-logging in...');
+                                Logger.debug('✅ Admin email confirmation - auto-logging in...');
                                 
                                 // CRITICAL: Ensure user record exists in users table
                                 // This may not have been created during registration if email
@@ -1463,7 +1487,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       .maybeSingle();
                                   
                                   if (existingRecord == null) {
-                                    print('⚠️ Admin user record not found in users table - creating now...');
+                                    Logger.debug('⚠️ Admin user record not found in users table - creating now...');
                                     // Get position_id from metadata if available
                                     final positionId = user.userMetadata?['position_id'] as String?;
                                     
@@ -1474,12 +1498,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       'role': 'admin',
                                       if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
                                     });
-                                    print('✅ Admin user record created in users table');
+                                    Logger.debug('✅ Admin user record created in users table');
                                   } else {
-                                    print('✅ Admin user record already exists in users table');
+                                    Logger.debug('✅ Admin user record already exists in users table');
                                   }
                                 } catch (e) {
-                                  print('⚠️ Error ensuring admin user record: $e');
+                                  Logger.debug('⚠️ Error ensuring admin user record: $e');
                                   // Continue anyway - the record might be created by trigger
                                 }
                                 
@@ -1487,30 +1511,30 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 await authProvider.initialize();
                                 
                                 if (authProvider.isAuthenticated && authProvider.isAdmin) {
-                                  print('✅ Admin authenticated - routing to admin home');
+                                  Logger.debug('✅ Admin authenticated - routing to admin home');
                                   if (context.mounted) {
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
                                   }
                                   return;
                                 } else {
-                                  print('⚠️ Admin not authenticated after initialization. isAuthenticated: ${authProvider.isAuthenticated}, isAdmin: ${authProvider.isAdmin}, userRole: ${authProvider.userRole}');
+                                  Logger.debug('⚠️ Admin not authenticated after initialization. isAuthenticated: ${authProvider.isAuthenticated}, isAdmin: ${authProvider.isAdmin}, userRole: ${authProvider.userRole}');
                                   // Fallback: try routing anyway if we have a session and confirmed role
                                   if (isAdmin && confirmedSession != null && context.mounted) {
-                                    print('⚠️ Attempting fallback routing to admin home');
+                                    Logger.debug('⚠️ Attempting fallback routing to admin home');
                                     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/admin', (route) => false);
                                   }
                                 }
                               } else {
                                 // Technician - route to pending approval
-                                print('✅ Technician email confirmation - routing to pending approval screen');
+                                Logger.debug('✅ Technician email confirmation - routing to pending approval screen');
                                 
                                 // Wait for database trigger to create pending approval record
-                                print('⏳ Waiting for database trigger to create pending approval record...');
+                                Logger.debug('⏳ Waiting for database trigger to create pending approval record...');
                                 await Future.delayed(const Duration(milliseconds: 1500));
                                 
                                 // Create admin notification and send push notification after email confirmation
                                 try {
-                                  print('📧 Creating admin notification for new registration...');
+                                  Logger.debug('📧 Creating admin notification for new registration...');
                                   await SupabaseService.client.rpc(
                                     'create_admin_notification',
                                     params: {
@@ -1525,9 +1549,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       },
                                     },
                                   );
-                                  print('✅ Admin notification created in notification center');
+                                  Logger.debug('✅ Admin notification created in notification center');
                                 } catch (notifError) {
-                                  print('⚠️ Could not create admin notification: $notifError');
+                                  Logger.debug('⚠️ Could not create admin notification: $notifError');
                                   // Fallback: Try direct push notification
                                   try {
                                     await SupabaseService.client
@@ -1545,9 +1569,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                             'email': email,
                                           },
                                         });
-                                    print('✅ Admin notification created via direct insert');
+                                    Logger.debug('✅ Admin notification created via direct insert');
                                   } catch (insertError) {
-                                    print('⚠️ Could not create admin notification via direct insert: $insertError');
+                                    Logger.debug('⚠️ Could not create admin notification via direct insert: $insertError');
                                   }
                                 }
                                 
@@ -1562,9 +1586,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       'email': email,
                                     },
                                   );
-                                  print('✅ Push notification sent to admins for new registration');
+                                  Logger.debug('✅ Push notification sent to admins for new registration');
                                 } catch (pushError) {
-                                  print('⚠️ Could not send push notification: $pushError');
+                                  Logger.debug('⚠️ Could not send push notification: $pushError');
                                 }
                                 
                                 // Route to pending approval for technicians
@@ -1574,7 +1598,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               }
                             }
                           } catch (e) {
-                            print('⚠️ Email confirmation error: $e');
+                            Logger.debug('⚠️ Email confirmation error: $e');
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -1593,7 +1617,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                     );
                   } else if (type == 'recovery' || type == 'invite' || uriString.contains('reset-password')) {
                     // Password reset
-                    print('🔐 Password reset route detected');
+                    Logger.debug('🔐 Password reset route detected');
                     final accessToken = params['access_token'];
                     final refreshToken = params['refresh_token'];
                     
@@ -1609,9 +1633,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                   } else if (type == 'oauth' || hasAccessToken || uriString.contains('email-confirmation') || uri.queryParameters.containsKey('provider')) {
                     // Email confirmation or OAuth callback - get session from URL and auto-login
                     final isOAuth = type == 'oauth' || uri.queryParameters.containsKey('provider');
-                    print('✅ ${isOAuth ? "OAuth" : "Email confirmation"} detected, getting session from URL...');
-                    print('🔐 Full URI: $uri');
-                    print('🔐 Query parameters: ${uri.queryParameters}');
+                    Logger.debug('✅ ${isOAuth ? "OAuth" : "Email confirmation"} detected, getting session from URL...');
+                    Logger.debug('🔐 Full URI: $uri');
+                    Logger.debug('🔐 Query parameters: ${uri.queryParameters}');
                     
                     // Process the session and navigate directly to home - no role selection
                     return MaterialPageRoute(
@@ -1619,8 +1643,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                         // Process the session when the route is built
                         WidgetsBinding.instance.addPostFrameCallback((_) async {
                           try {
-                            print('🔐 Getting session from URL...');
-                            print('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
+                            Logger.debug('🔐 Getting session from URL...');
+                            Logger.debug('🔐 URI scheme: ${uri.scheme}, host: ${uri.host}, path: ${uri.path}');
                             
                             // Get session from URL (this confirms the email/OAuth and creates the session)
                             final sessionResponse = code != null && !hasAccessToken
@@ -1628,11 +1652,11 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 : await SupabaseService.client.auth.getSessionFromUrl(uri);
                             
                             if (sessionResponse.session != null) {
-                              print('✅ Session created from email confirmation');
-                              print('✅ User: ${sessionResponse.session!.user.email}');
-                              print('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
-                              print('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
-                              print('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
+                              Logger.debug('✅ Session created from email confirmation');
+                              Logger.debug('✅ User: ${sessionResponse.session!.user.email}');
+                              Logger.debug('✅ Email confirmed: ${sessionResponse.session!.user.emailConfirmedAt != null}');
+                              Logger.debug('✅ User metadata: ${sessionResponse.session!.user.userMetadata}');
+                              Logger.debug('✅ Role in metadata: ${sessionResponse.session!.user.userMetadata?['role']}');
                               
                               // Get auth provider and initialize with the new session
                               final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -1640,7 +1664,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               
                               // Wait for database trigger to create pending approval record (for technicians)
                               // The trigger fires when email_confirmed_at is set
-                              print('⏳ Waiting for database trigger to create pending approval record...');
+                              Logger.debug('⏳ Waiting for database trigger to create pending approval record...');
                               await Future.delayed(const Duration(milliseconds: 2000));
                               
                               // Re-initialize to pick up role and approval status from database
@@ -1648,14 +1672,14 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               
                               // Check authentication status after initialization
                               if (authProvider.isAuthenticated && authProvider.user != null) {
-                                print('✅ User authenticated after email confirmation');
-                                print('✅ User role from AuthProvider: ${authProvider.userRole}');
-                                print('✅ Is admin from AuthProvider: ${authProvider.isAdmin}');
+                                Logger.debug('✅ User authenticated after email confirmation');
+                                Logger.debug('✅ User role from AuthProvider: ${authProvider.userRole}');
+                                Logger.debug('✅ Is admin from AuthProvider: ${authProvider.isAdmin}');
                                 
                                 // CRITICAL: Use checkApprovalStatus() as the source of truth
                                 // This is the simplest and most reliable way to determine routing
                                 final isApproved = await authProvider.checkApprovalStatus();
-                                print('✅ Approval status: $isApproved');
+                                Logger.debug('✅ Approval status: $isApproved');
                                 
                               final navigator = Navigator.of(context, rootNavigator: true);
                                 final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
@@ -1664,7 +1688,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 // If not approved (pending/rejected), route to pending approval screen
                                 // This "traps" the user at pending approval until admin approves
                                 if (isApproved == false) {
-                                  print('✅ User is NOT approved - routing to pending approval screen');
+                                  Logger.debug('✅ User is NOT approved - routing to pending approval screen');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/pending-approval',
                                     (route) => false,
@@ -1674,20 +1698,20 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 
                                 // If approved, route based on role
                                 if (authProvider.isAdmin) {
-                                  print('✅ Admin user - routing to admin home');
+                                  Logger.debug('✅ Admin user - routing to admin home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/admin',
                                     (route) => false,
                                   );
                                 } else if (authProvider.isTechnician) {
-                                  print('✅ Approved technician - routing to technician home');
+                                  Logger.debug('✅ Approved technician - routing to technician home');
                                   navigator.pushNamedAndRemoveUntil(
                                     '/technician',
                                     (route) => false,
                                   );
                                 } else if (authProvider.userRole == UserRole.pending && isOAuthUser) {
                                   // OAuth sign-in without an existing account
-                                  print('🔐 OAuth user without account - signing out');
+                                  Logger.debug('🔐 OAuth user without account - signing out');
                                   await authProvider.signOut();
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1703,7 +1727,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 } else {
                                   // Fallback: Check metadata for role
                                   final roleFromMetadata = sessionResponse.session!.user.userMetadata?['role'] as String?;
-                                  print('⚠️ Role not loaded - checking metadata: $roleFromMetadata');
+                                  Logger.debug('⚠️ Role not loaded - checking metadata: $roleFromMetadata');
                                   
                                   if (roleFromMetadata == 'admin') {
                                     navigator.pushNamedAndRemoveUntil(
@@ -1718,7 +1742,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                   );
                                 } else {
                                     // Unknown role - redirect to role selection
-                                    print('⚠️ Unknown role - redirecting to role selection');
+                                    Logger.debug('⚠️ Unknown role - redirecting to role selection');
                                   navigator.pushNamedAndRemoveUntil(
                                       '/role-selection',
                                     (route) => false,
@@ -1727,8 +1751,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 }
                               } else {
                                 // If still not authenticated after initialization, there's an issue
-                                print('⚠️ Session created but user not authenticated after initialization');
-                                print('⚠️ This might indicate a role assignment issue');
+                                Logger.debug('⚠️ Session created but user not authenticated after initialization');
+                                Logger.debug('⚠️ This might indicate a role assignment issue');
                                 
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1750,8 +1774,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 }
                               }
                             } else {
-                              print('⚠️ No session returned from URL');
-                              print('⚠️ This might mean the confirmation link is invalid or expired');
+                              Logger.debug('⚠️ No session returned from URL');
+                              Logger.debug('⚠️ This might mean the confirmation link is invalid or expired');
                               
                               // Show error message and redirect to role selection
                               if (context.mounted) {
@@ -1774,8 +1798,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                               }
                             }
                           } catch (e, stackTrace) {
-                            print('❌ Error getting session from URL: $e');
-                            print('❌ Stack trace: $stackTrace');
+                            Logger.debug('❌ Error getting session from URL: $e');
+                            Logger.debug('❌ Stack trace: $stackTrace');
                             
                             // Show error message to user and redirect to role selection
                             if (context.mounted) {
@@ -1839,7 +1863,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             },
             onUnknownRoute: (settings) {
               // Fallback for any unhandled routes
-              print('⚠️ Unknown route (onUnknownRoute): ${settings.name}');
+              Logger.debug('⚠️ Unknown route (onUnknownRoute): ${settings.name}');
               return MaterialPageRoute(
                 builder: (context) => const RoleSelectionScreen(),
                 settings: RouteSettings(name: '/role-selection'),

@@ -219,7 +219,7 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
                               side: BorderSide(
                                 color: isCurrentUser 
                                     ? AppTheme.primaryColor.withValues(alpha: 0.5)
-                                    : Colors.grey.withValues(alpha: 0.3),
+                                    : Colors.grey.withValues(alpha: 0.55),
                               ),
                             ),
                             child: Padding(

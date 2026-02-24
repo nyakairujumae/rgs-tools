@@ -15,6 +15,7 @@ import '../widgets/common/themed_button.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../services/image_upload_service.dart';
+import '../utils/logger.dart';
 
 class AddToolIssueScreen extends StatefulWidget {
   final Function()? onNavigateToDashboard;
@@ -454,7 +455,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
           (tool) => tool.id == _selectedToolId,
         );
       } catch (e) {
-        debugPrint('❌ Tool not found: $_selectedToolId');
+        Logger.debug('❌ Tool not found: $_selectedToolId');
         AuthErrorHandler.showErrorSnackBar(context, 'Selected tool not found. Please refresh and try again.');
         setState(() {
           _isLoading = false;
@@ -469,13 +470,13 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
           ? '$technicianName (ID: $technicianId)'
           : technicianName;
 
-      debugPrint('📝 Creating tool issue:');
-      debugPrint('   Tool ID: $_selectedToolId');
-      debugPrint('   Tool Name: ${selectedTool.name}');
-      debugPrint('   Reported By: $reportedByInfo');
-      debugPrint('   Issue Type: $_selectedIssueType');
-      debugPrint('   Priority: $_selectedPriority');
-      debugPrint('   Description: ${_descriptionController.text.trim()}');
+      Logger.debug('📝 Creating tool issue:');
+      Logger.debug('   Tool ID: $_selectedToolId');
+      Logger.debug('   Tool Name: ${selectedTool.name}');
+      Logger.debug('   Reported By: $reportedByInfo');
+      Logger.debug('   Issue Type: $_selectedIssueType');
+      Logger.debug('   Priority: $_selectedPriority');
+      Logger.debug('   Description: ${_descriptionController.text.trim()}');
 
       // Upload images if any
       List<String> imageUrls = [];
@@ -491,9 +492,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               imageUrls.add(imageUrl);
             }
           }
-          debugPrint('✅ Uploaded ${imageUrls.length} image(s) for issue');
+          Logger.debug('✅ Uploaded ${imageUrls.length} image(s) for issue');
         } catch (e) {
-          debugPrint('⚠️ Failed to upload some images: $e');
+          Logger.debug('⚠️ Failed to upload some images: $e');
           // Continue with submission even if image upload fails
         }
       }
@@ -515,9 +516,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         attachments: imageUrls.isNotEmpty ? imageUrls : null,
       );
 
-      debugPrint('📤 Submitting issue to Supabase...');
+      Logger.debug('📤 Submitting issue to Supabase...');
       await context.read<ToolIssueProvider>().addIssue(issue);
-      debugPrint('✅ Issue submitted successfully!');
+      Logger.debug('✅ Issue submitted successfully!');
 
       if (mounted) {
         // Clear the form
@@ -539,8 +540,8 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
         // can navigate using the bottom navigation bar.
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error submitting tool issue: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error submitting tool issue: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
       
       if (mounted) {
         String errorMessage = 'Oops! Something went wrong. Please try again.';
@@ -713,7 +714,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

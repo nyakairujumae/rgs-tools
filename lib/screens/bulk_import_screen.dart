@@ -507,7 +507,7 @@ class _BulkImportScreenState extends State<BulkImportScreen> with ErrorHandlingM
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
+            backgroundColor: AppTheme.secondaryColor, // AppTheme.secondaryColor
             behavior: SnackBarBehavior.fixed,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.zero,

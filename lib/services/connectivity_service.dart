@@ -51,10 +51,15 @@ class ConnectivityService {
     return false;
   }
 
-  /// Check current connectivity status
+  /// Check current connectivity status and notify stream if changed
   Future<bool> checkConnectivity() async {
     final result = await _connectivity.checkConnectivity();
-    _isOnline = _isConnected(result);
+    final nowOnline = _isConnected(result);
+    if (_isOnline != nowOnline) {
+      _isOnline = nowOnline;
+      _connectivityController.add(_isOnline);
+      debugPrint('🌐 Connectivity re-check: ${_isOnline ? "Online" : "Offline"}');
+    }
     return _isOnline;
   }
 

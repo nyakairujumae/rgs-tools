@@ -482,15 +482,31 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                     ),
                   ),
 
+                  // Offline banner
+                  if (isOffline)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            'Offline — showing cached data',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // Tools List
                   Expanded(
-                    child: isOffline && !toolProvider.isLoading
-                        ? OfflineToolGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            message: 'You are offline. Showing cached tools.',
-                          )
-                        : toolProvider.isLoading
+                    child: toolProvider.isLoading
                         ? const ToolCardGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
@@ -709,14 +725,14 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
           Icon(
             Icons.build,
             size: 40,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
           ),
           SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],

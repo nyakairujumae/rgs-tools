@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
+import '../utils/logger.dart';
 
 class CsvExportService {
   static final DateFormat _fileNameFormat = DateFormat('yyyyMMdd_HHmmss');
@@ -38,11 +39,11 @@ class CsvExportService {
         }
       }
 
-      debugPrint('✅ Exported ${files.length} CSV files');
+      Logger.debug('✅ Exported ${files.length} CSV files');
       return files;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error exporting data to CSV: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error exporting data to CSV: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -85,7 +86,7 @@ class CsvExportService {
     }
 
     await file.writeAsString(csvContent.toString());
-    debugPrint('✅ Tools CSV exported: ${file.path}');
+    Logger.debug('✅ Tools CSV exported: ${file.path}');
     return file;
   }
 
@@ -128,7 +129,7 @@ class CsvExportService {
           role = tech.role?.toString() ?? 'technician';
           createdAt = tech.createdAt?.toString() ?? '';
         } catch (e) {
-          debugPrint('⚠️ Error extracting technician data: $e');
+          Logger.debug('⚠️ Error extracting technician data: $e');
         }
       }
 
@@ -144,7 +145,7 @@ class CsvExportService {
     }
 
     await file.writeAsString(csvContent.toString());
-    debugPrint('✅ Technicians CSV exported: ${file.path}');
+    Logger.debug('✅ Technicians CSV exported: ${file.path}');
     return file;
   }
 
@@ -179,7 +180,7 @@ class CsvExportService {
     }
 
     await file.writeAsString(csvContent.toString());
-    debugPrint('✅ Assigned tools CSV exported: ${file.path}');
+    Logger.debug('✅ Assigned tools CSV exported: ${file.path}');
     return file;
   }
 
@@ -205,7 +206,7 @@ class CsvExportService {
         }
         return directory;
       } catch (e) {
-        debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
+        Logger.debug('⚠️ Failed to get application documents directory, using temp directory: $e');
         return await getTemporaryDirectory();
       }
     } else if (Platform.isAndroid) {

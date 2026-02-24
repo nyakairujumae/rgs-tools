@@ -136,5 +136,15 @@ class Tool {
   }
   
   static const Object _undefined = Object();
+
+  /// Validate tool data before saving. Returns null if valid, error message otherwise.
+  String? validate() {
+    if (name.trim().isEmpty) return 'Tool name is required';
+    if (category.trim().isEmpty) return 'Category is required';
+    if (condition.trim().isEmpty) return 'Condition is required';
+    if (purchasePrice != null && purchasePrice! < 0) return 'Purchase price cannot be negative';
+    if (currentValue != null && currentValue! < 0) return 'Current value cannot be negative';
+    return null;
+  }
 }
 

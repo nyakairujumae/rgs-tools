@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../providers/auth_provider.dart';
 import '../utils/auth_error_handler.dart';
 import '../theme/app_theme.dart';
@@ -11,6 +12,7 @@ import '../services/admin_position_service.dart';
 import 'admin_home_screen.dart';
 import 'role_selection_screen.dart';
 import 'auth/login_screen.dart';
+import '../utils/logger.dart';
 
 class AdminRegistrationScreen extends StatefulWidget {
   const AdminRegistrationScreen({super.key});
@@ -62,10 +64,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         _superAdminPositionId = fallbackAdmin?.id;
       });
       if (_superAdminPositionId == null) {
-        debugPrint('❌ Super Admin position not found');
+        Logger.debug('❌ Super Admin position not found');
       }
     } catch (e) {
-      debugPrint('❌ Error loading Super Admin position: $e');
+      Logger.debug('❌ Error loading Super Admin position: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -178,10 +180,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your email address';
                           }
-                          if (!value.contains('@royalgulf.ae') &&
-                              !value.contains('@mekar.ae') &&
-                              !value.contains('@gmail.com')) {
-                            return 'Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com';
+                          if (!AppConfig.isAdminEmailDomain(value)) {
+                            return 'Invalid email domain for admin registration. Use ${AppConfig.adminDomainsDisplay}';
                           }
                           return null;
                         },
@@ -402,7 +402,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         return;
       }
 
-      debugPrint('🔍 Starting admin registration...');
+      Logger.debug('🔍 Starting admin registration...');
       final response = await authProvider.registerAdmin(
         _nameController.text.trim(),
         _emailController.text.trim(),
@@ -410,15 +410,15 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         _superAdminPositionId!,
       );
 
-      debugPrint('✅ Admin registration method completed successfully');
+      Logger.debug('✅ Admin registration method completed successfully');
 
       if (mounted) {
         // Check if user was actually created
         final userCreated = response.user != null;
         final hasSession = response.session != null;
         
-        debugPrint('🔍 Registration check - User created: $userCreated, hasSession: $hasSession');
-        debugPrint('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
+        Logger.debug('🔍 Registration check - User created: $userCreated, hasSession: $hasSession');
+        Logger.debug('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
         
         if (!userCreated) {
           throw Exception('Registration failed: User was not created. Please try again.');
@@ -426,7 +426,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         
         if (hasSession) {
           // Email was auto-confirmed or confirmation is disabled
-          debugPrint('✅ Admin has session, navigating to home screen');
+          Logger.debug('✅ Admin has session, navigating to home screen');
           AuthErrorHandler.showSuccessSnackBar(
             context,
             '🎉 Admin account created successfully! Welcome to RGS HVAC Services.',
@@ -442,7 +442,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           );
         } else {
           // Email confirmation required for admin
-          debugPrint('⚠️ No session - email confirmation required');
+          Logger.debug('⚠️ No session - email confirmation required');
           
           // Show email confirmation dialog
           await _showEmailConfirmationDialog();
@@ -458,9 +458,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('❌ Admin registration error: $e');
-        debugPrint('❌ Error type: ${e.runtimeType}');
-        debugPrint('❌ Error string: ${e.toString()}');
+        Logger.debug('❌ Admin registration error: $e');
+        Logger.debug('❌ Error type: ${e.runtimeType}');
+        Logger.debug('❌ Error string: ${e.toString()}');
         
         String errorMessage = AuthErrorHandler.getErrorMessage(e);
         

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'logger.dart';
 
 /// Utility class for handling authentication errors and providing user-friendly messages
 class AuthErrorHandler {
@@ -170,7 +171,7 @@ class AuthErrorHandler {
     }
     
     // Generic fallback - but log the actual error for debugging
-    debugPrint('⚠️ Unhandled error in AuthErrorHandler: $error');
+    Logger.debug('⚠️ Unhandled error in AuthErrorHandler: $error');
     return '❌ Something went wrong. Please try again.';
   }
   

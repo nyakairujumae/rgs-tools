@@ -14,6 +14,7 @@ import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
+import '../utils/logger.dart';
 
 class RequestNewToolScreen extends StatefulWidget {
   const RequestNewToolScreen({super.key});
@@ -549,19 +550,19 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
               imageUrls.add(imageUrl);
             }
           }
-          debugPrint('✅ Uploaded ${imageUrls.length} image(s) for request');
+          Logger.debug('✅ Uploaded ${imageUrls.length} image(s) for request');
         } catch (e) {
-          debugPrint('⚠️ Failed to upload some images: $e');
+          Logger.debug('⚠️ Failed to upload some images: $e');
           // Continue with submission even if image upload fails
         }
       }
 
       // Create approval workflow in database
       try {
-        debugPrint('🔍 Creating approval workflow for ${_selectedRequestType} request');
+        Logger.debug('🔍 Creating approval workflow for ${_selectedRequestType} request');
         final approvalWorkflow = _buildApprovalWorkflow(authProvider, user, imageUrls);
         final workflowMap = approvalWorkflow.toMap(includeId: false);
-        debugPrint('🔍 Approval workflow data: $workflowMap');
+        Logger.debug('🔍 Approval workflow data: $workflowMap');
         
         final response = await SupabaseService.client
             .from('approval_workflows')
@@ -569,11 +570,11 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
             .select()
             .single();
         
-        debugPrint('✅ Created approval workflow for ${_selectedRequestType} request (ID: ${response['id']})');
+        Logger.debug('✅ Created approval workflow for ${_selectedRequestType} request (ID: ${response['id']})');
       } catch (e) {
-        debugPrint('❌ Failed to create approval workflow: $e');
-        debugPrint('❌ Error type: ${e.runtimeType}');
-        debugPrint('❌ Stack trace: ${StackTrace.current}');
+        Logger.debug('❌ Failed to create approval workflow: $e');
+        Logger.debug('❌ Error type: ${e.runtimeType}');
+        Logger.debug('❌ Stack trace: ${StackTrace.current}');
         // Continue anyway - notification is still important
       }
 
@@ -592,9 +593,9 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           message: _buildNotificationMessage(authProvider),
           data: notificationData,
         );
-        debugPrint('✅ Created admin notification for tool request');
+        Logger.debug('✅ Created admin notification for tool request');
       } catch (e) {
-        debugPrint('❌ Failed to create admin notification: $e');
+        Logger.debug('❌ Failed to create admin notification: $e');
         // Re-throw so user sees the error
         rethrow;
       }
@@ -607,7 +608,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       }
       _resetForm();
     } catch (e) {
-      debugPrint('Error submitting tool request: $e');
+      Logger.debug('Error submitting tool request: $e');
       if (mounted) {
         AuthErrorHandler.showErrorSnackBar(
           context,
@@ -1278,7 +1279,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

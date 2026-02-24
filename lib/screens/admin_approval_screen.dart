@@ -824,7 +824,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
             ),
             SizedBox(height: 16),
             Text(
@@ -849,7 +849,7 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: Colors.red.withValues(alpha: 0.3),
+                    color: Colors.red.withValues(alpha: 0.55),
                     width: 1,
                   ),
                 ),

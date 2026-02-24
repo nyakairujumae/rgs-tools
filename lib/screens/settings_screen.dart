@@ -14,6 +14,9 @@ import '../utils/auth_error_handler.dart';
 import '../utils/account_deletion_helper.dart';
 import 'terms_of_service_screen.dart';
 import 'package:intl/intl.dart';
+import '../utils/logger.dart';
+import '../providers/locale_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +28,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _autoBackup = true;
-  String _selectedLanguage = 'English';
   String _selectedCurrency = 'AED';
 
   EdgeInsets _tilePadding(BuildContext context) => EdgeInsets.symmetric(
@@ -99,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
                   Expanded(
                     child: Text(
-                      'Settings',
+                      AppLocalizations.of(context).settings_title,
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
                         fontWeight: FontWeight.w700,
@@ -122,33 +124,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildSectionLabel(context, 'Account'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_accountSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAccountCard(context, authProvider),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-                        _buildSectionLabel(context, 'Account Details'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_accountDetailsSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAccountDetails(context, authProvider),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        _buildSectionLabel(context, 'Account Management'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_accountManagementSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAccountManagementCard(authProvider),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        _buildSectionLabel(context, 'Preferences'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_preferencesSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildLanguageCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                         _buildCurrencyCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        _buildSectionLabel(context, 'Notifications'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_notificationsSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildNotificationCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        _buildSectionLabel(context, 'Data & Backup'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_dataBackupSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildBackupCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                        _buildSectionLabel(context, 'About'),
+                        _buildSectionLabel(context, AppLocalizations.of(context).settings_aboutSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAboutCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
@@ -399,6 +401,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
   Widget _buildLanguageCard() {
+    final localeProvider = context.watch<LocaleProvider>();
+    final currentCode = localeProvider.locale?.languageCode ?? 'en';
+    final displayName = localeProvider.displayNameFor(currentCode);
+
     return _buildCard(
       context,
       ListTile(
@@ -413,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         title: Text(
-          'Language',
+          AppLocalizations.of(context).settings_languageLabel,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
             fontWeight: FontWeight.w600,
@@ -421,7 +427,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         subtitle: Text(
-          _selectedLanguage,
+          displayName,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -809,64 +815,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguageDialog() {
+    final localeProvider = context.read<LocaleProvider>();
+    final currentCode = localeProvider.locale?.languageCode ?? 'en';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
         title: Text(
-          'Select Language',
+          AppLocalizations.of(context).settings_selectLanguage,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
+            color: Theme.of(dialogContext).textTheme.bodyLarge?.color,
           ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLanguageOption('English', 'English'),
-            _buildLanguageOption('العربية', 'Arabic'),
-            _buildLanguageOption('Français', 'French'),
-            _buildLanguageOption('Español', 'Spanish'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(String displayName, String value) {
-    final isSelected = _selectedLanguage == value;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedLanguage = value;
-        });
-        Navigator.pop(context);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.secondaryColor.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                displayName,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
+          children: LocaleProvider.supportedLocales.map((locale) {
+            final code = locale.languageCode;
+            final displayName = LocaleProvider.localeDisplayNames[code] ?? code;
+            final isSelected = currentCode == code;
+            return InkWell(
+              onTap: () {
+                localeProvider.setLocale(locale);
+                Navigator.pop(dialogContext);
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.secondaryColor.withValues(alpha: 0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: Theme.of(dialogContext).textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(Icons.check, color: AppTheme.secondaryColor, size: 20),
+                  ],
                 ),
               ),
-            ),
-            if (isSelected)
-              Icon(Icons.check, color: AppTheme.secondaryColor, size: 20),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
@@ -992,7 +994,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           try {
             await OpenFile.open(files.first.path);
           } catch (e) {
-            debugPrint('Could not open file: $e');
+            Logger.debug('Could not open file: $e');
           }
         }
       }

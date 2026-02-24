@@ -14,6 +14,7 @@ import '../models/tool_issue.dart';
 import '../models/tool_history.dart';
 import '../models/approval_workflow.dart';
 import '../services/supabase_service.dart';
+import '../utils/logger.dart';
 
 enum ReportType {
   comprehensive,
@@ -58,8 +59,8 @@ class ReportService {
         endDate: endDate,
       );
     } catch (e, stackTrace) {
-      debugPrint('❌ Error generating report: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error generating report: $e');
+      Logger.debug('❌ Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -81,7 +82,7 @@ class ReportService {
       try {
         excel.rename('Sheet1', targetSheetName);
       } catch (e) {
-        debugPrint('Could not rename Sheet1: $e');
+        Logger.debug('Could not rename Sheet1: $e');
         // If rename fails, we'll just use Sheet1
       }
     }
@@ -120,7 +121,7 @@ class ReportService {
     try {
       _setSheetsToLandscape(excel);
     } catch (e) {
-      debugPrint('Warning: Could not set sheet landscape settings: $e');
+      Logger.debug('Warning: Could not set sheet landscape settings: $e');
       // Continue anyway - Excel file will still be generated
     }
 
@@ -136,17 +137,17 @@ class ReportService {
     try {
       bytesList = excel.save();
     } catch (e, stackTrace) {
-      debugPrint('❌ Error saving Excel file: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error saving Excel file: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Stack trace: $stackTrace');
       
       // Check if it's the unmodifiable list error
       final errorString = e.toString().toLowerCase();
       if (errorString.contains('unmodifiable') || errorString.contains('cannot remove')) {
         // This is a known issue with the Excel library
         // Try to work around it by creating a fresh Excel object
-        debugPrint('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
-        debugPrint('⚠️ Attempting workaround...');
+        Logger.debug('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
+        Logger.debug('⚠️ Attempting workaround...');
         
         // Re-throw with a more helpful error message
         throw Exception(
@@ -165,7 +166,7 @@ class ReportService {
         final bytes = Uint8List.fromList(bytesList);
         await file.writeAsBytes(bytes);
       } catch (e) {
-        debugPrint('Error writing Excel file to disk: $e');
+        Logger.debug('Error writing Excel file to disk: $e');
         rethrow;
       }
       // Landscape orientation modification is disabled - was causing errors
@@ -430,7 +431,7 @@ class ReportService {
 
               return widgets;
             } catch (e) {
-              debugPrint('❌ Error building PDF widgets: $e');
+              Logger.debug('❌ Error building PDF widgets: $e');
               // Return a minimal error widget
               return [
                 pw.Text(
@@ -443,7 +444,7 @@ class ReportService {
         ),
       );
     } catch (e) {
-      debugPrint('❌ Error adding PDF page: $e');
+      Logger.debug('❌ Error adding PDF page: $e');
       // Add a simple error page
       pdf.addPage(
         pw.Page(
@@ -466,11 +467,11 @@ class ReportService {
       final pdfBytes = await pdf.save();
       await file.writeAsBytes(pdfBytes);
       
-      debugPrint('✅ PDF report saved successfully: ${file.path}');
+      Logger.debug('✅ PDF report saved successfully: ${file.path}');
       return file;
     } catch (e) {
-      debugPrint('❌ Error saving PDF report: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Error saving PDF report: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
       
       // If it's a TooManyPagesException, provide helpful error message
       if (e.toString().contains('TooManyPages') || e.toString().contains('too many pages')) {
@@ -510,14 +511,14 @@ class ReportService {
             }
           }
         } catch (e) {
-          debugPrint('Warning: Could not optimize sheet $sheetName: $e');
+          Logger.debug('Warning: Could not optimize sheet $sheetName: $e');
           // Continue with other sheets
           continue;
         }
       }
     } catch (e, stackTrace) {
-      debugPrint('Warning: Could not optimize sheets for landscape: $e');
-      debugPrint('Stack trace: $stackTrace');
+      Logger.debug('Warning: Could not optimize sheets for landscape: $e');
+      Logger.debug('Stack trace: $stackTrace');
       // Continue anyway - the Excel file will still be generated
     }
   }
@@ -803,7 +804,7 @@ class ReportService {
         sheet.appendRow([entry.key, entry.value]);
       }
     } catch (e) {
-      debugPrint('Error generating tool issues summary report: $e');
+      Logger.debug('Error generating tool issues summary report: $e');
     }
   }
 
@@ -879,7 +880,7 @@ class ReportService {
         sheet.appendRow([entry.key, entry.value]);
       }
     } catch (e) {
-      debugPrint('Error generating approval workflows summary report: $e');
+      Logger.debug('Error generating approval workflows summary report: $e');
     }
   }
 
@@ -1054,7 +1055,7 @@ class ReportService {
           }
         } catch (e) {
           // Assignments table doesn't exist, derive from tools table
-          debugPrint('Assignments table not found, deriving from tools: $e');
+          Logger.debug('Assignments table not found, deriving from tools: $e');
           for (final tool in tools) {
             if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
               assignmentData[tool.id ?? ''] = {
@@ -1066,7 +1067,7 @@ class ReportService {
           }
         }
       } catch (e) {
-        debugPrint('Error fetching assignments: $e');
+        Logger.debug('Error fetching assignments: $e');
       }
     }
 
@@ -1199,7 +1200,7 @@ class ReportService {
       } catch (e) {
         // Assignments table doesn't exist, use tools table instead
         assignmentsTableExists = false;
-        debugPrint('Assignments table not found, using tools table: $e');
+        Logger.debug('Assignments table not found, using tools table: $e');
       }
 
       final headers = [
@@ -1276,7 +1277,7 @@ class ReportService {
       _formatTable(sheet, sheet.maxRows - rowCount, headers.length);
     } catch (e) {
       sheet.appendRow(List<dynamic>.from(['Error fetching assignments: $e']));
-      debugPrint('Error in _addAssignmentsTable: $e');
+      Logger.debug('Error in _addAssignmentsTable: $e');
     }
   }
 
@@ -1434,7 +1435,7 @@ class ReportService {
         }
       }
     } catch (e) {
-      debugPrint('Error getting technician name: $e');
+      Logger.debug('Error getting technician name: $e');
     }
     
     return 'Unknown';
@@ -1948,7 +1949,7 @@ class ReportService {
             _sanitizePdfText(priceStr),
           ];
         } catch (e) {
-          debugPrint('Error processing tool in export: $e');
+          Logger.debug('Error processing tool in export: $e');
           // Return a safe default row if tool processing fails
           return [
             _sanitizePdfText(tool.name ?? 'Unknown'),
@@ -2745,7 +2746,7 @@ class ReportService {
         return directory;
       } catch (e) {
         // Fallback: use temp directory
-        debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
+        Logger.debug('⚠️ Failed to get application documents directory, using temp directory: $e');
         final tempDir = Directory.systemTemp;
         final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
         if (!await fallbackDir.exists()) {

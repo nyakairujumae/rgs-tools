@@ -18,6 +18,9 @@ import '../services/badge_service.dart';
 import '../models/user_role.dart';
 import '../config/supabase_config.dart';
 import '../utils/name_formatter.dart';
+import '../config/app_config.dart';
+import '../services/local_cache_service.dart';
+import '../utils/logger.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
@@ -55,7 +58,7 @@ class AuthProvider with ChangeNotifier {
 
   void resetLoadingState({String? reason}) {
     if (_isLoading) {
-      debugPrint('🔄 Resetting auth loading state${reason != null ? " ($reason)" : ""}');
+      Logger.debug('🔄 Resetting auth loading state${reason != null ? " ($reason)" : ""}');
     }
     _isLoading = false;
     notifyListeners();
@@ -118,7 +121,7 @@ class AuthProvider with ChangeNotifier {
       _appleApprovalBypassFetchedAt = now;
       return enabled;
     } catch (e) {
-      debugPrint('⚠️ Could not load apple_bypass_approval flag: $e');
+      Logger.debug('⚠️ Could not load apple_bypass_approval flag: $e');
       return _appleApprovalBypassEnabled ?? false;
     }
   }
@@ -134,7 +137,7 @@ class AuthProvider with ChangeNotifier {
     if (_user == null) return null;
 
     if (_isAppleProvider() && await _isAppleApprovalBypassEnabled()) {
-      debugPrint('✅ Apple sign-in detected - bypassing approval checks');
+      Logger.debug('✅ Apple sign-in detected - bypassing approval checks');
       return true;
     }
     
@@ -151,7 +154,7 @@ class AuthProvider with ChangeNotifier {
       
       if (approval != null) {
         final status = approval['status'] as String?;
-        debugPrint('🔍 Found pending approval record with status: $status');
+        Logger.debug('🔍 Found pending approval record with status: $status');
         
         if (status == 'approved') {
           // If approved, check if user record exists (should exist after approval)
@@ -161,11 +164,11 @@ class AuthProvider with ChangeNotifier {
               .eq('id', _user!.id)
               .maybeSingle();
           final isApproved = userRecord != null;
-          debugPrint('🔍 Approval status: approved, user record exists: $isApproved');
+          Logger.debug('🔍 Approval status: approved, user record exists: $isApproved');
           return isApproved;
         } else if (status == 'pending' || status == 'rejected') {
           // Status is pending or rejected - NOT approved
-          debugPrint('🔍 Approval status: $status - user is NOT approved');
+          Logger.debug('🔍 Approval status: $status - user is NOT approved');
           return false;
         }
       }
@@ -181,25 +184,25 @@ class AuthProvider with ChangeNotifier {
       if (userRecord != null && userRecord['role'] != null) {
         final role = userRecord['role'] as String;
         if (role == 'admin') {
-          debugPrint('🔍 User is admin - always approved');
+          Logger.debug('🔍 User is admin - always approved');
           return true; // Admins are always approved
         }
         // For technicians, if they have a user record and NO pending approval, they're approved
-        debugPrint('🔍 Technician with user record and no pending approval - approved');
+        Logger.debug('🔍 Technician with user record and no pending approval - approved');
         return true;
       }
       
       // No record found anywhere - treat as not approved (pending registration)
-      debugPrint('🔍 No user record or pending approval found - NOT approved');
+      Logger.debug('🔍 No user record or pending approval found - NOT approved');
       return false;
     } catch (e) {
-      debugPrint('❌ Error checking approval status: $e');
+      Logger.debug('❌ Error checking approval status: $e');
       return null;
     }
   }
 
   Future<void> initialize() async {
-    print('🔍 AuthProvider initialize called');
+    Logger.debug('🔍 AuthProvider initialize called');
     _isLoading = true;
     notifyListeners();
 
@@ -207,7 +210,7 @@ class AuthProvider with ChangeNotifier {
     // After this, we'll proceed even if not fully initialized
     Timer(const Duration(seconds: 3), () {
       if (_isLoading || !_isInitialized) {
-        print('⚠️ Initialization timeout - forcing completion');
+        Logger.debug('⚠️ Initialization timeout - forcing completion');
         _isLoading = false;
         _isInitialized = true;
         notifyListeners();
@@ -215,50 +218,50 @@ class AuthProvider with ChangeNotifier {
     });
 
     try {
-      print('🔍 Getting current session...');
+      Logger.debug('🔍 Getting current session...');
       // Get session immediately - don't wait, Supabase should have it ready
       var session = SupabaseService.client.auth.currentSession;
       
       // If no session found immediately, wait briefly (max 600ms)
       if (session == null) {
-        print('🔍 No session found immediately, waiting briefly...');
+        Logger.debug('🔍 No session found immediately, waiting briefly...');
         for (int i = 0; i < 3; i++) {
           await Future.delayed(const Duration(milliseconds: 200));
           session = SupabaseService.client.auth.currentSession;
           if (session != null) {
-            print('✅ Session restored after ${(i + 1) * 200}ms');
+            Logger.debug('✅ Session restored after ${(i + 1) * 200}ms');
             break;
           }
         }
       }
-      print('🔍 Current session: ${session != null ? "Found (user: ${session.user.email}, expired: ${session.isExpired})" : "None"}');
+      Logger.debug('🔍 Current session: ${session != null ? "Found (user: ${session.user.email}, expired: ${session.isExpired})" : "None"}');
       
       // If session exists but is expired, try to refresh it (non-blocking for UI)
       if (session != null && session.isExpired) {
-        print('🔄 Session expired, attempting to refresh...');
+        Logger.debug('🔄 Session expired, attempting to refresh...');
         try {
           final refreshResponse = await SupabaseService.client.auth
               .refreshSession()
               .timeout(
             const Duration(seconds: 3),
             onTimeout: () {
-              print('⚠️ Session refresh timed out');
+              Logger.debug('⚠️ Session refresh timed out');
               throw TimeoutException('Session refresh timed out');
             },
           );
           if (refreshResponse?.session != null) {
             session = refreshResponse!.session;
-            print('✅ Session refreshed successfully');
+            Logger.debug('✅ Session refreshed successfully');
           } else {
-            print('⚠️ Session refresh returned null - session may be invalid');
+            Logger.debug('⚠️ Session refresh returned null - session may be invalid');
           }
         } catch (e) {
-          print('❌ Failed to refresh session: $e');
+          Logger.debug('❌ Failed to refresh session: $e');
           // Don't clear session on refresh failure - session might still be valid
           // Only clear if it's definitely expired and refresh failed
           // This prevents losing valid sessions due to temporary network issues
           if (session != null && session.isExpired) {
-            print('⚠️ Session is expired and refresh failed - keeping session for now');
+            Logger.debug('⚠️ Session is expired and refresh failed - keeping session for now');
             // Don't set session to null - let it try to use the expired session
             // The app will handle expired sessions gracefully
           }
@@ -273,7 +276,7 @@ class AuthProvider with ChangeNotifier {
         try {
           final currentUser = SupabaseService.client.auth.currentUser;
           if (currentUser != null) {
-            print('🔍 Found user from currentUser (session was null)');
+            Logger.debug('🔍 Found user from currentUser (session was null)');
             _user = currentUser;
             
             // CRITICAL: Check if email is confirmed - but skip for technicians (they bypass email confirmation)
@@ -281,14 +284,14 @@ class AuthProvider with ChangeNotifier {
             final isTechnician = roleFromMetadata == 'technician';
             
             if (_user!.emailConfirmedAt == null && !isTechnician) {
-              print('❌ Email not confirmed - cannot restore session (admin requires email confirmation)');
+              Logger.debug('❌ Email not confirmed - cannot restore session (admin requires email confirmation)');
               _user = null;
               return; // Don't proceed if email is not confirmed (for admins only)
             }
             
             // Technicians can proceed without email confirmation
             if (isTechnician) {
-              print('✅ Technician - bypassing email confirmation check');
+              Logger.debug('✅ Technician - bypassing email confirmation check');
             }
             
             // Try to get a fresh session for this user (non-blocking)
@@ -302,17 +305,17 @@ class AuthProvider with ChangeNotifier {
               );
               if (refreshResponse?.session != null) {
                 _user = refreshResponse!.session!.user;
-                print('✅ Restored session for user: ${_user?.email}');
+                Logger.debug('✅ Restored session for user: ${_user?.email}');
               }
             } catch (e) {
-              print('⚠️ Could not refresh session for existing user: $e');
+              Logger.debug('⚠️ Could not refresh session for existing user: $e');
               // Continue with the user anyway - they might still be authenticated
               // The session might still be valid, just couldn't refresh
               // This prevents losing valid sessions due to temporary network issues
             }
           }
         } catch (e) {
-          print('⚠️ Error checking currentUser: $e');
+          Logger.debug('⚠️ Error checking currentUser: $e');
         }
       }
       
@@ -320,7 +323,7 @@ class AuthProvider with ChangeNotifier {
       // This handles cases where Supabase is still initializing in the background
       // Supabase needs time to restore the persisted session from storage
       if (_user == null) {
-        print('🔍 Still no user found, waiting for Supabase to fully initialize and restore session...');
+        Logger.debug('🔍 Still no user found, waiting for Supabase to fully initialize and restore session...');
         // Wait longer to ensure Supabase has restored persisted session
         await Future.delayed(const Duration(milliseconds: 1500));
         
@@ -329,14 +332,14 @@ class AuthProvider with ChangeNotifier {
           final delayedSession = SupabaseService.client.auth.currentSession;
           if (delayedSession != null) {
             _user = delayedSession.user;
-            print('✅ Session restored after delay: ${_user?.email}');
+            Logger.debug('✅ Session restored after delay: ${_user?.email}');
             session = delayedSession; // Update session variable too
           } else {
             // Try currentUser as fallback
             final delayedUser = SupabaseService.client.auth.currentUser;
             if (delayedUser != null) {
               _user = delayedUser;
-              print('✅ User found after delay (no session): ${_user?.email}');
+              Logger.debug('✅ User found after delay (no session): ${_user?.email}');
               // Try to refresh session for this user
               try {
                 final refreshResponse = await SupabaseService.client.auth
@@ -345,32 +348,32 @@ class AuthProvider with ChangeNotifier {
                 if (refreshResponse?.session != null) {
                   _user = refreshResponse!.session!.user;
                   session = refreshResponse.session;
-                  print('✅ Session refreshed for restored user: ${_user?.email}');
+                  Logger.debug('✅ Session refreshed for restored user: ${_user?.email}');
                 }
               } catch (e) {
-                print('⚠️ Could not refresh session for restored user: $e');
+                Logger.debug('⚠️ Could not refresh session for restored user: $e');
                 // Continue with user anyway - they might still be authenticated
               }
             }
           }
         } catch (e) {
-          print('⚠️ Error checking session after delay: $e');
+          Logger.debug('⚠️ Error checking session after delay: $e');
         }
       }
       
-      print('🔍 Current user: ${_user?.email ?? "None"}');
+      Logger.debug('🔍 Current user: ${_user?.email ?? "None"}');
 
       // Listen to auth state changes
-      print('🔍 Setting up auth state listener...');
+      Logger.debug('🔍 Setting up auth state listener...');
       SupabaseService.client.auth.onAuthStateChange.listen((data) {
-        print('🔍 Auth state changed: ${data.session?.user?.email ?? "None"}');
+        Logger.debug('🔍 Auth state changed: ${data.event} — ${data.session?.user?.email ?? "None"}');
         // CRITICAL: Don't process auth state changes during logout
         if (_isLoggingOut) {
-          print('🔍 Ignoring auth state change during logout');
+          Logger.debug('🔍 Ignoring auth state change during logout');
           return;
         }
         if (_suppressAuthStateChanges) {
-          debugPrint('🔍 Suppressing auth state change during account creation');
+          Logger.debug('🔍 Suppressing auth state change during account creation');
           return;
         }
         if (_isLoading &&
@@ -379,6 +382,14 @@ class AuthProvider with ChangeNotifier {
                 data.event == AuthChangeEvent.userUpdated)) {
           _isLoading = false;
         }
+
+        // Guard against spurious signedOut from failed token refresh during data ops
+        if (data.event == AuthChangeEvent.signedOut && !_isLoggingOut && _user != null) {
+          Logger.debug('⚠️ Unexpected signedOut — user did not log out. Attempting session recovery...');
+          _attemptSessionRecovery();
+          return;
+        }
+
         _user = data.session?.user;
         // Only load role if we have a user - don't create default accounts
         if (_user != null) {
@@ -392,13 +403,13 @@ class AuthProvider with ChangeNotifier {
 
       // Load user role if user exists - with timeout to prevent hanging when offline
       if (_user != null) {
-        print('🔍 Loading user role...');
+        Logger.debug('🔍 Loading user role...');
         try {
           // Add timeout to prevent hanging when offline (5 seconds max)
           await _loadUserRole().timeout(
             const Duration(seconds: 5),
             onTimeout: () {
-              debugPrint('⚠️ User role loading timed out (likely offline) - using saved role');
+              Logger.debug('⚠️ User role loading timed out (likely offline) - using saved role');
               // Try to load from local storage as fallback
               _getSavedUserRole().then((savedRole) {
                 if (savedRole != null) {
@@ -409,12 +420,12 @@ class AuthProvider with ChangeNotifier {
             },
           );
         } catch (e) {
-          debugPrint('⚠️ Error loading user role (likely offline): $e');
+          Logger.debug('⚠️ Error loading user role (likely offline): $e');
           // Try to load from local storage as fallback
           final savedRole = await _getSavedUserRole();
           if (savedRole != null) {
             _userRole = savedRole;
-            debugPrint('✅ Loaded user role from local storage: ${_userRole.value}');
+            Logger.debug('✅ Loaded user role from local storage: ${_userRole.value}');
           }
         }
         
@@ -427,18 +438,18 @@ class AuthProvider with ChangeNotifier {
           await FirebaseMessagingService.registerCurrentToken()
               .timeout(const Duration(seconds: 3));
         } catch (e) {
-          debugPrint('⚠️ Could not register FCM token after initialization: $e');
+          Logger.debug('⚠️ Could not register FCM token after initialization: $e');
         }
       } else {
-        print('🔍 No user found, setting default role');
+        Logger.debug('🔍 No user found, setting default role');
         _userRole = UserRole.technician;
       }
     } catch (e) {
-      print('❌ Error initializing auth: $e');
+      Logger.debug('❌ Error initializing auth: $e');
       // Set default values on error
       _userRole = UserRole.technician;
     } finally {
-      print('🔍 AuthProvider initialization complete');
+      Logger.debug('🔍 AuthProvider initialization complete');
       _isLoading = false;
       _isInitialized = true;
       notifyListeners();
@@ -461,10 +472,10 @@ class AuthProvider with ChangeNotifier {
             );
         
         final isAvailable = result as bool? ?? true; // Default to available if null
-        debugPrint('✅ [Email Check] SQL function result: $isAvailable for $email');
+        Logger.debug('✅ [Email Check] SQL function result: $isAvailable for $email');
         return isAvailable;
       } catch (rpcError) {
-        debugPrint('⚠️ [Email Check] SQL function not available, using fallback method: $rpcError');
+        Logger.debug('⚠️ [Email Check] SQL function not available, using fallback method: $rpcError');
         // Fall through to backup method
       }
       
@@ -478,57 +489,18 @@ class AuthProvider with ChangeNotifier {
             .timeout(const Duration(seconds: 3));
         
         if (publicUser != null) {
-          debugPrint('⚠️ [Email Check] Email already exists in public.users: $email');
+          Logger.debug('⚠️ [Email Check] Email already exists in public.users: $email');
           return false;
         }
       } catch (e) {
-        debugPrint('⚠️ [Email Check] Could not check public.users: $e');
+        Logger.debug('⚠️ [Email Check] Could not check public.users: $e');
       }
       
-      // Method 3: Last resort - Try to sign in with dummy password
-      // This checks auth.users but is less reliable due to error message parsing
-      try {
-        await SupabaseService.client.auth.signInWithPassword(
-          email: email,
-          password: 'dummy_check_password_12345_xyz',
-        ).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            throw TimeoutException('Email check timed out');
-          },
-        );
-        // If we get here (unlikely with dummy password), email exists
-        debugPrint('⚠️ [Email Check] Email already exists (sign in succeeded): $email');
-        return false;
-      } catch (signInError) {
-        final errorString = signInError.toString().toLowerCase();
-        
-        // If error says "invalid login credentials" or "invalid_credentials"
-        // This means email EXISTS but password is wrong
-        if (errorString.contains('invalid login credentials') ||
-            errorString.contains('invalid_credentials') ||
-            errorString.contains('wrong password') ||
-            errorString.contains('incorrect password')) {
-          debugPrint('⚠️ [Email Check] Email already exists (invalid credentials): $email');
-          return false; // Email is already registered
-        }
-        
-        // If error says "user not found" or "email not found"
-        // This means email does NOT exist
-        if (errorString.contains('user not found') ||
-            errorString.contains('email not found') ||
-            errorString.contains('account not found')) {
-          debugPrint('✅ [Email Check] Email is available (user not found): $email');
-          return true; // Email is available
-        }
-        
-        // For other errors, assume email is available (safer for registration)
-        // The signUp will fail with a proper error if email actually exists
-        debugPrint('⚠️ [Email Check] Could not determine email availability, assuming available: $email');
-        return true;
-      }
+      // Methods 1 & 2 failed — assume available and let signUp handle duplicates
+      Logger.debug('⚠️ [Email Check] Could not determine availability, deferring to signUp');
+      return true;
     } catch (e) {
-      debugPrint('⚠️ [Email Check] Error checking email availability: $e');
+      Logger.debug('⚠️ [Email Check] Error checking email availability: $e');
       // If check fails, assume email is available
       // The signUp will fail with proper error if email actually exists
       return true;
@@ -556,7 +528,7 @@ class AuthProvider with ChangeNotifier {
 
       final adminCount = (adminCountResponse as List).length;
       if (adminCount > 1) {
-        debugPrint('⚠️ Multiple admins found; skipping auto-assign of Super Admin position');
+        Logger.debug('⚠️ Multiple admins found; skipping auto-assign of Super Admin position');
         return;
       }
 
@@ -581,9 +553,9 @@ class AuthProvider with ChangeNotifier {
           .update({'position_id': positionId})
           .eq('id', _user!.id);
 
-      debugPrint('✅ Auto-assigned admin position_id: $positionId');
+      Logger.debug('✅ Auto-assigned admin position_id: $positionId');
     } catch (e) {
-      debugPrint('⚠️ Could not auto-assign admin position: $e');
+      Logger.debug('⚠️ Could not auto-assign admin position: $e');
     }
   }
 
@@ -599,36 +571,36 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final isAdmin = role == UserRole.admin;
-      debugPrint('🔍 signUp called for: $email, role: ${role?.value ?? "null"}, isAdmin: $isAdmin');
+      Logger.debug('🔍 signUp called for: $email, role: ${role?.value ?? "null"}, isAdmin: $isAdmin');
       
       // Check database connection first
-      debugPrint('🔍 Checking database connection...');
+      Logger.debug('🔍 Checking database connection...');
       final isConnected = await SupabaseService.ensureConnection(retries: 2);
       if (!isConnected) {
         throw Exception('Cannot connect to database. Please check your internet connection and try again.');
       }
-      debugPrint('✅ Database connection verified');
+      Logger.debug('✅ Database connection verified');
       
       // Check if email is already in use BEFORE attempting signup
       // This prevents sending confirmation emails for existing emails
-      debugPrint('🔍 Checking if email is available: $email');
+      Logger.debug('🔍 Checking if email is available: $email');
       final emailAvailable = await isEmailAvailable(email);
       if (!emailAvailable) {
         throw Exception('This email is already registered. Please sign in or use a different email address.');
       }
-      debugPrint('✅ Email is available, proceeding with registration');
+      Logger.debug('✅ Email is available, proceeding with registration');
       
       // Email confirmation may be enabled in Supabase
       // If enabled, users won't have a session until they confirm their email
-      debugPrint('🔍 Calling Supabase auth.signUp...');
-      debugPrint('🔍 SignUp parameters: email=$email, role=${role?.value ?? "NULL (must be set)"}');
+      Logger.debug('🔍 Calling Supabase auth.signUp...');
+      Logger.debug('🔍 SignUp parameters: email=$email, role=${role?.value ?? "NULL (must be set)"}');
       
       // Try signUp with retry logic
       AuthResponse? response;
       int maxRetries = 2;
       for (int attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          debugPrint('🔍 SignUp attempt $attempt/$maxRetries...');
+          Logger.debug('🔍 SignUp attempt $attempt/$maxRetries...');
           
           // Timeout set to 30 seconds (email confirmation is disabled, so should be faster)
           // Ensure role is explicitly provided - no automatic defaults
@@ -648,24 +620,24 @@ class AuthProvider with ChangeNotifier {
           ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              debugPrint('❌ SignUp attempt $attempt timed out after 30 seconds');
+              Logger.debug('❌ SignUp attempt $attempt timed out after 30 seconds');
               if (attempt < maxRetries) {
-                debugPrint('⏳ Will retry...');
+                Logger.debug('⏳ Will retry...');
               }
               throw TimeoutException('Registration is taking longer than expected. Please check your internet connection and try again.');
             },
           );
           
-          debugPrint('✅ SignUp API call completed on attempt $attempt');
+          Logger.debug('✅ SignUp API call completed on attempt $attempt');
           break; // Success, exit retry loop
         } catch (e) {
           if (attempt == maxRetries) {
             // Last attempt failed, rethrow
-            debugPrint('❌ All signUp attempts failed');
+            Logger.debug('❌ All signUp attempts failed');
             rethrow;
           } else {
             // Wait before retrying
-            debugPrint('⏳ Waiting 3 seconds before retry...');
+            Logger.debug('⏳ Waiting 3 seconds before retry...');
             await Future.delayed(const Duration(seconds: 3));
           }
         }
@@ -675,7 +647,7 @@ class AuthProvider with ChangeNotifier {
         throw Exception('SignUp failed after $maxRetries attempts');
       }
 
-      debugPrint('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
+      Logger.debug('🔍 signUp response received: user=${response.user?.id ?? "null"}, session=${response.session != null}');
 
       // CRITICAL FIX: Only update _user if we don't already have a logged-in user
       // This prevents admin's session from being replaced when creating technician accounts
@@ -688,15 +660,15 @@ class AuthProvider with ChangeNotifier {
         // If we're already logged in (admin creating technician), preserve current user
         if (!wasAlreadyLoggedIn) {
         _user = response.user;
-          debugPrint('🔍 Updated _user to new user: ${_user!.id} (self-registration)');
+          Logger.debug('🔍 Updated _user to new user: ${_user!.id} (self-registration)');
         } else {
-          debugPrint('🔍 Preserving current logged-in user (ID: $previousUserId) - admin creating technician');
-          debugPrint('🔍 New technician user ID: ${response.user!.id}');
+          Logger.debug('🔍 Preserving current logged-in user (ID: $previousUserId) - admin creating technician');
+          Logger.debug('🔍 New technician user ID: ${response.user!.id}');
           // Don't update _user - keep the current admin user
         }
         
         final hasSession = response.session != null;
-        debugPrint('🔍 User created: ${_user!.id}, hasSession: $hasSession, emailConfirmed: ${_user!.emailConfirmedAt != null}');
+        Logger.debug('🔍 User created: ${_user!.id}, hasSession: $hasSession, emailConfirmed: ${_user!.emailConfirmedAt != null}');
         
         // For technicians, create pending approval instead of user record
         // Role must be explicitly set - no null check (role is required)
@@ -705,7 +677,7 @@ class AuthProvider with ChangeNotifier {
           // But we can still create the pending approval record (it will be created by trigger or we create it)
           if (hasSession) {
             try {
-              debugPrint('🔍 Creating pending approval for technician (has session)...');
+              Logger.debug('🔍 Creating pending approval for technician (has session)...');
               // Create pending approval record with timeout
               final approvalResponse = await SupabaseService.client
                   .from('pending_user_approvals')
@@ -724,7 +696,7 @@ class AuthProvider with ChangeNotifier {
                     },
                   );
               
-              debugPrint('✅ Pending approval created for technician: $email');
+              Logger.debug('✅ Pending approval created for technician: $email');
               
               // Create notification for admins in the main notification center
               try {
@@ -745,9 +717,9 @@ class AuthProvider with ChangeNotifier {
                         'submitted_at': DateTime.now().toIso8601String(),
                       },
                     });
-                debugPrint('✅ Created admin notification for new technician approval request');
+                Logger.debug('✅ Created admin notification for new technician approval request');
               } catch (notifError) {
-                debugPrint('⚠️ Failed to create admin notification: $notifError');
+                Logger.debug('⚠️ Failed to create admin notification: $notifError');
                 // Don't fail the registration if notification creation fails
               }
               
@@ -760,24 +732,24 @@ class AuthProvider with ChangeNotifier {
                     .timeout(
                       const Duration(seconds: 10),
                       onTimeout: () {
-                        debugPrint('⚠️ Delete user record timed out');
+                        Logger.debug('⚠️ Delete user record timed out');
                       },
                     );
-                debugPrint('✅ Removed user record for pending technician');
+                Logger.debug('✅ Removed user record for pending technician');
               } catch (deleteError) {
-                debugPrint('⚠️ Could not delete user record: $deleteError');
+                Logger.debug('⚠️ Could not delete user record: $deleteError');
                 // Don't throw - this is not critical
               }
               
               // Set role to pending IMMEDIATELY (before notifyListeners)
               _userRole = UserRole.pending;
               await _saveUserRole(_userRole);
-              debugPrint('✅ User role set to pending: ${_userRole.value}');
+              Logger.debug('✅ User role set to pending: ${_userRole.value}');
               notifyListeners(); // Notify immediately so UI can check isPendingApproval
             } catch (e, stackTrace) {
-              debugPrint('❌ Error creating pending approval: $e');
-              debugPrint('❌ Error type: ${e.runtimeType}');
-              debugPrint('❌ Stack trace: $stackTrace');
+              Logger.debug('❌ Error creating pending approval: $e');
+              Logger.debug('❌ Error type: ${e.runtimeType}');
+              Logger.debug('❌ Stack trace: $stackTrace');
               // Re-throw if it's a timeout or connection error
               if (e is TimeoutException || e.toString().contains('connection') || e.toString().contains('network')) {
                 rethrow;
@@ -788,47 +760,47 @@ class AuthProvider with ChangeNotifier {
             // No session - email confirmation is enabled
             // User was created but needs to confirm email before getting a session
             // Pending approval will be created by database trigger when user confirms email
-            debugPrint('ℹ️ No session after signup - email confirmation is enabled');
-            debugPrint('ℹ️ User must confirm email before getting a session');
-            debugPrint('ℹ️ Pending approval will be created automatically when email is confirmed');
+            Logger.debug('ℹ️ No session after signup - email confirmation is enabled');
+            Logger.debug('ℹ️ User must confirm email before getting a session');
+            Logger.debug('ℹ️ Pending approval will be created automatically when email is confirmed');
             // Don't throw - this is expected when email confirmation is enabled
             // The UI will handle showing the email confirmation message
           }
         } else {
           // For admins, load role normally (only if we have a session)
           if (hasSession) {
-            debugPrint('🔍 Loading role for admin...');
+            Logger.debug('🔍 Loading role for admin...');
             await _loadUserRole();
           } else {
             // No session - email confirmation is enabled
-            debugPrint('ℹ️ No session for admin - email confirmation is enabled');
-            debugPrint('ℹ️ Admin must confirm email before getting a session');
+            Logger.debug('ℹ️ No session for admin - email confirmation is enabled');
+            Logger.debug('ℹ️ Admin must confirm email before getting a session');
             // Don't throw - this is expected when email confirmation is enabled
             // The UI will handle showing the email confirmation message
           }
         }
       } else {
-        debugPrint('⚠️ signUp returned null user');
+        Logger.debug('⚠️ signUp returned null user');
       }
 
       return response;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error signing up: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Error string: ${e.toString()}');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error signing up: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Error string: ${e.toString()}');
+      Logger.debug('❌ Stack trace: $stackTrace');
       
       // Provide more specific error messages
       if (e is TimeoutException) {
-        debugPrint('⚠️ Timeout occurred - this might indicate:');
-        debugPrint('   1. Slow network connection');
-        debugPrint('   2. Supabase email service is slow');
-        debugPrint('   3. Email confirmation is enabled and causing delays');
-        debugPrint('   4. Supabase service might be experiencing issues');
+        Logger.debug('⚠️ Timeout occurred - this might indicate:');
+        Logger.debug('   1. Slow network connection');
+        Logger.debug('   2. Supabase email service is slow');
+        Logger.debug('   3. Email confirmation is enabled and causing delays');
+        Logger.debug('   4. Supabase service might be experiencing issues');
       } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-        debugPrint('⚠️ Network error detected');
+        Logger.debug('⚠️ Network error detected');
       } else if (e.toString().contains('email') && e.toString().contains('already')) {
-        debugPrint('⚠️ Email already registered');
+        Logger.debug('⚠️ Email already registered');
         // Re-throw with clearer message
         throw Exception('This email is already registered. Please sign in or use a different email address.');
       }
@@ -849,7 +821,7 @@ class AuthProvider with ChangeNotifier {
   ) async {
     // Validate email domain
     if (!_isAdminEmailAllowed(email)) {
-      throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
+      throw Exception('Invalid email domain for admin registration. Use ${AppConfig.adminDomainsDisplay}');
     }
 
     final bootstrapAllowed = await canBootstrapAdmin();
@@ -857,7 +829,7 @@ class AuthProvider with ChangeNotifier {
       throw Exception('Admin registration is closed. Please request an admin invite.');
     }
 
-    debugPrint('🔍 Starting admin registration for: $email with position_id: $positionId');
+    Logger.debug('🔍 Starting admin registration for: $email with position_id: $positionId');
     final response = await signUp(
       email: email,
       password: password,
@@ -868,12 +840,12 @@ class AuthProvider with ChangeNotifier {
 
     // Verify that user was actually created
     if (response.user == null) {
-      debugPrint('❌ Admin registration failed - no user returned');
+      Logger.debug('❌ Admin registration failed - no user returned');
       throw Exception('Registration failed: User was not created. Please try again.');
     }
 
-    debugPrint('✅ Admin registration successful - user ID: ${response.user!.id}');
-    debugPrint('🔍 Admin registration - hasSession: ${response.session != null}, emailConfirmed: ${response.user?.emailConfirmedAt != null}');
+    Logger.debug('✅ Admin registration successful - user ID: ${response.user!.id}');
+    Logger.debug('🔍 Admin registration - hasSession: ${response.session != null}, emailConfirmed: ${response.user?.emailConfirmedAt != null}');
     
     // If we have a session, ensure the user record exists in the users table
     // (it should be created by the database trigger, but let's verify)
@@ -896,7 +868,7 @@ class AuthProvider with ChangeNotifier {
             );
         
         if (userRecord == null) {
-          debugPrint('⚠️ User record not found in users table, creating manually...');
+          Logger.debug('⚠️ User record not found in users table, creating manually...');
           // Create user record manually if trigger didn't fire
           final userData = {
                 'id': response.user!.id,
@@ -908,7 +880,7 @@ class AuthProvider with ChangeNotifier {
           // Add position_id if provided
           if (positionId != null && positionId.isNotEmpty) {
             userData['position_id'] = positionId;
-            debugPrint('🔍 Adding position_id to user record: $positionId');
+            Logger.debug('🔍 Adding position_id to user record: $positionId');
           }
           
           await SupabaseService.client
@@ -920,9 +892,9 @@ class AuthProvider with ChangeNotifier {
                   throw TimeoutException('Failed to create user record. Please try again.');
                 },
               );
-          debugPrint('✅ User record created manually with position_id');
+          Logger.debug('✅ User record created manually with position_id');
         } else {
-          debugPrint('✅ User record exists in users table');
+          Logger.debug('✅ User record exists in users table');
           // Update position_id if it wasn't set by trigger
           if (positionId != null && positionId.isNotEmpty && userRecord['position_id'] == null) {
             try {
@@ -930,19 +902,19 @@ class AuthProvider with ChangeNotifier {
                   .from('users')
                   .update({'position_id': positionId})
                   .eq('id', response.user!.id);
-              debugPrint('✅ Updated user record with position_id: $positionId');
+              Logger.debug('✅ Updated user record with position_id: $positionId');
             } catch (e) {
-              debugPrint('⚠️ Could not update position_id: $e');
+              Logger.debug('⚠️ Could not update position_id: $e');
             }
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Error verifying/creating user record: $e');
+        Logger.debug('⚠️ Error verifying/creating user record: $e');
         // Don't throw - user is created, record might be created later
       }
     } else {
-      debugPrint('⚠️ No session after admin registration - email confirmation is required');
-      debugPrint('⚠️ Admin must confirm email before getting a session');
+      Logger.debug('⚠️ No session after admin registration - email confirmation is required');
+      Logger.debug('⚠️ Admin must confirm email before getting a session');
     }
     
     return response;
@@ -957,7 +929,7 @@ class AuthProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('❌ Error checking admin bootstrap status: $e');
+      Logger.debug('❌ Error checking admin bootstrap status: $e');
       return false;
     }
   }
@@ -979,7 +951,7 @@ class AuthProvider with ChangeNotifier {
 
       // First, create the auth user with 'technician' role
       // Note: signUp will create a basic pending approval, but we need to update it with additional details
-      debugPrint('🔍 Starting technician registration for: $email');
+      Logger.debug('🔍 Starting technician registration for: $email');
       final response = await signUp(
         email: email,
         password: password,
@@ -989,17 +961,17 @@ class AuthProvider with ChangeNotifier {
       
       // Verify that user was actually created
       if (response.user == null) {
-        debugPrint('❌ Technician registration failed - no user returned');
+        Logger.debug('❌ Technician registration failed - no user returned');
         throw Exception('Registration failed: User was not created. Please try again.');
       }
       
-      debugPrint('✅ signUp completed for: $email, user ID: ${response.user!.id}');
+      Logger.debug('✅ signUp completed for: $email, user ID: ${response.user!.id}');
 
       // Send push notification immediately after user creation (technicians bypass email confirmation)
       // This should happen regardless of session status since technicians are auto-confirmed
       if (_user != null) {
         try {
-          debugPrint('📧 Sending push notification for new technician registration...');
+          Logger.debug('📧 Sending push notification for new technician registration...');
           await PushNotificationService.sendToAdmins(
             title: 'New User Registration',
             body: '$formattedName has registered and is waiting for approval',
@@ -1009,30 +981,30 @@ class AuthProvider with ChangeNotifier {
               'email': email,
             },
           );
-          debugPrint('✅ Push notification sent to admins for new technician registration');
+          Logger.debug('✅ Push notification sent to admins for new technician registration');
         } catch (pushError) {
-          debugPrint('⚠️ Could not send push notification for new technician registration: $pushError');
+          Logger.debug('⚠️ Could not send push notification for new technician registration: $pushError');
           // Don't throw - notification failure shouldn't block registration
         }
       }
 
       if (profileImage != null) {
-        debugPrint('🔍 Uploading profile image...');
+        Logger.debug('🔍 Uploading profile image...');
         profilePictureUrl = await _uploadTechnicianProfileImage(profileImage);
-        debugPrint('✅ Profile image uploaded: $profilePictureUrl');
+        Logger.debug('✅ Profile image uploaded: $profilePictureUrl');
       }
       
       // Check if we have a session (email confirmation might be required)
       final hasSession = response.session != null || SupabaseService.client.auth.currentSession != null;
-      debugPrint('🔍 After signUp - hasSession: $hasSession, user: ${_user?.id ?? "null"}');
-      debugPrint('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
+      Logger.debug('🔍 After signUp - hasSession: $hasSession, user: ${_user?.id ?? "null"}');
+      Logger.debug('🔍 Email confirmed: ${response.user?.emailConfirmedAt != null}');
       
       // Only try to update/create pending approval if we have a session
       // If email confirmation is required, these operations will fail due to RLS
       // The pending approval will be created by database trigger when email is confirmed
       if (_user != null && hasSession) {
         try {
-          debugPrint('🔍 Checking for existing pending approval...');
+          Logger.debug('🔍 Checking for existing pending approval...');
           // Check if a pending approval already exists (created by signUp) with timeout
           final existingApproval = await SupabaseService.client
               .from('pending_user_approvals')
@@ -1048,7 +1020,7 @@ class AuthProvider with ChangeNotifier {
               );
           
           if (existingApproval != null) {
-            debugPrint('✅ Found existing pending approval, updating...');
+            Logger.debug('✅ Found existing pending approval, updating...');
             // Update existing approval with additional details
             final updateData = <String, dynamic>{
               'employee_id': employeeId,
@@ -1072,9 +1044,9 @@ class AuthProvider with ChangeNotifier {
                   },
                 );
             
-            debugPrint('✅ Updated existing pending approval with additional details: $email');
+            Logger.debug('✅ Updated existing pending approval with additional details: $email');
           } else {
-            debugPrint('⚠️ No existing approval found, creating new one...');
+            Logger.debug('⚠️ No existing approval found, creating new one...');
             // Create new pending approval if it doesn't exist
             final insertData = {
               'user_id': _user!.id,
@@ -1101,14 +1073,14 @@ class AuthProvider with ChangeNotifier {
                   },
                 );
           
-            debugPrint('✅ Created pending approval for technician: $email');
+            Logger.debug('✅ Created pending approval for technician: $email');
           }
           
           // Create admin notification for new registration
           // This should happen whether we created a new approval or updated an existing one
           // Note: Push notification is already sent above, immediately after user creation
           try {
-            debugPrint('📧 Creating admin notification for new registration...');
+            Logger.debug('📧 Creating admin notification for new registration...');
             await SupabaseService.client.rpc(
               'create_admin_notification',
               params: {
@@ -1123,9 +1095,9 @@ class AuthProvider with ChangeNotifier {
                 },
               },
             );
-            debugPrint('✅ Admin notification created in notification center');
+            Logger.debug('✅ Admin notification created in notification center');
           } catch (notifError) {
-            debugPrint('⚠️ Could not create admin notification: $notifError');
+            Logger.debug('⚠️ Could not create admin notification: $notifError');
             // Fallback: Try direct insert
             try {
               await SupabaseService.client
@@ -1143,9 +1115,9 @@ class AuthProvider with ChangeNotifier {
                       'email': email,
                     },
                   });
-              debugPrint('✅ Admin notification created via direct insert');
+              Logger.debug('✅ Admin notification created via direct insert');
             } catch (insertError) {
-              debugPrint('⚠️ Could not create admin notification via direct insert: $insertError');
+              Logger.debug('⚠️ Could not create admin notification via direct insert: $insertError');
             }
           }
           
@@ -1159,12 +1131,12 @@ class AuthProvider with ChangeNotifier {
                 .timeout(
                   const Duration(seconds: 10),
                   onTimeout: () {
-                    debugPrint('⚠️ Delete user record timed out');
+                    Logger.debug('⚠️ Delete user record timed out');
                   },
                 );
-            debugPrint('✅ Removed user record for pending technician (will be created on approval)');
+            Logger.debug('✅ Removed user record for pending technician (will be created on approval)');
           } catch (deleteError) {
-            debugPrint('⚠️ Could not delete user record (might not exist): $deleteError');
+            Logger.debug('⚠️ Could not delete user record (might not exist): $deleteError');
             // Don't throw - this is not critical
           }
           
@@ -1172,41 +1144,41 @@ class AuthProvider with ChangeNotifier {
           _userRole = UserRole.pending;
           await _saveUserRole(_userRole);
           notifyListeners();
-          debugPrint('✅ Technician registration completed successfully');
+          Logger.debug('✅ Technician registration completed successfully');
         } catch (e, stackTrace) {
-          debugPrint('❌ Error updating pending approval: $e');
-          debugPrint('❌ Error type: ${e.runtimeType}');
-          debugPrint('❌ Stack trace: $stackTrace');
+          Logger.debug('❌ Error updating pending approval: $e');
+          Logger.debug('❌ Error type: ${e.runtimeType}');
+          Logger.debug('❌ Stack trace: $stackTrace');
           // If email confirmation is required, this is expected - don't throw
           // The pending approval will be created after email confirmation
           if (e.toString().contains('permission denied') || 
               e.toString().contains('row-level security') ||
               e.toString().contains('RLS')) {
-            debugPrint('⚠️ RLS blocked pending approval creation - this is expected when email confirmation is required');
-            debugPrint('⚠️ Pending approval will be created after email confirmation');
+            Logger.debug('⚠️ RLS blocked pending approval creation - this is expected when email confirmation is required');
+            Logger.debug('⚠️ Pending approval will be created after email confirmation');
           } else if (e is TimeoutException || e.toString().contains('connection') || e.toString().contains('network')) {
             // Re-throw timeout and connection errors
-            debugPrint('❌ Connection/timeout error - rethrowing');
+            Logger.debug('❌ Connection/timeout error - rethrowing');
             rethrow;
           } else {
             // Other errors should still be logged but not thrown
-            debugPrint('⚠️ Non-RLS error occurred, but continuing anyway');
+            Logger.debug('⚠️ Non-RLS error occurred, but continuing anyway');
           }
         }
       } else if (_user == null) {
-        debugPrint('❌ User is null after signUp');
+        Logger.debug('❌ User is null after signUp');
         throw Exception('User creation failed - no user returned from signUp');
       } else {
         // User exists but no session - email confirmation required
-        debugPrint('⚠️ User created but no session - email confirmation required');
-        debugPrint('⚠️ Pending approval details will be saved after email confirmation');
+        Logger.debug('⚠️ User created but no session - email confirmation required');
+        Logger.debug('⚠️ Pending approval details will be saved after email confirmation');
         // Don't throw error - this is expected when email confirmation is enabled
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error in registerTechnician: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Error string: ${e.toString()}');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error in registerTechnician: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Error string: ${e.toString()}');
+      Logger.debug('❌ Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -1228,7 +1200,7 @@ class AuthProvider with ChangeNotifier {
           .getPublicUrl(filePath);
       return publicUrl;
     } catch (e) {
-      debugPrint('❌ Error uploading technician profile image: $e');
+      Logger.debug('❌ Error uploading technician profile image: $e');
       return null;
     }
   }
@@ -1243,24 +1215,24 @@ class AuthProvider with ChangeNotifier {
     try {
       // Ensure Supabase client is ready
       final client = SupabaseService.client;
-      debugPrint('🔍 Attempting sign in for: $email');
-      debugPrint('🔍 Supabase client initialized: ${SupabaseService.isInitialized}');
-      debugPrint('🔍 Supabase URL: ${SupabaseConfig.url}');
-      debugPrint('🔍 Supabase Anon Key (first 20 chars): ${SupabaseConfig.anonKey.substring(0, 20)}...');
+      Logger.debug('🔍 Attempting sign in for: $email');
+      Logger.debug('🔍 Supabase client initialized: ${SupabaseService.isInitialized}');
+      Logger.debug('🔍 Supabase URL: ${SupabaseConfig.url}');
+      Logger.debug('🔍 Supabase Anon Key (first 20 chars): ${SupabaseConfig.anonKey.substring(0, 20)}...');
       
       // Verify we're using the correct database by checking the URL
       final expectedUrl = 'https://npgwikkvtxebzwtpzwgx.supabase.co';
       if (SupabaseConfig.url != expectedUrl) {
-        debugPrint('⚠️ WARNING: Supabase URL mismatch!');
-        debugPrint('⚠️ Expected: $expectedUrl');
-        debugPrint('⚠️ Actual: ${SupabaseConfig.url}');
+        Logger.debug('⚠️ WARNING: Supabase URL mismatch!');
+        Logger.debug('⚠️ Expected: $expectedUrl');
+        Logger.debug('⚠️ Actual: ${SupabaseConfig.url}');
       } else {
-        debugPrint('✅ Supabase URL matches expected: $expectedUrl');
+        Logger.debug('✅ Supabase URL matches expected: $expectedUrl');
       }
       
       // Skip connection test - just try to login directly
       // The login itself will test the connection
-      debugPrint('🔍 Proceeding with login attempt...');
+      Logger.debug('🔍 Proceeding with login attempt...');
       
       // Try to sign in - with retry logic for connection issues
       AuthResponse? response;
@@ -1270,7 +1242,7 @@ class AuthProvider with ChangeNotifier {
       while (attempt < maxAttempts) {
         try {
           attempt++;
-          debugPrint('🔍 Sign in attempt $attempt/$maxAttempts...');
+          Logger.debug('🔍 Sign in attempt $attempt/$maxAttempts...');
           
           // First, check if user exists and is confirmed
           // If email confirmation is enabled, unconfirmed users can't login
@@ -1280,13 +1252,13 @@ class AuthProvider with ChangeNotifier {
           ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              debugPrint('❌ Sign in timed out after 30 seconds (attempt $attempt)');
+              Logger.debug('❌ Sign in timed out after 30 seconds (attempt $attempt)');
               throw TimeoutException('Login is taking longer than expected. Please check your internet connection and try again.');
             },
           );
           
           // Success - break out of retry loop
-          debugPrint('✅ Sign in successful on attempt $attempt');
+          Logger.debug('✅ Sign in successful on attempt $attempt');
           break;
         } catch (e) {
           final errorString = e.toString().toLowerCase();
@@ -1297,7 +1269,7 @@ class AuthProvider with ChangeNotifier {
               errorString.contains('wrong password') ||
               errorString.contains('incorrect password')) {
             // Email exists but password is wrong - provide helpful message
-            debugPrint('⚠️ Email exists but password is incorrect');
+            Logger.debug('⚠️ Email exists but password is incorrect');
             throw Exception('Incorrect password. Please check your password or use "Forgot Password" to reset it.');
           }
           
@@ -1305,7 +1277,7 @@ class AuthProvider with ChangeNotifier {
           if (errorString.contains('user not found') ||
               errorString.contains('email not found') ||
               errorString.contains('account not found')) {
-            debugPrint('⚠️ Email not found');
+            Logger.debug('⚠️ Email not found');
             throw Exception('No account found with this email. Please check your email or create a new account.');
           }
           
@@ -1316,12 +1288,12 @@ class AuthProvider with ChangeNotifier {
               errorString.contains('failed host lookup');
           
           if (isConnectionError && attempt < maxAttempts) {
-            debugPrint('⚠️ Connection error on attempt $attempt, retrying in ${attempt * 2} seconds...');
+            Logger.debug('⚠️ Connection error on attempt $attempt, retrying in ${attempt * 2} seconds...');
             await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
             continue; // Retry
           } else {
             // Not a connection error, or max attempts reached
-            debugPrint('❌ Sign in failed: $e');
+            Logger.debug('❌ Sign in failed: $e');
             rethrow;
           }
         }
@@ -1334,7 +1306,7 @@ class AuthProvider with ChangeNotifier {
       
       // At this point, response is guaranteed to be non-null
       final authResponse = response!;
-      debugPrint('✅ Sign in response received: user=${authResponse.user?.id ?? "null"}');
+      Logger.debug('✅ Sign in response received: user=${authResponse.user?.id ?? "null"}');
 
       if (authResponse.user != null) {
         _user = authResponse.user;
@@ -1364,7 +1336,7 @@ class AuthProvider with ChangeNotifier {
               if (roleFromMetadata == 'admin') {
                 // Admin user who registered but user record wasn't created
                 // This happens when deep link doesn't work after email confirmation
-                debugPrint('🔐 Admin user without DB record - creating from metadata');
+                Logger.debug('🔐 Admin user without DB record - creating from metadata');
                 try {
                   final positionId = _user!.userMetadata?['position_id'] as String?;
                   final fullName = _user!.userMetadata?['full_name'] as String? ?? 
@@ -1378,7 +1350,7 @@ class AuthProvider with ChangeNotifier {
                     'role': 'admin',
                     if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
                   });
-                  debugPrint('✅ Admin user record created from metadata');
+                  Logger.debug('✅ Admin user record created from metadata');
                   
                   // Set role and continue
                   _userRole = UserRole.admin;
@@ -1386,14 +1358,14 @@ class AuthProvider with ChangeNotifier {
                   notifyListeners();
                   return authResponse;
                 } catch (insertError) {
-                  debugPrint('⚠️ Could not create admin record: $insertError');
+                  Logger.debug('⚠️ Could not create admin record: $insertError');
                   // Continue to OAuth check
                 }
               }
               
               if (isOAuthUser) {
                 // OAuth users without a role need to select a role
-                debugPrint('🔐 OAuth user without role - needs role selection');
+                Logger.debug('🔐 OAuth user without role - needs role selection');
                 // Don't sign out - let the UI handle role selection
                 // Set role to pending so UI can detect this case
                 _userRole = UserRole.pending;
@@ -1404,7 +1376,7 @@ class AuthProvider with ChangeNotifier {
                 return authResponse;
               } else {
                 // Email/password user without role - must register first
-                debugPrint('❌ User logged in but account is not registered (no role found)');
+                Logger.debug('❌ User logged in but account is not registered (no role found)');
                 await signOut();
                 throw Exception('Your account is not available. Please register first by creating a new account.');
               }
@@ -1416,19 +1388,19 @@ class AuthProvider with ChangeNotifier {
             rethrow;
           }
           
-          debugPrint('⚠️ Error loading user role after sign in: $e');
+          Logger.debug('⚠️ Error loading user role after sign in: $e');
           // Try to use saved role or metadata as fallback
           try {
             final savedRole = await _getSavedUserRole();
             if (savedRole != null && savedRole != UserRole.pending) {
               _userRole = savedRole;
-              debugPrint('✅ Using saved role after load error: ${_userRole.value}');
+              Logger.debug('✅ Using saved role after load error: ${_userRole.value}');
             } else {
               // Try user metadata
               final roleFromMetadata = _user!.userMetadata?['role'] as String?;
               if (roleFromMetadata != null && roleFromMetadata.isNotEmpty) {
                 _userRole = UserRoleExtension.fromString(roleFromMetadata);
-                debugPrint('✅ Using role from metadata: ${_userRole.value}');
+                Logger.debug('✅ Using role from metadata: ${_userRole.value}');
               } else {
                 // Check if this is an OAuth user (first-time OAuth login)
                 final isOAuthUser = _user!.appMetadata?['provider'] != null && 
@@ -1436,7 +1408,7 @@ class AuthProvider with ChangeNotifier {
                 
                 if (isOAuthUser) {
                   // OAuth users without a role need to select a role
-                  debugPrint('🔐 OAuth user without role - needs role selection');
+                  Logger.debug('🔐 OAuth user without role - needs role selection');
                   // Don't sign out - let the UI handle role selection
                   // Set role to pending so UI can detect this case
                   _userRole = UserRole.pending;
@@ -1447,7 +1419,7 @@ class AuthProvider with ChangeNotifier {
                   return authResponse;
                 } else {
                   // Email/password user without role - must register first
-                  debugPrint('❌ No role found in saved role or metadata - account not registered');
+                  Logger.debug('❌ No role found in saved role or metadata - account not registered');
                   await signOut();
                   throw Exception('Your account is not available. Please register first by creating a new account.');
                 }
@@ -1455,7 +1427,7 @@ class AuthProvider with ChangeNotifier {
             }
             notifyListeners();
           } catch (fallbackError) {
-            debugPrint('❌ Fallback role loading also failed: $fallbackError');
+            Logger.debug('❌ Fallback role loading also failed: $fallbackError');
             // If fallback also fails and we still don't have a role, account is not registered
             if (_userRole == UserRole.pending) {
               await signOut();
@@ -1473,7 +1445,7 @@ class AuthProvider with ChangeNotifier {
         try {
           await FirebaseMessagingService.saveTokenFromLocalStorage();
         } catch (e) {
-          debugPrint('⚠️ Could not save FCM token from local storage: $e');
+          Logger.debug('⚠️ Could not save FCM token from local storage: $e');
         }
         
         // CRITICAL: Check if email is confirmed - but skip for technicians (they bypass email confirmation)
@@ -1481,14 +1453,14 @@ class AuthProvider with ChangeNotifier {
         final isTechnician = roleFromMetadata == 'technician';
         
         if (_user!.emailConfirmedAt == null && !isTechnician) {
-          debugPrint('❌ Email not confirmed - blocking access (admin requires email confirmation)');
+          Logger.debug('❌ Email not confirmed - blocking access (admin requires email confirmation)');
           await signOut();
           throw Exception('Please confirm your email address before signing in. Check your inbox for the confirmation email.');
         }
         
         // Technicians can proceed without email confirmation
         if (isTechnician) {
-          debugPrint('✅ Technician - bypassing email confirmation check');
+          Logger.debug('✅ Technician - bypassing email confirmation check');
         }
         
         // Ensure user record exists in public.users table
@@ -1503,7 +1475,7 @@ class AuthProvider with ChangeNotifier {
           
           if (userRecord == null) {
             // User record doesn't exist - wait a moment and retry (trigger might still be processing)
-            debugPrint('⚠️ User record not found, waiting for trigger or checking metadata...');
+            Logger.debug('⚠️ User record not found, waiting for trigger or checking metadata...');
             await Future.delayed(const Duration(milliseconds: 1000));
             
             // Retry checking for user record (trigger might have created it)
@@ -1514,24 +1486,24 @@ class AuthProvider with ChangeNotifier {
                 .maybeSingle();
             
             if (retryUserRecord != null) {
-              debugPrint('✅ User record found after retry - trigger created it');
+              Logger.debug('✅ User record found after retry - trigger created it');
               // Continue with login
             } else {
               // Still no user record - check if we have a role to create it with
               final roleFromMetadata = _user!.userMetadata?['role'] as String?;
               
-              debugPrint('🔍 Role in metadata: $roleFromMetadata');
-              debugPrint('🔍 Full metadata: ${_user!.userMetadata}');
+              Logger.debug('🔍 Role in metadata: $roleFromMetadata');
+              Logger.debug('🔍 Full metadata: ${_user!.userMetadata}');
               
               if (roleFromMetadata == null || roleFromMetadata.isEmpty) {
                 // No role in metadata - account is not properly registered
-                debugPrint('❌ User record not found and no role in metadata - account not registered');
-                debugPrint('❌ This might mean the registration did not include a role');
+                Logger.debug('❌ User record not found and no role in metadata - account not registered');
+                Logger.debug('❌ This might mean the registration did not include a role');
                 await signOut();
                 throw Exception('Your account is not available. Please register first by creating a new account with a role (admin or technician).');
               }
               
-              debugPrint('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
+              Logger.debug('⚠️ User record not found in public.users, creating it with role: $roleFromMetadata');
               // Create user record from auth user data - role must be explicitly set
               try {
             await client.from('users').insert({
@@ -1542,7 +1514,7 @@ class AuthProvider with ChangeNotifier {
                           _user!.email?.split('@')[0] ?? 'User',
                   'role': roleFromMetadata, // Role must be explicitly set, no default
                 });
-                debugPrint('✅ Created user record in public.users with role: $roleFromMetadata');
+                Logger.debug('✅ Created user record in public.users with role: $roleFromMetadata');
                 
                 // If technician, also create pending approval
                 if (roleFromMetadata == 'technician') {
@@ -1555,13 +1527,13 @@ class AuthProvider with ChangeNotifier {
                                   _user!.email?.split('@')[0] ?? 'User',
                       'status': 'pending',
                     }, onConflict: 'user_id');
-                    debugPrint('✅ Created pending approval for technician');
+                    Logger.debug('✅ Created pending approval for technician');
                   } catch (e) {
-                    debugPrint('⚠️ Could not create pending approval (might already exist): $e');
+                    Logger.debug('⚠️ Could not create pending approval (might already exist): $e');
                   }
                 }
               } catch (insertError) {
-                debugPrint('❌ Error creating user record: $insertError');
+                Logger.debug('❌ Error creating user record: $insertError');
                 // Check if it was created by another process
                 final finalCheck = await client
                     .from('users')
@@ -1578,7 +1550,7 @@ class AuthProvider with ChangeNotifier {
             final role = userRecord['role'] as String?;
             if (role == null || role.isEmpty) {
               // User record exists but has no role - account is not properly registered
-              debugPrint('❌ User record exists but has no role - account not properly registered');
+              Logger.debug('❌ User record exists but has no role - account not properly registered');
               await signOut();
               throw Exception('Your account is not available. Please register first by creating a new account.');
             }
@@ -1588,15 +1560,13 @@ class AuthProvider with ChangeNotifier {
           if (e.toString().contains('not available') || e.toString().contains('not registered')) {
             rethrow;
           }
-          debugPrint('⚠️ Could not check/create user record: $e');
+          Logger.debug('⚠️ Could not check/create user record: $e');
           // Don't block login for other errors - user record might be created by trigger later
         }
         
         // Validate admin domain restrictions
         if (_userRole == UserRole.admin) {
-          if (!email.endsWith('@royalgulf.ae') && 
-              !email.endsWith('@mekar.ae') && 
-              !email.endsWith('@gmail.com')) {
+          if (!AppConfig.isAdminEmailDomain(email)) {
             // User has admin role but doesn't have admin domain - revoke access
             await signOut();
             throw Exception('Access denied: Invalid admin credentials');
@@ -1606,19 +1576,19 @@ class AuthProvider with ChangeNotifier {
         // CRITICAL: For technicians, check if they're approved before allowing access
         // Block login completely if not approved
         if (_userRole != UserRole.admin) {
-          debugPrint('🔍 Checking approval status for technician...');
+          Logger.debug('🔍 Checking approval status for technician...');
           final isApproved = await checkApprovalStatus();
-          debugPrint('🔍 Approval status result: $isApproved');
+          Logger.debug('🔍 Approval status result: $isApproved');
           
           if (isApproved == false || isApproved == null) {
             // User is not approved - BLOCK login completely
             _userRole = UserRole.pending;
             await _saveUserRole(_userRole);
             await signOut();
-            debugPrint('❌ Technician login blocked - not approved yet');
+            Logger.debug('❌ Technician login blocked - not approved yet');
             throw Exception('Your account is pending admin approval. You will be notified once your account is approved.');
           } else {
-            debugPrint('✅ Technician is approved - allowing login');
+            Logger.debug('✅ Technician is approved - allowing login');
           }
         }
         
@@ -1627,7 +1597,7 @@ class AuthProvider with ChangeNotifier {
           final fcmToken = await _getFCMTokenIfAvailable().timeout(
             const Duration(seconds: 2),
             onTimeout: () {
-              debugPrint('⚠️ FCM token fetch timed out after login');
+              Logger.debug('⚠️ FCM token fetch timed out after login');
               return null;
             },
           );
@@ -1635,25 +1605,25 @@ class AuthProvider with ChangeNotifier {
             _sendFCMTokenToServer(fcmToken, _user!.id).timeout(
               const Duration(seconds: 3),
               onTimeout: () {
-                debugPrint('⚠️ FCM token send timed out after login');
+                Logger.debug('⚠️ FCM token send timed out after login');
               },
             ).catchError((e) {
-              debugPrint('⚠️ Error sending FCM token after login: $e');
+              Logger.debug('⚠️ Error sending FCM token after login: $e');
             });
           } else {
-            debugPrint('⚠️ FCM token not available after login, will be sent when available');
+            Logger.debug('⚠️ FCM token not available after login, will be sent when available');
           }
         } catch (e) {
-          debugPrint('⚠️ Error getting/sending FCM token after login: $e');
+          Logger.debug('⚠️ Error getting/sending FCM token after login: $e');
         }
       }
 
       return authResponse;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error signing in: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Error string: ${e.toString()}');
-      debugPrint('❌ Stack trace: $stackTrace');
+      Logger.debug('❌ Error signing in: $e');
+      Logger.debug('❌ Error type: ${e.runtimeType}');
+      Logger.debug('❌ Error string: ${e.toString()}');
+      Logger.debug('❌ Stack trace: $stackTrace');
       rethrow;
     } finally {
       _isLoading = false;
@@ -1667,18 +1637,24 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('🚪 AuthProvider: Starting signOut process...');
+      Logger.debug('🚪 AuthProvider: Starting signOut process...');
       
       // Clear saved user role from local storage
       await _clearSavedUserRole();
       await LastRouteService.clearLastRoute();
+
+      // Clear offline cache
+      if (!kIsWeb) {
+        await LocalCacheService().clearAllCache();
+        Logger.debug('✅ AuthProvider: Offline cache cleared on logout');
+      }
       
       // Clear app badge on logout
       try {
         await BadgeService.clearBadge();
-        debugPrint('✅ AuthProvider: Badge cleared on logout');
+        Logger.debug('✅ AuthProvider: Badge cleared on logout');
       } catch (badgeError) {
-        debugPrint('⚠️ AuthProvider: Could not clear badge: $badgeError');
+        Logger.debug('⚠️ AuthProvider: Could not clear badge: $badgeError');
       }
       
       // Clear user data first to prevent widget tree issues
@@ -1688,11 +1664,11 @@ class AuthProvider with ChangeNotifier {
       
       // Then sign out from Supabase
       await SupabaseService.client.auth.signOut();
-      debugPrint('✅ AuthProvider: Supabase signOut successful');
-      debugPrint('✅ AuthProvider: User data and saved role cleared');
+      Logger.debug('✅ AuthProvider: Supabase signOut successful');
+      Logger.debug('✅ AuthProvider: User data and saved role cleared');
     } catch (e) {
-      debugPrint('❌ AuthProvider: Error during signOut: $e');
-      debugPrint('❌ AuthProvider: Error type: ${e.runtimeType}');
+      Logger.debug('❌ AuthProvider: Error during signOut: $e');
+      Logger.debug('❌ AuthProvider: Error type: ${e.runtimeType}');
       // Ensure user data is cleared even on error
       _user = null;
       _userRole = UserRole.pending; // Reset to pending on error
@@ -1704,7 +1680,7 @@ class AuthProvider with ChangeNotifier {
 _isLoading = false;
       _isLoggingOut = false;
       notifyListeners();
-      debugPrint('✅ AuthProvider: signOut process completed');
+      Logger.debug('✅ AuthProvider: signOut process completed');
     }
   }
 
@@ -1715,7 +1691,7 @@ _isLoading = false;
     }
 
     try {
-      debugPrint('🗑️ Deleting account for user: ${currentUser.id}');
+      Logger.debug('🗑️ Deleting account for user: ${currentUser.id}');
       final response = await SupabaseService.client.functions
           .invoke('delete-account')
           .timeout(_authOperationTimeout);
@@ -1730,9 +1706,9 @@ _isLoading = false;
         throw Exception(errorMessage);
       }
 
-      debugPrint('✅ Account deletion completed');
+      Logger.debug('✅ Account deletion completed');
     } catch (e) {
-      debugPrint('❌ Account deletion failed: $e');
+      Logger.debug('❌ Account deletion failed: $e');
       rethrow;
     }
   }
@@ -1743,17 +1719,17 @@ _isLoading = false;
       // If you want to use web redirect later, change to: 'https://rgstools.app/reset-password'
       final redirectUrl = redirectTo ?? 'com.rgs.app://reset-password';
       
-      debugPrint('🔍 Sending password reset email to: $email');
-      debugPrint('🔍 Redirect URL: $redirectUrl');
+      Logger.debug('🔍 Sending password reset email to: $email');
+      Logger.debug('🔍 Redirect URL: $redirectUrl');
       
       await SupabaseService.client.auth.resetPasswordForEmail(
         email,
         redirectTo: redirectUrl,
       );
       
-      debugPrint('✅ Password reset email sent successfully');
+      Logger.debug('✅ Password reset email sent successfully');
     } catch (e) {
-      debugPrint('❌ Error resetting password: $e');
+      Logger.debug('❌ Error resetting password: $e');
       rethrow;
     }
   }
@@ -1771,7 +1747,7 @@ _isLoading = false;
   }) async {
     try {
       final formattedName = NameFormatter.format(name);
-      debugPrint('🔍 Inviting technician via edge function: $email');
+      Logger.debug('🔍 Inviting technician via edge function: $email');
       final response = await SupabaseService.client.functions.invoke(
         'invite-technician',
         body: {
@@ -1798,7 +1774,7 @@ _isLoading = false;
 
       throw Exception('Invite failed - no user id returned');
     } catch (e) {
-      debugPrint('❌ Error inviting technician: $e');
+      Logger.debug('❌ Error inviting technician: $e');
       rethrow;
     }
   }
@@ -1809,7 +1785,7 @@ _isLoading = false;
     required String positionId,
   }) async {
     if (!_isAdminEmailAllowed(email)) {
-      throw Exception('Invalid email domain for admin registration. Use @royalgulf.ae, @mekar.ae, or @gmail.com');
+      throw Exception('Invalid email domain for admin registration. Use ${AppConfig.adminDomainsDisplay}');
     }
 
     if (_userRole != UserRole.admin) {
@@ -1817,7 +1793,7 @@ _isLoading = false;
     }
 
     try {
-      debugPrint('🔍 Inviting admin via edge function: $email');
+      Logger.debug('🔍 Inviting admin via edge function: $email');
       final response = await SupabaseService.client.functions.invoke(
         'invite-admin',
         body: {
@@ -1844,15 +1820,13 @@ _isLoading = false;
 
       throw Exception('Invite failed - no user id returned');
     } catch (e) {
-      debugPrint('❌ Error inviting admin: $e');
+      Logger.debug('❌ Error inviting admin: $e');
       rethrow;
     }
   }
 
   bool _isAdminEmailAllowed(String email) {
-    return email.endsWith('@royalgulf.ae') ||
-        email.endsWith('@mekar.ae') ||
-        email.endsWith('@gmail.com');
+    return AppConfig.isAdminEmailDomain(email);
   }
 
 
@@ -1962,18 +1936,18 @@ _isLoading = false;
       try {
         await _loadUserRole().timeout(const Duration(seconds: 5));
       } catch (e) {
-        debugPrint('⚠️ Could not load role after Apple sign-in: $e');
+        Logger.debug('⚠️ Could not load role after Apple sign-in: $e');
       }
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
-        debugPrint('ℹ️ Apple sign-in cancelled by user');
+        Logger.debug('ℹ️ Apple sign-in cancelled by user');
         return;
       }
-      debugPrint('❌ Apple sign-in failed: ${e.message}');
+      Logger.debug('❌ Apple sign-in failed: ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
-      debugPrint('❌ Error during Apple sign-in: $e');
-      debugPrint('Stack trace: $stackTrace');
+      Logger.debug('❌ Error during Apple sign-in: $e');
+      Logger.debug('Stack trace: $stackTrace');
       rethrow;
     } finally {
       _isLoading = false;
@@ -1999,8 +1973,8 @@ _isLoading = false;
       final formattedName =
           role == UserRole.technician ? NameFormatter.format(name) : name.trim();
       
-      debugPrint('🔐 Assigning role to OAuth user: $role');
-      debugPrint('🔐 User ID: $userId, Email: $email, Name: $name');
+      Logger.debug('🔐 Assigning role to OAuth user: $role');
+      Logger.debug('🔐 User ID: $userId, Email: $email, Name: $name');
       
       // Update auth.users metadata with role
       await client.auth.updateUser(
@@ -2035,7 +2009,7 @@ _isLoading = false;
             'status': 'pending',
             'created_at': DateTime.now().toIso8601String(),
           }).select().single();
-          debugPrint('✅ Created pending approval record for OAuth technician');
+          Logger.debug('✅ Created pending approval record for OAuth technician');
           
           // Create notification for admins in the main notification center
           try {
@@ -2056,16 +2030,16 @@ _isLoading = false;
                     'submitted_at': DateTime.now().toIso8601String(),
                   },
                 });
-            debugPrint('✅ Created admin notification for new OAuth technician approval request');
+            Logger.debug('✅ Created admin notification for new OAuth technician approval request');
           } catch (notifError) {
-            debugPrint('⚠️ Failed to create admin notification: $notifError');
+            Logger.debug('⚠️ Failed to create admin notification: $notifError');
             // Don't fail the registration if notification creation fails
           }
         } catch (e) {
-          debugPrint('⚠️ Could not create pending approval (may already exist): $e');
+          Logger.debug('⚠️ Could not create pending approval (may already exist): $e');
         }
       } else if (role == UserRole.technician && bypassApproval) {
-        debugPrint('✅ Apple bypass enabled - skipping pending approval creation');
+        Logger.debug('✅ Apple bypass enabled - skipping pending approval creation');
       }
       
       // Update local state
@@ -2073,10 +2047,10 @@ _isLoading = false;
       await _saveUserRole(role);
       notifyListeners();
       
-      debugPrint('✅ Role assigned successfully to OAuth user: $role');
+      Logger.debug('✅ Role assigned successfully to OAuth user: $role');
     } catch (e, stackTrace) {
-      debugPrint('❌ Error assigning role to OAuth user: $e');
-      debugPrint('Stack trace: $stackTrace');
+      Logger.debug('❌ Error assigning role to OAuth user: $e');
+      Logger.debug('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -2122,8 +2096,8 @@ _isLoading = false;
         throw Exception('Sign-in was cancelled or failed. Please try again.');
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error during OAuth sign-in ($provider): $e');
-      debugPrint('Stack trace: $stackTrace');
+      Logger.debug('❌ Error during OAuth sign-in ($provider): $e');
+      Logger.debug('Stack trace: $stackTrace');
       rethrow;
     } finally {
       await authSubscription?.cancel();
@@ -2135,7 +2109,7 @@ _isLoading = false;
   Future<void> _loadUserRole() async {
     // CRITICAL: Don't load role or create accounts during logout
     if (_isLoggingOut) {
-      debugPrint('🔍 Ignoring _loadUserRole during logout');
+      Logger.debug('🔍 Ignoring _loadUserRole during logout');
       return;
     }
     
@@ -2147,7 +2121,7 @@ _isLoading = false;
     // CRITICAL: Don't create accounts if there's no valid session
     final session = SupabaseService.client.auth.currentSession;
     if (session == null) {
-      debugPrint('🔍 No session found - cannot load role or create accounts');
+      Logger.debug('🔍 No session found - cannot load role or create accounts');
       _userRole = UserRole.pending;
       return;
     }
@@ -2157,7 +2131,7 @@ _isLoading = false;
       final savedRole = await _getSavedUserRole();
       if (savedRole != null) {
         _userRole = savedRole;
-        debugPrint('✅ User role loaded from local storage: ${_userRole.value}');
+        Logger.debug('✅ User role loaded from local storage: ${_userRole.value}');
         notifyListeners();
       }
 
@@ -2165,7 +2139,7 @@ _isLoading = false;
       // CRITICAL: Don't clear user on refresh failure - maintain persistence
       final session = SupabaseService.client.auth.currentSession;
       if (session != null && session.isExpired) {
-        debugPrint('🔄 Session expired, attempting to refresh...');
+        Logger.debug('🔄 Session expired, attempting to refresh...');
         try {
           final refreshResponse = await SupabaseService.client.auth.refreshSession().timeout(
             const Duration(seconds: 3),
@@ -2174,18 +2148,18 @@ _isLoading = false;
             },
           );
           if (refreshResponse.session != null) {
-            debugPrint('✅ Session refreshed successfully');
+            Logger.debug('✅ Session refreshed successfully');
             _user = refreshResponse.session!.user;
           } else {
-            debugPrint('❌ Session refresh failed - no new session');
+            Logger.debug('❌ Session refresh failed - no new session');
             // Don't clear user data immediately, try to maintain session
-            debugPrint('🔄 Attempting to maintain session...');
+            Logger.debug('🔄 Attempting to maintain session...');
             // Continue to load role even if refresh failed - session might still be valid
           }
         } catch (e) {
-          debugPrint('❌ Failed to refresh session: $e');
+          Logger.debug('❌ Failed to refresh session: $e');
           // Don't clear user data, maintain session
-          debugPrint('🔄 Maintaining session despite refresh failure...');
+          Logger.debug('🔄 Maintaining session despite refresh failure...');
           // Continue to load role even if refresh failed - session might still be valid
         }
       }
@@ -2216,9 +2190,9 @@ _isLoading = false;
             // CRITICAL: If role is 'technician', check pending approvals FIRST
             // Technicians with pending approval should have UserRole.pending, not UserRole.technician
             if (roleFromDb == 'technician') {
-              debugPrint('🔍 User has technician role, checking pending approval status...');
+              Logger.debug('🔍 User has technician role, checking pending approval status...');
               if (_isAppleProvider() && await _isAppleApprovalBypassEnabled()) {
-                debugPrint('✅ Apple sign-in detected - skipping pending approval checks');
+                Logger.debug('✅ Apple sign-in detected - skipping pending approval checks');
                 _userRole = newRole;
                 await _saveUserRole(newRole);
                 notifyListeners();
@@ -2241,18 +2215,18 @@ _isLoading = false;
                 
                 if (pendingApproval != null) {
                   final status = pendingApproval['status'] as String?;
-                  debugPrint('🔍 Found pending approval with status: $status');
+                  Logger.debug('🔍 Found pending approval with status: $status');
                   
                   if (status == 'pending' || status == 'rejected') {
                     // Technician is pending approval - set role to pending
-                    debugPrint('⚠️ Technician has pending/rejected approval - setting role to pending');
+                    Logger.debug('⚠️ Technician has pending/rejected approval - setting role to pending');
                     _userRole = UserRole.pending;
                     await _saveUserRole(_userRole);
                     notifyListeners();
                     return;
                   } else if (status == 'approved') {
                     // Technician is approved - use technician role
-                    debugPrint('✅ Technician is approved - using technician role');
+                    Logger.debug('✅ Technician is approved - using technician role');
             _userRole = newRole;
                     await _saveUserRole(newRole);
                     notifyListeners();
@@ -2260,14 +2234,14 @@ _isLoading = false;
                   }
                 } else {
                   // No pending approval record - if user record exists, they're approved
-                  debugPrint('✅ No pending approval found - technician is approved');
+                  Logger.debug('✅ No pending approval found - technician is approved');
                   _userRole = newRole;
                   await _saveUserRole(newRole);
                   notifyListeners();
                   return;
                 }
               } catch (e) {
-                debugPrint('⚠️ Error checking pending approval: $e');
+                Logger.debug('⚠️ Error checking pending approval: $e');
                 // On error, default to technician role (safer than blocking)
                 _userRole = newRole;
                 await _saveUserRole(newRole);
@@ -2278,7 +2252,7 @@ _isLoading = false;
               // Not a technician (admin or other) - use role from database
               _userRole = newRole;
             await _saveUserRole(newRole);
-            debugPrint('✅ User role loaded from database: ${_userRole.value}');
+            Logger.debug('✅ User role loaded from database: ${_userRole.value}');
             notifyListeners();
               if (roleFromDb == 'admin' && (positionId == null || positionId.isEmpty)) {
                 await _ensureAdminPosition();
@@ -2286,7 +2260,7 @@ _isLoading = false;
             return;
             }
           } else {
-            debugPrint('⚠️ No role found in database, keeping current role: ${_userRole.value}');
+            Logger.debug('⚠️ No role found in database, keeping current role: ${_userRole.value}');
             return;
           }
         } catch (e) {
@@ -2296,19 +2270,19 @@ _isLoading = false;
               errorString.contains('network') || 
               errorString.contains('timeout') ||
               errorString.contains('cannot connect to database')) {
-            debugPrint('⚠️ Connection error loading user role: $e');
-            debugPrint('🔄 Using saved role or default role instead');
+            Logger.debug('⚠️ Connection error loading user role: $e');
+            Logger.debug('🔄 Using saved role or default role instead');
             // Use saved role if available, otherwise keep current role
             final savedRole = await _getSavedUserRole();
             if (savedRole != null) {
               _userRole = savedRole;
-              debugPrint('✅ Using saved role: ${_userRole.value}');
+              Logger.debug('✅ Using saved role: ${_userRole.value}');
             } else {
               // Try to get role from user metadata as fallback
               final roleFromMetadata = _user!.userMetadata?['role'] as String?;
               if (roleFromMetadata != null) {
                 _userRole = UserRoleExtension.fromString(roleFromMetadata);
-                debugPrint('✅ Using role from metadata: ${_userRole.value}');
+                Logger.debug('✅ Using role from metadata: ${_userRole.value}');
               }
             }
             notifyListeners();
@@ -2319,9 +2293,9 @@ _isLoading = false;
           // User records should only be created during explicit registration, not during role loading
           // This prevents creating default accounts on logout or session restoration
           if (e.toString().contains('0 rows') || e.toString().contains('not found')) {
-            debugPrint('⚠️ User record not found in database');
-            debugPrint('⚠️ NOT creating user record - _loadUserRole() only loads roles, never creates accounts');
-            debugPrint('⚠️ Accounts must be created during explicit registration only');
+            Logger.debug('⚠️ User record not found in database');
+            Logger.debug('⚠️ NOT creating user record - _loadUserRole() only loads roles, never creates accounts');
+            Logger.debug('⚠️ Accounts must be created during explicit registration only');
             
             // Check if user has pending approval (for technicians)
             try {
@@ -2339,16 +2313,16 @@ _isLoading = false;
               
               if (pendingApproval != null) {
                 final status = pendingApproval['status'] as String?;
-                debugPrint('🔍 Found approval record with status: $status');
+                Logger.debug('🔍 Found approval record with status: $status');
                 
                 if (status == 'pending') {
-                  debugPrint('⚠️ User has pending approval - setting role to pending');
+                  Logger.debug('⚠️ User has pending approval - setting role to pending');
                   _userRole = UserRole.pending;
                   await _saveUserRole(_userRole);
                   notifyListeners();
                   return;
                 } else if (status == 'rejected') {
-                  debugPrint('❌ User approval was rejected - access denied');
+                  Logger.debug('❌ User approval was rejected - access denied');
                   _userRole = UserRole.pending; // Treat as pending to show rejection screen
                 await _saveUserRole(_userRole);
                 notifyListeners();
@@ -2356,7 +2330,7 @@ _isLoading = false;
                 } else if (status == 'approved') {
                   // User is approved, but user record doesn't exist - this shouldn't happen
                   // Don't create it here - it should have been created during approval
-                  debugPrint('⚠️ User approved but no user record - should have been created during approval');
+                  Logger.debug('⚠️ User approved but no user record - should have been created during approval');
                 _userRole = UserRole.pending;
                 await _saveUserRole(_userRole);
                 notifyListeners();
@@ -2364,7 +2338,7 @@ _isLoading = false;
               }
               }
             } catch (pendingError) {
-              debugPrint('🔍 No pending approval found: $pendingError');
+              Logger.debug('🔍 No pending approval found: $pendingError');
             }
             
             // No user record and no pending approval - set role to pending
@@ -2376,15 +2350,15 @@ _isLoading = false;
               return;
           }
           retryCount++;
-          debugPrint('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
+          Logger.debug('❌ Error loading user role (attempt $retryCount/$maxRetries): $e');
           
           if (retryCount >= maxRetries) {
-            debugPrint('❌ Max retries reached, keeping current role: ${_userRole.value}');
+            Logger.debug('❌ Max retries reached, keeping current role: ${_userRole.value}');
             // Don't default to any role - keep current role or set to pending if unknown
             if (_userRole == UserRole.pending) {
-              debugPrint('🔄 Role is pending (unknown) - user needs to register with explicit role');
+              Logger.debug('🔄 Role is pending (unknown) - user needs to register with explicit role');
             } else {
-              debugPrint('🔄 Keeping current role: ${_userRole.value}');
+              Logger.debug('🔄 Keeping current role: ${_userRole.value}');
             }
             notifyListeners();
             return;
@@ -2395,14 +2369,14 @@ _isLoading = false;
         }
       }
     } catch (e) {
-      debugPrint('❌ Critical error in _loadUserRole: $e');
+      Logger.debug('❌ Critical error in _loadUserRole: $e');
       // Don't change role on error, keep current role
-      debugPrint('🔄 Keeping current role due to error: ${_userRole.value}');
+      Logger.debug('🔄 Keeping current role due to error: ${_userRole.value}');
     }
   }
 
   Future<void> forceReAuthentication() async {
-    debugPrint('🔄 Forcing re-authentication...');
+    Logger.debug('🔄 Forcing re-authentication...');
     _user = null;
     _userRole = UserRole.pending; // Reset to pending (unknown) when forcing re-auth
     notifyListeners();
@@ -2411,8 +2385,30 @@ _isLoading = false;
     try {
       await SupabaseService.client.auth.signOut();
     } catch (e) {
-      debugPrint('Error during force logout: $e');
+      Logger.debug('Error during force logout: $e');
     }
+  }
+
+  /// Attempt to recover session after a spurious signedOut event
+  /// (e.g., Supabase token refresh failed during a data operation).
+  /// If recovery fails, then clear the user for real.
+  Future<void> _attemptSessionRecovery() async {
+    try {
+      final response = await SupabaseService.client.auth.refreshSession();
+      if (response.session != null) {
+        Logger.debug('✅ Session recovered after spurious signedOut event');
+        _user = response.session!.user;
+        notifyListeners();
+        return;
+      }
+    } catch (e) {
+      Logger.debug('❌ Session recovery failed: $e');
+    }
+    // Recovery failed — clear the user for real
+    Logger.debug('🚪 Session unrecoverable — clearing user');
+    _user = null;
+    _userRole = UserRole.pending;
+    notifyListeners();
   }
 
   // Method to handle automatic session refresh
@@ -2422,16 +2418,16 @@ _isLoading = false;
     try {
       final session = SupabaseService.client.auth.currentSession;
       if (session != null && session.isExpired) {
-        debugPrint('🔄 Auto-refreshing expired session...');
+        Logger.debug('🔄 Auto-refreshing expired session...');
         final refreshResponse = await SupabaseService.client.auth.refreshSession();
         if (refreshResponse.session != null) {
-          debugPrint('✅ Session auto-refreshed successfully');
+          Logger.debug('✅ Session auto-refreshed successfully');
           _user = refreshResponse.session!.user;
           notifyListeners();
         }
       }
     } catch (e) {
-      debugPrint('❌ Auto-refresh failed: $e');
+      Logger.debug('❌ Auto-refresh failed: $e');
       // Don't clear user data, maintain session
     }
   }
@@ -2450,15 +2446,15 @@ _isLoading = false;
       // Check session status without clearing user data
       final session = SupabaseService.client.auth.currentSession;
       if (session != null) {
-        debugPrint('✅ Session is valid, maintaining login');
+        Logger.debug('✅ Session is valid, maintaining login');
         return;
       }
       
       // If no session but user exists, try to refresh
-      debugPrint('🔄 No active session, attempting refresh...');
+      Logger.debug('🔄 No active session, attempting refresh...');
       await refreshSessionIfNeeded();
     } catch (e) {
-      debugPrint('❌ Session maintenance error: $e');
+      Logger.debug('❌ Session maintenance error: $e');
       // Don't clear user data on error
     }
   }
@@ -2468,9 +2464,9 @@ _isLoading = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_role_${_user?.id}', role.value);
-      debugPrint('✅ User role saved to local storage: ${role.value}');
+      Logger.debug('✅ User role saved to local storage: ${role.value}');
     } catch (e) {
-      debugPrint('❌ Error saving user role: $e');
+      Logger.debug('❌ Error saving user role: $e');
     }
   }
 
@@ -2483,7 +2479,7 @@ _isLoading = false;
         return UserRoleExtension.fromString(savedRole);
       }
     } catch (e) {
-      debugPrint('❌ Error loading saved user role: $e');
+      Logger.debug('❌ Error loading saved user role: $e');
     }
     return null;
   }
@@ -2493,9 +2489,9 @@ _isLoading = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_role_${_user?.id}');
-      debugPrint('✅ Saved user role cleared');
+      Logger.debug('✅ Saved user role cleared');
     } catch (e) {
-      debugPrint('❌ Error clearing saved user role: $e');
+      Logger.debug('❌ Error clearing saved user role: $e');
     }
   }
 
@@ -2503,7 +2499,7 @@ _isLoading = false;
     if (_user == null) return;
 
     try {
-      debugPrint('🔧 Updating user role to: $newRole');
+      Logger.debug('🔧 Updating user role to: $newRole');
       
       // Update in Supabase users table
       await SupabaseService.client
@@ -2518,10 +2514,10 @@ _isLoading = false;
 
       // Update local role
       _userRole = newRole;
-      debugPrint('✅ User role updated successfully');
+      Logger.debug('✅ User role updated successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ Error updating user role: $e');
+      Logger.debug('❌ Error updating user role: $e');
       rethrow;
     }
   }
@@ -2533,7 +2529,7 @@ _isLoading = false;
       final formattedName = _userRole == UserRole.technician
           ? NameFormatter.format(newName)
           : newName.trim();
-      debugPrint('🔧 Updating user name to: $formattedName');
+      Logger.debug('🔧 Updating user name to: $formattedName');
       
       // Update user metadata in Supabase Auth
       await SupabaseService.client.auth.updateUser(
@@ -2562,10 +2558,10 @@ _isLoading = false;
         _user = updatedUser;
       }
       
-      debugPrint('✅ User name updated successfully');
+      Logger.debug('✅ User name updated successfully');
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ Error updating user name: $e');
+      Logger.debug('❌ Error updating user name: $e');
       rethrow;
     }
   }
@@ -2619,17 +2615,17 @@ _isLoading = false;
       }
       
       // If token is null, try to refresh it
-      debugPrint('🔄 [FCM] Token is null, attempting to refresh...');
+      Logger.debug('🔄 [FCM] Token is null, attempting to refresh...');
       token = await FirebaseMessagingService.refreshToken();
       if (token != null && token.isNotEmpty) {
-        debugPrint('✅ [FCM] Token obtained after refresh');
+        Logger.debug('✅ [FCM] Token obtained after refresh');
         return token;
       }
       
-      debugPrint('⚠️ [FCM] Token still null after refresh attempt');
+      Logger.debug('⚠️ [FCM] Token still null after refresh attempt');
       return null;
     } catch (e) {
-      debugPrint('⚠️ Could not get FCM token: $e');
+      Logger.debug('⚠️ Could not get FCM token: $e');
       return null;
     }
   }
@@ -2637,12 +2633,12 @@ _isLoading = false;
   /// Send FCM token to server
   Future<void> _sendFCMTokenToServer(String token, String userId) async {
     try {
-      debugPrint('📤 [FCM] Sending token to server via FirebaseMessagingService...');
+      Logger.debug('📤 [FCM] Sending token to server via FirebaseMessagingService...');
       await FirebaseMessagingService.sendTokenToServer(token, userId);
-      debugPrint('✅ [FCM] Token send completed');
+      Logger.debug('✅ [FCM] Token send completed');
     } catch (e, stackTrace) {
-      debugPrint('❌ [FCM] Could not send FCM token to server: $e');
-      debugPrint('❌ [FCM] Stack trace: $stackTrace');
+      Logger.debug('❌ [FCM] Could not send FCM token to server: $e');
+      Logger.debug('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
@@ -2650,34 +2646,34 @@ _isLoading = false;
   /// This handles cases where Firebase might not be initialized yet
   Future<void> _sendFCMTokenAfterLogin() async {
     if (_user == null) {
-      debugPrint('⚠️ [FCM] Cannot send token: user is null');
+      Logger.debug('⚠️ [FCM] Cannot send token: user is null');
       return;
     }
     
-    debugPrint('🔄 [FCM] Attempting to save FCM token after login for user: ${_user!.id}');
+    Logger.debug('🔄 [FCM] Attempting to save FCM token after login for user: ${_user!.id}');
     
     // Try immediately
     try {
       await FirebaseMessagingService.registerCurrentToken(forceRefresh: true);
-      debugPrint('✅ [FCM] Token registration attempted after login');
+      Logger.debug('✅ [FCM] Token registration attempted after login');
       return; // Success path will be handled inside registration
     } catch (e, stackTrace) {
-      debugPrint('⚠️ [FCM] Could not register FCM token immediately after login: $e');
-      debugPrint('⚠️ [FCM] Stack trace: $stackTrace');
+      Logger.debug('⚠️ [FCM] Could not register FCM token immediately after login: $e');
+      Logger.debug('⚠️ [FCM] Stack trace: $stackTrace');
     }
     
     // If token not available, retry after delays (Firebase might still be initializing)
-    debugPrint('🔄 [FCM] Token not available immediately, will retry...');
+    Logger.debug('🔄 [FCM] Token not available immediately, will retry...');
     
     // Retry after 2 seconds
     Future.delayed(const Duration(seconds: 2), () async {
       if (_user == null) return;
       try {
         await FirebaseMessagingService.registerCurrentToken();
-        debugPrint('✅ [FCM] Token registration attempted on retry (2s)');
+        Logger.debug('✅ [FCM] Token registration attempted on retry (2s)');
           return;
       } catch (e) {
-        debugPrint('⚠️ [FCM] Token retry (2s) failed: $e');
+        Logger.debug('⚠️ [FCM] Token retry (2s) failed: $e');
       }
       
       // Retry after 5 seconds
@@ -2685,9 +2681,9 @@ _isLoading = false;
         if (_user == null) return;
         try {
           await FirebaseMessagingService.registerCurrentToken();
-          debugPrint('✅ [FCM] Token registration attempted on retry (5s)');
+          Logger.debug('✅ [FCM] Token registration attempted on retry (5s)');
         } catch (e) {
-          debugPrint('⚠️ [FCM] Token retry (5s) failed: $e');
+          Logger.debug('⚠️ [FCM] Token retry (5s) failed: $e');
         }
       });
     });

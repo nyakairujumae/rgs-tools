@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/admin_position.dart';
 import 'supabase_service.dart';
+import '../utils/logger.dart';
 
 /// Service to manage admin positions and permissions
 class AdminPositionService {
@@ -17,7 +18,7 @@ class AdminPositionService {
           .map((json) => AdminPosition.fromJson(json))
           .toList();
     } catch (e) {
-      debugPrint('❌ Error loading admin positions: $e');
+      Logger.debug('❌ Error loading admin positions: $e');
       return [];
     }
   }
@@ -34,7 +35,7 @@ class AdminPositionService {
       if (response == null) return null;
       return AdminPosition.fromJson(response);
     } catch (e) {
-      debugPrint('❌ Error loading position by ID: $e');
+      Logger.debug('❌ Error loading position by ID: $e');
       return null;
     }
   }
@@ -51,7 +52,7 @@ class AdminPositionService {
       if (response == null) return null;
       return AdminPosition.fromJson(response);
     } catch (e) {
-      debugPrint('❌ Error loading position by name: $e');
+      Logger.debug('❌ Error loading position by name: $e');
       return null;
     }
   }
@@ -71,7 +72,7 @@ class AdminPositionService {
 
       return getPositionById(userResponse['position_id'] as String);
     } catch (e) {
-      debugPrint('❌ Error loading user position: $e');
+      Logger.debug('❌ Error loading user position: $e');
       return null;
     }
   }
@@ -86,7 +87,7 @@ class AdminPositionService {
       if (position == null) return false;
       return position.hasPermission(permissionName);
     } catch (e) {
-      debugPrint('❌ Error checking user permission: $e');
+      Logger.debug('❌ Error checking user permission: $e');
       return false;
     }
   }
@@ -99,9 +100,9 @@ class AdminPositionService {
           .update({'position_id': positionId})
           .eq('id', userId);
       
-      debugPrint('✅ Updated user position: $userId -> $positionId');
+      Logger.debug('✅ Updated user position: $userId -> $positionId');
     } catch (e) {
-      debugPrint('❌ Error updating user position: $e');
+      Logger.debug('❌ Error updating user position: $e');
       rethrow;
     }
   }
