@@ -98,6 +98,7 @@ enum NotificationType {
   accessRequest('access_request', 'Access Request'),
   toolRequest('tool_request', 'Tool Request'),
   toolAssignment('tool_assignment', 'Tool Assignment'),
+  toolReleased('tool_released', 'Tool Released'),
   maintenanceRequest('maintenance_request', 'Maintenance Request'),
   issueReport('issue_report', 'Issue Report'),
   userApproved('user_approved', 'User Approved'),
@@ -117,6 +118,8 @@ enum NotificationType {
       case 'tool_assignment':
       case 'tool_assigned':
         return NotificationType.toolAssignment;
+      case 'tool_released':
+        return NotificationType.toolReleased;
       case 'maintenance_request':
         return NotificationType.maintenanceRequest;
       case 'issue_report':

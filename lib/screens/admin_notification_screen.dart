@@ -448,6 +448,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Icons.build;
       case NotificationType.toolAssignment:
         return Icons.assignment_ind;
+      case NotificationType.toolReleased:
+        return Icons.move_to_inbox;
       case NotificationType.maintenanceRequest:
         return Icons.build_circle;
       case NotificationType.issueReport:
@@ -467,6 +469,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         return Colors.green;
       case NotificationType.toolAssignment:
         return Colors.orange;
+      case NotificationType.toolReleased:
+        return Colors.teal;
       case NotificationType.maintenanceRequest:
         return Colors.orange;
       case NotificationType.issueReport:
@@ -482,15 +486,18 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
-    // Handle negative difference (clock skew or future timestamp)
-    if (difference.isNegative || difference.inMinutes < 1) {
+    // Use absolute difference to handle minor clock skew (future timestamps)
+    final diff = difference.isNegative ? Duration.zero : difference;
+    if (diff.inSeconds < 10) {
       return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+    } else if (diff.inSeconds < 60) {
+      return '${diff.inSeconds}s ago';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
     } else {
-      return '${difference.inDays}d ago';
+      return '${diff.inDays}d ago';
     }
   }
 
@@ -629,6 +636,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         targetScreen = const ToolIssuesScreen();
         break;
       case NotificationType.toolAssignment:
+      case NotificationType.toolReleased:
       case NotificationType.userApproved:
       case NotificationType.general:
         return false;

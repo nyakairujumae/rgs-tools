@@ -308,6 +308,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Tool Request';
       case NotificationType.toolAssignment:
         return 'Tool Assignment Declined';
+      case NotificationType.toolReleased:
+        return 'Tool Release';
       case NotificationType.maintenanceRequest:
         return 'Maintenance Request';
       case NotificationType.issueReport:
@@ -327,6 +329,8 @@ class AdminNotificationProvider extends ChangeNotifier {
         return 'Technician $technicianName requested a tool';
       case NotificationType.toolAssignment:
         return 'Technician $technicianName declined a tool assignment';
+      case NotificationType.toolReleased:
+        return 'Tool release update from $technicianName';
       case NotificationType.maintenanceRequest:
         return 'Technician $technicianName requested maintenance for a tool';
       case NotificationType.issueReport:

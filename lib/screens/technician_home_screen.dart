@@ -1498,15 +1498,18 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
-    // Handle negative difference (clock skew or future timestamp)
-    if (difference.isNegative || difference.inMinutes < 1) {
+    // Use absolute difference to handle minor clock skew (future timestamps)
+    final diff = difference.isNegative ? Duration.zero : difference;
+    if (diff.inSeconds < 10) {
       return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+    } else if (diff.inSeconds < 60) {
+      return '${diff.inSeconds}s ago';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
     } else {
-      return '${difference.inDays}d ago';
+      return '${diff.inDays}d ago';
     }
   }
 
@@ -1524,9 +1527,18 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
     final authProvider = context.read<AuthProvider>();
     final isToolRequestForCurrentHolder = type == 'tool_request' &&
         data != null &&
-        (data['owner_id']?.toString() == authProvider.userId);
-    final isToolReleasedForCurrentUser = type == 'tool_released' && data != null;
-    final isToolAssignedForCurrentUser = (type == 'tool_assigned' || type == 'tool_assignment') && data != null && data['tool_id'] != null;
+        (data['owner_id']?.toString() == authProvider.userId) &&
+        data['action_taken'] == null;
+    final isToolReleasedForCurrentUser = type == 'tool_released' &&
+        data != null &&
+        data['released_by_id'] != null &&
+        data['action_taken'] == null &&
+        data['accepted_by_id'] == null &&
+        data['declined_by_id'] == null;
+    final isToolAssignedForCurrentUser = (type == 'tool_assigned' || type == 'tool_assignment') &&
+        data != null &&
+        data['tool_id'] != null &&
+        data['action_taken'] == null;
     final requesterName = data?['requester_name']?.toString() ?? 'the requester';
     
     showDialog(
@@ -1640,6 +1652,49 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                   ),
                 ],
               ),
+              // Show completed status if action was already taken
+              if (data != null && data['action_taken'] != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: data['action_taken'] == 'declined'
+                        ? Colors.orange.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: data['action_taken'] == 'declined'
+                          ? Colors.orange.withValues(alpha: 0.3)
+                          : Colors.green.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        data['action_taken'] == 'declined'
+                            ? Icons.cancel_outlined
+                            : Icons.check_circle_outline,
+                        size: 16,
+                        color: data['action_taken'] == 'declined' ? Colors.orange : Colors.green,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        data['action_taken'] == 'declined'
+                            ? 'You declined this'
+                            : data['action_taken'] == 'released'
+                                ? 'You released this tool'
+                                : 'You accepted this',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: data['action_taken'] == 'declined' ? Colors.orange : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               // Accept/Decline buttons for tool assignment
               if (isToolAssignedForCurrentUser) ...[
                 const SizedBox(height: 20),
@@ -1734,7 +1789,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
               ),
             ),
           ],
-          if (!isToolAssignedForCurrentUser && !isToolReleasedForCurrentUser)
+          if (!isToolAssignedForCurrentUser && !isToolReleasedForCurrentUser && !isToolRequestForCurrentHolder)
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               style: TextButton.styleFrom(
@@ -1754,6 +1809,35 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         ],
       ),
     );
+  }
+
+  /// Patches the notification's data field in the DB with [updates] so that
+  /// re-opening it reflects the new state (e.g. action_taken, accepted_by_id).
+  Future<void> _markNotificationActedOn(
+    Map<String, dynamic> notification,
+    Map<String, dynamic> updates,
+  ) async {
+    final notificationId = notification['id']?.toString();
+    if (notificationId == null) return;
+    final currentData = notification['data'];
+    final mergedData = {
+      if (currentData is Map) ...Map<String, dynamic>.from(currentData),
+      ...updates,
+    };
+    try {
+      // Try technician_notifications first (most tool-action notifications land here)
+      final result = await SupabaseService.client
+          .from('technician_notifications')
+          .update({'data': mergedData})
+          .eq('id', notificationId)
+          .select();
+      if ((result as List).isEmpty) {
+        await SupabaseService.client
+            .from('admin_notifications')
+            .update({'data': mergedData})
+            .eq('id', notificationId);
+      }
+    } catch (_) {}
   }
 
   Future<void> _releaseToolToRequester(
@@ -1827,31 +1911,36 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
       await SupabaseService.client.from('technician_notifications').insert({
         'user_id': requesterId,
-        'title': 'Tool Offered to You: $toolName',
-        'message': '$holderName wants to release the $toolName to you. Tap to accept or decline.',
-        'type': 'tool_released',
+        'title': 'Tool Assignment: $toolName',
+        'message': '$holderName wants to release the $toolName to you. Please accept or decline.',
+        'type': 'tool_assigned',
         'is_read': false,
         'timestamp': DateTime.now().toIso8601String(),
         'data': {
           'tool_id': toolId,
           'tool_name': toolName,
-          'released_by_id': authProvider.userId,
-          'released_by_name': holderName,
+          'assigned_by_name': holderName,
+          'assigned_by_id': authProvider.userId,
+          'assignment_type': 'release',
         },
       });
 
       try {
         await PushNotificationService.sendToUser(
           userId: requesterId,
-          title: 'Tool Offered to You: $toolName',
+          title: 'Tool Assignment: $toolName',
           body: '$holderName wants to release the $toolName to you. Tap to accept or decline.',
           data: {
-            'type': 'tool_released',
+            'type': 'tool_assigned',
             'tool_id': toolId,
             'tool_name': toolName,
+            'assigned_by_name': holderName,
+            'assigned_by_id': authProvider.userId ?? '',
           },
         );
       } catch (_) {}
+
+      await _markNotificationActedOn(notification, {'action_taken': 'released'});
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1952,6 +2041,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         } catch (_) {}
       }
 
+      await _markNotificationActedOn(notification, {'action_taken': 'accepted', 'accepted_by_id': currentUserId});
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You have accepted the $toolName. It is now assigned to you.'), backgroundColor: Colors.green, duration: const Duration(seconds: 3)),
@@ -2025,6 +2116,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         } catch (_) {}
       }
 
+      await _markNotificationActedOn(notification, {'action_taken': 'declined', 'declined_by_id': currentUserId});
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You declined the $toolName. It is now available.'), backgroundColor: Colors.orange, duration: const Duration(seconds: 3)),
@@ -2084,6 +2177,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
       await toolProvider.loadTools();
       UserNameService.clearCacheForUser(currentUserId);
+
+      await _markNotificationActedOn(notification, {'action_taken': 'accepted', 'accepted_by_id': currentUserId});
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2153,6 +2248,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           fromUserId: currentUserId,
         );
       } catch (_) {}
+
+      await _markNotificationActedOn(notification, {'action_taken': 'declined', 'declined_by_id': currentUserId});
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

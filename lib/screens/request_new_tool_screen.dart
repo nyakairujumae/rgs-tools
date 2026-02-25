@@ -1076,7 +1076,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
       case RequestTypes.toolPurchase:
         return '$requesterName requested ${_quantityCtrl.text.trim()} x ${_nameCtrl.text.trim()}';
       case RequestTypes.toolAssignment:
-        return '$requesterName requested to assign ${_toolNameCtrl.text.trim()} to ${_technicianNameCtrl.text.trim()}';
+        return '$requesterName requested a tool assignment';
       case RequestTypes.transfer:
         return '$requesterName requested to transfer ${_toolNameCtrl.text.trim()} from ${_fromLocationCtrl.text.trim()} to ${_toLocationCtrl.text.trim()}';
       case RequestTypes.maintenance:

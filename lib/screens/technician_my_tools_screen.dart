@@ -7,7 +7,6 @@ import '../providers/auth_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
-import '../utils/responsive_helper.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
@@ -55,12 +54,12 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
   Future<void> _openAddTool() async {
     final authProvider = context.read<AuthProvider>();
     final isAdmin = authProvider.isAdmin;
-    
+
     final added = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => isAdmin 
-            ? const AddToolScreen(isFromMyTools: true) 
+        builder: (context) => isAdmin
+            ? const AddToolScreen(isFromMyTools: true)
             : const TechnicianAddToolScreen(),
       ),
     );
@@ -72,50 +71,13 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: isDarkMode ? colorScheme.surface : context.appBarBackground, // ChatGPT-style: pure white
-        elevation: 0, // ChatGPT-style: no elevation
-        shadowColor: Colors.transparent,
-        scrolledUnderElevation: 6,
-        foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(
-              Icons.chevron_left,
-              size: 28,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        title: Text(
-          'My Tools',
-          style: TextStyle(
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-            fontWeight: FontWeight.w600,
-            color: theme.textTheme.bodyLarge?.color,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: SafeArea(
-          bottom: false,
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          color: theme.scaffoldBackgroundColor,
           child: Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
             builder: (context, toolProvider, authProvider, connectivityProvider, child) {
               final currentUserId = authProvider.userId;
@@ -141,96 +103,121 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
 
               return Column(
                 children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.chevron_left,
+                            size: 28,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 4),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'My Tools',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Tools currently assigned to you',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Search and Filter Bar
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 12.0),
                     child: Column(
-                        children: [
+                      children: [
                         // Compact Search Bar
-                          TextField(
-                            controller: _searchController,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            decoration: context.chatGPTInputDecoration.copyWith(
-                              hintText: 'Search tools...',
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.45),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                size: 18,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.45),
-                              ),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear,
-                                        size: 18,
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.45),
-                                      ),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        FocusScope.of(context).unfocus();
-                                      },
-                                    )
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
+                        TextField(
+                          controller: _searchController,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          const SizedBox(height: 12),
+                          decoration: context.chatGPTInputDecoration.copyWith(
+                            hintText: 'Search tools...',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: theme.colorScheme.onSurface.withOpacity(0.45),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              size: 18,
+                              color: theme.colorScheme.onSurface.withOpacity(0.45),
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      size: 18,
+                                      color: theme.colorScheme.onSurface.withOpacity(0.45),
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                  )
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
 
-                        // Professional Filter Row
+                        // Filter Row
                         Row(
                           children: [
                             // Category Filter
                             Expanded(
                               child: Container(
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.cardSurfaceColor(context),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: AppTheme.subtleBorder,
-                                    width: 1.1,
-                                  ),
-                                  boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
+                                height: 40,
+                                decoration: context.cardDecoration.copyWith(
+                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                  color: context.cardBackground,
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _selectedCategory,
                                     isExpanded: true,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     icon: Icon(
                                       Icons.keyboard_arrow_down,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      size: 20,
+                                      color: theme.colorScheme.onSurface,
+                                      size: 18,
                                     ),
                                     style: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.color,
-                                      fontSize: 14,
+                                      color: theme.textTheme.bodyLarge?.color,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
-                                    selectedItemBuilder:
-                                        (BuildContext context) {
+                                    selectedItemBuilder: (BuildContext context) {
                                       return categories.map((category) {
                                         return Align(
                                           alignment: Alignment.centerLeft,
@@ -238,24 +225,18 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                             children: [
                                               Icon(
                                                 _getCategoryIcon(category),
-                                                size: 18,
+                                                size: 16,
                                                 color: category == 'Category'
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.35)
-                                                    : _getCategoryIconColor(
-                                                        category),
+                                                    ? theme.colorScheme.onSurface.withOpacity(0.35)
+                                                    : _getCategoryIconColor(category),
                                               ),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 4),
                                               Text(
                                                 category,
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: 12,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface,
+                                                  color: theme.colorScheme.onSurface,
                                                 ),
                                               ),
                                             ],
@@ -263,50 +244,36 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                         );
                                       }).toList();
                                     },
-                                    dropdownColor:
-                                        AppTheme.cardSurfaceColor(context),
+                                    dropdownColor: context.cardBackground,
                                     menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                     items: categories.map((category) {
                                       return DropdownMenuItem<String>(
                                         value: category,
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
-                              children: [
-                                Icon(
+                                            children: [
+                                              Icon(
                                                 _getCategoryIcon(category),
-                                                size: 18,
+                                                size: 16,
                                                 color: category == 'Category'
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withOpacity(0.35)
-                                                    : _getCategoryIconColor(
-                                                        category),
+                                                    ? theme.colorScheme.onSurface.withOpacity(0.35)
+                                                    : _getCategoryIconColor(category),
                                               ),
-                                              SizedBox(width: 12),
+                                              const SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
                                                   category,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                  overflow: TextOverflow.ellipsis,
                                                   style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        category == 'Category'
-                                                            ? FontWeight.normal
-                                                            : FontWeight.w500,
-                                                    color: category ==
-                                                            'Category'
-                                                        ? Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.6)
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface,
+                                                    fontSize: 12,
+                                                    fontWeight: category == 'Category'
+                                                        ? FontWeight.normal
+                                                        : FontWeight.w500,
+                                                    color: category == 'Category'
+                                                        ? theme.colorScheme.onSurface.withOpacity(0.6)
+                                                        : theme.colorScheme.onSurface,
                                                   ),
                                                 ),
                                               ),
@@ -324,70 +291,51 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             // Status Filter
                             Expanded(
                               child: Container(
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.cardSurfaceColor(context),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: AppTheme.subtleBorder,
-                                    width: 1.1,
-                                  ),
-                                  boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
+                                height: 40,
+                                decoration: context.cardDecoration.copyWith(
+                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
+                                  color: context.cardBackground,
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _selectedStatus,
                                     isExpanded: true,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     icon: Icon(
                                       Icons.keyboard_arrow_down,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      size: 20,
+                                      color: theme.colorScheme.onSurface,
+                                      size: 18,
                                     ),
                                     style: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.color,
-                                      fontSize: 14,
+                                      color: theme.textTheme.bodyLarge?.color,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
-                                    dropdownColor:
-                                        AppTheme.cardSurfaceColor(context),
+                                    dropdownColor: context.cardBackground,
                                     menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
                                     items: [
                                       DropdownMenuItem<String>(
                                         value: 'All',
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
                                             children: [
                                               Icon(
                                                 Icons.filter_list_outlined,
-                                                size: 18,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withOpacity(0.35),
+                                                size: 16,
+                                                color: theme.colorScheme.onSurface.withOpacity(0.35),
                                               ),
-                                              SizedBox(width: 12),
-                                Text(
+                                              const SizedBox(width: 8),
+                                              Text(
                                                 'Status',
                                                 style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withOpacity(0.6),
+                                                  fontSize: 12,
+                                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                                                 ),
                                               ),
                                             ],
@@ -397,17 +345,12 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                       DropdownMenuItem<String>(
                                         value: 'Available',
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
                                             children: [
-                                              Icon(
-                                                Icons.check_circle_outline,
-                                                size: 18,
-                                                color: Colors.green,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text('Available'),
+                                              const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                                              const SizedBox(width: 8),
+                                              const Text('Available'),
                                             ],
                                           ),
                                         ),
@@ -415,17 +358,12 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                       DropdownMenuItem<String>(
                                         value: 'Assigned',
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
                                             children: [
-                                              Icon(
-                                                Icons.build_outlined,
-                                                size: 18,
-                                                color: Colors.blue,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text('Assigned'),
+                                              const Icon(Icons.build_outlined, size: 16, color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              const Text('Assigned'),
                                             ],
                                           ),
                                         ),
@@ -433,17 +371,12 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                       DropdownMenuItem<String>(
                                         value: 'In Use',
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
                                             children: [
-                                              Icon(
-                                                Icons.build_outlined,
-                                                size: 18,
-                                                color: Colors.blue,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text('In Use'),
+                                              const Icon(Icons.build_outlined, size: 16, color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              const Text('In Use'),
                                             ],
                                           ),
                                         ),
@@ -451,17 +384,12 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                                       DropdownMenuItem<String>(
                                         value: 'Maintenance',
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
                                           child: Row(
                                             children: [
-                                              Icon(
-                                                Icons.warning_amber_outlined,
-                                                size: 18,
-                                                color: Colors.orange,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text('Maintenance'),
+                                              const Icon(Icons.warning_amber_outlined, size: 16, color: Colors.orange),
+                                              const SizedBox(width: 8),
+                                              const Text('Maintenance'),
                                             ],
                                           ),
                                         ),
@@ -486,7 +414,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                   if (isOffline)
                     Container(
                       width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.orange,
@@ -504,88 +432,81 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                       ),
                     ),
 
-                  // Tools List
+                  // Tools Grid
                   Expanded(
-                    child: toolProvider.isLoading
-                        ? const ToolCardGridSkeleton(
+                    child: isOffline && !toolProvider.isLoading
+                        ? OfflineToolGridSkeleton(
                             itemCount: 6,
                             crossAxisCount: 2,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 12.0,
-                            childAspectRatio: 0.75,
+                            message: 'You are offline. Showing cached data.',
                           )
-                        : filteredTools.isEmpty
-                            ? RefreshIndicator(
-                                onRefresh: () async {
-                                  await toolProvider.loadTools();
-                                },
-                                child: SingleChildScrollView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  child: Container(
-                                    height: MediaQuery.of(context).size.height * 0.6,
-                                    alignment: Alignment.center,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.build,
-                                          size: 64,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.45),
+                        : toolProvider.isLoading
+                            ? const ToolCardGridSkeleton(
+                                itemCount: 6,
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10.0,
+                                mainAxisSpacing: 12.0,
+                                childAspectRatio: 0.75,
+                              )
+                            : filteredTools.isEmpty
+                                ? RefreshIndicator(
+                                    onRefresh: () async {
+                                      await toolProvider.loadTools();
+                                    },
+                                    child: SingleChildScrollView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      child: Container(
+                                        height: MediaQuery.of(context).size.height * 0.6,
+                                        alignment: Alignment.center,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.build_rounded,
+                                              size: 64,
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'No tools found',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              'Tools assigned to you will appear here',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        SizedBox(height: 16),
-                                        Text(
-                                          'No tools found',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withOpacity(0.45),
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Add your first tool to get started',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withOpacity(0.6),
-                            ),
-                          ),
-                        ],
+                                      ),
+                                    ),
+                                  )
+                                : RefreshIndicator(
+                                    onRefresh: () async {
+                                      await toolProvider.loadTools();
+                                    },
+                                    child: GridView.builder(
+                                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 10.0,
+                                        mainAxisSpacing: 12.0,
+                                        childAspectRatio: 0.75,
+                                      ),
+                                      itemCount: filteredTools.length,
+                                      itemBuilder: (context, index) {
+                                        final tool = filteredTools[index];
+                                        return _buildToolCard(tool);
+                                      },
                                     ),
                                   ),
-                                ),
-                              )
-                            : RefreshIndicator(
-                                onRefresh: () async {
-                                  await toolProvider.loadTools();
-                                },
-                                child: GridView.builder(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 10.0,
-                                    mainAxisSpacing: 12.0,
-                                    childAspectRatio:
-                                        0.75, // Square image + consistent details below
-                                  ),
-                                  itemCount: filteredTools.length,
-                        itemBuilder: (context, index) {
-                                    final tool = filteredTools[index];
-                                    return _buildToolCard(tool);
-                                  },
-                                ),
-                              ),
                   ),
                 ],
               );
@@ -604,11 +525,16 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
   }
 
   Widget _buildToolCard(Tool tool) {
+    final cardRadius = context.borderRadiusLarge;
+
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(context, '/tool-detail', arguments: tool);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ToolDetailScreen(tool: tool)),
+        );
       },
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(cardRadius),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -617,63 +543,50 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
           Expanded(
             flex: 1,
             child: AspectRatio(
-              aspectRatio: 1.0, // Perfect square
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardSurfaceColor(context),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: AppTheme.subtleBorder,
-                        width: 1.5,
+              aspectRatio: 1.0,
+              child: Container(
+                decoration: context.cardDecoration.copyWith(
+                  borderRadius: BorderRadius.circular(cardRadius),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    if (tool.imagePath != null && tool.imagePath!.isNotEmpty)
+                      tool.imagePath!.startsWith('http')
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(cardRadius),
+                              child: Image.network(
+                                tool.imagePath!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildPlaceholderImage(),
+                              ),
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(cardRadius),
+                              child: Image.file(
+                                File(tool.imagePath!),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildPlaceholderImage(),
+                              ),
+                            )
+                    else
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(cardRadius),
+                        child: _buildPlaceholderImage(),
                       ),
-                      boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      children: [
-                        // Image content
-                        if (tool.imagePath != null)
-                          (tool.imagePath!.startsWith('http')
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
-                                  child: Image.network(
-                                    tool.imagePath!,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            _buildPlaceholderImage(),
-                                  ),
-                                )
-                              : ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
-                                  child: Image.file(
-                                    File(tool.imagePath!),
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            _buildPlaceholderImage(),
-                                  ),
-                                ))
-                        else
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: _buildPlaceholderImage(),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Details Below Card - Clean and simple
+          // Details Below Card
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Column(
@@ -692,7 +605,6 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 3),
-                // Category as subtitle
                 Text(
                   tool.category,
                   style: TextStyle(
@@ -704,6 +616,8 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
+                _buildStatusPill(tool.status),
               ],
             ),
           ),
@@ -712,27 +626,74 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     );
   }
 
+  Widget _buildStatusPill(String status) {
+    final normalized = status.toLowerCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color textColor;
+    Color backgroundColor;
+
+    switch (normalized) {
+      case 'available':
+        textColor = isDark ? const Color(0xFF34D399) : const Color(0xFF0FA958);
+        backgroundColor = isDark ? const Color(0xFF0FA958).withValues(alpha: 0.15) : const Color(0xFFE9F8F1);
+        break;
+      case 'in use':
+      case 'assigned':
+        textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF3B82F6);
+        backgroundColor = isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : const Color(0xFFEFF6FF);
+        break;
+      case 'maintenance':
+        textColor = isDark ? const Color(0xFFFCA5A5) : const Color(0xFFD9534F);
+        backgroundColor = isDark ? const Color(0xFFD9534F).withValues(alpha: 0.15) : const Color(0xFFFCEAEA);
+        break;
+      default:
+        textColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
+        backgroundColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          fontSize: 8.5,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
   Widget _buildPlaceholderImage() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.cardSurfaceColor(context),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF5F5F7),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.build,
+            Icons.build_rounded,
             size: 40,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'No Image',
             style: TextStyle(
               fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
             ),
           ),
         ],
