@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'RGS Tools - Enterprise Management',
-  description: 'Professional tool and equipment management for FM, HVAC, and cleaning companies',
+  title: 'RGS Tools - Tools Management Software',
+  description: 'Tools management software for FM, HVAC, and cleaning companies',
   icons: {
     icon: '/icon.png',
     apple: '/icon.png',
