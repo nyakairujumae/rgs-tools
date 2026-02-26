@@ -19,6 +19,7 @@ import '../providers/connectivity_provider.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import 'tool_detail_screen.dart';
+import 'tools_screen.dart';
 import '../services/push_notification_service.dart';
 import '../utils/logger.dart';
 
@@ -123,6 +124,32 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                             ],
                           ),
                         ),
+                        if (!isTechnician)
+                          Material(
+                            color: Colors.transparent,
+                            child: IconButton(
+                              onPressed: () async {
+                                final updated = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ToolsScreen(
+                                      isSelectionMode: true,
+                                      selectionForShared: true,
+                                    ),
+                                  ),
+                                );
+                                if (updated == true && context.mounted) {
+                                  await context.read<SupabaseToolProvider>().loadTools();
+                                }
+                              },
+                              icon: const Icon(Icons.add, size: 26, color: Colors.white),
+                              tooltip: 'Add shared tool',
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],

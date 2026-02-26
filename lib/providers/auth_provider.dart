@@ -1877,9 +1877,6 @@ _isLoading = false;
       throw Exception('Sign in with Apple is only available on Apple devices.');
     }
 
-    _isLoading = true;
-    notifyListeners();
-
     try {
       final isAvailable = await SignInWithApple.isAvailable();
       if (!isAvailable) {
@@ -1891,6 +1888,8 @@ _isLoading = false;
       final rawNonce = _generateNonce();
       final hashedNonce = _sha256ofString(rawNonce);
 
+      // Do not set loading here – wait until after user has signed in with Apple so the
+      // "Logging in…" overlay does not show before the Apple sheet.
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -1906,6 +1905,9 @@ _isLoading = false;
           );
         },
       );
+
+      _isLoading = true;
+      notifyListeners();
 
       final idToken = credential.identityToken;
       if (idToken == null || idToken.isEmpty) {
@@ -1939,6 +1941,8 @@ _isLoading = false;
         Logger.debug('⚠️ Could not load role after Apple sign-in: $e');
       }
     } on SignInWithAppleAuthorizationException catch (e) {
+      _isLoading = false;
+      notifyListeners();
       if (e.code == AuthorizationErrorCode.canceled) {
         Logger.debug('ℹ️ Apple sign-in cancelled by user');
         return;
@@ -1946,13 +1950,14 @@ _isLoading = false;
       Logger.debug('❌ Apple sign-in failed: ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
+      _isLoading = false;
+      notifyListeners();
       Logger.debug('❌ Error during Apple sign-in: $e');
       Logger.debug('Stack trace: $stackTrace');
       rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+    // On success, leave _isLoading true so the login screen overlay stays until it navigates.
+    // The login screen will call resetLoadingState() right before pushReplacement.
   }
   
   /// Assign role to OAuth user (called after they select admin or technician)

@@ -230,30 +230,67 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           ),
                           const SizedBox(width: 8),
                         ],
-                        Text(
-                          AppLocalizations.of(context).technicians_title,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context).technicians_title,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              if (_selectedTools == null) const SizedBox(height: 4),
+                              if (_selectedTools == null)
+                                Text(
+                                  AppLocalizations.of(context).technicians_subtitle,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.55),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
+                        if (_selectedTools == null)
+                          Material(
+                            color: Colors.transparent,
+                            child: IconButton(
+                              onPressed: _showAddTechnicianDialog,
+                              icon: const Icon(
+                                Icons.add,
+                                size: 26,
+                                color: Colors.white,
+                              ),
+                              tooltip: 'Add Technician',
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                    child: Text(
-                      AppLocalizations.of(context).technicians_subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.55),
+                  if (_selectedTools != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                      child: Text(
+                        AppLocalizations.of(context).technicians_subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.55),
+                        ),
                       ),
                     ),
-                  ),
                   // Assignment Instructions (only show when assigning tools)
                   if (_selectedTools != null)
                     Container(
@@ -478,30 +515,15 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           _assignToolsToTechnicians();
                         }
                       : null,
-                  icon: Icon(Icons.assignment_turned_in),
+                  icon: const Icon(Icons.assignment_turned_in),
                   label: Text(_selectedTechnicians.isNotEmpty
                       ? 'Assign ${_selectedTools!.length} Tool${_selectedTools!.length > 1 ? 's' : ''} to ${_selectedTechnicians.length} Technician${_selectedTechnicians.length > 1 ? 's' : ''}'
                       : 'Select Technicians First'),
                   backgroundColor: _selectedTechnicians.isNotEmpty
-                      ? Colors.green
+                      ? AppTheme.secondaryColor
                       : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 )
-              : Padding(
-                  padding: const EdgeInsets.only(right: 16, bottom: 16),
-                  child: SizedBox(
-                    height: 52,
-                    width: 52,
-                    child: FloatingActionButton(
-                      onPressed: _showAddTechnicianDialog,
-              backgroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(context.borderRadiusLarge),
-              ),
-              elevation: 0, // No elevation - clean design
-                      child: const Icon(Icons.add, color: Colors.white, size: 24),
-                    ),
-                  ),
-                ),
+              : null,
         );
       },
     );
@@ -752,6 +774,21 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               child: Text(
                 technician.department?.isNotEmpty == true
                     ? technician.department!
+                    : '-',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Phone
+            Expanded(
+              flex: 2,
+              child: Text(
+                technician.phone?.trim().isNotEmpty == true
+                    ? technician.phone!
                     : '-',
                 style: TextStyle(
                   fontSize: 12,

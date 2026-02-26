@@ -8,6 +8,7 @@ import "../providers/supabase_tool_provider.dart";
 import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/approval_workflows_provider.dart';
+import '../providers/supabase_certification_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
@@ -30,6 +31,7 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   String _selectedPeriod = 'Last 30 Days';
   ReportType _selectedReportType = ReportType.comprehensive;
+  ReportFormat _selectedFormat = ReportFormat.pdf;
   bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -89,6 +91,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'description': 'Complete transaction history and status changes',
       'icon': Icons.history,
     },
+    ReportType.calibration: {
+      'name': 'Calibration Report',
+      'description': 'Calibration certificates status, expiry tracking and scheduled calibrations',
+      'icon': Icons.straighten,
+    },
+    ReportType.compliance: {
+      'name': 'Compliance Report',
+      'description': 'All certification types, compliance rate and attention-required items',
+      'icon': Icons.verified_outlined,
+    },
   };
 
   @override
@@ -103,6 +115,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         context.read<SupabaseTechnicianProvider>().loadTechnicians(),
         context.read<ToolIssueProvider>().loadIssues(),
         context.read<ApprovalWorkflowsProvider>().loadWorkflows(),
+        context.read<SupabaseCertificationProvider>().loadAll(),
       ]);
     });
   }
@@ -225,10 +238,145 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.download_rounded),
-              onPressed: _exportReport,
-              tooltip: 'Export Report',
+            Theme(
+              data: Theme.of(context).copyWith(
+                popupMenuTheme: PopupMenuThemeData(
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFF1E2128)
+                      : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 8,
+                  shadowColor: Colors.black.withValues(alpha: 0.12),
+                  textStyle: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              child: PopupMenuButton<ReportFormat>(
+                icon: Icon(
+                  Icons.download_rounded,
+                  color: theme.colorScheme.onSurface,
+                ),
+                tooltip: 'Export Report',
+                offset: const Offset(0, 8),
+                onSelected: (format) {
+                  setState(() => _selectedFormat = format);
+                  _exportReport(format: format);
+                },
+                itemBuilder: (context) {
+                  final showExcel = _selectedReportType != ReportType.calibration &&
+                      _selectedReportType != ReportType.compliance;
+
+                  return [
+                    PopupMenuItem<ReportFormat>(
+                      enabled: false,
+                      height: 36,
+                      child: Text(
+                        'EXPORT FORMAT',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                    PopupMenuItem<ReportFormat>(
+                      value: ReportFormat.pdf,
+                      height: 48,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.picture_as_pdf_outlined,
+                              size: 18,
+                              color: Color(0xFFE53935),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Export as PDF',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              Text(
+                                'Formatted report document',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (showExcel) ...[
+                      PopupMenuDivider(height: 1),
+                      PopupMenuItem<ReportFormat>(
+                        value: ReportFormat.excel,
+                        height: 48,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E7E34).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.table_chart_outlined,
+                                size: 18,
+                                color: Color(0xFF1E7E34),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Export as Excel',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  'Spreadsheet with raw data',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ];
+                },
+              ),
             ),
         ],
       ),
@@ -432,9 +580,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) => Column(
           mainAxisSize: MainAxisSize.min,
@@ -868,7 +1016,51 @@ class _ReportsScreenState extends State<ReportsScreen> {
         return _buildHistoryDetailed(tools, technicianProvider);
       case ReportType.comprehensive:
         return _buildComprehensiveDetailed(tools, technicians, issues, workflows, technicianProvider);
+      case ReportType.calibration:
+      case ReportType.compliance:
+        return _buildCalibrationCompliancePlaceholder();
     }
+  }
+
+  Widget _buildCalibrationCompliancePlaceholder() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _selectedReportType == ReportType.calibration
+                  ? Icons.straighten
+                  : Icons.verified_outlined,
+              size: 48,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _selectedReportType == ReportType.calibration
+                  ? 'Calibration Report'
+                  : 'Compliance Report',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap the download button to generate and view this report as a PDF.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildToolsInventoryDetailed(List tools, SupabaseTechnicianProvider technicianProvider) {
@@ -2423,7 +2615,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  Future<void> _exportReport() async {
+  Future<void> _exportReport({ReportFormat format = ReportFormat.pdf}) async {
     setState(() {
       _isExporting = true;
     });
@@ -2433,6 +2625,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final technicianProvider = context.read<SupabaseTechnicianProvider>();
       final issueProvider = context.read<ToolIssueProvider>();
       final workflowProvider = context.read<ApprovalWorkflowsProvider>();
+      final certificationProvider = context.read<SupabaseCertificationProvider>();
 
       // Always refresh data from database to ensure reports have latest information
       await Future.wait([
@@ -2440,21 +2633,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
         technicianProvider.loadTechnicians(),
         issueProvider.loadIssues(),
         workflowProvider.loadWorkflows(),
+        certificationProvider.loadAll(),
       ]);
 
       final startDate = _getStartDate();
       final endDate = DateTime.now();
 
-      // Use PDF format for all reports - table-based PDFs similar to Excel sheets
+      // Calibration/Compliance only support PDF
+      final effectiveFormat = (_selectedReportType == ReportType.calibration ||
+              _selectedReportType == ReportType.compliance)
+          ? ReportFormat.pdf
+          : format;
+
       final file = await ReportService.generateReport(
         reportType: _selectedReportType,
         tools: toolProvider.tools,
         technicians: technicianProvider.technicians,
         issues: issueProvider.issues,
         workflows: workflowProvider.workflows,
+        certifications: certificationProvider.certifications,
+        maintenanceSchedules: certificationProvider.calibrationSchedules,
         startDate: startDate,
         endDate: endDate,
-        format: ReportFormat.pdf,
+        format: effectiveFormat,
       );
 
       if (file == null) {

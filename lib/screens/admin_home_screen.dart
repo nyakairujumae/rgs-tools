@@ -359,60 +359,34 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   leadingWidth: 64,
                   leading: Consumer<AdminNotificationProvider>(
                     builder: (context, notificationProvider, child) {
+                      final count = notificationProvider.unreadCount;
                       return Padding(
                         padding: const EdgeInsets.only(left: 8.0),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined),
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AdminNotificationScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (notificationProvider.unreadCount > 0)
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: notificationProvider.unreadCount > 9 ? 4 : 5,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF28B82),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  child: Text(
-                                    notificationProvider.unreadCount > 99 
-                                        ? '99+' 
-                                        : '${notificationProvider.unreadCount}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.0,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
+                        child: IconButton(
+                          icon: Badge(
+                            isLabelVisible: count > 0,
+                            label: Text(
+                              count > 99 ? '99+' : count.toString(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
                               ),
-                          ],
+                            ),
+                            backgroundColor: AppTheme.badgeColor,
+                            textColor: Colors.white,
+                            child: const Icon(Icons.notifications_outlined),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AdminNotificationScreen(),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },

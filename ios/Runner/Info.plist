@@ -37,23 +37,14 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<!-- Use default ATS (HTTPS only). If you need HTTP for a specific host, add that domain under NSExceptionDomains with a real key, e.g. your-api.example.com -->
 		<key>NSAppTransportSecurity</key>
 		<dict>
-			<key>NSExceptionDomains</key>
-			<dict>
-				<key>New Exception Domain</key>
-				<dict>
-					<key>NSExceptionAllowsInsecureHTTPLoads</key>
-					<true/>
-					<key>NSIncludesSubdomains</key>
-					<true/>
-				</dict>
-			</dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<false/>
 		</dict>
 		<key>NSCameraUsageDescription</key>
 		<string>This app needs access to camera to scan barcodes and take photos of tools.</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>This app needs access to microphone for video recording features.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>This app needs access to photo library to select tool images.</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>

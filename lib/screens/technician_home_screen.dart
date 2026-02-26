@@ -880,37 +880,19 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, size: 24),
-                if (_unreadNotificationCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Center(
-                        child: Text(
-                          _unreadNotificationCount > 99 ? '99+' : _unreadNotificationCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            icon: Badge(
+              isLabelVisible: _unreadNotificationCount > 0,
+              label: Text(
+                _unreadNotificationCount > 99 ? '99+' : _unreadNotificationCount.toString(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  height: 1.0,
+                ),
+              ),
+              backgroundColor: AppTheme.badgeColor,
+              textColor: Colors.white,
+              child: const Icon(Icons.notifications_outlined, size: 24),
             ),
             onPressed: () => _showNotifications(context),
             tooltip: 'Notifications',

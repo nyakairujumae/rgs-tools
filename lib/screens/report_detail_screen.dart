@@ -8,6 +8,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/approval_workflows_provider.dart';
+import '../providers/supabase_certification_provider.dart';
 import '../models/tool_issue.dart';
 import '../models/approval_workflow.dart';
 import '../services/report_service.dart';
@@ -84,6 +85,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         return 'Tool History Report';
       case ReportType.comprehensive:
         return 'Comprehensive Report';
+      case ReportType.calibration:
+        return 'Calibration Report';
+      case ReportType.compliance:
+        return 'Compliance & Certification Report';
     }
   }
 
@@ -107,6 +112,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         return Icons.history;
       case ReportType.comprehensive:
         return Icons.assessment;
+      case ReportType.calibration:
+        return Icons.straighten;
+      case ReportType.compliance:
+        return Icons.verified_outlined;
     }
   }
 
@@ -162,6 +171,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         workflows = workflowProvider.workflows;
       }
 
+      final certificationProvider = Provider.of<SupabaseCertificationProvider>(context, listen: false);
+      if (widget.reportType == ReportType.calibration || widget.reportType == ReportType.compliance) {
+        await certificationProvider.loadAll();
+      }
+
       final startDate = _getStartDate();
       final endDate = DateTime.now();
 
@@ -173,6 +187,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         endDate: endDate,
         issues: issues,
         workflows: workflows,
+        certifications: certificationProvider.certifications,
+        maintenanceSchedules: certificationProvider.calibrationSchedules,
       );
 
       if (mounted) {
@@ -336,6 +352,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         return _buildHistoryReport(tools, technicianProvider);
       case ReportType.comprehensive:
         return _buildComprehensiveReport(tools, technicians, technicianProvider);
+      case ReportType.calibration:
+      case ReportType.compliance:
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              'Tap the download button to generate this report as a PDF.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
     }
   }
 

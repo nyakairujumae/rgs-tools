@@ -1152,7 +1152,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       case 'available':
         return Icons.check_circle;
       case 'in use':
+      case 'assigned':
         return Icons.build;
+      case 'pending acceptance':
+        return Icons.hourglass_top;
       case 'maintenance':
         return Icons.warning;
       case 'retired':
@@ -1170,8 +1173,12 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         return 'Assigned';
       case 'in use':
         return 'In Use';
+      case 'pending acceptance':
+        return 'Pending';
       case 'maintenance':
         return 'Maintenance';
+      case 'retired':
+        return 'Retired';
       default:
         return status;
     }
@@ -1184,6 +1191,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       case 'assigned':
       case 'in use':
         return AppTheme.secondaryColor;
+      case 'pending acceptance':
+        return Colors.orange;
       case 'maintenance':
         return Colors.orange;
       case 'retired':

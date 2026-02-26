@@ -12,6 +12,8 @@ import '../theme/theme_extensions.dart';
 import '../utils/auth_error_handler.dart';
 import 'add_technician_screen.dart';
 import 'technicians_screen.dart';
+import 'tool_detail_screen.dart';
+import '../models/tool.dart';
 import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
 
@@ -482,11 +484,14 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
   Widget _buildToolsTab() {
     return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
-        // Get tools assigned to this technician
-        final assignedTools = toolProvider.tools.where((tool) => 
-          tool.assignedTo == widget.technician.name || 
-          tool.assignedTo == widget.technician.employeeId
-        ).toList();
+        // Get tools assigned to this technician (assigned_to stores technician id or user id)
+        final assignedTools = toolProvider.tools.where((tool) {
+          if (tool.assignedTo == null || tool.assignedTo!.isEmpty) return false;
+          return tool.assignedTo == widget.technician.id ||
+              tool.assignedTo == widget.technician.userId ||
+              tool.assignedTo == widget.technician.name ||
+              tool.assignedTo == widget.technician.employeeId;
+        }).toList();
 
         if (assignedTools.isEmpty) {
           return Center(
@@ -591,8 +596,12 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
                 ),
                 onTap: () {
-                  // Navigate to tool detail screen
-                  // TODO: Implement tool detail navigation
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ToolDetailScreen(tool: tool),
+                    ),
+                  );
                 },
               ),
             );
@@ -605,11 +614,16 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
   Widget _buildIssuesTab() {
     return Consumer<ToolIssueProvider>(
       builder: (context, issueProvider, child) {
-        // Get issues reported by this technician
-        final reportedIssues = issueProvider.issues.where((issue) => 
-          issue.reportedBy.contains(widget.technician.name) ||
-          issue.reportedBy.contains(widget.technician.employeeId ?? '')
-        ).toList();
+        // Get issues reported by this technician (match by user id first, then name for legacy)
+        final reportedIssues = issueProvider.issues.where((issue) {
+          if (issue.reportedByUserId != null && widget.technician.userId != null) {
+            return issue.reportedByUserId == widget.technician.userId;
+          }
+          return issue.reportedBy.contains(widget.technician.name) ||
+              (widget.technician.employeeId != null &&
+                  widget.technician.employeeId!.isNotEmpty &&
+                  issue.reportedBy.contains(widget.technician.employeeId!));
+        }).toList();
 
         if (reportedIssues.isEmpty) {
           return Center(

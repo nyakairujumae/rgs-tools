@@ -9,6 +9,7 @@ import 'tool_detail_screen.dart';
 import 'tool_instances_screen.dart';
 import 'technicians_screen.dart';
 import 'permanent_assignment_screen.dart';
+import 'add_tool_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/loading_widget.dart';
@@ -19,11 +20,13 @@ import '../utils/navigation_helper.dart';
 class ToolsScreen extends StatefulWidget {
   final String? initialStatusFilter;
   final bool isSelectionMode;
+  final bool selectionForShared;
 
   const ToolsScreen({
     super.key,
     this.initialStatusFilter,
     this.isSelectionMode = false,
+    this.selectionForShared = false,
   });
 
   @override
@@ -165,28 +168,56 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Tools',
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 24 : 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  letterSpacing: kIsWeb ? -0.3 : 0,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Tools',
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 24 : 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    letterSpacing: kIsWeb ? -0.3 : 0,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Manage all tools, assignments, and maintenance',
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 14 : 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: kIsWeb ? 0.5 : 0.55),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Manage all tools, assignments, and maintenance',
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 14 : 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: kIsWeb ? 0.5 : 0.55),
+                                  ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          Material(
+                            color: Colors.transparent,
+                            child: IconButton(
+                              onPressed: () async {
+                                final added = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AddToolScreen(),
+                                  ),
+                                );
+                                if (added == true && context.mounted) {
+                                  await toolProvider.loadTools();
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.add,
+                                size: 26,
+                                color: Colors.white,
                               ),
-                            ],
+                              tooltip: 'Add Tool',
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -709,13 +740,25 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {
+                          onTap: () async {
                             final selectedToolsList = toolProvider.tools
                                 .where((t) =>
                                     t.id != null &&
                                     _selectedTools.contains(t.id!))
                                 .toList();
                             if (selectedToolsList.isEmpty) return;
+                            if (widget.selectionForShared) {
+                              for (final tool in selectedToolsList) {
+                                final updated = tool.copyWith(
+                                  toolType: 'shared',
+                                  updatedAt: DateTime.now().toIso8601String(),
+                                );
+                                await toolProvider.updateTool(updated);
+                              }
+                              await toolProvider.loadTools();
+                              if (context.mounted) Navigator.of(context).pop(true);
+                              return;
+                            }
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -735,13 +778,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.people,
+                                  widget.selectionForShared ? Icons.share : Icons.people,
                                   color: Colors.white,
                                   size: 24,
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''}',
+                                  widget.selectionForShared
+                                      ? 'Mark ${_selectedTools.length} as shared'
+                                      : 'Assign ${_selectedTools.length} Tool${_selectedTools.length > 1 ? 's' : ''}',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -752,12 +797,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                         letterSpacing: 0.5,
                                       ),
                                 ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                                if (!widget.selectionForShared) const SizedBox(width: 8),
+                                if (!widget.selectionForShared)
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                               ],
                             ),
                           ),

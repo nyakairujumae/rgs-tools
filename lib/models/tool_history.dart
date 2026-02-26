@@ -8,7 +8,7 @@ class ToolHistory {
   final String? newValue;
   final String? performedBy;
   final String? performedByRole;
-  final String timestamp;
+  final String? timestamp;
   final String? location;
   final String? notes;
   final Map<String, dynamic>? metadata;
@@ -23,7 +23,7 @@ class ToolHistory {
     this.newValue,
     this.performedBy,
     this.performedByRole,
-    required this.timestamp,
+    this.timestamp,
     this.location,
     this.notes,
     this.metadata,
@@ -145,18 +145,15 @@ class ToolHistory {
         return 'Badge Released';
       case 'Released to Requester':
         return 'Released to Requester';
-      case 'Accepted Assignment':
-        return 'Assignment Accepted';
-      case 'Declined Assignment':
-        return 'Assignment Declined';
       default:
         return action;
     }
   }
 
   String get timeAgo {
+    if (timestamp == null || timestamp!.isEmpty) return 'Unknown';
     final now = DateTime.now();
-    final historyTime = DateTime.parse(timestamp);
+    final historyTime = DateTime.parse(timestamp!);
     final difference = now.difference(historyTime);
 
     if (difference.inDays > 0) {
@@ -171,8 +168,9 @@ class ToolHistory {
   }
 
   bool get isRecent {
+    if (timestamp == null || timestamp!.isEmpty) return false;
     final now = DateTime.now();
-    final historyTime = DateTime.parse(timestamp);
+    final historyTime = DateTime.parse(timestamp!);
     final difference = now.difference(historyTime);
     return difference.inHours < 24;
   }

@@ -11,8 +11,12 @@ import 'admin_approval_screen.dart';
 import 'approval_workflows_screen.dart';
 import 'tool_issues_screen.dart';
 import 'maintenance_screen.dart';
+import 'tool_detail_screen.dart';
+import 'tools_screen.dart';
 import '../services/firebase_messaging_service.dart';
 import '../services/badge_service.dart';
+import '../providers/supabase_tool_provider.dart';
+import '../models/tool.dart';
 import '../widgets/common/loading_widget.dart';
 import '../l10n/app_localizations.dart';
 
@@ -300,7 +304,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               // Sync badge after marking as read
               await BadgeService.syncBadgeWithDatabase(context);
             }
-            if (!_navigateToScreenForType(notification)) {
+            if (!await _navigateToScreenForType(notification)) {
               _showNotificationDetails(notification);
             }
           },
@@ -600,9 +604,9 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             child: const Text('Close'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              _navigateToScreenForType(notification);
+              await _navigateToScreenForType(notification);
             },
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.secondaryColor,
@@ -618,8 +622,17 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     );
   }
 
-  /// Returns true if navigated to a screen, false if no screen (show dialog instead)
-  bool _navigateToScreenForType(AdminNotification notification) {
+  Tool? _findToolById(List<Tool> tools, String toolId) {
+    try {
+      return tools.firstWhere((t) => t.id == toolId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Navigates to the screen appropriate for the notification type. Returns true if navigation occurred.
+  Future<bool> _navigateToScreenForType(AdminNotification notification) async {
+    if (!mounted) return false;
     final navigator = Navigator.of(context);
     Widget? targetScreen;
     switch (notification.type) {
@@ -639,9 +652,28 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
       case NotificationType.toolReleased:
       case NotificationType.userApproved:
       case NotificationType.general:
+        // Try to navigate by data (e.g. New Tool Added has tool_id in data)
+        final toolId = notification.data?['tool_id']?.toString();
+        if (toolId != null && toolId.isNotEmpty) {
+          final toolProvider = context.read<SupabaseToolProvider>();
+          Tool? tool = _findToolById(toolProvider.tools, toolId);
+          if (tool == null) {
+            await toolProvider.loadTools();
+            if (!mounted) return false;
+            tool = _findToolById(toolProvider.tools, toolId);
+          }
+          if (tool != null && mounted) {
+            navigator.push(MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool!)));
+            return true;
+          }
+          if (mounted) {
+            navigator.push(MaterialPageRoute(builder: (_) => const ToolsScreen()));
+            return true;
+          }
+        }
         return false;
     }
-    if (targetScreen != null) {
+    if (targetScreen != null && mounted) {
       navigator.push(MaterialPageRoute(builder: (_) => targetScreen!));
       return true;
     }

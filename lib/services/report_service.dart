@@ -14,7 +14,6 @@ import '../models/tool_issue.dart';
 import '../models/tool_history.dart';
 import '../models/approval_workflow.dart';
 import '../services/supabase_service.dart';
-import '../utils/logger.dart';
 
 enum ReportType {
   comprehensive,
@@ -26,6 +25,8 @@ enum ReportType {
   approvalWorkflowsSummary,
   financialSummary,
   toolHistory,
+  calibration,
+  compliance,
 }
 
 enum ReportFormat { excel, pdf }
@@ -43,6 +44,8 @@ class ReportService {
     required List<dynamic> technicians,
     List<ToolIssue>? issues,
     List<ApprovalWorkflow>? workflows,
+    List<dynamic>? certifications,
+    List<dynamic>? maintenanceSchedules,
     DateTime? startDate,
     DateTime? endDate,
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
@@ -55,12 +58,14 @@ class ReportService {
         technicians: technicians,
         issues: issues,
         workflows: workflows,
+        certifications: certifications,
+        maintenanceSchedules: maintenanceSchedules,
         startDate: startDate,
         endDate: endDate,
       );
     } catch (e, stackTrace) {
-      Logger.debug('❌ Error generating report: $e');
-      Logger.debug('❌ Stack trace: $stackTrace');
+      debugPrint('❌ Error generating report: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -82,7 +87,7 @@ class ReportService {
       try {
         excel.rename('Sheet1', targetSheetName);
       } catch (e) {
-        Logger.debug('Could not rename Sheet1: $e');
+        debugPrint('Could not rename Sheet1: $e');
         // If rename fails, we'll just use Sheet1
       }
     }
@@ -115,13 +120,17 @@ class ReportService {
       case ReportType.toolHistory:
         await _generateToolHistoryReport(excel, tools, startDate, endDate);
         break;
+      case ReportType.calibration:
+      case ReportType.compliance:
+        // PDF-only; no Excel sheet for these
+        break;
     }
 
     // Set all sheets to landscape orientation (optional - wrapped in try-catch)
     try {
       _setSheetsToLandscape(excel);
     } catch (e) {
-      Logger.debug('Warning: Could not set sheet landscape settings: $e');
+      debugPrint('Warning: Could not set sheet landscape settings: $e');
       // Continue anyway - Excel file will still be generated
     }
 
@@ -137,17 +146,17 @@ class ReportService {
     try {
       bytesList = excel.save();
     } catch (e, stackTrace) {
-      Logger.debug('❌ Error saving Excel file: $e');
-      Logger.debug('❌ Error type: ${e.runtimeType}');
-      Logger.debug('❌ Stack trace: $stackTrace');
+      debugPrint('❌ Error saving Excel file: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Stack trace: $stackTrace');
       
       // Check if it's the unmodifiable list error
       final errorString = e.toString().toLowerCase();
       if (errorString.contains('unmodifiable') || errorString.contains('cannot remove')) {
         // This is a known issue with the Excel library
         // Try to work around it by creating a fresh Excel object
-        Logger.debug('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
-        Logger.debug('⚠️ Attempting workaround...');
+        debugPrint('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
+        debugPrint('⚠️ Attempting workaround...');
         
         // Re-throw with a more helpful error message
         throw Exception(
@@ -166,7 +175,7 @@ class ReportService {
         final bytes = Uint8List.fromList(bytesList);
         await file.writeAsBytes(bytes);
       } catch (e) {
-        Logger.debug('Error writing Excel file to disk: $e');
+        debugPrint('Error writing Excel file to disk: $e');
         rethrow;
       }
       // Landscape orientation modification is disabled - was causing errors
@@ -200,7 +209,7 @@ class ReportService {
       ),
       ...historyItems.map((h) => pw.TableRow(
             children: [
-              _cell(h.timestamp),
+              _cell(h.timestamp ?? ''),
               _cell(h.action),
               _cell(h.description),
               _cell(h.toolName),
@@ -282,6 +291,10 @@ class ReportService {
         return 'Financial Summary';
       case ReportType.toolHistory:
         return 'Tool History';
+      case ReportType.calibration:
+        return 'Calibration';
+      case ReportType.compliance:
+        return 'Compliance';
     }
   }
 
@@ -291,6 +304,8 @@ class ReportService {
     required List<dynamic> technicians,
     List<ToolIssue>? issues,
     List<ApprovalWorkflow>? workflows,
+    List<dynamic>? certifications,
+    List<dynamic>? maintenanceSchedules,
     DateTime? startDate,
     DateTime? endDate,
   }) async {
@@ -384,6 +399,28 @@ class ReportService {
             case ReportType.toolHistory:
               widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate, showTitle: false));
               break;
+            case ReportType.calibration:
+            case ReportType.compliance:
+              widgets.add(pw.Center(
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.all(24),
+                  child: pw.Column(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Text(
+                        reportType == ReportType.calibration ? 'Calibration Report' : 'Compliance Report',
+                        style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        'Generated: ${_dateFormat.format(DateTime.now())}',
+                        style: const pw.TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ));
+              break;
             case ReportType.comprehensive:
               // Add comprehensive report sections - break down Columns to allow natural page breaks
               widgets.add(pw.Text(
@@ -431,7 +468,7 @@ class ReportService {
 
               return widgets;
             } catch (e) {
-              Logger.debug('❌ Error building PDF widgets: $e');
+              debugPrint('❌ Error building PDF widgets: $e');
               // Return a minimal error widget
               return [
                 pw.Text(
@@ -444,7 +481,7 @@ class ReportService {
         ),
       );
     } catch (e) {
-      Logger.debug('❌ Error adding PDF page: $e');
+      debugPrint('❌ Error adding PDF page: $e');
       // Add a simple error page
       pdf.addPage(
         pw.Page(
@@ -467,11 +504,11 @@ class ReportService {
       final pdfBytes = await pdf.save();
       await file.writeAsBytes(pdfBytes);
       
-      Logger.debug('✅ PDF report saved successfully: ${file.path}');
+      debugPrint('✅ PDF report saved successfully: ${file.path}');
       return file;
     } catch (e) {
-      Logger.debug('❌ Error saving PDF report: $e');
-      Logger.debug('❌ Error type: ${e.runtimeType}');
+      debugPrint('❌ Error saving PDF report: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       
       // If it's a TooManyPagesException, provide helpful error message
       if (e.toString().contains('TooManyPages') || e.toString().contains('too many pages')) {
@@ -511,14 +548,14 @@ class ReportService {
             }
           }
         } catch (e) {
-          Logger.debug('Warning: Could not optimize sheet $sheetName: $e');
+          debugPrint('Warning: Could not optimize sheet $sheetName: $e');
           // Continue with other sheets
           continue;
         }
       }
     } catch (e, stackTrace) {
-      Logger.debug('Warning: Could not optimize sheets for landscape: $e');
-      Logger.debug('Stack trace: $stackTrace');
+      debugPrint('Warning: Could not optimize sheets for landscape: $e');
+      debugPrint('Stack trace: $stackTrace');
       // Continue anyway - the Excel file will still be generated
     }
   }
@@ -804,7 +841,7 @@ class ReportService {
         sheet.appendRow([entry.key, entry.value]);
       }
     } catch (e) {
-      Logger.debug('Error generating tool issues summary report: $e');
+      debugPrint('Error generating tool issues summary report: $e');
     }
   }
 
@@ -880,7 +917,7 @@ class ReportService {
         sheet.appendRow([entry.key, entry.value]);
       }
     } catch (e) {
-      Logger.debug('Error generating approval workflows summary report: $e');
+      debugPrint('Error generating approval workflows summary report: $e');
     }
   }
 
@@ -1055,7 +1092,7 @@ class ReportService {
           }
         } catch (e) {
           // Assignments table doesn't exist, derive from tools table
-          Logger.debug('Assignments table not found, deriving from tools: $e');
+          debugPrint('Assignments table not found, deriving from tools: $e');
           for (final tool in tools) {
             if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
               assignmentData[tool.id ?? ''] = {
@@ -1067,7 +1104,7 @@ class ReportService {
           }
         }
       } catch (e) {
-        Logger.debug('Error fetching assignments: $e');
+        debugPrint('Error fetching assignments: $e');
       }
     }
 
@@ -1200,7 +1237,7 @@ class ReportService {
       } catch (e) {
         // Assignments table doesn't exist, use tools table instead
         assignmentsTableExists = false;
-        Logger.debug('Assignments table not found, using tools table: $e');
+        debugPrint('Assignments table not found, using tools table: $e');
       }
 
       final headers = [
@@ -1277,7 +1314,7 @@ class ReportService {
       _formatTable(sheet, sheet.maxRows - rowCount, headers.length);
     } catch (e) {
       sheet.appendRow(List<dynamic>.from(['Error fetching assignments: $e']));
-      Logger.debug('Error in _addAssignmentsTable: $e');
+      debugPrint('Error in _addAssignmentsTable: $e');
     }
   }
 
@@ -1435,7 +1472,7 @@ class ReportService {
         }
       }
     } catch (e) {
-      Logger.debug('Error getting technician name: $e');
+      debugPrint('Error getting technician name: $e');
     }
     
     return 'Unknown';
@@ -1483,6 +1520,10 @@ class ReportService {
         return 'FinancialSummary';
       case ReportType.toolHistory:
         return 'ToolHistory';
+      case ReportType.calibration:
+        return 'Calibration';
+      case ReportType.compliance:
+        return 'Compliance';
     }
   }
 
@@ -1532,6 +1573,10 @@ class ReportService {
         return 'Financial Summary Report';
       case ReportType.toolHistory:
         return 'Tool History Report';
+      case ReportType.calibration:
+        return 'Calibration Report';
+      case ReportType.compliance:
+        return 'Compliance Report';
     }
   }
 
@@ -1949,7 +1994,7 @@ class ReportService {
             _sanitizePdfText(priceStr),
           ];
         } catch (e) {
-          Logger.debug('Error processing tool in export: $e');
+          debugPrint('Error processing tool in export: $e');
           // Return a safe default row if tool processing fails
           return [
             _sanitizePdfText(tool.name ?? 'Unknown'),
@@ -2746,7 +2791,7 @@ class ReportService {
         return directory;
       } catch (e) {
         // Fallback: use temp directory
-        Logger.debug('⚠️ Failed to get application documents directory, using temp directory: $e');
+        debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
         final tempDir = Directory.systemTemp;
         final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
         if (!await fallbackDir.exists()) {

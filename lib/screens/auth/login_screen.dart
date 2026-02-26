@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
@@ -16,6 +17,9 @@ import '../../widgets/common/themed_text_field.dart';
 import '../../widgets/common/themed_button.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'auth_error_screen.dart';
+import '../admin_home_screen.dart';
+import '../technician_home_screen.dart';
+import '../pending_approval_screen.dart';
 import '../../utils/logger.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -32,6 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSigningIn = false;
+  /// True from OAuth return until navigation (or error) so overlay stays and login form doesn't flash.
+  bool _isCompletingOAuth = false;
   static const Duration _authTimeout = Duration(seconds: 15);
   static const Duration _profileTimeout = Duration(seconds: 10);
 
@@ -112,9 +118,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     );
                 if (context.mounted) {
-                  await _handleOAuthPostLogin(authProvider);
+                  setState(() => _isCompletingOAuth = true);
+                  try {
+                    await _handleOAuthPostLogin(authProvider);
+                    // Don't clear _isCompletingOAuth on success – overlay stays until we're replaced
+                  } catch (postError) {
+                    if (mounted) setState(() => _isCompletingOAuth = false);
+                    rethrow;
+                  }
                 }
               } catch (e) {
+                if (mounted) setState(() => _isCompletingOAuth = false);
                 authProvider.resetLoadingState(reason: 'google-error');
                 if (context.mounted) {
                   final errorMessage = AuthErrorHandler.getErrorMessage(e);
@@ -144,9 +158,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 try {
                   await authProvider.signInWithApple();
                   if (context.mounted) {
-                    await _handleOAuthPostLogin(authProvider);
+                    setState(() => _isCompletingOAuth = true);
+                    await Future.delayed(Duration.zero);
+                    if (!mounted) return;
+                    try {
+                      await _handleOAuthPostLogin(authProvider);
+                      // Don't clear _isCompletingOAuth on success – overlay stays until we're replaced
+                    } catch (postError) {
+                      if (mounted) setState(() => _isCompletingOAuth = false);
+                      rethrow;
+                    }
                   }
                 } catch (e) {
+                  if (mounted) setState(() => _isCompletingOAuth = false);
                   authProvider.resetLoadingState(reason: 'apple-error');
                   if (context.mounted) {
                     String errorMessage;
@@ -223,10 +247,14 @@ class _LoginScreenState extends State<LoginScreen> {
         initialRoute.contains('code=');
     
     return Scaffold(
-      body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: SafeArea(
-        child: LayoutBuilder(
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          return Stack(
+            children: [
+              Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: SafeArea(
+                child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               padding: ResponsiveHelper.getResponsivePadding(
@@ -456,7 +484,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Bottom safe-area spacing
                           SizedBox(height: MediaQuery.of(context).padding.bottom + context.spacingLarge),
                         ],
-                      ),
+                        ),
                     ),
                   ],
                 ),
@@ -468,6 +496,62 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
       ),
+    ), // Container
+    if (authProvider.isLoading || _isCompletingOAuth) _buildAuthLoadingOverlay(context, theme),
+  ],
+);
+        },
+      ),
+    );
+  }
+
+  /// Overlay shown during OAuth (e.g. Apple/Google) sign-in after returning from native sheet.
+  Widget _buildAuthLoadingOverlay(BuildContext context, ThemeData theme) {
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          child: Container(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.75),
+            alignment: Alignment.center,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Logging in…',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -641,13 +725,34 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
+    // Clear loading only now so overlay stayed visible until this point (no flash).
+    authProvider.resetLoadingState(reason: 'oauth-success');
+    if (!mounted) return;
+    // Use instant transition (no animation) so the login screen never flashes.
     if (authProvider.isAdmin) {
-      Navigator.pushReplacementNamed(context, '/admin');
+      _pushReplacementInstant(
+        context,
+        AdminHomeScreenErrorBoundary(
+          child: AdminHomeScreen(initialTab: 0),
+        ),
+      );
     } else if (!bypassApproval && authProvider.isPendingApproval) {
-      Navigator.pushReplacementNamed(context, '/pending-approval');
+      _pushReplacementInstant(context, const PendingApprovalScreen());
     } else {
-      Navigator.pushReplacementNamed(context, '/technician');
+      _pushReplacementInstant(context, const TechnicianHomeScreen());
     }
+  }
+
+  /// Replaces current route with [page] using zero-duration transition to avoid flash.
+  void _pushReplacementInstant(BuildContext context, Widget page) {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => page,
+      ),
+    );
   }
 
   Future<bool> _ensureProfileLoaded(AuthProvider authProvider) async {
