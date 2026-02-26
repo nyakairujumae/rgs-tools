@@ -976,7 +976,7 @@ class AuthProvider with ChangeNotifier {
             title: 'New User Registration',
             body: '$formattedName has registered and is waiting for approval',
             data: {
-              'type': 'new_registration',
+              'type': 'access_request',
               'user_id': _user!.id,
               'email': email,
             },
@@ -1088,7 +1088,7 @@ class AuthProvider with ChangeNotifier {
                 'p_message': '$formattedName has registered and is waiting for approval',
                 'p_technician_name': formattedName,
                 'p_technician_email': email,
-                'p_type': 'new_registration',
+                'p_type': 'access_request',
                 'p_data': {
                   'user_id': _user!.id,
                   'email': email,
@@ -1107,7 +1107,7 @@ class AuthProvider with ChangeNotifier {
                     'message': '$formattedName has registered and is waiting for approval',
                     'technician_name': formattedName,
                     'technician_email': email,
-                    'type': 'new_registration',
+                    'type': 'access_request',
                     'is_read': false,
                     'timestamp': DateTime.now().toIso8601String(),
                     'data': {

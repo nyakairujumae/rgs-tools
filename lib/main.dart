@@ -1542,7 +1542,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       'p_message': '$fullName has registered and is waiting for approval',
                                       'p_technician_name': fullName.toUpperCase(),
                                       'p_technician_email': email,
-                                      'p_type': 'new_registration',
+                                      'p_type': 'access_request',
                                       'p_data': {
                                         'user_id': userId,
                                         'email': email,
@@ -1561,7 +1561,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                           'message': '$fullName has registered and is waiting for approval',
                                           'technician_name': fullName.toUpperCase(),
                                           'technician_email': email,
-                                          'type': 'new_registration',
+                                          'type': 'access_request',
                                           'is_read': false,
                                           'timestamp': DateTime.now().toIso8601String(),
                                           'data': {
@@ -1581,7 +1581,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                     title: 'New User Registration',
                                     body: '$fullName has registered and is waiting for approval',
                                     data: {
-                                      'type': 'new_registration',
+                                      'type': 'access_request',
                                       'user_id': userId,
                                       'email': email,
                                     },
