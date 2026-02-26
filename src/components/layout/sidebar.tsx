@@ -25,6 +25,8 @@ import {
   LogOut,
   X,
   Share2,
+  UserCheck,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -38,10 +40,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Tools', href: '/dashboard/tools', icon: <Wrench className="w-5 h-5" /> },
+  { label: 'Assign Tool', href: '/dashboard/tools/assign', icon: <ArrowLeftRight className="w-5 h-5" /> },
   { label: 'Shared Tools', href: '/dashboard/shared-tools', icon: <Share2 className="w-5 h-5" /> },
   { label: 'Technicians', href: '/dashboard/technicians', icon: <Users className="w-5 h-5" /> },
   { label: 'Issues', href: '/dashboard/issues', icon: <AlertTriangle className="w-5 h-5" /> },
   { label: 'Approvals', href: '/dashboard/approvals', icon: <CheckSquare className="w-5 h-5" /> },
+  { label: 'Authorize Users', href: '/dashboard/approvals/users', icon: <UserCheck className="w-5 h-5" /> },
   { label: 'Maintenance', href: '/dashboard/maintenance', icon: <ClipboardList className="w-5 h-5" /> },
   { label: 'Compliance', href: '/dashboard/compliance', icon: <Shield className="w-5 h-5" /> },
   { label: 'Calibration', href: '/dashboard/calibration', icon: <Gauge className="w-5 h-5" /> },
@@ -85,6 +89,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
+    if (href === '/dashboard/tools') return pathname === '/dashboard/tools' || (pathname.startsWith('/dashboard/tools/') && !pathname.startsWith('/dashboard/tools/assign'))
+    if (href === '/dashboard/approvals') return pathname === '/dashboard/approvals'
     return pathname.startsWith(href)
   }
 
