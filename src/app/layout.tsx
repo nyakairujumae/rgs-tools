@@ -4,6 +4,10 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'RGS Tools - Enterprise Management',
   description: 'Professional tool and equipment management for FM, HVAC, and cleaning companies',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 }
 
 export default function RootLayout({
