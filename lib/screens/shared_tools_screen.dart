@@ -50,6 +50,13 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     super.dispose();
   }
 
+  Future<void> _refresh() async {
+    await Future.wait([
+      context.read<SupabaseToolProvider>().loadTools(),
+      context.read<SupabaseTechnicianProvider>().loadTechnicians(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -153,7 +160,10 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                               ],
                             ),
                           ),
-                        Expanded(child: _buildSharedToolsContent(context, toolProvider, technicianProvider, tools, isOffline, hasActiveFilters)),
+                        Expanded(child: RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: _buildSharedToolsContent(context, toolProvider, technicianProvider, tools, isOffline, hasActiveFilters),
+                        )),
                       ],
                     );
                   },
@@ -188,25 +198,31 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
       return Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           final isAdmin = authProvider.userRole == UserRole.admin;
-          return EmptyState(
-            icon: Icons.share,
-            title: !hasActiveFilters ? 'No Shared Tools' : 'No Tools Found',
-            subtitle: !hasActiveFilters
-                ? (isAdmin
-                    ? 'Go to All Tools to mark tools as "Shared" so they appear here'
-                    : 'No shared tools available. Contact your admin to share tools.')
-                : 'Try adjusting your filters or search terms',
-            actionText: isAdmin ? 'Go to Tools' : null,
-            onAction: isAdmin
-                ? () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/admin',
-                      (route) => false,
-                      arguments: {'initialTab': 1},
-                    );
-                  }
-                : null,
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+              EmptyState(
+                icon: Icons.share,
+                title: !hasActiveFilters ? 'No Shared Tools' : 'No Tools Found',
+                subtitle: !hasActiveFilters
+                    ? (isAdmin
+                        ? 'Go to All Tools to mark tools as "Shared" so they appear here'
+                        : 'No shared tools available. Contact your admin to share tools.')
+                    : 'Try adjusting your filters or search terms',
+                actionText: isAdmin ? 'Go to Tools' : null,
+                onAction: isAdmin
+                    ? () {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/admin',
+                          (route) => false,
+                          arguments: {'initialTab': 1},
+                        );
+                      }
+                    : null,
+              ),
+            ],
           );
         },
       );

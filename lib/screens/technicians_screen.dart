@@ -51,6 +51,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    await Future.wait([
+      context.read<SupabaseTechnicianProvider>().loadTechnicians(),
+      context.read<SupabaseToolProvider>().loadTools(),
+    ]);
+  }
+
   Widget _buildTechnicianSkeletonList(BuildContext context) {
     return Shimmer.fromColors(
       baseColor: _skeletonBaseColor,
@@ -389,8 +396,10 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
                   // Technicians List
                   Expanded(
-                    child: technicianProvider.isLoading
-                            ? _buildTechnicianSkeletonList(context)
+                    child: RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: technicianProvider.isLoading
+                              ? _buildTechnicianSkeletonList(context)
                     : filteredTechnicians.isEmpty
                         ? Center(
                             child: Column(
@@ -456,6 +465,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                   );
                                 },
                               ),
+                    ),
                   ),
                 ],
               ),

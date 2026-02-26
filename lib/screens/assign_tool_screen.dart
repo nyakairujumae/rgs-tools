@@ -19,6 +19,10 @@ class AssignToolScreen extends StatefulWidget {
 class _AssignToolScreenState extends State<AssignToolScreen> {
   Set<String> _selectedTools = <String>{};
 
+  Future<void> _refresh() async {
+    await context.read<SupabaseToolProvider>().loadTools();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,7 +164,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
               
                 // Tools Grid
                 Expanded(
-                  child: LayoutBuilder(
+                  child: RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: LayoutBuilder(
                     builder: (context, constraints) {
                       final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
                       final spacing = ResponsiveHelper.getResponsiveGridSpacing(context, 12);
@@ -183,8 +189,9 @@ class _AssignToolScreenState extends State<AssignToolScreen> {
                       );
                     },
                   ),
+                  ),
                 ),
-              
+
                 // Assignment Button
                 Container(
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 16),

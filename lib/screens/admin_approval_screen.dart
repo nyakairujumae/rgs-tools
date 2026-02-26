@@ -50,6 +50,10 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
     super.dispose();
   }
 
+  Future<void> _refresh() async {
+    await context.read<PendingApprovalsProvider>().loadPendingApprovals();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -108,13 +112,16 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
               ),
             ),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildPendingTab(),
-                  _buildApprovedTab(),
-                  _buildRejectedTab(),
-                ],
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildPendingTab(),
+                    _buildApprovedTab(),
+                    _buildRejectedTab(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -141,32 +148,38 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         final pendingApprovals = provider.getPendingApprovals();
 
         if (pendingApprovals.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.pending_actions,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.pending_actions,
+                      size: 80,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No Users Awaiting Authorization',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'New technician registrations will appear here for authorization',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                Text(
-                  'No Users Awaiting Authorization',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'New technician registrations will appear here for authorization',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 
@@ -188,32 +201,38 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         final approvedApprovals = provider.getApprovedApprovals();
 
         if (approvedApprovals.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 80,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No Authorized Users',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Authorized technician registrations will appear here',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                Text(
-                  'No Authorized Users',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Authorized technician registrations will appear here',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 
@@ -235,32 +254,38 @@ class _AdminApprovalScreenState extends State<AdminApprovalScreen>
         final rejectedApprovals = provider.getRejectedApprovals();
 
         if (rejectedApprovals.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.cancel_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.cancel_outlined,
+                      size: 80,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No Rejected Users',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Rejected technician registrations will appear here',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                Text(
-                  'No Rejected Users',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Rejected technician registrations will appear here',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 

@@ -50,6 +50,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    await context.read<SupabaseToolProvider>().loadTools();
+  }
+
   @override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
@@ -554,7 +558,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
                   // Tools List
                   Expanded(
-                    child: Consumer<ConnectivityProvider>(
+                    child: RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: Consumer<ConnectivityProvider>(
                       builder: (context, connectivityProvider, _) {
                         final isOffline = !connectivityProvider.isOnline;
                         
@@ -680,6 +686,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               );
                                 },
                               ),
+                    ),
                   ),
                 ],
               ),
