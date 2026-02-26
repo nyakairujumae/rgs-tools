@@ -98,10 +98,12 @@ async function sendPushToAdmins(
       if (users) admins = users
     }
 
-    // Send push to each admin via Edge Function
+    // Send push to each admin via server-side API route (avoids auth issues with browser client)
     for (const admin of admins) {
-      await supabase().functions.invoke('send-push-notification', {
-        body: { user_id: admin.id, title, body, ...(data ? { data } : {}) },
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: admin.id, title, body, ...(data ? { data } : {}) }),
       })
     }
   } catch (e) {
