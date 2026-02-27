@@ -5,6 +5,8 @@ import 'dart:async';
 import '../models/technician_notification.dart';
 import '../services/supabase_service.dart';
 import '../services/badge_service.dart';
+import '../services/local_cache_service.dart';
+import '../services/connectivity_service.dart';
 import '../utils/logger.dart';
 
 class TechnicianNotificationProvider extends ChangeNotifier {
@@ -13,6 +15,9 @@ class TechnicianNotificationProvider extends ChangeNotifier {
   String? _error;
   RealtimeChannel? _realtimeChannel;
   StreamSubscription? _realtimeSubscription;
+
+  final LocalCacheService _cache = LocalCacheService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   List<TechnicianNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
