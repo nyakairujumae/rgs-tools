@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -88,6 +88,35 @@ class DatabaseHelper {
       )
     ''');
 
+    // Admin notifications cache — stores last fetched admin notifications for offline use
+    await db.execute('''
+      CREATE TABLE admin_notifications_cache (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        message TEXT,
+        technician_name TEXT,
+        technician_email TEXT,
+        type TEXT,
+        timestamp TEXT,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        data TEXT
+      )
+    ''');
+
+    // Technician notifications cache — stores last fetched technician notifications per user
+    await db.execute('''
+      CREATE TABLE technician_notifications_cache (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT,
+        message TEXT,
+        type TEXT,
+        timestamp TEXT,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        data TEXT
+      )
+    ''');
+
     Logger.debug('Created SQLite database v$version');
   }
 
@@ -100,6 +129,36 @@ class DatabaseHelper {
       await db.execute('DROP TABLE IF EXISTS technicians');
       await db.execute('DROP TABLE IF EXISTS tools');
       await _createDB(db, newVersion);
+    }
+
+    // v3: add notifications cache tables if upgrading from v2
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS admin_notifications_cache (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          message TEXT,
+          technician_name TEXT,
+          technician_email TEXT,
+          type TEXT,
+          timestamp TEXT,
+          is_read INTEGER NOT NULL DEFAULT 0,
+          data TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS technician_notifications_cache (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          title TEXT,
+          message TEXT,
+          type TEXT,
+          timestamp TEXT,
+          is_read INTEGER NOT NULL DEFAULT 0,
+          data TEXT
+        )
+      ''');
     }
   }
 

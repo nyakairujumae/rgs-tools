@@ -13,9 +13,8 @@ class AuthErrorHandler {
 
     String errorString = error.toString().toLowerCase();
     
-    // Network and connectivity errors - be more specific
-    // Only show connection error for actual network failures, not auth errors
-    if ((errorString.contains('network') || 
+    // Network and connectivity errors (not auth failures)
+    if ((errorString.contains('network') ||
         errorString.contains('connection') ||
         errorString.contains('unreachable') ||
         errorString.contains('no internet') ||
@@ -26,98 +25,88 @@ class AuthErrorHandler {
         !errorString.contains('invalid') &&
         !errorString.contains('credentials') &&
         !errorString.contains('password')) {
-      
-      // Check for macOS permission error
       if (errorString.contains('operation not permitted') || errorString.contains('errno = 1')) {
-        return '🔒 Network Permission Required\n\nThis app needs network access to connect to the database.\n\nOn macOS:\n1. Go to System Settings > Privacy & Security > Network\n2. Find this app and enable network access\n3. Restart the app';
+        return 'Network access is required. On macOS: System Settings > Privacy & Security > Network, enable this app, then restart.';
       }
-      
-      return '🌐 Connection error: Please check your internet connection and try again.';
+      return 'Connection problem. Check your internet and try again.';
     }
-    
-    // Timeout errors - separate from connection errors
+
+    // Timeout errors
     if (errorString.contains('timeout') || errorString.contains('timed out')) {
-      return '⏱️ Request timed out. Please check your internet connection and try again.';
+      return 'Request timed out. Check your connection and try again.';
     }
     
     // Authentication errors (login)
-    if (errorString.contains('invalid login credentials') || 
+    if (errorString.contains('invalid login credentials') ||
         errorString.contains('invalid_credentials') ||
         errorString.contains('wrong password') ||
         errorString.contains('incorrect password')) {
-      // For login errors, just say password is incorrect (don't mention "email already registered")
-      if (errorString.contains('incorrect password') || 
-          errorString.contains('check your password')) {
-        return '🔐 Incorrect password. Please check your password or use "Forgot Password" to reset it.';
-      }
-      return '🔐 Sorry, your email or password is incorrect. Please try again.';
+      return 'Incorrect email or password. Please try again or use Forgot Password to reset.';
     }
-    
+
     if (errorString.contains('user not found') ||
         errorString.contains('account not found') ||
         errorString.contains('email not found')) {
-      return '👤 Sorry, we couldn\'t find an account with this email. Please check your email or create a new account.';
+      return 'No account found with this email. Check the address or create an account.';
     }
-    
+
     if (errorString.contains('not available') ||
         errorString.contains('not registered') ||
         errorString.contains('please register first')) {
-      return '📝 Your account is not available. Please register first by creating a new account.';
+      return 'You need to create an account first. Please register to continue.';
     }
-    
+
     if (errorString.contains('email not confirmed') ||
         errorString.contains('unconfirmed email') ||
         errorString.contains('verify your email')) {
-      return '📧 Please check your email and click the verification link before signing in.';
+      return 'Please verify your email using the link we sent you, then sign in again.';
     }
-    
+
     // Registration errors
-    if (errorString.contains('email already registered') || 
+    if (errorString.contains('email already registered') ||
         errorString.contains('user already exists') ||
         errorString.contains('email already exists') ||
         errorString.contains('already registered') ||
         errorString.contains('this email is already registered')) {
-      return '📧 This email is already registered. Please sign in or use a different email address.';
+      return 'This email is already registered. Sign in with it or use a different email.';
     }
     
     if (errorString.contains('invalid email') ||
         errorString.contains('email format') ||
         errorString.contains('malformed email')) {
-      return '📧 Please enter a valid email address.';
+      return 'Please enter a valid email address.';
     }
-    
+
     // Admin domain restrictions
     if (errorString.contains('invalid email domain for admin registration') ||
         errorString.contains('invalid admin credentials') ||
         errorString.contains('access denied')) {
-      return '🚫 Sorry, your email cannot sign up as an admin. Please contact support if you believe this is an error.';
+      return 'This email cannot be used for admin sign-up. Contact support if you think this is wrong.';
     }
-    
+
     if (errorString.contains('password') && errorString.contains('weak') ||
         errorString.contains('password too short') ||
         errorString.contains('password requirements')) {
-      return '🔒 Password must be at least 6 characters long.';
+      return 'Password must be at least 6 characters.';
     }
-    
+
     // Rate limiting errors
     if (errorString.contains('too many requests') ||
         errorString.contains('rate limit') ||
         errorString.contains('too many attempts') ||
         errorString.contains('try again later')) {
-      return '⏰ Too many attempts. Please wait a few minutes before trying again.';
+      return 'Too many attempts. Please wait a few minutes and try again.';
     }
     
-    // Email sending errors (when email confirmation is enabled but email service fails)
+    // Email sending errors
     if (errorString.contains('error sending confirmation email') ||
         errorString.contains('error sending email') ||
         (errorString.contains('confirmation email') && errorString.contains('error')) ||
         (errorString.contains('unexpected_failure') && errorString.contains('email'))) {
-      // Check if this is for an admin (they need email confirmation)
-      // For technicians, this shouldn't happen if the auto-confirm trigger is working
-      return '📧 Email service error. For admins, email confirmation is required. Please check your email service configuration in Supabase.';
+      return 'We couldn\'t send the email. Try again later or contact support.';
     }
-    
-    // Server errors - be more specific to avoid false positives
+
+    // Server errors
     if (errorString.contains('server error') ||
         errorString.contains('internal server error') ||
         errorString.contains('service unavailable') ||
@@ -130,215 +119,241 @@ class AuthErrorHandler {
         (errorString.contains('500') && (errorString.contains('internal') || errorString.contains('server'))) ||
         (errorString.contains('502') && (errorString.contains('bad gateway') || errorString.contains('server'))) ||
         (errorString.contains('503') && (errorString.contains('service') || errorString.contains('unavailable')))) {
-      return '🔧 Our servers are temporarily down. Please try again in a few minutes.';
+      return 'Servers are temporarily unavailable. Try again in a few minutes.';
     }
-    
+
     // Database errors
     if (errorString.contains('database error') ||
         errorString.contains('database connection') ||
         errorString.contains('postgres') ||
         errorString.contains('supabase') ||
         errorString.contains('trouble connecting to our database')) {
-      // Provide more helpful error message for desktop
-      return '🗄️ Cannot connect to database. Please check:\n• Your internet connection\n• Firewall settings (may be blocking Supabase)\n• Try again in a moment';
+      return 'Cannot connect to the server. Check your internet and firewall, then try again.';
     }
-    
+
     // JWT and session errors
     if (errorString.contains('jwt') ||
         errorString.contains('token') ||
         errorString.contains('session') ||
         errorString.contains('expired')) {
-      return '🔑 Your session has expired. Please sign in again.';
+      return 'Your session expired. Please sign in again.';
     }
-    
+
     // Supabase-specific errors
     if (errorString.contains('duplicate key') ||
         errorString.contains('unique constraint') ||
         errorString.contains('already exists')) {
-      return '📧 This email is already registered. Please sign in or use a different email address.';
+      return 'This email is already registered. Sign in or use a different email.';
     }
-    
+
     if (errorString.contains('foreign key') ||
         errorString.contains('constraint') ||
         errorString.contains('violates')) {
-      return '❌ Registration failed due to a data constraint. Please check your information and try again.';
+      return 'Registration failed. Check your details and try again.';
     }
-    
+
     if (errorString.contains('permission denied') ||
         errorString.contains('row-level security') ||
         errorString.contains('rls')) {
-      return '🔒 Permission denied. Please contact support if this issue persists.';
+      return 'Permission denied. Contact support if it keeps happening.';
     }
-    
-    // Generic fallback - but log the actual error for debugging
+
     Logger.debug('⚠️ Unhandled error in AuthErrorHandler: $error');
-    return '❌ Something went wrong. Please try again.';
+    return 'Something went wrong. Please try again.';
   }
-  
-  /// Get error color based on error type
+
+  /// Get error color based on error type (keyword-based; messages no longer use emoji)
   static Color getErrorColor(String errorMessage) {
-    if (errorMessage.contains('🌐') || errorMessage.contains('No internet')) {
-      return Colors.orange; // Network issues
-    } else if (errorMessage.contains('🔐') || errorMessage.contains('Invalid')) {
-      return Colors.red; // Authentication issues
-    } else if (errorMessage.contains('📧') || errorMessage.contains('email')) {
-      return Colors.blue; // Email issues
-    } else if (errorMessage.contains('⏰') || errorMessage.contains('Too many')) {
-      return Colors.purple; // Rate limiting
-    } else if (errorMessage.contains('🔧') || errorMessage.contains('Server')) {
-      return Colors.red; // Server issues
-    } else {
-      return Colors.grey; // Generic errors
+    final lower = errorMessage.toLowerCase();
+    if (lower.contains('connection') || lower.contains('internet') || lower.contains('network')) {
+      return Colors.orange;
     }
+    if (lower.contains('incorrect') || lower.contains('password') || lower.contains('invalid')) {
+      return Colors.red;
+    }
+    if (lower.contains('email') || lower.contains('registered')) {
+      return Colors.blue;
+    }
+    if (lower.contains('too many') || lower.contains('wait')) {
+      return Colors.purple;
+    }
+    if (lower.contains('server') || lower.contains('unavailable')) {
+      return Colors.red;
+    }
+    return Colors.grey;
   }
   
-  /// Show error snackbar with appropriate styling - small, beautiful, and auto-dismissing
+  /// Show error snackbar with appropriate styling - small, beautiful, and auto-dismissing.
+  /// Schedules show in the next frame so it appears reliably (e.g. after async or navigation).
   static void showErrorSnackBar(BuildContext context, String errorMessage) {
-    // First, hide any existing snackbars to prevent stacking
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.hideCurrentSnackBar();
-    scaffoldMessenger.clearSnackBars(); // Clear all snackbars to prevent stacking
-    
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.error_outline,
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    final color = getErrorColor(errorMessage);
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.error_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              errorMessage,
+              style: const TextStyle(
                 color: Colors.white,
-                size: 18,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                errorMessage,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: getErrorColor(errorMessage),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        duration: const Duration(seconds: 4), // Auto-dismiss after 4 seconds
-        // Allow the snackbar to be dismissed with a simple horizontal swipe
-        dismissDirection: DismissDirection.horizontal,
-        elevation: 0,
+          ),
+        ],
       ),
+      backgroundColor: color,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      duration: const Duration(seconds: 4),
+      dismissDirection: DismissDirection.horizontal,
+      elevation: 0,
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final m = ScaffoldMessenger.maybeOf(context);
+      if (m == null) return;
+      m.hideCurrentSnackBar();
+      m.showSnackBar(snackBar);
+    });
   }
   
-  /// Show success snackbar
+  /// Show success snackbar. Schedules show in the next frame so it appears reliably.
   static void showSuccessSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Hide any existing snackbars
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.check_circle,
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    final snackBar = SnackBar(
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              message,
+              style: const TextStyle(
                 color: Colors.white,
-                size: 18,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.secondaryColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        duration: const Duration(seconds: 3),
-        dismissDirection: DismissDirection.horizontal,
-        elevation: 0,
+          ),
+        ],
       ),
+      backgroundColor: AppTheme.secondaryColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      duration: const Duration(seconds: 3),
+      dismissDirection: DismissDirection.horizontal,
+      elevation: 0,
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final m = ScaffoldMessenger.maybeOf(context);
+      if (m == null) return;
+      m.hideCurrentSnackBar();
+      m.showSnackBar(snackBar);
+    });
   }
   
-  /// Show info snackbar
+  /// Show info snackbar. Schedules show in the next frame so it appears reliably.
   static void showInfoSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Hide any existing snackbars
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.info_outline,
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
                 color: Colors.white,
-                size: 18,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        duration: const Duration(seconds: 4),
-        dismissDirection: DismissDirection.horizontal,
-        elevation: 0,
+          ),
+        ],
       ),
+      backgroundColor: AppTheme.primaryColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      duration: const Duration(seconds: 4),
+      dismissDirection: DismissDirection.horizontal,
+      elevation: 0,
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final m = ScaffoldMessenger.maybeOf(context);
+      if (m == null) return;
+      m.hideCurrentSnackBar();
+      m.showSnackBar(snackBar);
+    });
   }
 }

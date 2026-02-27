@@ -176,12 +176,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     String errorMessage;
                     if (e is SignInWithAppleAuthorizationException) {
                       if (e.code == AuthorizationErrorCode.canceled) {
-                        errorMessage = 'Apple sign-in was cancelled.';
+                        errorMessage = 'Sign in with Apple was cancelled.';
                       } else {
-                        errorMessage = e.message ?? 'Apple sign-in failed.';
+                        errorMessage = e.message ?? 'Sign in with Apple failed. Please try again.';
                       }
                     } else if (e.toString().contains('Sign in with Apple')) {
-                      errorMessage = e.toString();
+                      errorMessage = 'Sign in with Apple failed. Please try again.';
                     } else {
                       errorMessage = AuthErrorHandler.getErrorMessage(e);
                     }
@@ -497,7 +497,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     ), // Container
-    if (authProvider.isLoading || _isCompletingOAuth) _buildAuthLoadingOverlay(context, theme),
+    // Only show overlay for OAuth (Apple/Google) completion – not for normal email/password login
+    if (_isCompletingOAuth) _buildAuthLoadingOverlay(context, theme),
   ],
 );
         },
@@ -704,7 +705,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         AuthErrorHandler.showSuccessSnackBar(
           context,
-          'Create an account to continue with your ${isAppleProvider ? "Apple" : "Google"} ID',
+          'Create your account below to continue with ${isAppleProvider ? "Apple" : "Google"}.',
         );
         Navigator.pushReplacementNamed(context, '/role-selection');
       }

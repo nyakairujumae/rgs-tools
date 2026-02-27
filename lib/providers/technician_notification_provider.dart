@@ -36,6 +36,8 @@ class TechnicianNotificationProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    final isOnline = _connectivity.isOnline;
+
     try {
       // Check if user is authenticated
       final session = SupabaseService.client.auth.currentSession;
@@ -48,44 +50,81 @@ class TechnicianNotificationProvider extends ChangeNotifier {
 
       final userId = session.user.id;
 
-      // Load notifications from technician_notifications table
-      final response = await SupabaseService.client
-          .from('technician_notifications')
-          .select()
-          .eq('user_id', userId)
-          .order('timestamp', ascending: false)
-          .limit(100);
+      if (isOnline) {
+        // Load notifications from technician_notifications table
+        final response = await SupabaseService.client
+            .from('technician_notifications')
+            .select()
+            .eq('user_id', userId)
+            .order('timestamp', ascending: false)
+            .limit(100);
 
-      _notifications = (response as List)
-          .map((json) => TechnicianNotification.fromJson(json))
-          .toList();
-      
-      _isLoading = false;
-      notifyListeners();
-      
-      // Sync badge with database after loading notifications
-      try {
-        final unreadCount = _notifications.where((n) => !n.isRead).length;
-        final currentBadge = await BadgeService.getBadgeCount();
-        if (unreadCount != currentBadge) {
-          await BadgeService.updateBadge(unreadCount);
-          Logger.debug('✅ [TechnicianNotifications] Badge synced: $unreadCount unread');
+        _notifications = (response as List)
+            .map((json) => TechnicianNotification.fromJson(json))
+            .toList();
+
+        // Cache for offline use
+        await _cache.cacheTechnicianNotifications(userId, _notifications);
+
+        // Sync badge with database after loading notifications
+        try {
+          final unreadCount = _notifications.where((n) => !n.isRead).length;
+          final currentBadge = await BadgeService.getBadgeCount();
+          if (unreadCount != currentBadge) {
+            await BadgeService.updateBadge(unreadCount);
+            Logger.debug(
+                '✅ [TechnicianNotifications] Badge synced: $unreadCount unread');
+          }
+        } catch (e) {
+          Logger.debug('⚠️ [TechnicianNotifications] Error syncing badge: $e');
         }
-      } catch (e) {
-        Logger.debug('⚠️ [TechnicianNotifications] Error syncing badge: $e');
+
+        // Set up realtime subscription for real-time updates
+        _setupRealtimeSubscription(userId);
+      } else {
+        Logger.debug(
+            '📡 [TechnicianNotifications] Offline – loading notifications from cache');
+        _notifications =
+            await _cache.getCachedTechnicianNotifications(userId);
+        if (_notifications.isEmpty) {
+          _error =
+              'You are offline and no notifications are cached yet. Connect once to sync them.';
+        }
       }
-      
-      // Set up realtime subscription for real-time updates
-      _setupRealtimeSubscription(userId);
     } catch (e) {
       Logger.debug('Error loading technician notifications: $e');
-      if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
+      if (e.toString().contains('JWT expired') ||
+          e.toString().contains('PGRST303')) {
         _error = 'Session expired. Please log in again';
-      } else if (e.toString().contains('PGRST204') || e.toString().contains('relation "technician_notifications" does not exist')) {
-        _error = 'Notifications table not found. Please run the SQL script to create it.';
+      } else if (e.toString().contains('PGRST204') ||
+          e
+              .toString()
+              .contains('relation "technician_notifications" does not exist')) {
+        _error =
+            'Notifications table not found. Please run the SQL script to create it.';
+      } else if (e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('network')) {
+        final session = SupabaseService.client.auth.currentSession;
+        final userId = session?.user.id;
+        if (userId != null) {
+          final cached =
+              await _cache.getCachedTechnicianNotifications(userId);
+          if (cached.isNotEmpty) {
+            _notifications = cached;
+            _error = null;
+          } else {
+            _error =
+                'Cannot reach the server. You are offline and no notifications are cached yet.';
+          }
+        } else {
+          _error =
+              'Cannot reach the server. You are offline and no notifications are cached yet.';
+        }
       } else {
-        _error = 'Failed to load notifications: $e';
+        _error = 'Failed to load notifications. Please try again.';
       }
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

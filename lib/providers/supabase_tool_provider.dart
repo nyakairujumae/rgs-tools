@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool.dart';
@@ -5,11 +7,16 @@ import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/user_name_service.dart';
 import '../services/tool_history_service.dart';
+import '../services/local_cache_service.dart';
+import '../services/connectivity_service.dart';
+import '../utils/logger.dart';
 
 class SupabaseToolProvider with ChangeNotifier {
   List<Tool> _tools = [];
   bool _isLoading = false;
   RealtimeChannel? _toolsChannel;
+  final LocalCacheService _cache = LocalCacheService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   List<Tool> get tools => _tools;
   bool get isLoading => _isLoading;
@@ -50,20 +57,38 @@ class SupabaseToolProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      final response =
-          await SupabaseService.client.from('tools').select().order('name');
+    final isOnline = _connectivity.isOnline;
 
-      _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
-      debugPrint('✅ Loaded ${_tools.length} tools from database');
-    } catch (e) {
-      debugPrint('❌ Error loading tools: $e');
-      // Don't clear tools on error - keep existing data
-      // This prevents showing empty state if there's a temporary network issue
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    if (isOnline) {
+      try {
+        final response =
+            await SupabaseService.client.from('tools').select().order('name');
+
+        _tools = (response as List).map((data) => Tool.fromMap(data)).toList();
+        Logger.debug('✅ Loaded ${_tools.length} tools from Supabase');
+
+        // Cache to SQLite in the background (mobile only)
+        if (!kIsWeb) {
+          unawaited(_cache.cacheTools(_tools));
+        }
+      } catch (e) {
+        Logger.debug('❌ Error loading tools from Supabase: $e');
+        // Network error — fall back to cache
+        if (!kIsWeb) {
+          _tools = await _cache.getCachedTools();
+          Logger.debug('📦 Loaded ${_tools.length} tools from SQLite cache (network error fallback)');
+        }
+      }
+    } else {
+      // Offline — load from cache
+      if (!kIsWeb) {
+        _tools = await _cache.getCachedTools();
+        Logger.debug('📦 Loaded ${_tools.length} tools from SQLite cache (offline)');
+      }
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<Tool> addTool(Tool tool) async {
@@ -79,6 +104,7 @@ class SupabaseToolProvider with ChangeNotifier {
 
       final createdTool = Tool.fromMap(response);
       _tools.add(createdTool);
+      if (!kIsWeb) unawaited(_cache.cacheSingleTool(createdTool));
       notifyListeners();
       debugPrint('✅ Tool added successfully: ${createdTool.id}');
 
@@ -196,6 +222,7 @@ class SupabaseToolProvider with ChangeNotifier {
 
       // Update local state
       _tools.removeWhere((tool) => tool.id == toolId);
+      if (!kIsWeb) unawaited(_cache.removeCachedTool(toolId));
       debugPrint(
           '✅ Provider: Removed tool from local list. Remaining tools: ${_tools.length}');
 

@@ -36,6 +36,8 @@ import '../models/tool_history.dart';
 import '../utils/account_deletion_helper.dart';
 import '../models/user_role.dart';
 import '../widgets/common/loading_widget.dart';
+import '../services/local_cache_service.dart';
+import '../services/connectivity_service.dart';
 
 // Removed placeholder request/report screens; using detailed screens directly
 
@@ -58,6 +60,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   int _notificationRefreshKey = 0;
   late final List<Widget> _screens;
   TechnicianNotificationProvider? _notificationProviderRef;
+  final LocalCacheService _cache = LocalCacheService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   @override
   void initState() {
@@ -1257,6 +1261,19 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       String? technicianEmail) async {
     if (technicianEmail == null) return [];
 
+    final isOnline = _connectivity.isOnline;
+
+    if (!isOnline) {
+      // Offline – use cached admin notifications and filter by technician_email
+      final cached = await _cache.getCachedAdminNotifications();
+      return cached
+          .where((n) =>
+              n.technicianEmail.toLowerCase() ==
+              technicianEmail.toLowerCase())
+          .map((n) => n.toJson())
+          .toList();
+    }
+
     try {
       final adminNotifications = await SupabaseService.client
           .from('admin_notifications')
@@ -1268,7 +1285,14 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       return (adminNotifications as List).cast<Map<String, dynamic>>();
     } catch (e) {
       debugPrint('⚠️ Error loading admin notifications for technician: $e');
-      return [];
+      // Fallback to cache on error
+      final cached = await _cache.getCachedAdminNotifications();
+      return cached
+          .where((n) =>
+              n.technicianEmail.toLowerCase() ==
+              technicianEmail.toLowerCase())
+          .map((n) => n.toJson())
+          .toList();
     }
   }
 

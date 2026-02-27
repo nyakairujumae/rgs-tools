@@ -4,6 +4,8 @@ import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
 import '../models/tool.dart';
 import '../models/technician.dart';
+import '../models/admin_notification.dart';
+import '../models/technician_notification.dart';
 import '../utils/logger.dart';
 
 /// Represents a queued offline mutation waiting to sync
@@ -139,6 +141,142 @@ class LocalCacheService {
     }
   }
 
+  // ─── Notifications (Admin) ────────────────────────────────
+
+  /// Bulk replace cached admin notifications.
+  Future<void> cacheAdminNotifications(List<AdminNotification> items) async {
+    if (!_isSupported) return;
+    try {
+      final db = await DatabaseHelper.instance.database;
+      await db.transaction((txn) async {
+        await txn.delete('admin_notifications_cache');
+        for (final n in items) {
+          await txn.insert('admin_notifications_cache', {
+            'id': n.id,
+            'title': n.title,
+            'message': n.message,
+            'technician_name': n.technicianName,
+            'technician_email': n.technicianEmail,
+            'type': n.type.toString(),
+            'timestamp': n.timestamp.toIso8601String(),
+            'is_read': n.isRead ? 1 : 0,
+            'data': n.data != null ? jsonEncode(n.data) : null,
+          });
+        }
+      });
+      await _updateLastSyncTime('admin_notifications_cache');
+      Logger.debug('Cached ${items.length} admin notifications to SQLite');
+    } catch (e) {
+      Logger.debug('Error caching admin notifications: $e');
+    }
+  }
+
+  /// Read all cached admin notifications.
+  Future<List<AdminNotification>> getCachedAdminNotifications() async {
+    if (!_isSupported) return [];
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final rows = await db.query(
+        'admin_notifications_cache',
+        orderBy: 'timestamp DESC',
+        limit: 100,
+      );
+      final list = rows.map((row) {
+        return AdminNotification(
+          id: (row['id'] ?? '').toString(),
+          title: (row['title'] ?? '').toString(),
+          message: (row['message'] ?? '').toString(),
+          technicianName: (row['technician_name'] ?? '').toString(),
+          technicianEmail: (row['technician_email'] ?? '').toString(),
+          type: NotificationType.fromString((row['type'] ?? 'general').toString()),
+          timestamp: DateTime.tryParse((row['timestamp'] ?? '').toString()) ??
+              DateTime.now(),
+          isRead: (row['is_read'] ?? 0) == 1,
+          data: row['data'] != null
+              ? (jsonDecode(row['data'] as String) as Map<String, dynamic>?)
+              : null,
+        );
+      }).toList();
+      Logger.debug('Read ${list.length} cached admin notifications from SQLite');
+      return list;
+    } catch (e) {
+      Logger.debug('Error reading cached admin notifications: $e');
+      return [];
+    }
+  }
+
+  // ─── Notifications (Technician) ───────────────────────────
+
+  /// Bulk replace cached technician notifications for a user.
+  Future<void> cacheTechnicianNotifications(
+      String userId, List<TechnicianNotification> items) async {
+    if (!_isSupported) return;
+    try {
+      final db = await DatabaseHelper.instance.database;
+      await db.transaction((txn) async {
+        await txn.delete(
+          'technician_notifications_cache',
+          where: 'user_id = ?',
+          whereArgs: [userId],
+        );
+        for (final n in items) {
+          await txn.insert('technician_notifications_cache', {
+            'id': n.id,
+            'user_id': userId,
+            'title': n.title,
+            'message': n.message,
+            'type': n.type.toString(),
+            'timestamp': n.timestamp.toIso8601String(),
+            'is_read': n.isRead ? 1 : 0,
+            'data': n.data != null ? jsonEncode(n.data) : null,
+          });
+        }
+      });
+      await _updateLastSyncTime('technician_notifications_cache_$userId');
+      Logger.debug(
+          'Cached ${items.length} technician notifications for user $userId to SQLite');
+    } catch (e) {
+      Logger.debug('Error caching technician notifications: $e');
+    }
+  }
+
+  /// Read cached technician notifications for a user.
+  Future<List<TechnicianNotification>> getCachedTechnicianNotifications(
+      String userId) async {
+    if (!_isSupported) return [];
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final rows = await db.query(
+        'technician_notifications_cache',
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        orderBy: 'timestamp DESC',
+        limit: 100,
+      );
+      final list = rows.map((row) {
+        return TechnicianNotification(
+          id: (row['id'] ?? '').toString(),
+          userId: (row['user_id'] ?? '').toString(),
+          title: (row['title'] ?? '').toString(),
+          message: (row['message'] ?? '').toString(),
+          type: NotificationType.fromString((row['type'] ?? 'general').toString()),
+          timestamp: DateTime.tryParse((row['timestamp'] ?? '').toString()) ??
+              DateTime.now(),
+          isRead: (row['is_read'] ?? 0) == 1,
+          data: row['data'] != null
+              ? (jsonDecode(row['data'] as String) as Map<String, dynamic>?)
+              : null,
+        );
+      }).toList();
+      Logger.debug(
+          'Read ${list.length} cached technician notifications for user $userId from SQLite');
+      return list;
+    } catch (e) {
+      Logger.debug('Error reading cached technician notifications: $e');
+      return [];
+    }
+  }
+
   // ─── Sync queue ──────────────────────────────────────────
 
   /// Queue an offline mutation for later sync
@@ -253,6 +391,8 @@ class LocalCacheService {
       final db = await DatabaseHelper.instance.database;
       await db.delete('tools');
       await db.delete('technicians');
+      await db.delete('admin_notifications_cache');
+      await db.delete('technician_notifications_cache');
       await db.delete('sync_queue');
       await db.delete('cache_metadata');
       Logger.debug('All SQLite cache cleared');

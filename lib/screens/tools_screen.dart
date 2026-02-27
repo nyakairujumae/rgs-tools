@@ -592,120 +592,147 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: RefreshIndicator(
                       onRefresh: _refresh,
                       child: Consumer<ConnectivityProvider>(
-                      builder: (context, connectivityProvider, _) {
-                        final isOffline = !connectivityProvider.isOnline;
-                        
-                        if (isOffline && !toolProvider.isLoading) {
-                          // Show offline skeleton when offline
-                          return OfflineToolGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            message: 'You are offline. Showing cached data.',
-                          );
-                        }
-                        
-                        return toolProvider.isLoading
-                        ? const ToolCardGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 12.0,
-                            childAspectRatio: 0.75,
-                          )
-                        : filteredTools.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.build_rounded,
-                                      size: kIsWeb ? 56 : 64,
+                        builder: (context, connectivityProvider, _) {
+                          final isOffline = !connectivityProvider.isOnline;
+
+                          // Offline, still loading or no cached tools: show skeleton + banner
+                          if (isOffline &&
+                              (toolProvider.isLoading || filteredTools.isEmpty)) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Material(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    child: Text(
+                                      'Offline — showing cached data',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: OfflineToolGridSkeleton(
+                                    itemCount: 6,
+                                    crossAxisCount: 2,
+                                    message:
+                                        'You are offline. Showing cached data.',
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          // Online or offline with cached data
+                          final showOfflineBanner =
+                              isOffline && filteredTools.isNotEmpty;
+
+                          Widget content;
+                          if (toolProvider.isLoading) {
+                            content = const ToolCardGridSkeleton(
+                              itemCount: 6,
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10.0,
+                              mainAxisSpacing: 12.0,
+                              childAspectRatio: 0.75,
+                            );
+                          } else if (filteredTools.isEmpty) {
+                            content = Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.build_rounded,
+                                    size: kIsWeb ? 56 : 64,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.25),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No tools found',
+                                    style: TextStyle(
+                                      fontSize: kIsWeb ? 17 : 18,
+                                      fontWeight: FontWeight.w600,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface
-                                          .withValues(alpha: 0.25),
+                                          .withValues(alpha: 0.45),
                                     ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No tools found',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 17 : 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.45),
-                                      ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Add your first tool to get started',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.4),
                                     ),
-                                    SizedBox(height: 6),
-                                    Text(
-                                      'Add your first tool to get started',
-                                      style: TextStyle(
-                                        fontSize: kIsWeb ? 14 : 14,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.4),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final screenWidth = constraints.maxWidth;
-                                  final isDesktop = kIsWeb && screenWidth >= 900;
-                                  
-                                  // Web desktop: grid (default) or list
-                                  if (isDesktop) {
-                                    if (_webViewList) {
-                                      return _buildWebToolsTable(context, toolGroups);
-                                    }
-                                    // Grid view – marketplace style like Shared Tools
-                                    int crossAxisCount = 2;
-                                    double crossAxisSpacing = 10.0;
-                                    double mainAxisSpacing = 12.0;
-                                    double childAspectRatio = 0.75;
-                                    double padding = 16.0;
-                                    if (screenWidth > 1600) {
-                                      crossAxisCount = 6;
-                                    } else if (screenWidth > 1200) {
-                                      crossAxisCount = 5;
-                                    } else if (screenWidth > 900) {
-                                      crossAxisCount = 4;
-                                    }
-                                    if (screenWidth >= 900) {
-                                      crossAxisSpacing = 8.0;
-                                      mainAxisSpacing = 8.0;
-                                      childAspectRatio = 0.85;
-                                      padding = 20.0;
-                                    }
-                                    return GridView.builder(
-                                      padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
-                                      gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        crossAxisSpacing: crossAxisSpacing,
-                                        mainAxisSpacing: mainAxisSpacing,
-                                        childAspectRatio: childAspectRatio,
-                                      ),
-                                      itemCount: toolGroups.length,
-                                      itemBuilder: (context, index) {
-                                        final toolGroup = toolGroups[index];
-                                        return _buildToolCard(toolGroup);
-                                      },
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            content = LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenWidth = constraints.maxWidth;
+                                final isDesktop =
+                                    kIsWeb && screenWidth >= 900;
+
+                                // Web desktop: grid (default) or list
+                                if (isDesktop) {
+                                  if (_webViewList) {
+                                    return _buildWebToolsTable(
+                                      context,
+                                      toolGroups,
                                     );
                                   }
-                                  
-                                  // Mobile: card grid
+                                  // Grid view – marketplace style like Shared Tools
+                                  int crossAxisCount = 2;
+                                  double crossAxisSpacing = 10.0;
+                                  double mainAxisSpacing = 12.0;
+                                  double childAspectRatio = 0.75;
+                                  double padding = 16.0;
+                                  if (screenWidth > 1600) {
+                                    crossAxisCount = 6;
+                                  } else if (screenWidth > 1200) {
+                                    crossAxisCount = 5;
+                                  } else if (screenWidth > 900) {
+                                    crossAxisCount = 4;
+                                  }
+                                  if (screenWidth >= 900) {
+                                    crossAxisSpacing = 8.0;
+                                    mainAxisSpacing = 8.0;
+                                    childAspectRatio = 0.85;
+                                    padding = 20.0;
+                                  }
                                   return GridView.builder(
-                                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                                    padding: EdgeInsets.fromLTRB(
+                                      padding,
+                                      12,
+                                      padding,
+                                      16,
+                                    ),
                                     gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 10.0,
-                                      mainAxisSpacing: 12.0,
-                                      childAspectRatio: 0.75,
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: crossAxisSpacing,
+                                      mainAxisSpacing: mainAxisSpacing,
+                                      childAspectRatio: childAspectRatio,
                                     ),
                                     itemCount: toolGroups.length,
                                     itemBuilder: (context, index) {
@@ -713,10 +740,76 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                       return _buildToolCard(toolGroup);
                                     },
                                   );
-                                },
-                              );
-                                },
-                              ),
+                                }
+
+                                // Mobile: card grid
+                                return GridView.builder(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    16,
+                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 10.0,
+                                    mainAxisSpacing: 12.0,
+                                    childAspectRatio: 0.75,
+                                  ),
+                                  itemCount: toolGroups.length,
+                                  itemBuilder: (context, index) {
+                                    final toolGroup = toolGroups[index];
+                                    return _buildToolCard(toolGroup);
+                                  },
+                                );
+                              },
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (showOfflineBanner)
+                                Material(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.wifi_off,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Offline — showing cached data',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              Expanded(child: content),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],

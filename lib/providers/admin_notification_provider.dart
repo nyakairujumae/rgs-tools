@@ -6,6 +6,8 @@ import '../models/admin_notification.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/badge_service.dart';
+import '../services/local_cache_service.dart';
+import '../services/connectivity_service.dart';
 import '../utils/logger.dart';
 
 class AdminNotificationProvider extends ChangeNotifier {
@@ -14,6 +16,9 @@ class AdminNotificationProvider extends ChangeNotifier {
   String? _error;
   RealtimeChannel? _realtimeChannel;
   StreamSubscription? _realtimeSubscription;
+
+  final LocalCacheService _cache = LocalCacheService();
+  final ConnectivityService _connectivity = ConnectivityService();
 
   List<AdminNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -40,6 +45,8 @@ class AdminNotificationProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    final isOnline = _connectivity.isOnline;
+
     try {
       // Check if user is authenticated
       final session = SupabaseService.client.auth.currentSession;
@@ -50,45 +57,72 @@ class AdminNotificationProvider extends ChangeNotifier {
         return;
       }
 
-      // Load notifications from Supabase
-      final response = await SupabaseService.client
-          .from('admin_notifications')
-          .select()
-          .order('timestamp', ascending: false)
-          .limit(100);
+      if (isOnline) {
+        // Load notifications from Supabase
+        final response = await SupabaseService.client
+            .from('admin_notifications')
+            .select()
+            .order('timestamp', ascending: false)
+            .limit(100);
 
-      _notifications = (response as List)
-          .map((json) => AdminNotification.fromJson(json))
-          .toList();
-      
-      _isLoading = false;
-      notifyListeners();
-      
-      // Sync badge with database after loading notifications
-      // Use the unreadCount from the loaded notifications
-      // Only update if count changed to prevent unnecessary updates
-      try {
-        final unreadCount = _notifications.where((n) => !n.isRead).length;
-        final currentBadge = await BadgeService.getBadgeCount();
-        if (unreadCount != currentBadge) {
-          await BadgeService.updateBadge(unreadCount);
-          Logger.debug('✅ [AdminNotifications] Badge synced: $unreadCount unread');
+        _notifications = (response as List)
+            .map((json) => AdminNotification.fromJson(json))
+            .toList();
+
+        // Cache for offline use (mobile/desktop only)
+        await _cache.cacheAdminNotifications(_notifications);
+
+        // Sync badge with database after loading notifications
+        try {
+          final unreadCount = _notifications.where((n) => !n.isRead).length;
+          final currentBadge = await BadgeService.getBadgeCount();
+          if (unreadCount != currentBadge) {
+            await BadgeService.updateBadge(unreadCount);
+            Logger.debug(
+                '✅ [AdminNotifications] Badge synced: $unreadCount unread');
+          }
+        } catch (e) {
+          Logger.debug('⚠️ [AdminNotifications] Error syncing badge: $e');
         }
-      } catch (e) {
-        Logger.debug('⚠️ [AdminNotifications] Error syncing badge: $e');
+
+        // Set up realtime subscription for real-time updates
+        _setupRealtimeSubscription();
+      } else {
+        Logger.debug(
+            '📡 [AdminNotifications] Offline – loading notifications from cache');
+        _notifications = await _cache.getCachedAdminNotifications();
+        if (_notifications.isEmpty) {
+          _error =
+              'You are offline and no notifications are cached yet. Connect to the internet to load them once.';
+        }
       }
-      
-      // Set up realtime subscription for real-time updates
-      _setupRealtimeSubscription();
     } catch (e) {
       Logger.debug('Error loading notifications: $e');
-      if (e.toString().contains('JWT expired') || e.toString().contains('PGRST303')) {
-        _error = 'Session expired. Please log in again';
-      } else if (e.toString().contains('PGRST204') || e.toString().contains('relation "admin_notifications" does not exist')) {
-        _error = 'Notifications table not found. Please run the SQL script to create it.';
+      // Network/offline errors – fall back to cache
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('network')) {
+        final cached = await _cache.getCachedAdminNotifications();
+        if (cached.isNotEmpty) {
+          _notifications = cached;
+          _error = null; // Show cached silently
+        } else {
+          _error =
+              'Cannot reach the server. You are offline and no notifications are cached yet.';
+        }
+      } else if (e.toString().contains('JWT expired') ||
+          e.toString().contains('PGRST303')) {
+        _error = 'Session expired. Please log in again.';
+      } else if (e.toString().contains('PGRST204') ||
+          e
+              .toString()
+              .contains('relation \"admin_notifications\" does not exist')) {
+        _error =
+            'Notifications table not found. Please run the SQL script to create it.';
       } else {
-        _error = 'Failed to load notifications: $e';
+        _error = 'Failed to load notifications. Please try again.';
       }
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
