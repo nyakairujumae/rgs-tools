@@ -1,0 +1,182 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
+
+class PremiumFieldStyles {
+  // ChatGPT-style colors
+  static const Color fillColor = Color(0xFFF5F5F5); // Soft off-white card surfaces
+  static const Color borderColor = Color(0xFFE5E5E5); // Light borders
+
+  static TextStyle labelTextStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.onSurface,
+    );
+  }
+
+  static TextStyle fieldTextStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: theme.colorScheme.onSurface,
+    );
+  }
+
+  static InputDecoration inputDecoration(
+    BuildContext context, {
+    String? hintText,
+    Widget? prefixIcon,
+    List<Widget>? suffixIcons,
+    Widget? suffixIcon,
+    String? helperText,
+    EdgeInsets? contentPadding,
+    String? prefixText,
+  }) {
+    final theme = Theme.of(context);
+    final baseColor = theme.colorScheme.onSurface;
+
+    Widget? styledSuffix;
+    if (suffixIcons != null && suffixIcons.isNotEmpty) {
+      styledSuffix = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: suffixIcons
+            .map(
+              (icon) => Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconTheme.merge(
+                  data: IconThemeData(
+                    size: 18,
+                    color: baseColor.withOpacity(0.6),
+                  ),
+                  child: icon,
+                ),
+              ),
+            )
+            .toList(),
+      );
+    } else if (suffixIcon != null) {
+      styledSuffix = IconTheme.merge(
+        data: IconThemeData(
+          size: 18,
+          color: baseColor.withOpacity(0.6),
+        ),
+        child: suffixIcon,
+      );
+    }
+
+    return InputDecoration(
+      filled: true,
+      fillColor: fillColor,
+      hintText: hintText,
+      hintStyle: TextStyle(
+        fontSize: 14,
+        color: baseColor.withOpacity(0.45),
+      ),
+      prefixText: prefixText,
+      prefixStyle: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: baseColor.withOpacity(0.6),
+      ),
+      contentPadding:
+          contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 12), // ChatGPT-style padding
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14), // ChatGPT-style: 14px radius
+        borderSide: const BorderSide(color: borderColor, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: borderColor, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.4), // Green focus
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      prefixIcon: prefixIcon == null
+          ? null
+          : IconTheme.merge(
+              data: IconThemeData(
+                size: 18,
+                color: baseColor.withOpacity(0.5),
+              ),
+              child: prefixIcon,
+            ),
+      suffixIcon: styledSuffix,
+      helperText: helperText,
+      helperStyle: TextStyle(
+        fontSize: 12,
+        color: baseColor.withOpacity(0.45),
+      ),
+    );
+  }
+
+  static BoxDecoration dropdownContainerDecoration(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: fillColor,
+      borderRadius: BorderRadius.circular(16), // ChatGPT-style: 16px for cards
+      border: Border.all(color: borderColor, width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04), // Ultra-soft shadow (0.04 opacity)
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  static InputDecoration dropdownInputDecoration(
+    BuildContext context, {
+    String? hintText,
+  }) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
+      ),
+      border: InputBorder.none,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    );
+  }
+
+  static Widget dropdownIcon(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    return Icon(
+      Icons.keyboard_arrow_down_rounded,
+      size: 20,
+      color: color,
+    );
+  }
+
+  static Widget labeledField({
+    required BuildContext context,
+    required String label,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: labelTextStyle(context)),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
+  }
+
+  static const double fieldSpacing = 12; // ChatGPT-style: 12px medium gap
+}

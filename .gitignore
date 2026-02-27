@@ -29,7 +29,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files
+.env
 .env*.local
+.env.*.local
 
 # vercel
 .vercel
@@ -37,3 +39,68 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Miscellaneous (from app)
+*.class
+*.log
+*.pyc
+*.swp
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+app.*.symbols
+app.*.map.json
+
+# Android Studio
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Deployment artifacts
+github-pages/
+netlify-deploy*/
+vercel-deploy/
+public/
+test_web_app/
+*.zip
+rgs-tools-*/
+web-build/
+build/web/
+ios/build/
+android/build/
+ios/Pods/
+android/.gradle/
+
+# SQL
+SUPABASE_*.sql
+!SUPABASE_RECREATE_ALL_TABLES.sql
+
+# Android keystore
+keystore/
+android/keystore.properties
+android/keystore/*.jks
+android/keystore/*.keystore
+
+# Apple Push Notification keys
+*.p8
+AuthKey_*.p8

@@ -1,0 +1,25 @@
+-- V2_EXPORT_DATA.sql
+-- Reference: tables to export for v2 duplication
+--
+-- EASIEST: Use Supabase Table Editor
+--   1. Open each table in original project
+--   2. Download as CSV (or use the export option)
+--   3. In v2 project: Table Editor → Select table → Import → Upload CSV
+--
+-- Run order (respect foreign keys - parent tables first):
+--   1. technicians
+--   2. tools
+--   3. users (or skip - created by auth trigger on signup)
+--   4. assignments
+--   5. tool_issues
+--   6. approval_workflows
+--   7. pending_user_approvals
+--   8. admin_positions
+--   9. admin_notifications
+--  10. technician_notifications
+--  11. user_fcm_tokens
+--  12. app_settings (if exists)
+--  13. request_threads, request_messages (if exists)
+--
+-- Quick list of tables (run in original to see what exists):
+SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
