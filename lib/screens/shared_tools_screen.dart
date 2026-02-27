@@ -352,9 +352,10 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               Expanded(
                 child: Container(
                   height: 40,
-                  decoration: context.cardDecoration.copyWith(
+                  decoration: BoxDecoration(
+                    color: kIsWeb ? AppTheme.secondaryColor : context.cardBackground,
                     borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    color: context.cardBackground,
+                    border: kIsWeb ? null : (context.cardDecoration.border ?? Border.all(color: context.cardBorder)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -364,11 +365,11 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                           const EdgeInsets.symmetric(horizontal: 12),
                       icon: Icon(
                         Icons.keyboard_arrow_down,
-                        color: theme.colorScheme.onSurface,
+                        color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
                         size: 18,
                       ),
                       style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
+                        color: kIsWeb ? Colors.white : theme.textTheme.bodyLarge?.color,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -381,18 +382,19 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                 Icon(
                                   _getCategoryIcon(category),
                                   size: 16,
-                                  color: category == 'Category'
-                                      ? theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.35)
-                                      : _getCategoryIconColor(category),
+                                  color: kIsWeb
+                                      ? (category == 'Category' ? Colors.white70 : Colors.white)
+                                      : (category == 'Category'
+                                          ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
+                                          : _getCategoryIconColor(category)),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  category,
+                                  category == 'Category' && kIsWeb ? 'All Categories' : category,
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: theme.colorScheme.onSurface,
+                                    color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -454,9 +456,10 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
               Expanded(
                 child: Container(
                   height: 40,
-                  decoration: context.cardDecoration.copyWith(
+                  decoration: BoxDecoration(
+                    color: kIsWeb ? AppTheme.secondaryColor : context.cardBackground,
                     borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    color: context.cardBackground,
+                    border: kIsWeb ? null : (context.cardDecoration.border ?? Border.all(color: context.cardBorder)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -466,14 +469,51 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                           const EdgeInsets.symmetric(horizontal: 12),
                       icon: Icon(
                         Icons.keyboard_arrow_down,
-                        color: theme.colorScheme.onSurface,
+                        color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
                         size: 18,
                       ),
                       style: TextStyle(
-                        color: theme.textTheme.bodyLarge?.color,
+                        color: kIsWeb ? Colors.white : theme.textTheme.bodyLarge?.color,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
+                      selectedItemBuilder: kIsWeb
+                          ? (context) {
+                              const values = ['All', 'Available', 'In Use', 'Maintenance', 'Retired'];
+                              final icons = [
+                                Icons.filter_list_outlined,
+                                Icons.check_circle_outline,
+                                Icons.build_outlined,
+                                Icons.warning_amber_outlined,
+                                Icons.block_outlined,
+                              ];
+                              return List.generate(5, (i) {
+                                final value = values[i];
+                                final label = value == 'All' ? 'All Status' : value;
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        icons[i],
+                                        size: 16,
+                                        color: Colors.white70,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        label,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              });
+                            }
+                          : null,
                       dropdownColor: context.cardBackground,
                       menuMaxHeight: 300,
                       borderRadius: BorderRadius.circular(20),
