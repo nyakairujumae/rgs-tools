@@ -79,6 +79,23 @@ export async function createAdminNotification(params: {
 
 // ── Push Notifications (FCM via Edge Function) ──
 
+async function sendPushToUser(
+  userId: string,
+  title: string,
+  body: string,
+  data?: Record<string, string>
+) {
+  try {
+    await fetch('/api/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, title, body, ...(data ? { data } : {}) }),
+    })
+  } catch (e) {
+    console.error('Push notification to user error:', e)
+  }
+}
+
 async function sendPushToAdmins(
   title: string,
   body: string,
@@ -272,6 +289,19 @@ export async function assignTool(
     performed_by: performedBy || 'Admin',
     performed_by_role: 'admin',
   })
+
+  // Notify technician (same as app: technician-facing type is tool_assigned)
+  sendPushToUser(
+    technicianUserId,
+    'Tool Assigned to You',
+    `${toolName} has been assigned to you. Open the app to view and accept.`,
+    {
+      type: 'tool_assigned',
+      tool_id: toolId,
+      tool_name: toolName,
+      assigned_by: performedBy || 'Admin',
+    }
+  ).catch(() => {})
 
   return true
 }

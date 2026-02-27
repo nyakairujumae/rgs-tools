@@ -194,27 +194,26 @@ export default function SharedToolsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none cursor-pointer"
+          className="h-9 px-3 rounded-lg bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23737373%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
         >
           <option value="all">All Status</option>
           <option value="Available">Available</option>
           <option value="In Use">In Use</option>
+          <option value="Assigned">Assigned</option>
           <option value="Maintenance">Maintenance</option>
           <option value="Retired">Retired</option>
         </select>
 
-        {categories.length > 0 && (
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        )}
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="h-9 px-3 rounded-lg bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23737373%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+        >
+          <option value="all">All Categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
 
         {(search || statusFilter !== 'all' || categoryFilter !== 'all') && (
           <button

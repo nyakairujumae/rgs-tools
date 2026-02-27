@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User, AdminPosition } from '@/lib/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -20,7 +20,8 @@ export function useAuth() {
     loading: true,
   })
 
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const fetchPosition = async (positionId?: string): Promise<AdminPosition | null> => {
     if (!positionId) return null

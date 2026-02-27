@@ -56,6 +56,8 @@ export default function ToolsPage() {
   const [assignToolTarget, setAssignToolTarget] = useState<Tool | null>(null)
   const [reassignToolTarget, setReassignToolTarget] = useState<Tool | null>(null)
   const [returnToolTarget, setReturnToolTarget] = useState<Tool | null>(null)
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -173,6 +175,41 @@ export default function ToolsPage() {
       setTools((prev) => prev.filter((t) => t.id !== id))
     }
     setActionMenuId(null)
+  }
+
+  const openBulkAssign = () => {
+    if (selectedIds.size === 0) return
+    const firstId = Array.from(selectedIds)[0]
+    const tool = tools.find((t) => t.id === firstId)
+    if (tool) {
+      setAssignToolTarget(tool)
+    }
+  }
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedIds.size === 0) {
+      setShowBulkDelete(false)
+      return
+    }
+
+    setBulkDeleting(true)
+    const supabase = createClient()
+    const ids = Array.from(selectedIds)
+
+    const { error } = await supabase
+      .from('tools')
+      .delete()
+      .in('id', ids)
+
+    if (!error) {
+      setTools((prev) => prev.filter((t) => !selectedIds.has(t.id)))
+      setSelectedIds(new Set())
+    } else {
+      console.error('Failed to delete tools:', error)
+    }
+
+    setBulkDeleting(false)
+    setShowBulkDelete(false)
   }
 
   const toggleToolType = async (tool: Tool) => {
@@ -311,21 +348,17 @@ export default function ToolsPage() {
         <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2">
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
           <div className="h-4 w-px bg-border" />
-          <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5">
+          <button
+            onClick={openBulkAssign}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+          >
             <UserPlus className="w-3.5 h-3.5" /> Assign
           </button>
           <button className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5">
             <Download className="w-3.5 h-3.5" /> Export
           </button>
           <button
-            onClick={() => {
-              if (confirm(`Delete ${selectedIds.size} tools?`)) {
-                const supabase = createClient()
-                selectedIds.forEach((id) => supabase.from('tools').delete().eq('id', id))
-                setTools((prev) => prev.filter((t) => !selectedIds.has(t.id)))
-                setSelectedIds(new Set())
-              }
-            }}
+            onClick={() => setShowBulkDelete(true)}
             className="text-sm text-destructive hover:text-destructive/80 flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -611,6 +644,36 @@ export default function ToolsPage() {
             setReturnToolTarget(null)
           }}
         />
+      )}
+
+      {/* Bulk delete confirmation */}
+      {showBulkDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-[400px] w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold">Delete Tools</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {selectedIds.size === 1
+                ? 'Are you sure you want to delete this tool? This action cannot be undone.'
+                : `Are you sure you want to delete ${selectedIds.size} tools? This action cannot be undone.`}
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowBulkDelete(false)}
+                className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeleteConfirm}
+                disabled={bulkDeleting}
+                className="h-9 px-4 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {bulkDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {bulkDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
