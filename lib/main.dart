@@ -87,6 +87,29 @@ void main() async {
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
     );
+    // Android: set system bars early (like iOS) - use platform brightness until theme loads
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      SystemChrome.setSystemUIOverlayStyle(
+        brightness == Brightness.light
+            ? const SystemUiOverlayStyle(
+                statusBarColor: Colors.white,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+                systemNavigationBarColor: Colors.white,
+                systemNavigationBarIconBrightness: Brightness.dark,
+                systemNavigationBarDividerColor: Colors.transparent,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.black,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+                systemNavigationBarColor: Colors.black,
+                systemNavigationBarIconBrightness: Brightness.light,
+                systemNavigationBarDividerColor: Colors.transparent,
+              ),
+      );
+    }
   }
 
   // CRITICAL: Splash screen ONLY on fresh install (first launch)
@@ -1198,8 +1221,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             initialRoute: defaultRoute,
             builder: (context, child) {
               final content = ErrorBoundary(child: child!);
-              // Android: apply system bar colors to match app theme (status bar + nav bar)
-              // Screens without AppBar (e.g. RoleSelectionScreen) otherwise get dark bars
+              // Android: match iOS - use SystemChrome (global, persistent) so system bars
+              // follow app theme on all screens including those without AppBar
               final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
               final overlayStyle = isAndroid
                   ? (Theme.of(context).brightness == Brightness.light
@@ -1220,6 +1243,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                           systemNavigationBarDividerColor: Colors.transparent,
                         ))
                   : null;
+              if (overlayStyle != null) {
+                SystemChrome.setSystemUIOverlayStyle(overlayStyle!);
+              }
               final wrapped = ResponsiveBreakpoints.builder(
                 breakpoints: [
                   const Breakpoint(start: 0, end: 450, name: MOBILE),
