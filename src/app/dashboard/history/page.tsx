@@ -2,12 +2,17 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { formatDateTime, cn } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 import { Loader2, Search, X, Clock, ArrowRight } from 'lucide-react'
 import type { ToolHistory } from '@/lib/types/database'
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default function HistoryPage() {
   const [history, setHistory] = useState<ToolHistory[]>([])
+  const [tools, setTools] = useState<{ id: string; name: string }[]>([])
+  const [technicians, setTechnicians] = useState<{ id: string; user_id?: string; name: string }[]>([])
+  const [users, setUsers] = useState<{ id: string; full_name?: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [actionFilter, setActionFilter] = useState('all')
@@ -15,16 +20,36 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetch = async () => {
       const supabase = createClient()
-      const { data } = await supabase
-        .from('tool_history')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(200)
-      setHistory(data || [])
+      const [
+        { data: historyData },
+        { data: toolsData },
+        { data: techData },
+        { data: usersData },
+      ] = await Promise.all([
+        supabase.from('tool_history').select('*').order('timestamp', { ascending: false }).limit(200),
+        supabase.from('tools').select('id, name'),
+        supabase.from('technicians').select('id, user_id, name'),
+        supabase.from('users').select('id, full_name'),
+      ])
+      setHistory(historyData || [])
+      setTools(toolsData || [])
+      setTechnicians(techData || [])
+      setUsers(usersData || [])
       setLoading(false)
     }
     fetch()
   }, [])
+
+  const resolveId = useMemo(() => {
+    const toolMap = new Map(tools.map((t) => [t.id, t.name]))
+    const techById = new Map(technicians.map((t) => [t.id, t.name]))
+    const techByUserId = new Map(technicians.map((t) => [t.user_id || '', t.name]))
+    const userMap = new Map(users.map((u) => [u.id, u.full_name || u.id]))
+    return (val: string): string => {
+      if (!UUID_REGEX.test(val)) return val
+      return toolMap.get(val) ?? techById.get(val) ?? techByUserId.get(val) ?? userMap.get(val) ?? val
+    }
+  }, [tools, technicians, users])
 
   const actions = useMemo(() => [...new Set(history.map((h) => h.action))].sort(), [history])
 
@@ -101,9 +126,9 @@ export default function HistoryPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">{h.description}</p>
                   {(h.old_value || h.new_value) && (
                     <div className="flex items-center gap-1.5 mt-1 text-xs">
-                      {h.old_value && <span className="text-red-400 line-through">{h.old_value}</span>}
+                      {h.old_value && <span className="text-red-400 line-through">{resolveId(h.old_value)}</span>}
                       {h.old_value && h.new_value && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
-                      {h.new_value && <span className="text-emerald-400">{h.new_value}</span>}
+                      {h.new_value && <span className="text-emerald-400">{resolveId(h.new_value)}</span>}
                     </div>
                   )}
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
