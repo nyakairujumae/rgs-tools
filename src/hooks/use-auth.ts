@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import type { User, AdminPosition } from '@/lib/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-// Auth init timeout: if session check hangs (network, etc), stop loading and treat as logged out.
-// Supabase JWT expiry is typically 1h (configurable in Supabase Dashboard > Auth > Settings).
-const AUTH_INIT_TIMEOUT_MS = 10_000
+// Match Flutter app: longer timeout so reload is treated as refresh; don't log out on transient failure.
+const AUTH_INIT_TIMEOUT_MS = 30_000
+const PROFILE_LOAD_TIMEOUT_MS = 5_000
+const LOAD_PROFILE_RETRIES = 2
 
 // Cache auth across layout remounts (e.g. client nav) so we don't flash full loading again.
 let authCache: { user: SupabaseUser; profile: User | null; position: AdminPosition | null } | null = null
@@ -49,52 +50,59 @@ export function useAuth() {
     }
   }
 
-  const loadProfile = async (user: SupabaseUser) => {
-    try {
-      await Promise.race([
-        (async () => {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single()
-          const position = await fetchPosition(profile?.position_id)
-          const next = { user, profile: profile || null, position, loading: false }
-          authCache = next
-          setState(next)
-        })(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Profile load timeout')), AUTH_INIT_TIMEOUT_MS)
-        ),
-      ])
-    } catch {
-      setLoggedOut()
+  const loadProfile = async (user: SupabaseUser): Promise<boolean> => {
+    for (let attempt = 1; attempt <= LOAD_PROFILE_RETRIES; attempt++) {
+      try {
+        await Promise.race([
+          (async () => {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', user.id)
+              .single()
+            const position = await fetchPosition(profile?.position_id)
+            const next = { user, profile: profile || null, position, loading: false }
+            authCache = next
+            setState(next)
+          })(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Profile load timeout')), PROFILE_LOAD_TIMEOUT_MS)
+          ),
+        ])
+        return true
+      } catch {
+        if (attempt === LOAD_PROFILE_RETRIES) return false
+      }
     }
+    return false
   }
 
   useEffect(() => {
     let cancelled = false
 
     const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled) return
+      if (!session?.user) {
+        setLoggedOut()
+        return
+      }
+      // Reload = refresh: use session from storage; only log out when there is no session
+      let ok = false
       try {
         await Promise.race([
           (async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (cancelled) return
-            if (session?.user) {
-              // Use session.user directly; loadProfile validates via Supabase RLS (invalid token = fetch fails)
-              await loadProfile(session.user)
-            } else {
-              setLoggedOut()
-            }
+            ok = await loadProfile(session.user)
           })(),
-          new Promise<never>((_, reject) =>
+          new Promise<void>((_, reject) =>
             setTimeout(() => reject(new Error('Auth timeout')), AUTH_INIT_TIMEOUT_MS)
           ),
         ])
       } catch {
-        if (!cancelled) setLoggedOut()
+        // Timeout or throw: retry loadProfile once (don't log out on refresh failure)
+        if (!cancelled) ok = await loadProfile(session.user)
       }
+      // If !ok: profile load failed after retries — leave loading true (don't log out); user can refresh
     }
 
     init()
@@ -103,11 +111,8 @@ export function useAuth() {
       async (_event, session) => {
         if (cancelled) return
         if (session?.user) {
-          try {
-            await loadProfile(session.user)
-          } catch {
-            setLoggedOut()
-          }
+          await loadProfile(session.user)
+          // Don't log out on profile load failure — treat as refresh, keep session
         } else {
           setLoggedOut()
         }
