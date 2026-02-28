@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { Bell, X, Menu } from 'lucide-react'
+import { useBreadcrumbLabel } from '@/components/layout/breadcrumb-context'
 import { createClient } from '@/lib/supabase/client'
 import { cn, timeAgo } from '@/lib/utils'
 import type { AdminNotification } from '@/lib/types/database'
@@ -26,8 +27,11 @@ interface TopbarProps {
   onMenuToggle: () => void
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const pathname = usePathname()
+  const breadcrumbOverride = useBreadcrumbLabel()?.label ?? null
   const [notifications, setNotifications] = useState<AdminNotification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -37,7 +41,14 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
   const segments = pathname.split('/').filter(Boolean)
   const breadcrumbs = segments.map((_, i) => {
     const path = '/' + segments.slice(0, i + 1).join('/')
-    return { label: routeLabels[path] || segments[i], path }
+    let label = routeLabels[path] || segments[i]
+    // Don't show raw IDs in UI: use override (e.g. tool name) or a generic label
+    if (i === segments.length - 1 && UUID_REGEX.test(segments[i]) && breadcrumbOverride) {
+      label = breadcrumbOverride
+    } else if (i === segments.length - 1 && UUID_REGEX.test(segments[i])) {
+      label = 'Details'
+    }
+    return { label, path }
   }).filter((b) => b.label !== 'dashboard' || b.path === '/dashboard')
 
   useEffect(() => {

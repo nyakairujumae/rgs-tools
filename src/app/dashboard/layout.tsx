@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
+import { BreadcrumbLabelProvider } from '@/components/layout/breadcrumb-context'
 import { Loader2 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -57,14 +58,16 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar onMenuToggle={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto bg-background">
-          {children}
-        </main>
+    <BreadcrumbLabelProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Topbar onMenuToggle={() => setMobileOpen(true)} />
+          <main className="flex-1 overflow-y-auto bg-background">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </BreadcrumbLabelProvider>
   )
 }

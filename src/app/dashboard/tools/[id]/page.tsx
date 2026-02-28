@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatAED, formatDate, timeAgo } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { useBreadcrumbLabel } from '@/components/layout/breadcrumb-context'
 import {
   ArrowLeft,
   Wrench,
@@ -23,8 +24,10 @@ import type { Tool, ToolHistory } from '@/lib/types/database'
 export default function ToolDetailPage() {
   const { id } = useParams()
   const router = useRouter()
+  const setBreadcrumbLabel = useBreadcrumbLabel()?.setLabel
   const [tool, setTool] = useState<Tool | null>(null)
   const [history, setHistory] = useState<ToolHistory[]>([])
+  const [assignedToName, setAssignedToName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -36,10 +39,25 @@ export default function ToolDetailPage() {
       ])
       setTool(toolData)
       setHistory(historyData || [])
+      if (toolData?.assigned_to) {
+        const [techRes, userRes] = await Promise.all([
+          supabase.from('technicians').select('name').or(`user_id.eq.${toolData.assigned_to},id.eq.${toolData.assigned_to}`).limit(1).maybeSingle(),
+          supabase.from('users').select('full_name').eq('id', toolData.assigned_to).maybeSingle(),
+        ])
+        setAssignedToName(techRes.data?.name ?? userRes.data?.full_name ?? null)
+      } else {
+        setAssignedToName(null)
+      }
       setLoading(false)
     }
     fetch()
   }, [id])
+
+  // Show tool name in breadcrumb instead of raw ID
+  useEffect(() => {
+    if (tool?.name) setBreadcrumbLabel?.(tool.name)
+    return () => { setBreadcrumbLabel?.(null) }
+  }, [tool?.name, setBreadcrumbLabel])
 
   if (loading) {
     return (
@@ -66,7 +84,7 @@ export default function ToolDetailPage() {
     { icon: <Hash className="w-4 h-4" />, label: 'Model', value: tool.model || '-' },
     { icon: <Hash className="w-4 h-4" />, label: 'Serial #', value: tool.serial_number || '-' },
     { icon: <MapPin className="w-4 h-4" />, label: 'Location', value: tool.location || '-' },
-    { icon: <User className="w-4 h-4" />, label: 'Assigned To', value: tool.assigned_to || 'Unassigned' },
+    { icon: <User className="w-4 h-4" />, label: 'Assigned To', value: assignedToName ?? (tool.assigned_to ? '—' : 'Unassigned') },
     { icon: <Calendar className="w-4 h-4" />, label: 'Purchase Date', value: formatDate(tool.purchase_date) },
     { icon: <DollarSign className="w-4 h-4" />, label: 'Purchase Price', value: formatAED(tool.purchase_price) },
     { icon: <DollarSign className="w-4 h-4" />, label: 'Current Value', value: formatAED(tool.current_value) },
