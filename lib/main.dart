@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, kDebugMode;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, kDebugMode, TargetPlatform;
 import 'dart:io' show Platform;
 import 'config/app_config.dart';
 import 'package:flutter/services.dart';
@@ -1190,7 +1190,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             title: 'RGS HVAC Tools',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.system,
+            themeMode: themeProvider.themeMode,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: localeProvider.locale,
@@ -1198,6 +1198,28 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             initialRoute: defaultRoute,
             builder: (context, child) {
               final content = ErrorBoundary(child: child!);
+              // Android: apply system bar colors to match app theme (status bar + nav bar)
+              // Screens without AppBar (e.g. RoleSelectionScreen) otherwise get dark bars
+              final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+              final overlayStyle = isAndroid
+                  ? (Theme.of(context).brightness == Brightness.light
+                      ? const SystemUiOverlayStyle(
+                          statusBarColor: Colors.white,
+                          statusBarIconBrightness: Brightness.dark,
+                          statusBarBrightness: Brightness.light,
+                          systemNavigationBarColor: Colors.white,
+                          systemNavigationBarIconBrightness: Brightness.dark,
+                          systemNavigationBarDividerColor: Colors.transparent,
+                        )
+                      : const SystemUiOverlayStyle(
+                          statusBarColor: Colors.black,
+                          statusBarIconBrightness: Brightness.light,
+                          statusBarBrightness: Brightness.dark,
+                          systemNavigationBarColor: Colors.black,
+                          systemNavigationBarIconBrightness: Brightness.light,
+                          systemNavigationBarDividerColor: Colors.transparent,
+                        ))
+                  : null;
               final wrapped = ResponsiveBreakpoints.builder(
                 breakpoints: [
                   const Breakpoint(start: 0, end: 450, name: MOBILE),
@@ -1208,15 +1230,21 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                 child: content,
               );
               // Web: constrain width so content isn't elongated full-bleed; keep logic identical
-              if (kIsWeb) {
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1440),
-                    child: wrapped,
-                  ),
+              Widget result = kIsWeb
+                  ? Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1440),
+                        child: wrapped,
+                      ),
+                    )
+                  : wrapped;
+              if (overlayStyle != null) {
+                result = AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: overlayStyle!,
+                  child: result,
                 );
               }
-              return wrapped;
+              return result;
             },
             routes: {
               '/role-selection': (context) => const RoleSelectionScreen(),
