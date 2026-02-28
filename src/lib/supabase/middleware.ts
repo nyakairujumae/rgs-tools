@@ -68,7 +68,13 @@ export async function updateSession(request: NextRequest) {
       }
     )
 
-    const { data: { user } } = await supabase.auth.getUser()
+    let user = (await supabase.auth.getUser()).data.user
+
+    // If getUser failed (network, etc.), fall back to getSession from cookies
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      user = session?.user ?? null
+    }
 
     // Not logged in → redirect to login
     if (!user) {
@@ -95,7 +101,30 @@ export async function updateSession(request: NextRequest) {
 
     return supabaseResponse
   } catch {
-    // Auth check failed (network error, bad config, etc.) → redirect to login
+    // Auth check failed (network error, etc.) → try getSession from cookies before redirecting
+    try {
+      const fallbackResponse = NextResponse.next({ request })
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll: () => request.cookies.getAll(),
+            setAll: (cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) => {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                fallbackResponse.cookies.set(name, value, options as any)
+              )
+            },
+          },
+        }
+      )
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        return fallbackResponse
+      }
+    } catch {
+      // Ignore
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
