@@ -58,10 +58,7 @@ export function useAuth() {
             .select('*')
             .eq('id', user.id)
             .single()
-          const [position] = await Promise.all([
-            fetchPosition(profile?.position_id),
-            supabase.auth.getUser().catch(() => null),
-          ])
+          const position = await fetchPosition(profile?.position_id)
           const next = { user, profile: profile || null, position, loading: false }
           authCache = next
           setState(next)
@@ -85,14 +82,8 @@ export function useAuth() {
             const { data: { session } } = await supabase.auth.getSession()
             if (cancelled) return
             if (session?.user) {
-              const { data: { user } } = await supabase.auth.getUser()
-              if (cancelled) return
-              if (user) {
-                await loadProfile(user)
-              } else {
-                await supabase.auth.signOut()
-                setLoggedOut()
-              }
+              // Use session.user directly; loadProfile validates via Supabase RLS (invalid token = fetch fails)
+              await loadProfile(session.user)
             } else {
               setLoggedOut()
             }
