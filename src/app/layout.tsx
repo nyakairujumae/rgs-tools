@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'RGS Tools - Tools Management Software',
-  description: 'Tools management software for FM, HVAC, and cleaning companies',
+  description: 'Tools Management Software.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -11,8 +11,12 @@ export const metadata: Metadata = {
     title: 'RGS Tools',
   },
   icons: {
-    icon: '/icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
     apple: '/icon.png',
+    shortcut: '/favicon.ico',
   },
 }
 
