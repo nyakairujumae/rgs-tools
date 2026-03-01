@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import {
@@ -27,6 +27,7 @@ import {
   Share2,
   UserCheck,
   ArrowLeftRight,
+  Package,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -40,6 +41,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Tools', href: '/dashboard/tools', icon: <Wrench className="w-5 h-5" /> },
+  { label: 'My Tools', href: '/dashboard/my-tools', icon: <Package className="w-5 h-5" /> },
   { label: 'Assign Tool', href: '/dashboard/tools/assign', icon: <ArrowLeftRight className="w-5 h-5" /> },
   { label: 'Shared Tools', href: '/dashboard/shared-tools', icon: <Share2 className="w-5 h-5" /> },
   { label: 'Technicians', href: '/dashboard/technicians', icon: <Users className="w-5 h-5" /> },
@@ -90,6 +92,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
     if (href === '/dashboard/tools') return pathname === '/dashboard/tools' || (pathname.startsWith('/dashboard/tools/') && !pathname.startsWith('/dashboard/tools/assign'))
+    if (href === '/dashboard/my-tools') return pathname.startsWith('/dashboard/my-tools')
     if (href === '/dashboard/approvals') return pathname === '/dashboard/approvals'
     return pathname.startsWith(href)
   }

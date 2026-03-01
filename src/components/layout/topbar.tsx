@@ -11,6 +11,7 @@ import type { AdminNotification } from '@/lib/types/database'
 const routeLabels: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/dashboard/tools': 'Tools',
+  '/dashboard/my-tools': 'My Tools',
   '/dashboard/shared-tools': 'Shared Tools',
   '/dashboard/technicians': 'Technicians',
   '/dashboard/issues': 'Issues',

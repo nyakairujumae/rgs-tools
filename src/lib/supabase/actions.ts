@@ -136,27 +136,30 @@ export async function addTool(
 ): Promise<Tool | null> {
   const now = new Date().toISOString()
 
+  const insertPayload: Record<string, unknown> = {
+    name: tool.name,
+    category: tool.category,
+    brand: tool.brand || null,
+    model: tool.model || null,
+    serial_number: tool.serial_number || null,
+    purchase_date: tool.purchase_date || null,
+    purchase_price: tool.purchase_price || null,
+    current_value: tool.current_value || null,
+    condition: tool.condition || 'Good',
+    location: tool.location || null,
+    assigned_to: null,
+    status: 'Available',
+    tool_type: 'inventory',
+    image_path: tool.image_path || null,
+    notes: tool.notes || null,
+    created_at: now,
+    updated_at: now,
+  }
+  if (tool.owned_by !== undefined) insertPayload.owned_by = tool.owned_by
+
   const { data, error } = await supabase()
     .from('tools')
-    .insert({
-      name: tool.name,
-      category: tool.category,
-      brand: tool.brand || null,
-      model: tool.model || null,
-      serial_number: tool.serial_number || null,
-      purchase_date: tool.purchase_date || null,
-      purchase_price: tool.purchase_price || null,
-      current_value: tool.current_value || null,
-      condition: tool.condition || 'Good',
-      location: tool.location || null,
-      assigned_to: null,
-      status: 'Available',
-      tool_type: 'inventory',
-      image_path: tool.image_path || null,
-      notes: tool.notes || null,
-      created_at: now,
-      updated_at: now,
-    })
+    .insert(insertPayload)
     .select()
     .single()
 

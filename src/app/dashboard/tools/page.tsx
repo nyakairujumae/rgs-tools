@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useAuth } from '@/hooks/use-auth'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatAED, formatDate } from '@/lib/utils'
@@ -24,7 +25,6 @@ import {
   List,
   Camera,
   Share2,
-  Package,
   ArrowLeftRight,
   KeyRound,
 } from 'lucide-react'
@@ -40,9 +40,11 @@ type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'c
 type SortDir = 'asc' | 'desc'
 
 export default function ToolsPage() {
+  const { user } = useAuth()
   const [tools, setTools] = useState<Tool[]>([])
   const [technicians, setTechnicians] = useState<Technician[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewMyTools, setViewMyTools] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
@@ -103,6 +105,10 @@ export default function ToolsPage() {
   const filtered = useMemo(() => {
     let result = tools
 
+    if (viewMyTools && user?.id) {
+      result = result.filter((t) => t.assigned_to === user.id)
+    }
+
     if (search) {
       const q = search.toLowerCase()
       result = result.filter(
@@ -140,7 +146,7 @@ export default function ToolsPage() {
     })
 
     return result
-  }, [tools, search, statusFilter, categoryFilter, sortField, sortDir])
+  }, [tools, search, statusFilter, categoryFilter, sortField, sortDir, viewMyTools, user])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -257,7 +263,9 @@ export default function ToolsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Tools</h1>
-          <p className="text-sm text-muted-foreground">{tools.length} tools in inventory</p>
+          <p className="text-sm text-muted-foreground">
+            {viewMyTools ? `${filtered.length} of ${tools.length} tools` : `${tools.length} tools in inventory`}
+          </p>
         </div>
         <button
           onClick={() => setShowAddDialog(true)}
@@ -318,6 +326,20 @@ export default function ToolsPage() {
             Clear
           </button>
         )}
+
+        <button
+          onClick={() => setViewMyTools((v) => !v)}
+          className={cn(
+            'flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium border transition-colors',
+            viewMyTools
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'border-input text-muted-foreground hover:text-foreground'
+          )}
+          title="Show only tools you added"
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          My Tools
+        </button>
 
         <div className="ml-auto flex items-center gap-1 bg-muted rounded-lg p-0.5">
           <button
@@ -596,6 +618,7 @@ export default function ToolsPage() {
           setTools((prev) => [tool, ...prev])
           setShowAddDialog(false)
         }}
+        assignedTo={viewMyTools && user ? user.id : undefined}
       />
 
       {editTool && (

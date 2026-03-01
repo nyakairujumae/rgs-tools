@@ -39,9 +39,11 @@ interface AddToolDialogProps {
   open: boolean
   onClose: () => void
   onSuccess: (tool: Tool) => void
+  /** When set, the tool is assigned to this user on creation (e.g. admin adding from My Tools) */
+  assignedTo?: string
 }
 
-export function AddToolDialog({ open, onClose, onSuccess }: AddToolDialogProps) {
+export function AddToolDialog({ open, onClose, onSuccess, assignedTo }: AddToolDialogProps) {
   const { profile } = useAuth()
   const [saving, setSaving] = useState(false)
   const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([])
@@ -117,6 +119,7 @@ export function AddToolDialog({ open, onClose, onSuccess }: AddToolDialogProps) 
         tool_type: 'inventory',
         image_path: imagePath || undefined,
         notes: form.notes.trim() || undefined,
+        ...(assignedTo && { assigned_to: assignedTo }),
       },
       profile?.full_name || 'Admin'
     )

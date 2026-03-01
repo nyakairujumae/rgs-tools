@@ -68,6 +68,8 @@ export interface Tool {
   notes?: string
   created_at?: string
   updated_at?: string
+  /** Admin user id who added/owns this tool (for "My Tools") */
+  owned_by?: string
   // Joined field (not in table)
   assigned_user_name?: string
 }
