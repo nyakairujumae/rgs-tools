@@ -27,6 +27,7 @@ import {
   Share2,
   ArrowLeftRight,
   KeyRound,
+  Package,
 } from 'lucide-react'
 import { deleteTool as deleteToolAction } from '@/lib/supabase/actions'
 import { AddToolDialog } from '@/components/tools/add-tool-dialog'
