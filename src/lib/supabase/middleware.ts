@@ -2,6 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Public routes — no auth required
+  const publicPaths = ['/privacy', '/support']
+  if (publicPaths.some((p) => request.nextUrl.pathname.startsWith(p))) {
+    return NextResponse.next({ request })
+  }
+
   // If already on login page, just refresh the session and continue
   if (request.nextUrl.pathname.startsWith('/login')) {
     let supabaseResponse = NextResponse.next({ request })
