@@ -178,16 +178,16 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           {!collapsed && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
 
-        {/* Collapse toggle - desktop only */}
+        {/* Collapse toggle */}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={mobileOpen ? onMobileClose : () => setCollapsed(!collapsed)}
           className={cn(
-            'hidden md:flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors w-full text-sidebar-foreground hover:bg-accent hover:text-foreground',
-            collapsed && 'justify-center px-0'
+            'flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors w-full text-sidebar-foreground hover:bg-accent hover:text-foreground',
+            collapsed && !mobileOpen && 'justify-center px-0'
           )}
         >
-          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-          {!collapsed && <span>Collapse</span>}
+          {mobileOpen ? <ChevronLeft className="w-5 h-5" /> : collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          {(!collapsed || mobileOpen) && <span>Collapse</span>}
         </button>
 
         {/* User */}

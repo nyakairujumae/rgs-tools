@@ -46,13 +46,13 @@ export default function MaintenancePage() {
         <p className="text-sm text-muted-foreground">{counts.Overdue > 0 ? `${counts.Overdue} overdue` : 'All up to date'}</p>
       </div>
 
-      <div className="flex items-center gap-1 border-b border-border">
+      <div className="flex items-center gap-1 border-b border-border overflow-x-auto scrollbar-hide">
         {(['all', 'Overdue', 'Scheduled', 'In Progress', 'Completed'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0',
               tab === t ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
@@ -62,8 +62,8 @@ export default function MaintenancePage() {
         ))}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card border border-border rounded-xl overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tool</th>

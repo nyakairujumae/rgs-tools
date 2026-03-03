@@ -169,13 +169,13 @@ export default function CompliancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border">
+      <div className="flex items-center gap-1 border-b border-border overflow-x-auto scrollbar-hide">
         {(['all', 'Valid', 'Expiring Soon', 'Expired', 'Revoked'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0',
               tab === t ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
@@ -186,8 +186,8 @@ export default function CompliancePage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card border border-border rounded-xl overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tool</th>
