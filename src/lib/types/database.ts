@@ -28,6 +28,7 @@ export type AssignmentStatus = 'Active' | 'On Leave' | 'Transferred' | 'Returned
 export type NotificationType =
   | 'access_request'
   | 'tool_request'
+  | 'tool_added'
   | 'maintenance_request'
   | 'issue_report'
   | 'user_approved'

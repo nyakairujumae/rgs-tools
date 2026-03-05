@@ -178,6 +178,14 @@ export async function addTool(
     performed_by_role: 'admin',
   })
 
+  // Create in-app admin notification
+  await createAdminNotification({
+    title: 'New Tool Added',
+    message: `${data.name} has been added to the inventory`,
+    type: 'tool_added',
+    data: { tool_id: data.id, tool_name: data.name },
+  })
+
   // Send push notification to admins (non-blocking, same as Flutter app)
   sendPushToAdmins(
     'New Tool Added',

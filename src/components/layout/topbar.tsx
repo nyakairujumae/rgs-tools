@@ -36,6 +36,8 @@ function getNotificationRoute(n: AdminNotification): string | null {
       return '/dashboard/approvals/users'
     case 'tool_request':
       return '/dashboard/approvals'
+    case 'tool_added':
+      return '/dashboard/tools'
     case 'maintenance_request':
       return '/dashboard/maintenance'
     case 'issue_report':
