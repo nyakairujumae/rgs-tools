@@ -30,23 +30,17 @@ interface TopbarProps {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+const NOTIFICATION_ROUTES: Record<string, string> = {
+  access_request: '/dashboard/approvals/users',
+  tool_request: '/dashboard/approvals',
+  tool_added: '/dashboard/tools',
+  maintenance_request: '/dashboard/maintenance',
+  issue_report: '/dashboard/issues',
+  user_approved: '/dashboard/technicians',
+}
+
 function getNotificationRoute(n: AdminNotification): string | null {
-  switch (n.type) {
-    case 'access_request':
-      return '/dashboard/approvals/users'
-    case 'tool_request':
-      return '/dashboard/approvals'
-    case 'tool_added':
-      return '/dashboard/tools'
-    case 'maintenance_request':
-      return '/dashboard/maintenance'
-    case 'issue_report':
-      return '/dashboard/issues'
-    case 'user_approved':
-      return '/dashboard/technicians'
-    default:
-      return null
-  }
+  return NOTIFICATION_ROUTES[n.type] ?? null
 }
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
@@ -122,6 +116,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
 
   const handleNotificationClick = async (n: AdminNotification) => {
     await markAsRead(n.id)
+    console.log('[Notification] type:', n.type, '| route:', getNotificationRoute(n))
     const route = getNotificationRoute(n)
     if (route) {
       setShowNotifications(false)
