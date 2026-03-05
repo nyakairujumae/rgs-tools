@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Bell, X, Menu } from 'lucide-react'
 import { useBreadcrumbLabel } from '@/components/layout/breadcrumb-context'
 import { createClient } from '@/lib/supabase/client'
@@ -30,8 +30,26 @@ interface TopbarProps {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+function getNotificationRoute(n: AdminNotification): string | null {
+  switch (n.type) {
+    case 'access_request':
+      return '/dashboard/approvals/users'
+    case 'tool_request':
+      return '/dashboard/approvals'
+    case 'maintenance_request':
+      return '/dashboard/maintenance'
+    case 'issue_report':
+      return '/dashboard/issues'
+    case 'user_approved':
+      return '/dashboard/technicians'
+    default:
+      return null
+  }
+}
+
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const breadcrumbOverride = useBreadcrumbLabel()?.label ?? null
   const [notifications, setNotifications] = useState<AdminNotification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -98,6 +116,15 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     )
+  }
+
+  const handleNotificationClick = async (n: AdminNotification) => {
+    await markAsRead(n.id)
+    const route = getNotificationRoute(n)
+    if (route) {
+      setShowNotifications(false)
+      router.push(route)
+    }
   }
 
   const markAllRead = async () => {
@@ -185,7 +212,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
                 notifications.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => markAsRead(n.id)}
+                    onClick={() => handleNotificationClick(n)}
                     className={cn(
                       'w-full text-left px-4 py-3 border-b border-border last:border-0 hover:bg-accent/50 transition-colors',
                       !n.is_read && 'bg-primary/5'
