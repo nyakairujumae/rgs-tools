@@ -1,9 +1,25 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Application configuration management
 /// Handles environment-specific settings and feature flags
 class AppConfig {
   static const String _defaultEnvironment = 'development';
+
+  /// App display name (from .env APP_NAME or default "Tools")
+  static String get appName {
+    try {
+      final name = dotenv.env['APP_NAME'];
+      if (name != null && name.isNotEmpty) return name;
+    } catch (_) {}
+    return 'Tools';
+  }
+
+  /// Short app name for compact UI (e.g. app bar)
+  static String get appShortName {
+    final name = appName;
+    return name.length > 12 ? '${name.substring(0, 12)}…' : name;
+  }
   
   // Environment detection
   static String get environment {
@@ -20,13 +36,13 @@ class AppConfig {
   static String get databaseName {
     switch (environment) {
       case 'development':
-        return 'rgs_tools_dev.db';
+        return 'tools_dev.db';
       case 'staging':
-        return 'rgs_tools_staging.db';
+        return 'tools_staging.db';
       case 'production':
-        return 'rgs_tools_prod.db';
+        return 'tools_prod.db';
       default:
-        return 'rgs_tools.db';
+        return 'tools.db';
     }
   }
   
@@ -38,9 +54,9 @@ class AppConfig {
       case 'development':
         return 'http://localhost:3000/api';
       case 'staging':
-        return 'https://api-staging.rgstools.com';
+        return 'https://api-staging.example.com';
       case 'production':
-        return 'https://api.rgstools.com';
+        return 'https://api.example.com';
       default:
         return 'http://localhost:3000/api';
     }
@@ -100,12 +116,18 @@ class AppConfig {
   // Allow all email domains for general registration - no restrictions
   static List<String> get allowedEmailDomains => [];
 
-  // Admin-only email domains (centralized — update this list to add/remove)
-  static const List<String> allowedAdminDomains = [
-    '@royalgulf.ae',
-    '@mekar.ae',
-    '@gmail.com',
-  ];
+  // Admin email domain allowlist.
+  // Empty = any email can register as admin (whitelabel default).
+  // Set APP_ADMIN_DOMAINS=@mycompany.com in .env to restrict if needed.
+  static List<String> get allowedAdminDomains {
+    try {
+      final domains = dotenv.env['APP_ADMIN_DOMAINS'];
+      if (domains != null && domains.isNotEmpty) {
+        return domains.split(',').map((d) => d.trim()).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 
   // Validate email format - returns true if email format is valid
   static bool isValidEmailFormat(String email) {
@@ -122,10 +144,13 @@ class AppConfig {
     return true;
   }
 
-  // Check if an email is eligible for admin registration
+  // Check if an email is eligible for admin registration.
+  // Returns true if no domain restrictions are configured (open whitelabel).
   static bool isAdminEmailDomain(String email) {
+    final domains = allowedAdminDomains;
+    if (domains.isEmpty) return true; // No restriction — any email can be admin
     final lower = email.toLowerCase().trim();
-    return allowedAdminDomains.any((domain) => lower.endsWith(domain));
+    return domains.any((domain) => lower.endsWith(domain));
   }
 
   // Human-readable list for error messages

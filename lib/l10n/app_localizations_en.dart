@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'RGS HVAC Tools';
+  String get appTitle => 'Tools';
 
   @override
   String get common_cancel => 'Cancel';
@@ -270,8 +270,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login_welcomeBack => 'Welcome Back';
 
   @override
-  String get login_welcomeBackSubtitle =>
-      'Sign in to your RGS HVAC Services account';
+  String get login_welcomeBackSubtitle => 'Sign in to your account';
 
   @override
   String get login_successMessage => 'Welcome back! Successfully signed in.';
@@ -299,7 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get login_emailDomainNotAllowed =>
-      'Email domain not allowed. Use @mekar.ae or other approved domains';
+      'Email domain not allowed. Please use an approved email address.';
 
   @override
   String get login_resetPasswordDialogTitle => 'Reset Password';
@@ -407,8 +406,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminRegistration_title => 'Admin Registration';
 
   @override
-  String get adminRegistration_subtitle =>
-      'Register as an administrator for RGS HVAC Services';
+  String get adminRegistration_subtitle => 'Register as an administrator';
 
   @override
   String get adminRegistration_fullNameLabel => 'Full Name';
@@ -449,7 +447,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminRegistration_accountCreated =>
-      'Admin account created successfully! Welcome to RGS HVAC Services.';
+      'Admin account created successfully! Welcome.';
 
   @override
   String adminRegistration_invalidDomain(String domains) {
@@ -484,8 +482,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get techRegistration_title => 'Technician Registration';
 
   @override
-  String get techRegistration_subtitle =>
-      'Register as a technician for RGS HVAC Services';
+  String get techRegistration_subtitle => 'Register as a technician';
 
   @override
   String get techRegistration_fullNameLabel => 'Full Name';
@@ -576,7 +573,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingApproval_approved =>
-      'Your account has been approved! Welcome to RGS HVAC Services.';
+      'Your account has been approved! Welcome.';
 
   @override
   String pendingApproval_errorSigningOut(String error) {
@@ -738,8 +735,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminDashboard_greetingEvening => 'Good Evening';
 
   @override
-  String get adminDashboard_manageTools =>
-      'Manage your HVAC tools and technicians';
+  String get adminDashboard_manageTools => 'Manage your tools and field team';
 
   @override
   String get adminManagement_title => 'Admins';
@@ -1443,21 +1439,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addTechnician_removePhoto => 'Remove Photo';
 
   @override
-  String get department_repairing => 'Repairing';
-
-  @override
-  String get department_maintenance => 'Maintenance';
-
-  @override
-  String get department_retrofit => 'Retrofit';
-
-  @override
-  String get department_installation => 'Installation';
-
-  @override
-  String get department_factory => 'Factory';
-
-  @override
   String get settings_title => 'Settings';
 
   @override
@@ -1515,7 +1496,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_importDataMessage =>
-      'To import data, please contact support at support@rgstools.app. We will help you restore your data from a backup file.';
+      'To import data, please contact support. We will help you restore your data from a backup file.';
 
   @override
   String get settings_appVersion => 'App Version';
@@ -1562,7 +1543,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_versionInfo => 'Version Information';
 
   @override
-  String get settings_rgsToolsManager => 'RGS Tools Manager';
+  String get settings_rgsToolsManager => 'Tools Manager';
 
   @override
   String get settings_couldNotOpenPage => 'Could not open support page';

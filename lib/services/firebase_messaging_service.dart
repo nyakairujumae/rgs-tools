@@ -21,9 +21,9 @@ import '../screens/technician_home_screen.dart';
 import '../utils/logger.dart';
 
 // Background notification channel constants (must be accessible from background handler)
-const String _backgroundChannelId = 'rgs_notifications';
-const String _backgroundChannelName = 'RGS Notifications';
-const String _backgroundChannelDesc = 'Notifications from RGS Tools app';
+const String _backgroundChannelId = 'app_notifications';
+const String _backgroundChannelName = 'App Notifications';
+const String _backgroundChannelDesc = 'Notifications from the app';
 
 /// Production-ready Firebase Messaging Service
 /// Handles notifications in foreground, background, and terminated states
@@ -41,9 +41,9 @@ class FirebaseMessagingService {
       FlutterLocalNotificationsPlugin();
   
   // Android notification channel
-  static const String _androidChannelId = 'rgs_notifications';
-  static const String _androidChannelName = 'RGS Notifications';
-  static const String _androidChannelDesc = 'Notifications from RGS Tools app';
+  static const String _androidChannelId = 'app_notifications';
+  static const String _androidChannelName = 'App Notifications';
+  static const String _androidChannelDesc = 'Notifications from the app';
 
   // Guards to prevent duplicate initialization and permission requests
   static bool _isInitialized = false;

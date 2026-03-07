@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/logo_assets.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/app_logo.dart';
 import '../theme/theme_extensions.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_role.dart';
 import '../utils/auth_error_handler.dart';
-import 'admin_registration_screen.dart';
+import 'admin_onboarding_wizard_screen.dart';
 import 'auth/login_screen.dart';
 import 'technician_registration_screen.dart';
-import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
@@ -119,7 +118,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final theme = Theme.of(context);
     final subtitleColor =
         theme.colorScheme.onBackground.withOpacity(0.65);
-    final logoWidth = isDesktop ? 150.0 : 120.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -135,17 +133,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               child: child,
             ),
           ),
-          child: Image.asset(
-            getThemeLogoAsset(theme.brightness),
-            width: logoWidth,
-            height: null,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              Logger.debug('❌ Error loading logo: $error');
-              Logger.debug('❌ Logo asset path: ${getThemeLogoAsset(theme.brightness)}');
-              return const SizedBox.shrink();
-            },
-          ),
+          child: const AppLogo(),
         ),
         const SizedBox(height: 14),
         TweenAnimationBuilder<double>(
@@ -293,18 +281,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     try {
       final authProvider = context.read<AuthProvider>();
       
-      if (role == UserRole.admin) {
-        final bootstrapAllowed = await authProvider.canBootstrapAdmin();
-        if (!bootstrapAllowed) {
-          if (!mounted) return;
-          AuthErrorHandler.showErrorSnackBar(
-            context,
-            'Admin registration is closed. Please request an admin invite.',
-          );
-          return;
-        }
-      }
-
       if (isOAuthUser) {
         await authProvider.assignRoleToOAuthUser(role);
         if (!mounted) return;
@@ -318,7 +294,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
       // Regular user - navigate to registration screen
       if (role == UserRole.admin) {
-        _navigate(context, const AdminRegistrationScreen());
+        _navigate(context, const AdminOnboardingWizardScreen());
       } else {
         _navigate(context, const TechnicianRegistrationScreen());
       }

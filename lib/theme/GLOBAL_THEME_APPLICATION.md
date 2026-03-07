@@ -30,7 +30,7 @@ Container(
 
 **After:**
 ```dart
-import 'package:rgsapp/widgets/common/themed_card.dart';
+import 'package:toolsapp/widgets/common/themed_card.dart';
 
 ThemedCard(
   padding: EdgeInsets.all(16),
@@ -70,7 +70,7 @@ TextFormField(
 
 **After:**
 ```dart
-import 'package:rgsapp/widgets/common/themed_text_field.dart';
+import 'package:toolsapp/widgets/common/themed_text_field.dart';
 
 ThemedTextField(
   controller: _controller,
@@ -115,7 +115,7 @@ ElevatedButton(
 
 **After:**
 ```dart
-import 'package:rgsapp/widgets/common/themed_button.dart';
+import 'package:toolsapp/widgets/common/themed_button.dart';
 
 ThemedButton(
   onPressed: () => _handleSubmit(),

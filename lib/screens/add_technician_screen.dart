@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/organization_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
@@ -215,8 +216,17 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                     SizedBox(height: context.spacingMedium), // 12px
 
                     // Department Field
-                    DropdownButtonFormField<String>(
-                      value: _departmentController.text.isEmpty ? null : _departmentController.text,
+                    Builder(builder: (context) {
+                      final orgDepts = context.watch<OrganizationProvider>().departments;
+                      final depts = orgDepts.isNotEmpty ? orgDepts : ['Other'];
+                      // Reset selected value if it's no longer in the list
+                      final currentVal = _departmentController.text.isEmpty
+                          ? null
+                          : (_departmentController.text.isNotEmpty && depts.contains(_departmentController.text)
+                              ? _departmentController.text
+                              : null);
+                      return DropdownButtonFormField<String>(
+                      value: currentVal,
                       isExpanded: true,
                       decoration: context.chatGPTInputDecoration.copyWith(
                         labelText: 'Department',
@@ -228,13 +238,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         ),
                         prefixIconConstraints: const BoxConstraints(minWidth: 52),
                       ),
-                      items: [
-                        'Repairing',
-                        'Maintenance',
-                        'Retrofit',
-                        'Installation',
-                        'Factory',
-                      ].map((String department) {
+                      items: depts.map((String department) {
                         return DropdownMenuItem<String>(
                           value: department,
                           child: Padding(
@@ -252,13 +256,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         );
                       }).toList(),
                       selectedItemBuilder: (BuildContext context) {
-                        return [
-                          'Repairing',
-                          'Maintenance',
-                          'Retrofit',
-                          'Installation',
-                          'Factory',
-                        ].map<Widget>((String department) {
+                        return depts.map<Widget>((String department) {
                           return Text(
                             department,
                             style: TextStyle(
@@ -288,7 +286,8 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
                         color: theme.colorScheme.onSurface.withOpacity(0.7),
                         size: 18,
                       ),
-                    ),
+                    );
+                    }), // Builder end
 
                     SizedBox(height: context.spacingMedium), // 12px
 

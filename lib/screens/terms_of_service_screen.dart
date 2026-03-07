@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../config/app_config.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
@@ -71,13 +72,13 @@ class TermsOfServiceScreen extends StatelessWidget {
                   context,
                   theme,
                   'Agreement to Terms',
-                  'By accessing or using RGS Tools, you agree to be bound by these Terms of Service and all applicable laws and regulations.',
+                  'By accessing or using ${AppConfig.appName}, you agree to be bound by these Terms of Service and all applicable laws and regulations.',
                 ),
                 _buildSection(
                   context,
                   theme,
                   'Use License',
-                  'Permission is granted to use RGS Tools for internal business purposes. You may not:',
+                  'Permission is granted to use ${AppConfig.appName} for internal business purposes. You may not:',
                   items: [
                     'Modify or copy the software',
                     'Use the software for any commercial purpose without permission',
@@ -95,7 +96,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   context,
                   theme,
                   'Prohibited Uses',
-                  'You may not use RGS Tools:',
+                  'You may not use ${AppConfig.appName}:',
                   items: [
                     'In any way that violates applicable laws or regulations',
                     'To transmit harmful, threatening, or abusive content',
@@ -107,13 +108,13 @@ class TermsOfServiceScreen extends StatelessWidget {
                   context,
                   theme,
                   'Intellectual Property',
-                  'The service and its original content, features, and functionality are owned by RGS Tools and are protected by international copyright, trademark, and other intellectual property laws.',
+                  'The service and its original content, features, and functionality are owned by ${AppConfig.appName} and are protected by international copyright, trademark, and other intellectual property laws.',
                 ),
                 _buildSection(
                   context,
                   theme,
                   'Limitation of Liability',
-                  'RGS Tools shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.',
+                  'The service shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.',
                 ),
                 _buildSection(
                   context,

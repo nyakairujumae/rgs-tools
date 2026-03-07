@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
 import '../providers/auth_provider.dart';
+import '../providers/organization_provider.dart';
 import '../providers/admin_notification_provider.dart';
 import '../models/admin_notification.dart';
 import '../models/tool.dart';
@@ -45,21 +46,17 @@ class _AddToolScreenState extends State<AddToolScreen> {
   final ImagePicker _picker = ImagePicker();
   late PageController _imagePageController;
 
-  final List<String> _categories = [
-    'Hand Tools',
-    'Power Tools',
-    'Testing Equipment',
-    'Safety Equipment',
-    'Measuring Tools',
-    'Cutting Tools',
-    'Fastening Tools',
-    'Electrical Tools',
-    'Plumbing Tools',
-    'Carpentry Tools',
-    'Automotive Tools',
-    'Garden Tools',
-    'Other',
+  // Categories are loaded dynamically from OrganizationProvider.
+  // Fallback list used if org config is not yet loaded.
+  static const List<String> _fallbackCategories = [
+    'Hand Tools', 'Power Tools', 'Testing Equipment', 'Safety Equipment',
+    'Measuring Tools', 'Other',
   ];
+
+  List<String> _getCategories(BuildContext context) {
+    final orgCats = context.read<OrganizationProvider>().toolCategories;
+    return orgCats.isNotEmpty ? orgCats : _fallbackCategories;
+  }
 
   final Map<String, IconData> _categoryIcons = {
     'Hand Tools': Icons.build_outlined,
@@ -161,9 +158,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
     }
   }
 
+  String _orgPrefix() {
+    final orgName = context.read<OrganizationProvider>().orgName;
+    return orgName.isNotEmpty ? ToolIdGenerator.derivePrefix(orgName) : 'TOOL';
+  }
+
   void _generateToolId() {
     setState(() {
-      _serialNumberController.text = ToolIdGenerator.generateToolId();
+      _serialNumberController.text = ToolIdGenerator.generateToolId(prefix: _orgPrefix());
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +179,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
 
   void _generateModelNumber() {
     setState(() {
-      _modelController.text = ToolIdGenerator.generateModelNumber();
+      _modelController.text = ToolIdGenerator.generateModelNumber(prefix: _orgPrefix());
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +192,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
   }
 
   void _generateBothIds() {
-    final ids = ToolIdGenerator.generateBoth();
+    final ids = ToolIdGenerator.generateBoth(prefix: _orgPrefix());
     setState(() {
       _modelController.text = ids['model']!;
       _serialNumberController.text = ids['serial']!;
@@ -345,7 +347,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         ),
                         prefixIconConstraints: const BoxConstraints(minWidth: 52),
                       ),
-                      items: _categories.map((category) {
+                      items: _getCategories(context).map((category) {
                         return DropdownMenuItem<String>(
                           value: category,
                           child: Padding(
@@ -355,7 +357,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                         );
                       }).toList(),
                       selectedItemBuilder: (context) {
-                        return _categories
+                        return _getCategories(context)
                             .map(
                               (category) => Align(
                                 alignment: Alignment.centerLeft,
@@ -702,7 +704,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                       _buildCompactDropdown(
                         label: 'Category *',
                         value: _selectedCategory.isEmpty ? null : _selectedCategory,
-                        items: _categories,
+                        items: _getCategories(context),
                         onChanged: (value) {
                           setState(() {
                             _selectedCategory = value ?? '';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../config/app_config.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/responsive_helper.dart';
 
@@ -123,7 +124,7 @@ class _WebSidebarState extends State<WebSidebar> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'RGS Tools',
+                AppConfig.appName,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

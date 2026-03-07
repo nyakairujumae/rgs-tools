@@ -75,7 +75,7 @@ class _TechnicianRegistrationScreenState
         title: isDesktopLayout
             ? null
             : const Text(
-                'Technician Registration',
+                'Team Member Registration',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                 ),
@@ -136,7 +136,7 @@ class _TechnicianRegistrationScreenState
                   children: [
                     // Subtitle above card
                     Text(
-                      'Register as a technician for RGS HVAC Services',
+                      'Register as a team member',
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                         color: isDesktopLayout
@@ -380,7 +380,7 @@ class _TechnicianRegistrationScreenState
                       onPressed: _isLoading ? null : _handleRegister,
                       isLoading: _isLoading,
                       child: const Text(
-                        'Register as Technician',
+                        'Register',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

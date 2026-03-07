@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "RGS HVAC Tools",
+  "appTitle": "Tools",
 
   "common_cancel": "Cancel",
   "common_save": "Save",
@@ -97,7 +97,7 @@
   "login_registerPrompt": "Don't have an account? Register Here",
   "login_registerSubtext": "Choose Admin or Technician registration",
   "login_welcomeBack": "Welcome Back",
-  "login_welcomeBackSubtitle": "Sign in to your RGS HVAC Services account",
+  "login_welcomeBackSubtitle": "Sign in to your account",
   "login_successMessage": "Welcome back! Successfully signed in.",
   "login_accessDenied": "Access denied: Invalid admin credentials",
   "login_emailRequiredFirst": "Please enter your email address first",
@@ -105,7 +105,7 @@
   "login_appleCancelled": "Apple sign-in was cancelled.",
   "login_appleFailed": "Apple sign-in failed.",
   "login_oauthAccountExists": "This email is already registered. Please sign in with your email and password.",
-  "login_emailDomainNotAllowed": "Email domain not allowed. Use @mekar.ae or other approved domains",
+  "login_emailDomainNotAllowed": "Email domain not allowed. Please use an approved email address.",
 
   "login_resetPasswordDialogTitle": "Reset Password",
   "login_resetPasswordDialogMessage": "Enter your email address and we'll send you a link to reset your password.",
@@ -147,7 +147,7 @@
   "resetPassword_sessionExpired": "Session expired. Please open the invite link again.",
 
   "adminRegistration_title": "Admin Registration",
-  "adminRegistration_subtitle": "Register as an administrator for RGS HVAC Services",
+  "adminRegistration_subtitle": "Register as an administrator",
   "adminRegistration_fullNameLabel": "Full Name",
   "adminRegistration_fullNameHint": "Enter full name",
   "adminRegistration_emailLabel": "Email Address",
@@ -160,7 +160,7 @@
   "adminRegistration_alreadyHaveAccount": "Already have an account?",
   "adminRegistration_loadingRole": "Loading admin role...",
   "adminRegistration_positionNotConfigured": "Super Admin position not configured. Please run the admin positions migration.",
-  "adminRegistration_accountCreated": "Admin account created successfully! Welcome to RGS HVAC Services.",
+  "adminRegistration_accountCreated": "Admin account created successfully! Welcome.",
   "adminRegistration_invalidDomain": "Invalid email domain for admin registration. Use {domains}",
   "@adminRegistration_invalidDomain": {
     "placeholders": {
@@ -175,7 +175,7 @@
   "adminRegistration_weakPassword": "Password is too weak. Please use a stronger password.",
 
   "techRegistration_title": "Technician Registration",
-  "techRegistration_subtitle": "Register as a technician for RGS HVAC Services",
+  "techRegistration_subtitle": "Register as a technician",
   "techRegistration_fullNameLabel": "Full Name",
   "techRegistration_fullNameHint": "Enter full name",
   "techRegistration_emailLabel": "Email Address",
@@ -209,7 +209,7 @@
   "pendingApproval_checking": "Checking...",
   "pendingApproval_autoRefresh": "Status is checked automatically every 5 seconds",
   "pendingApproval_contactAdmin": "Questions? Contact your administrator",
-  "pendingApproval_approved": "Your account has been approved! Welcome to RGS HVAC Services.",
+  "pendingApproval_approved": "Your account has been approved! Welcome.",
   "pendingApproval_errorSigningOut": "Error signing out: {error}",
   "@pendingApproval_errorSigningOut": {
     "placeholders": {
@@ -269,7 +269,7 @@
   "adminDashboard_greetingMorning": "Good Morning",
   "adminDashboard_greetingAfternoon": "Good Afternoon",
   "adminDashboard_greetingEvening": "Good Evening",
-  "adminDashboard_manageTools": "Manage your HVAC tools and technicians",
+  "adminDashboard_manageTools": "Manage your tools and field team",
 
   "adminManagement_title": "Admins",
   "adminManagement_loading": "Loading admins...",
@@ -543,11 +543,6 @@
   "addTechnician_takePhoto": "Take Photo",
   "addTechnician_removePhoto": "Remove Photo",
 
-  "department_repairing": "Repairing",
-  "department_maintenance": "Maintenance",
-  "department_retrofit": "Retrofit",
-  "department_installation": "Installation",
-  "department_factory": "Factory",
 
   "settings_title": "Settings",
   "settings_accountSection": "Account",
@@ -567,7 +562,7 @@
   "settings_exportDataSubtitle": "Download your data as CSV",
   "settings_importData": "Import Data",
   "settings_importDataSubtitle": "Restore from backup file",
-  "settings_importDataMessage": "To import data, please contact support at support@rgstools.app. We will help you restore your data from a backup file.",
+  "settings_importDataMessage": "To import data, please contact support. We will help you restore your data from a backup file.",
   "settings_appVersion": "App Version",
   "settings_helpSupport": "Help & Support",
   "settings_helpSupportSubtitle": "Get help and contact support",
@@ -582,7 +577,7 @@
   "settings_requestAccountDeletion": "Request Account Deletion",
   "settings_requestAccountDeletionSubtitle": "Ask your administrator to delete your account",
   "settings_versionInfo": "Version Information",
-  "settings_rgsToolsManager": "RGS Tools Manager",
+  "settings_rgsToolsManager": "Tools Manager",
   "settings_couldNotOpenPage": "Could not open support page",
   "settings_exportSuccess": "Data exported successfully! {count} file(s) created.",
   "@settings_exportSuccess": {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import 'admin_home_screen.dart';
@@ -18,9 +19,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      title: 'Welcome to RGS Tools',
-      subtitle: 'Professional Tool Management for HVAC Teams',
-      description: 'Manage your tools, track assignments, and optimize costs with our comprehensive solution designed for 50+ technicians across multiple locations.',
+      title: 'Welcome to ${AppConfig.appName}',
+      subtitle: 'Professional Tool Management for Field Teams',
+      description: 'Manage your tools, track assignments, and optimize costs with our comprehensive solution designed for teams across multiple locations.',
       icon: Icons.build,
       color: AppTheme.primaryColor,
     ),
@@ -117,35 +118,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'RGS',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'HVAC SERVICES',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+              child: Text(
+                AppConfig.appName,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ),
           SizedBox(height: 16),
           Text(
-            'Welcome to RGS Tools',
+            'Welcome to ${AppConfig.appName}',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,

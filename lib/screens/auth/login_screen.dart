@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/theme_extensions.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
-import '../../utils/logo_assets.dart';
+import '../../widgets/common/app_logo.dart';
 import '../../utils/responsive_helper.dart';
 import '../../services/supabase_service.dart';
 import '../../services/user_profile_service.dart';
@@ -224,7 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final logoAsset = getThemeLogoAsset(theme.brightness);
     final mediaQuery = MediaQuery.of(context);
     final size = mediaQuery.size;
     final bool isDesktopLayout = size.width >= 900;
@@ -317,20 +316,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           : context.spacingLarge * 5.625,
                     ), // ~48px / ~90px
                     
-                    // Logo centered - width 110-130px
-                    Center(
-                      child: Image.asset(
-                        logoAsset,
-                        width: isTabletLayout ? 140 : 120,
-                        height: null,
-                      fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          Logger.debug('❌ Error loading logo: $error');
-                          Logger.debug('❌ Logo asset path: $logoAsset');
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                    ),
+                    // Logo centered
+                    const Center(child: AppLogo()),
                     
                     // Spacing ~34px
                     SizedBox(height: context.spacingLarge * 2.125), // ~34px
