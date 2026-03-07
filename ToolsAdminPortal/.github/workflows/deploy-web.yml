@@ -1,0 +1,63 @@
+name: Deploy Web App to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'web/**'
+      - 'assets/**'
+      - '.github/workflows/deploy-web.yml'
+
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push docs/ back to repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web app
+        run: flutter build web --release --base-href /
+
+      - name: Preserve CNAME and static pages
+        run: |
+          [[ -f docs/CNAME ]] && cp docs/CNAME /tmp/CNAME.bak || true
+          [[ -d docs/privacy ]] && cp -r docs/privacy /tmp/docs-privacy-bak || true
+          [[ -d docs/reset-password ]] && cp -r docs/reset-password /tmp/docs-reset-password-bak || true
+          [[ -d docs/support ]] && cp -r docs/support /tmp/docs-support-bak || true
+
+      - name: Update docs with build output
+        run: |
+          # Remove old docs content except CNAME (we'll restore it)
+          find docs -mindepth 1 -maxdepth 1 ! -name 'CNAME' -exec rm -rf {} +
+          # Copy build output
+          cp -r build/web/* docs/
+          # Restore preserved files
+          [[ -f /tmp/CNAME.bak ]] && cp /tmp/CNAME.bak docs/CNAME || true
+          [[ -d /tmp/docs-privacy-bak ]] && cp -r /tmp/docs-privacy-bak docs/privacy || true
+          [[ -d /tmp/docs-reset-password-bak ]] && cp -r /tmp/docs-reset-password-bak docs/reset-password || true
+          [[ -d /tmp/docs-support-bak ]] && cp -r /tmp/docs-support-bak docs/support || true
+
+      - name: Commit and push docs
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/
+          git diff --staged --quiet || git commit -m "Deploy web app [skip ci]"
+          git push
