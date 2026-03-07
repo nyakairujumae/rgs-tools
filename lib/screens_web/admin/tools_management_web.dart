@@ -8,6 +8,7 @@ import '../../screens/tool_detail_screen.dart';
 import '../../screens/edit_tool_screen.dart';
 import '../../screens/assign_tool_screen.dart';
 import '../../utils/currency_formatter.dart';
+import '../../providers/organization_provider.dart';
 import 'dart:async';
 
 /// Enterprise Tools Management Screen
@@ -156,7 +157,7 @@ class _ToolsManagementWebState extends State<ToolsManagementWeb> {
         _buildFilterDropdown(
           'Category',
           _filterCategory,
-          ['All', 'HVAC', 'Electrical', 'Plumbing', 'General'],
+          ['All', ...context.read<OrganizationProvider>().toolCategories],
           (value) => setState(() => _filterCategory = value == 'All' ? null : value),
           isDark,
         ),

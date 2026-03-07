@@ -17,6 +17,7 @@ import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
 import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/organization_provider.dart';
 
 class TechniciansScreen extends StatefulWidget {
   const TechniciansScreen({super.key});
@@ -235,7 +236,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                AppLocalizations.of(context).technicians_title,
+                                context.read<OrganizationProvider>().workerLabelPlural,
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
@@ -267,7 +268,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 size: 26,
                                 color: Colors.white,
                               ),
-                              tooltip: 'Add Technician',
+                              tooltip: 'Add ${context.read<OrganizationProvider>().workerLabel}',
                               style: IconButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
                                 foregroundColor: Colors.white,
@@ -331,7 +332,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Select technicians to assign',
+                                  'Select ${context.read<OrganizationProvider>().workerLabelPlural.toLowerCase()} to assign',
                                   style: TextStyle(
                                     fontSize: 12,
                                 color: Theme.of(context)

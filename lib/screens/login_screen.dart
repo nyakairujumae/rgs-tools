@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: PremiumFieldStyles.fieldTextStyle(context),
                           decoration: PremiumFieldStyles.inputDecoration(
                             context,
-                            hintText: 'e.g., user@royalgulf.ae',
+                            hintText: 'e.g., you@company.com',
                             prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
@@ -396,7 +396,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sign in to your RGS HVAC Services account',
+          'Sign in to your ${AppConfig.appName} account',
           style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),

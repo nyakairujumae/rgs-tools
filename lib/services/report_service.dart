@@ -13,6 +13,7 @@ import '../models/tool.dart';
 import '../models/tool_issue.dart';
 import '../models/tool_history.dart';
 import '../models/approval_workflow.dart';
+import '../config/app_config.dart';
 import '../services/supabase_service.dart';
 
 enum ReportType {
@@ -136,7 +137,7 @@ class ReportService {
 
     // Get directory and create file
     final directory = await _getDownloadsDirectory();
-    final fileName = 'RGS_Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.xlsx';
+    final fileName = 'Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.xlsx';
     final filePath = '${directory.path}/$fileName';
     
     final file = File(filePath);
@@ -258,7 +259,7 @@ class ReportService {
     );
 
     final directory = await _getDownloadsDirectory();
-    final fileName = 'RGS_Tools_MovementHistory_${_fileNameFormat.format(DateTime.now())}.pdf';
+    final fileName = 'Tools_MovementHistory_${_fileNameFormat.format(DateTime.now())}.pdf';
     final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
     return file;
@@ -497,7 +498,7 @@ class ReportService {
 
     try {
       final directory = await _getDownloadsDirectory();
-      final fileName = 'RGS_Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.pdf';
+      final fileName = 'Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.pdf';
       final file = File('${directory.path}/$fileName');
       
       // Save PDF with error handling
@@ -1604,7 +1605,7 @@ class ReportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          'RGS HVAC Services',
+          AppConfig.appName,
           style: pw.TextStyle(
             fontSize: 13,
             fontWeight: pw.FontWeight.bold,
@@ -2793,7 +2794,7 @@ class ReportService {
         // Fallback: use temp directory
         debugPrint('⚠️ Failed to get application documents directory, using temp directory: $e');
         final tempDir = Directory.systemTemp;
-        final fallbackDir = Directory('${tempDir.path}/RGS_Reports');
+        final fallbackDir = Directory('${tempDir.path}/Tools_Reports');
         if (!await fallbackDir.exists()) {
           await fallbackDir.create(recursive: true);
         }

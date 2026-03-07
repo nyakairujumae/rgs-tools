@@ -358,7 +358,7 @@ class AdminNotificationProvider extends ChangeNotifier {
   String _getNotificationMessage(NotificationType type, String technicianName) {
     switch (type) {
       case NotificationType.accessRequest:
-        return 'Technician $technicianName needs to access the RGS app';
+        return 'Technician $technicianName needs to access the app';
       case NotificationType.toolRequest:
         return 'Technician $technicianName requested a tool';
       case NotificationType.toolAssignment:

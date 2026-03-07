@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '258248380025',
     projectId: 'rgstools',
     storageBucket: 'rgstools.firebasestorage.app',
-    iosBundleId: 'com.rgs.app',
+    iosBundleId: 'com.tools.app',
   );
 }
 

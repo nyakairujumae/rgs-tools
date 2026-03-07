@@ -105,7 +105,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'RGS HVAC Tools'**
+  /// **'Tools'**
   String get appTitle;
 
   /// No description provided for @common_cancel.
@@ -615,7 +615,7 @@ abstract class AppLocalizations {
   /// No description provided for @login_welcomeBackSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to your RGS HVAC Services account'**
+  /// **'Sign in to your account'**
   String get login_welcomeBackSubtitle;
 
   /// No description provided for @login_successMessage.
@@ -663,7 +663,7 @@ abstract class AppLocalizations {
   /// No description provided for @login_emailDomainNotAllowed.
   ///
   /// In en, this message translates to:
-  /// **'Email domain not allowed. Use @mekar.ae or other approved domains'**
+  /// **'Email domain not allowed. Please use an approved email address.'**
   String get login_emailDomainNotAllowed;
 
   /// No description provided for @login_resetPasswordDialogTitle.
@@ -861,7 +861,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminRegistration_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Register as an administrator for RGS HVAC Services'**
+  /// **'Register as an administrator'**
   String get adminRegistration_subtitle;
 
   /// No description provided for @adminRegistration_fullNameLabel.
@@ -939,7 +939,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminRegistration_accountCreated.
   ///
   /// In en, this message translates to:
-  /// **'Admin account created successfully! Welcome to RGS HVAC Services.'**
+  /// **'Admin account created successfully! Welcome.'**
   String get adminRegistration_accountCreated;
 
   /// No description provided for @adminRegistration_invalidDomain.
@@ -993,7 +993,7 @@ abstract class AppLocalizations {
   /// No description provided for @techRegistration_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Register as a technician for RGS HVAC Services'**
+  /// **'Register as a technician'**
   String get techRegistration_subtitle;
 
   /// No description provided for @techRegistration_fullNameLabel.
@@ -1161,7 +1161,7 @@ abstract class AppLocalizations {
   /// No description provided for @pendingApproval_approved.
   ///
   /// In en, this message translates to:
-  /// **'Your account has been approved! Welcome to RGS HVAC Services.'**
+  /// **'Your account has been approved! Welcome.'**
   String get pendingApproval_approved;
 
   /// No description provided for @pendingApproval_errorSigningOut.
@@ -1479,7 +1479,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminDashboard_manageTools.
   ///
   /// In en, this message translates to:
-  /// **'Manage your HVAC tools and technicians'**
+  /// **'Manage your tools and field team'**
   String get adminDashboard_manageTools;
 
   /// No description provided for @adminManagement_title.
@@ -2808,36 +2808,6 @@ abstract class AppLocalizations {
   /// **'Remove Photo'**
   String get addTechnician_removePhoto;
 
-  /// No description provided for @department_repairing.
-  ///
-  /// In en, this message translates to:
-  /// **'Repairing'**
-  String get department_repairing;
-
-  /// No description provided for @department_maintenance.
-  ///
-  /// In en, this message translates to:
-  /// **'Maintenance'**
-  String get department_maintenance;
-
-  /// No description provided for @department_retrofit.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrofit'**
-  String get department_retrofit;
-
-  /// No description provided for @department_installation.
-  ///
-  /// In en, this message translates to:
-  /// **'Installation'**
-  String get department_installation;
-
-  /// No description provided for @department_factory.
-  ///
-  /// In en, this message translates to:
-  /// **'Factory'**
-  String get department_factory;
-
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:
@@ -2949,7 +2919,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_importDataMessage.
   ///
   /// In en, this message translates to:
-  /// **'To import data, please contact support at support@rgstools.app. We will help you restore your data from a backup file.'**
+  /// **'To import data, please contact support. We will help you restore your data from a backup file.'**
   String get settings_importDataMessage;
 
   /// No description provided for @settings_appVersion.
@@ -3039,7 +3009,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_rgsToolsManager.
   ///
   /// In en, this message translates to:
-  /// **'RGS Tools Manager'**
+  /// **'Tools Manager'**
   String get settings_rgsToolsManager;
 
   /// No description provided for @settings_couldNotOpenPage.

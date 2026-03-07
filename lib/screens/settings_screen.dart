@@ -7,6 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
 import '../providers/auth_provider.dart';
+import '../providers/organization_provider.dart';
+import '../config/app_config.dart';
+import 'org_departments_screen.dart';
+import 'org_tool_categories_screen.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../services/csv_export_service.dart';
@@ -150,6 +154,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildBackupCard(),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        if (authProvider.isAdmin) ...[
+                          _buildSectionLabel(context, 'Company Configuration'),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+                          _buildCompanyConfigCard(context),
+                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                        ],
                         _buildSectionLabel(context, AppLocalizations.of(context).settings_aboutSection),
                         SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                         _buildAboutCard(),
@@ -657,6 +667,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildCompanyConfigCard(BuildContext context) {
+    final orgProvider = context.watch<OrganizationProvider>();
+    return _buildCard(
+      context,
+      Column(
+        children: [
+          ListTile(
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(context: context, color: AppTheme.primaryColor, child: Icon(Icons.people_outlined, color: AppTheme.primaryColor, size: 20)),
+            title: const Text('Team Member Label'),
+            subtitle: Text(
+              '${orgProvider.workerLabel} / ${orgProvider.workerLabelPlural}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showWorkerLabelDialog(context, orgProvider),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(context: context, color: AppTheme.primaryColor, child: Icon(Icons.business_outlined, color: AppTheme.primaryColor, size: 20)),
+            title: const Text('Departments'),
+            subtitle: Text(
+              '${orgProvider.departments.length} department${orgProvider.departments.length == 1 ? '' : 's'}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OrgDepartmentsScreen()),
+            ),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            contentPadding: _tilePadding(context),
+            leading: _iconBadge(context: context, color: AppTheme.primaryColor, child: Icon(Icons.category_outlined, color: AppTheme.primaryColor, size: 20)),
+            title: const Text('Tool Categories'),
+            subtitle: Text(
+              '${orgProvider.toolCategories.length} categor${orgProvider.toolCategories.length == 1 ? 'y' : 'ies'}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OrgToolCategoriesScreen()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showWorkerLabelDialog(BuildContext context, OrganizationProvider orgProvider) async {
+    final singularCtrl = TextEditingController(text: orgProvider.workerLabel);
+    final pluralCtrl = TextEditingController(text: orgProvider.workerLabelPlural);
+    bool saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Team Member Label'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: singularCtrl,
+                decoration: const InputDecoration(labelText: 'Singular (e.g. Electrician)', border: OutlineInputBorder()),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pluralCtrl,
+                decoration: const InputDecoration(labelText: 'Plural (e.g. Electricians)', border: OutlineInputBorder()),
+                textCapitalization: TextCapitalization.words,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      setS(() => saving = true);
+                      try {
+                        await orgProvider.updateWorkerLabel(singularCtrl.text, pluralCtrl.text);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } catch (_) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(content: Text('Could not save label')),
+                          );
+                        }
+                      } finally {
+                        if (ctx.mounted) setS(() => saving = false);
+                      }
+                    },
+              child: saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    singularCtrl.dispose();
+    pluralCtrl.dispose();
+  }
+
   Widget _buildAboutCard() {
     return _buildCard(
       context,
@@ -1043,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'RGS Tools Manager',
+              AppConfig.appName,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -1062,7 +1180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              '© 2024 RGS Tools. All rights reserved.',
+              '© 2024 ${AppConfig.appName}. All rights reserved.',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),

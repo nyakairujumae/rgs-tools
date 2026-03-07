@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../config/app_config.dart';
 import '../models/user_role.dart';
 import '../services/supabase_service.dart';
 import '../services/last_route_service.dart';
@@ -134,7 +135,7 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('🎉 Your account has been approved! Welcome to RGS HVAC Services.'),
+              content: Text('🎉 Your account has been approved! Welcome to ${AppConfig.appName}.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),

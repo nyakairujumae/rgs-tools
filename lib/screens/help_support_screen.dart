@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive_helper.dart';
+import '../config/app_config.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -55,7 +56,7 @@ class HelpSupportScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'RGS Tools Support',
+                      '${AppConfig.appName} Support',
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getResponsiveFontSize(context, 24),
                         fontWeight: FontWeight.w700,
@@ -128,7 +129,7 @@ class HelpSupportScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () async {
                 final email = 'support@rgstools.app';
-                final subject = 'RGS Tools Support Request';
+                final subject = '${AppConfig.appName} Support Request';
                 final uri = Uri.parse('mailto:$email?subject=${Uri.encodeComponent(subject)}');
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri);

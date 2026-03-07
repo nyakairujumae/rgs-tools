@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../config/app_config.dart';
 import '../utils/logger.dart';
 
 class DataExportService {
@@ -19,7 +20,7 @@ class DataExportService {
       final csvContent = StringBuffer();
       
       // Header
-      csvContent.writeln('RGS Tools - User Data Export');
+      csvContent.writeln('${AppConfig.appName} - User Data Export');
       csvContent.writeln('Export Date: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
       csvContent.writeln('User: $userName ($userEmail)');
       csvContent.writeln('');

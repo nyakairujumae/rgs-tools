@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
+import '../providers/organization_provider.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
@@ -266,7 +267,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             ),
             prefixIcon: Icon(Icons.category, size: isDesktop ? 18 : 20),
           ),
-          items: _getCategoryOptions(),
+          items: _getCategoryOptions(context),
           onChanged: (value) {
             setState(() {
               _selectedCategory = value!;
@@ -818,14 +819,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     );
   }
 
-  List<DropdownMenuItem<String>> _getCategoryOptions() {
+  List<DropdownMenuItem<String>> _getCategoryOptions(BuildContext context) {
+    final orgCats = context.read<OrganizationProvider>().toolCategories;
+    final cats = orgCats.isNotEmpty
+        ? orgCats
+        : ['Hand Tools', 'Power Tools', 'Testing Equipment', 'Safety Equipment', 'Measuring Tools'];
     return [
       const DropdownMenuItem(value: 'All', child: Text('All Categories')),
-      const DropdownMenuItem(value: 'Testing Equipment', child: Text('Testing Equipment')),
-      const DropdownMenuItem(value: 'HVAC Tools', child: Text('HVAC Tools')),
-      const DropdownMenuItem(value: 'Power Tools', child: Text('Power Tools')),
-      const DropdownMenuItem(value: 'Safety Equipment', child: Text('Safety Equipment')),
-      const DropdownMenuItem(value: 'Measuring Tools', child: Text('Measuring Tools')),
+      ...cats.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))),
     ];
   }
 

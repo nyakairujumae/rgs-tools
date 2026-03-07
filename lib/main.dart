@@ -19,7 +19,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gotrue/gotrue.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
-import 'screens/role_selection_screen.dart';
+import 'screens/company_setup_wizard_screen.dart';
+import 'screens/admin_onboarding_wizard_screen.dart';
+// role_selection_screen removed — wizard is the entry point
 import 'screens/splash_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -41,6 +43,7 @@ import 'providers/admin_notification_provider.dart';
 import 'providers/technician_notification_provider.dart';
 import 'providers/approval_workflows_provider.dart';
 import 'providers/connectivity_provider.dart';
+import 'providers/organization_provider.dart';
 import 'database/database_helper.dart';
 import 'services/local_cache_service.dart';
 import 'services/sync_service.dart';
@@ -72,7 +75,14 @@ final _appLinks = AppLinks();
 final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // CRITICAL: preserve() MUST be called synchronously before any await,
+  // otherwise the framework dismisses the native splash before we can hold it.
+  // We always preserve first, then remove below if it's not a first launch.
+  if (!kIsWeb) {
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  }
 
   // Load environment variables from .env file
   try {
@@ -116,24 +126,20 @@ void main() async {
   // After first launch, NEVER show splash again, even if user is not logged in
   // Use single persistent boolean flag - save immediately when splash is shown
   bool shouldShowSplash = false;
-  
+
   try {
     final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
     shouldShowSplash = isFirstLaunch;
     _cachedLastRoute = await LastRouteService.getLastRoute();
-    
+
     if (isFirstLaunch) {
       Logger.debug('🚀 App starting (FIRST INSTALL) - will show splash screen');
-      // CRITICAL: Save flag IMMEDIATELY before preserving splash
-      // This ensures splash will never show again, even if app crashes
+      // CRITICAL: Save flag IMMEDIATELY so splash will never show again, even if app crashes
       await FirstLaunchService.markSplashShown();
       Logger.debug('✅ Splash flag saved - will never show again');
-      
-      // Only preserve native splash screen on first install
-  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
       Logger.debug('🚀 Native splash preserved (first install only)');
     } else {
-      // Not first install - remove splash immediately
+      // Not first install - remove the splash we preserved above
       FlutterNativeSplash.remove();
       Logger.debug('🚀 Skipping splash screen (already shown before)');
     }
@@ -242,7 +248,7 @@ Future<void> _initializeServicesInBackground() async {
       } catch (e) {
         // Not initialized yet, try to initialize it
         Logger.debug('🔍 Supabase not initialized, initializing now...');
-        Logger.debug('🔍 Using bundle ID: com.rgs.app');
+        Logger.debug('🔍 Using bundle ID: com.tools.app');
         
         try {
           // Minimal delay to allow native plugins to initialize
@@ -543,7 +549,7 @@ class ErrorBoundary extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                             MaterialPageRoute(
-                              builder: (context) => const RoleSelectionScreen(),
+                              builder: (context) => const AdminOnboardingWizardScreen(),
                               settings: const RouteSettings(name: '/role-selection'),
                             ),
                             (route) => false,
@@ -781,7 +787,7 @@ class _EmailConfirmationLoadingScreenState extends State<_EmailConfirmationLoadi
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'RGS Tools',
+                      AppConfig.appName,
                       style: TextStyle(
                         color: Colors.black.withOpacity(0.4),
                         fontSize: 14,
@@ -1088,9 +1094,25 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => TechnicianNotificationProvider()),
         ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseCertificationProvider()),
+        ChangeNotifierProvider(create: (_) => OrganizationProvider()),
       ],
       child: Consumer3<AuthProvider, ThemeProvider, LocaleProvider>(
         builder: (context, authProvider, themeProvider, localeProvider, child) {
+          // Load org config whenever org_id becomes available
+          final orgId = authProvider.organizationId;
+          if (orgId != null) {
+            final orgProvider = context.read<OrganizationProvider>();
+            if (!orgProvider.isLoaded || orgProvider.orgId != orgId) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                orgProvider.loadOrganization(orgId);
+              });
+            }
+          } else if (authProvider.isLoggingOut) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.read<OrganizationProvider>().clear();
+            });
+          }
+
           // Remove custom error widget to prevent blank error screens on back navigation
           // Flutter will handle errors with its default behavior
           ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -1171,7 +1193,9 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             }
             
             // Route directly to appropriate screen - NO intermediate screens
-            if (isPending) {
+            if (authProvider.needsCompanySetup) {
+              initialRoute = const CompanySetupWizardScreen();
+            } else if (isPending) {
               initialRoute = const PendingApprovalScreen();
             } else if (isAdmin) {
               initialRoute = AdminHomeScreenErrorBoundary(
@@ -1195,11 +1219,11 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             } else if (widget.cachedLastRoute == '/pending-approval') {
               initialRoute = const PendingApprovalScreen();
             } else {
-              initialRoute = const RoleSelectionScreen();
+              initialRoute = const AdminOnboardingWizardScreen();
             }
           } else {
             // No session - show role selection (only for logged out users)
-            initialRoute = const RoleSelectionScreen();
+            initialRoute = const AdminOnboardingWizardScreen();
           }
           
           // Always render MaterialApp immediately
@@ -1210,7 +1234,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           Logger.debug('🔐 Has session: $hasSession, Current user: ${currentUser?.email}, Session established: $_sessionEstablished');
           return MaterialApp(
             navigatorKey: _navigatorKey,
-            title: 'RGS HVAC Tools',
+            title: AppConfig.appName,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
@@ -1273,7 +1297,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               return result;
             },
             routes: {
-              '/role-selection': (context) => const RoleSelectionScreen(),
+              '/role-selection': (context) => const AdminOnboardingWizardScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/reset-password': (context) {
@@ -1287,6 +1311,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                 );
               },
               '/pending-approval': (context) => const PendingApprovalScreen(),
+              '/company-setup': (context) => const CompanySetupWizardScreen(),
+              '/admin-onboarding': (context) => const AdminOnboardingWizardScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                 final initialTab = args?['initialTab'] as int? ?? 0;
@@ -1911,7 +1937,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               }
 
               return MaterialPageRoute(
-                builder: (context) => const RoleSelectionScreen(),
+                builder: (context) => const AdminOnboardingWizardScreen(),
                 settings: const RouteSettings(name: '/role-selection'),
               );
             },
@@ -1919,7 +1945,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               // Fallback for any unhandled routes
               Logger.debug('⚠️ Unknown route (onUnknownRoute): ${settings.name}');
               return MaterialPageRoute(
-                builder: (context) => const RoleSelectionScreen(),
+                builder: (context) => const AdminOnboardingWizardScreen(),
                 settings: RouteSettings(name: '/role-selection'),
               );
             },

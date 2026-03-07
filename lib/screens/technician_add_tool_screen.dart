@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../models/tool.dart';
 import '../providers/auth_provider.dart';
+import '../providers/organization_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
@@ -888,9 +889,14 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     }
   }
 
+  String _orgPrefix() {
+    final orgName = context.read<OrganizationProvider>().orgName;
+    return orgName.isNotEmpty ? ToolIdGenerator.derivePrefix(orgName) : 'TOOL';
+  }
+
   void _generateModelNumber() {
     setState(() {
-      _modelController.text = ToolIdGenerator.generateModelNumber();
+      _modelController.text = ToolIdGenerator.generateModelNumber(prefix: _orgPrefix());
     });
 
     if (mounted) {
@@ -906,7 +912,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
 
   void _generateSerialNumber() {
     setState(() {
-      _serialNumberController.text = ToolIdGenerator.generateToolId();
+      _serialNumberController.text = ToolIdGenerator.generateToolId(prefix: _orgPrefix());
     });
 
     if (mounted) {
@@ -921,7 +927,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   }
 
   void _generateBothIds() {
-    final ids = ToolIdGenerator.generateBoth();
+    final ids = ToolIdGenerator.generateBoth(prefix: _orgPrefix());
     setState(() {
       _modelController.text = ids['model']!;
       _serialNumberController.text = ids['serial']!;

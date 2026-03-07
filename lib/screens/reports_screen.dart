@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
 import "../providers/supabase_tool_provider.dart";
+import '../config/app_config.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/approval_workflows_provider.dart';
@@ -218,7 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 Text(
-                  'Preview RGS tools reports summaries',
+                  'Preview ${AppConfig.appName} report summaries',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,

@@ -38,37 +38,11 @@ CREATE POLICY "Authenticated users can insert organizations"
   TO authenticated
   WITH CHECK (true);
 
--- ============================================================================
--- 2. HELPER FUNCTION: Get current user's organization
--- ============================================================================
-CREATE OR REPLACE FUNCTION public.current_organization_id()
-RETURNS UUID
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT organization_id FROM users WHERE id = auth.uid() LIMIT 1;
-$$;
+-- NOTE: current_organization_id() and user_belongs_to_org() are created in V2_002
+-- (they require the users table which doesn't exist yet)
 
 -- ============================================================================
--- 3. HELPER: Check if user belongs to organization
--- ============================================================================
-CREATE OR REPLACE FUNCTION public.user_belongs_to_org(org_id UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM users 
-    WHERE id = auth.uid() AND organization_id = org_id
-  );
-$$;
-
--- ============================================================================
--- 4. updated_at trigger for organizations
+-- 2. updated_at trigger for organizations
 -- ============================================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -85,7 +59,7 @@ CREATE TRIGGER update_organizations_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- 5. INSERT DEFAULT ORGANIZATION (optional - for bootstrap)
+-- 3. INSERT DEFAULT ORGANIZATION (optional - for bootstrap)
 -- ============================================================================
 -- Uncomment to create a default org for the first tenant:
 /*
