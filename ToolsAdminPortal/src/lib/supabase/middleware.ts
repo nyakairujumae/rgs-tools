@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
   // Public routes — no auth required
-  const publicPaths = ['/privacy', '/support', '/signup', '/onboarding']
+  const publicPaths = ['/privacy', '/support', '/signup', '/onboarding', '/pricing']
   if (
     request.nextUrl.pathname === '/' ||
     publicPaths.some((p) => request.nextUrl.pathname.startsWith(p))
