@@ -9,6 +9,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { BreadcrumbLabelProvider } from '@/components/layout/breadcrumb-context'
 import { Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isBillingPage = pathname === '/dashboard/billing'
 
   useEffect(() => {
     setMobileOpen(false)
@@ -37,6 +39,21 @@ export default function DashboardLayout({
       router.replace('/onboarding')
     }
   }, [loading, user, profile, orgState, router])
+
+  // Paywall: check subscription status and redirect to billing if expired
+  useEffect(() => {
+    if (!profile?.organization_id || isBillingPage) return
+    const check = async () => {
+      const supabase = createClient()
+      const { data } = await supabase.rpc('get_subscription_status', {
+        p_org_id: profile.organization_id,
+      })
+      if (data && !data.has_access) {
+        router.replace('/dashboard/billing')
+      }
+    }
+    check()
+  }, [profile?.organization_id, isBillingPage, router])
 
   if (loading || !user || (profile && profile.role !== 'admin')) {
     return (

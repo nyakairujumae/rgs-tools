@@ -53,10 +53,10 @@ export default function LandingPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            href="/signup"
+            href="/pricing"
             className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
           >
-            Start free trial
+            See pricing
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link

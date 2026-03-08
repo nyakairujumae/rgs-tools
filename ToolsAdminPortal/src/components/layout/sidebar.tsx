@@ -28,6 +28,7 @@ import {
   UserCheck,
   ArrowLeftRight,
   Package,
+  CreditCard,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useOrgContext } from '@/contexts/organization-context'
@@ -44,6 +45,7 @@ const adminOnlyItems: NavItem[] = [
 ]
 
 const bottomItems: NavItem[] = [
+  { label: 'Billing', href: '/dashboard/billing', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Settings', href: '/dashboard/settings', icon: <SettingsIcon className="w-5 h-5" /> },
 ]
 
