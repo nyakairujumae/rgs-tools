@@ -3,8 +3,9 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LoginPage() {
   return (
@@ -66,10 +67,17 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-[400px] mx-4">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <Image src="/icon.png" alt="Tools Admin" width={40} height={40} className="w-10 h-10 rounded-xl" />
-          <span className="text-xl font-semibold tracking-tight">Tools Admin</span>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+          <div className="flex items-center gap-3">
+            <Image src="/icon.png" alt="Tools Admin" width={40} height={40} className="w-10 h-10 rounded-xl" />
+            <span className="text-xl font-semibold tracking-tight">Tools Admin</span>
+          </div>
+          <div className="w-16" />
         </div>
 
         {/* Card */}
