@@ -1,10 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { AlertCircle, Loader2, ChevronLeft } from 'lucide-react'
+import {
+  AlertCircle, Loader2, ChevronLeft, Plus, X, CheckCircle2, Mail, UserPlus
+} from 'lucide-react'
+import { inviteAdmin, addTechnician, fetchAdminPositions } from '@/lib/supabase/actions'
+import type { AdminPosition } from '@/lib/types/database'
 
 // ─── Industry presets ────────────────────────────────────────────────────────
 const INDUSTRY_PRESETS = [
@@ -33,13 +37,17 @@ interface FormState {
   workerLabelPlural: string
 }
 
-const TOTAL_STEPS = 3
+interface InvitedAdmin { email: string; name: string; positionId: string; status: 'pending' | 'sent' | 'error'; error?: string }
+interface AddedMember { name: string; email: string; status: 'pending' | 'saved' | 'error'; error?: string }
+
+const TOTAL_STEPS = 5
 
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [orgReady, setOrgReady] = useState(false) // true after step 3 submits the org
 
   const [form, setForm] = useState<FormState>({
     companyName: '',
@@ -48,6 +56,20 @@ export default function OnboardingPage() {
     workerLabel: 'Technician',
     workerLabelPlural: 'Technicians',
   })
+
+  // Step 4 — admins
+  const [positions, setPositions] = useState<AdminPosition[]>([])
+  const [adminEmail, setAdminEmail] = useState('')
+  const [adminName, setAdminName] = useState('')
+  const [adminPositionId, setAdminPositionId] = useState('')
+  const [invitedAdmins, setInvitedAdmins] = useState<InvitedAdmin[]>([])
+  const [inviting, setInviting] = useState(false)
+
+  // Step 5 — team members
+  const [memberName, setMemberName] = useState('')
+  const [memberEmail, setMemberEmail] = useState('')
+  const [addedMembers, setAddedMembers] = useState<AddedMember[]>([])
+  const [addingMember, setAddingMember] = useState(false)
 
   const set = (field: keyof FormState, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -61,19 +83,29 @@ export default function OnboardingPage() {
     }))
   }
 
+  // Load positions once org is ready (after step 3)
+  useEffect(() => {
+    if (orgReady) {
+      fetchAdminPositions().then((p) => {
+        setPositions(p)
+        if (p.length > 0) setAdminPositionId(p[0].id)
+      })
+    }
+  }, [orgReady])
+
   const canAdvance = (): boolean => {
     if (step === 1) return form.companyName.trim().length > 0 && form.companySlug.trim().length > 0
     if (step === 2) return form.industry.length > 0
     if (step === 3) return form.workerLabel.trim().length > 0 && form.workerLabelPlural.trim().length > 0
-    return false
+    // Steps 4 & 5 are always skippable
+    return true
   }
 
-  const handleSubmit = async () => {
+  // ── Submit org (step 3 → 4) ───────────────────────────────────────────────
+  const submitOrg = async () => {
     setError('')
     setLoading(true)
-
     const supabase = createClient()
-
     try {
       const { error: rpcError } = await supabase.rpc('create_organization_and_assign_user', {
         p_name: form.companyName.trim(),
@@ -82,23 +114,83 @@ export default function OnboardingPage() {
         p_worker_label: form.workerLabel.trim(),
         p_worker_label_plural: form.workerLabelPlural.trim(),
       })
-
-      if (rpcError) {
-        setError(rpcError.message)
-        setLoading(false)
-        return
-      }
-
-      router.push('/dashboard')
+      if (rpcError) { setError(rpcError.message); setLoading(false); return }
+      setOrgReady(true)
+      setStep(4)
     } catch {
       setError('Something went wrong. Please try again.')
+    } finally {
       setLoading(false)
     }
   }
 
+  const advance = () => {
+    setError('')
+    if (step === 3) { submitOrg(); return }
+    setStep((s) => s + 1)
+  }
+
+  const back = () => {
+    setError('')
+    // Can't go back past step 4 once org is submitted
+    if (step === 4) return
+    setStep((s) => s - 1)
+  }
+
+  // ── Invite admin ──────────────────────────────────────────────────────────
+  const handleInviteAdmin = async () => {
+    if (!adminEmail.trim() || !adminName.trim()) return
+    setInviting(true)
+    const entry: InvitedAdmin = {
+      email: adminEmail.trim(),
+      name: adminName.trim(),
+      positionId: adminPositionId,
+      status: 'pending',
+    }
+    setInvitedAdmins((prev) => [...prev, entry])
+    setAdminEmail('')
+    setAdminName('')
+
+    const result = await inviteAdmin(entry.email, entry.name, entry.positionId)
+    setInvitedAdmins((prev) =>
+      prev.map((a) =>
+        a.email === entry.email
+          ? { ...a, status: result.error ? 'error' : 'sent', error: result.error }
+          : a
+      )
+    )
+    setInviting(false)
+  }
+
+  // ── Add team member ───────────────────────────────────────────────────────
+  const handleAddMember = async () => {
+    if (!memberName.trim()) return
+    setAddingMember(true)
+    const entry: AddedMember = { name: memberName.trim(), email: memberEmail.trim(), status: 'pending' }
+    setAddedMembers((prev) => [...prev, entry])
+    setMemberName('')
+    setMemberEmail('')
+
+    const result = await addTechnician({
+      name: entry.name,
+      email: entry.email || undefined,
+      status: 'Active',
+    })
+    setAddedMembers((prev) =>
+      prev.map((m) =>
+        m.name === entry.name && m.email === entry.email
+          ? { ...m, status: result ? 'saved' : 'error', error: result ? undefined : 'Failed to add' }
+          : m
+      )
+    )
+    setAddingMember(false)
+  }
+
+  const finish = () => router.push('/dashboard')
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-[460px]">
+      <div className="w-full max-w-[480px]">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
@@ -131,11 +223,7 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={form.companyName}
-                    onChange={(e) => {
-                      const name = e.target.value
-                      set('companyName', name)
-                      set('companySlug', toSlug(name))
-                    }}
+                    onChange={(e) => { set('companyName', e.target.value); set('companySlug', toSlug(e.target.value)) }}
                     placeholder="Acme Services Ltd"
                     autoFocus
                     className={inputClass}
@@ -144,9 +232,7 @@ export default function OnboardingPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1.5">URL slug</label>
                   <div className="flex rounded-lg border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
-                    <span className="flex items-center px-3 bg-muted text-muted-foreground text-sm border-r border-input select-none whitespace-nowrap">
-                      portal/
-                    </span>
+                    <span className="flex items-center px-3 bg-muted text-muted-foreground text-sm border-r border-input select-none whitespace-nowrap">portal/</span>
                     <input
                       type="text"
                       value={form.companySlug}
@@ -180,9 +266,7 @@ export default function OnboardingPage() {
                     }`}
                   >
                     <span>{preset.label}</span>
-                    <span className="text-xs text-muted-foreground font-normal">
-                      Team member: {preset.workerLabel}
-                    </span>
+                    <span className="text-xs text-muted-foreground font-normal">Team member: {preset.workerLabel}</span>
                   </button>
                 ))}
               </div>
@@ -199,26 +283,143 @@ export default function OnboardingPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Singular (e.g. Technician)</label>
-                  <input
-                    type="text"
-                    value={form.workerLabel}
-                    onChange={(e) => set('workerLabel', e.target.value)}
-                    placeholder="Technician"
-                    autoFocus
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.workerLabel} onChange={(e) => set('workerLabel', e.target.value)} placeholder="Technician" autoFocus className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Plural (e.g. Technicians)</label>
-                  <input
-                    type="text"
-                    value={form.workerLabelPlural}
-                    onChange={(e) => set('workerLabelPlural', e.target.value)}
-                    placeholder="Technicians"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.workerLabelPlural} onChange={(e) => set('workerLabelPlural', e.target.value)} placeholder="Technicians" className={inputClass} />
                 </div>
               </div>
+            </>
+          )}
+
+          {/* ── Step 4: Invite admins ────────────────────────────────────── */}
+          {step === 4 && (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <UserPlus className="w-4 h-4 text-primary" />
+                <h1 className="text-lg font-semibold">Invite admins</h1>
+              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                Add other people who will manage this portal. They&apos;ll receive an email invite.
+              </p>
+
+              {/* Input row */}
+              <div className="space-y-3 mb-4">
+                <input
+                  type="text"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  placeholder="Full name"
+                  className={inputClass}
+                />
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="Email address"
+                  className={inputClass}
+                  onKeyDown={(e) => e.key === 'Enter' && handleInviteAdmin()}
+                />
+                {positions.length > 0 && (
+                  <div className="relative">
+                    <select
+                      value={adminPositionId}
+                      onChange={(e) => setAdminPositionId(e.target.value)}
+                      className={`${inputClass} appearance-none pr-8`}
+                    >
+                      {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleInviteAdmin}
+                  disabled={inviting || !adminEmail.trim() || !adminName.trim()}
+                  className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  Send invite
+                </button>
+              </div>
+
+              {/* Invited list */}
+              {invitedAdmins.length > 0 && (
+                <div className="space-y-2">
+                  {invitedAdmins.map((a, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-muted/50">
+                      {a.status === 'pending' && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />}
+                      {a.status === 'sent' && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+                      {a.status === 'error' && <AlertCircle className="w-4 h-4 text-destructive shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{a.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{a.email}</p>
+                        {a.status === 'error' && <p className="text-xs text-destructive">{a.error}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Step 5: Add team members ─────────────────────────────────── */}
+          {step === 5 && (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <Plus className="w-4 h-4 text-primary" />
+                <h1 className="text-lg font-semibold">Add {form.workerLabelPlural || 'team members'}</h1>
+              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                Add your first team members now, or skip and do it later from the dashboard.
+              </p>
+
+              {/* Input row */}
+              <div className="space-y-3 mb-4">
+                <input
+                  type="text"
+                  value={memberName}
+                  onChange={(e) => setMemberName(e.target.value)}
+                  placeholder={`Full name (required)`}
+                  className={inputClass}
+                />
+                <input
+                  type="email"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                  className={inputClass}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddMember()}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddMember}
+                  disabled={addingMember || !memberName.trim()}
+                  className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {addingMember ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Add {form.workerLabel || 'member'}
+                </button>
+              </div>
+
+              {/* Added list */}
+              {addedMembers.length > 0 && (
+                <div className="space-y-2">
+                  {addedMembers.map((m, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-muted/50">
+                      {m.status === 'pending' && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0" />}
+                      {m.status === 'saved' && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+                      {m.status === 'error' && <AlertCircle className="w-4 h-4 text-destructive shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{m.name}</p>
+                        {m.email && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
+                        {m.status === 'error' && <p className="text-xs text-destructive">{m.error}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
 
@@ -232,10 +433,10 @@ export default function OnboardingPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3 mt-6">
-            {step > 1 && (
+            {step > 1 && step < 4 && (
               <button
                 type="button"
-                onClick={() => { setError(''); setStep((s) => s - 1) }}
+                onClick={back}
                 disabled={loading}
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
@@ -243,21 +444,32 @@ export default function OnboardingPage() {
                 Back
               </button>
             )}
+
+            {/* Skip button for steps 4 & 5 */}
+            {(step === 4 || step === 5) && (
+              <button
+                type="button"
+                onClick={step === 5 ? finish : () => setStep(5)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Skip for now
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={step < TOTAL_STEPS ? () => { setError(''); setStep((s) => s + 1) } : handleSubmit}
+              onClick={step === 5 ? finish : advance}
               disabled={!canAdvance() || loading}
               className="ml-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Setting up...
-                </>
-              ) : step < TOTAL_STEPS ? (
-                'Continue'
-              ) : (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Setting up...</>
+              ) : step === 3 ? (
                 'Finish setup'
+              ) : step === 5 ? (
+                'Go to dashboard'
+              ) : (
+                'Continue'
               )}
             </button>
           </div>
