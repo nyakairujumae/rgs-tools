@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Eye, EyeOff, AlertCircle, Loader2, ChevronLeft } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Loader2, ChevronLeft, ArrowLeft } from 'lucide-react'
 
 // ─── Industry presets (mirrors Flutter app) ────────────────────────────────
 const INDUSTRY_PRESETS = [
@@ -143,10 +143,17 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-[460px]">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
-          <span className="text-lg font-semibold tracking-tight">Tools Admin Portal</span>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
+            <span className="text-lg font-semibold tracking-tight">Tools Admin Portal</span>
+          </div>
+          <div className="w-16" />
         </div>
 
         {/* Progress */}

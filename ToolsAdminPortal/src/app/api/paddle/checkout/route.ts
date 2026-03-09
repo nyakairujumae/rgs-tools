@@ -41,8 +41,8 @@ export async function POST(request: Request) {
 
     const paddle = new Paddle(process.env.PADDLE_API_KEY!, {
       environment: process.env.NEXT_PUBLIC_PADDLE_ENV === 'sandbox'
-        ? Environment.Sandbox
-        : Environment.Production,
+        ? Environment.sandbox
+        : Environment.production,
     })
 
     // Get or create Paddle customer
