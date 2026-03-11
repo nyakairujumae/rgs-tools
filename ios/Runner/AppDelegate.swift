@@ -20,7 +20,7 @@ import image_picker_ios
 
     // Provide documents path for Supabase session persistence storage
     if let controller = window?.rootViewController as? FlutterViewController {
-      let documentsChannel = FlutterMethodChannel(name: "com.rgs.app/documents_path",
+      let documentsChannel = FlutterMethodChannel(name: "com.tools.app/documents_path",
                                                   binaryMessenger: controller.binaryMessenger)
       documentsChannel.setMethodCallHandler { call, result in
         if call.method == "getDocumentsPath" {

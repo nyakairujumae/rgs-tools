@@ -277,7 +277,7 @@ class FirebaseMessagingService {
 
   static Future<void> _showLocalFromMessage(RemoteMessage msg,
       {required int badgeCount}) async {
-    final title = msg.notification?.title ?? 'RGS';
+    final title = msg.notification?.title ?? 'Tools';
     final body = msg.notification?.body ?? 'You have a new notification';
     final androidDetails = AndroidNotificationDetails(
       _androidChannelId,
@@ -405,7 +405,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         NotificationDetails(android: androidDetails, iOS: darwinDetails);
     await plugin.show(
       (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 100000,
-      message.notification?.title ?? 'RGS',
+      message.notification?.title ?? 'Tools',
       message.notification?.body ?? 'You have a new notification',
       details,
       payload: message.data.isNotEmpty ? message.data.toString() : null,

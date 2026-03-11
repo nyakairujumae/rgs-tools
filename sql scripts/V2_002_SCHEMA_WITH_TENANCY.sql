@@ -47,6 +47,32 @@ CREATE POLICY "Users can read same org" ON users
   );
 
 -- ============================================================================
+-- 1b. HELPER FUNCTIONS (require users table - moved from V2_001)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.current_organization_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT organization_id FROM users WHERE id = auth.uid() LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.user_belongs_to_org(org_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users 
+    WHERE id = auth.uid() AND organization_id = org_id
+  );
+$$;
+
+-- ============================================================================
 -- 2. handle_new_user trigger (supports organization_id from signup metadata)
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()

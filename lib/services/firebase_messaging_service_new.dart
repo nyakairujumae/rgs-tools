@@ -16,9 +16,9 @@ class FirebaseMessagingService {
       FlutterLocalNotificationsPlugin();
   
   // Android notification channel
-  static const String _androidChannelId = 'rgs_notifications';
-  static const String _androidChannelName = 'RGS Notifications';
-  static const String _androidChannelDesc = 'Notifications from RGS Tools app';
+  static const String _androidChannelId = 'tools_notifications';
+  static const String _androidChannelName = 'App Notifications';
+  static const String _androidChannelDesc = 'Notifications from the app';
 
   /// Get current FCM token
   static String? get fcmToken => _fcmToken;

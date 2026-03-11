@@ -851,7 +851,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           const SizedBox(height: 16),
           _textField(_technicianNameCtrl, label: 'Assign To (Your Name or Another Technician)', hint: 'e.g., Ahmed Hassan', validator: _req),
           const SizedBox(height: 16),
-          _textField(_projectCtrl, label: 'Project/Site', hint: 'e.g., Site A HVAC Installation'),
+          _textField(_projectCtrl, label: 'Project/Site', hint: 'e.g., Site A - Phase 1'),
           const SizedBox(height: 16),
           _dropdown(
             label: 'Priority',

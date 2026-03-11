@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 
 /// Simple animated splash used while the auth/profile providers warm up.
 class SplashScreen extends StatefulWidget {
@@ -118,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'RGS Tools',
+                  AppConfig.appName,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -128,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Precision tools management for HVAC pros',
+                  'Professional tools management for field teams',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.white70,
                   ),

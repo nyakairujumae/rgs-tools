@@ -116,7 +116,7 @@ class ToolTemplate {
   }
 }
 
-// Pre-defined tool templates for HVAC industry
+// Pre-defined generic tool templates
 class ToolTemplates {
   static List<ToolTemplate> get defaultTemplates => [
     // Electrical Tools
@@ -147,37 +147,6 @@ class ToolTemplates {
         'condition': 'Good',
         'status': 'Available',
         'category': 'Testing Equipment',
-      },
-    ),
-
-    // HVAC Tools
-    ToolTemplate(
-      name: 'Refrigerant Manifold Gauge Set',
-      category: 'HVAC Tools',
-      brand: 'Yellow Jacket',
-      model: '41040',
-      description: '4-valve manifold gauge set for refrigerant work',
-      estimatedValue: 150.0,
-      requiredFields: ['serialNumber', 'purchaseDate', 'purchasePrice'],
-      defaultValues: {
-        'condition': 'Good',
-        'status': 'Available',
-        'category': 'HVAC Tools',
-      },
-    ),
-
-    ToolTemplate(
-      name: 'Vacuum Pump',
-      category: 'HVAC Tools',
-      brand: 'Robinair',
-      model: '15500',
-      description: '5 CFM vacuum pump for system evacuation',
-      estimatedValue: 300.0,
-      requiredFields: ['serialNumber', 'purchaseDate', 'purchasePrice'],
-      defaultValues: {
-        'condition': 'Good',
-        'status': 'Available',
-        'category': 'HVAC Tools',
       },
     ),
 

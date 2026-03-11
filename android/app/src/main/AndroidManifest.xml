@@ -5,7 +5,7 @@
     <!-- Android 13+ notifications permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="RGS"
+        android:label="Tools"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -36,11 +36,11 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="com.rgs.app"
+                    android:scheme="com.tools.app"
                     android:host="auth"
                     android:path="/callback" />
                 <data
-                    android:scheme="com.rgs.app"
+                    android:scheme="com.tools.app"
                     android:host="reset-password" />
             </intent-filter>
         </activity>
@@ -55,7 +55,7 @@
             android:resource="@mipmap/ic_launcher" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="rgs_notifications" />
+            android:value="tools_notifications" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

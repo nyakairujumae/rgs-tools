@@ -72,7 +72,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   context,
                   theme,
                   'Overview',
-                  'RGS Tools ("we", "our", "us") respects your privacy. This policy explains what data we collect, why we collect it, and how it is used.',
+                  'This app ("we", "our", "us") respects your privacy. This policy explains what data we collect, why we collect it, and how it is used.',
                 ),
                 _buildSection(
                   context,
@@ -126,7 +126,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   context,
                   theme,
                   'Children\'s Privacy',
-                  'RGS Tools is not intended for children under 13.',
+                  'This app is not intended for children under 13.',
                 ),
                 const SizedBox(height: 24),
                 Container(
@@ -148,7 +148,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Contact us at support@rgstools.app for privacy questions.',
+                          'Contact us for privacy questions.',
                           style: TextStyle(
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                             color: AppTheme.secondaryColor,
