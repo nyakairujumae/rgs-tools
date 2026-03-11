@@ -72,7 +72,14 @@ final _appLinks = AppLinks();
 final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // CRITICAL: preserve() MUST be called synchronously before any await,
+  // otherwise the framework dismisses the native splash before we can hold it.
+  // We always preserve first, then remove below if it's not a first launch.
+  if (!kIsWeb) {
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  }
 
   // Load environment variables from .env file
   try {
@@ -116,24 +123,20 @@ void main() async {
   // After first launch, NEVER show splash again, even if user is not logged in
   // Use single persistent boolean flag - save immediately when splash is shown
   bool shouldShowSplash = false;
-  
+
   try {
     final isFirstLaunch = await FirstLaunchService.isFirstLaunch();
     shouldShowSplash = isFirstLaunch;
     _cachedLastRoute = await LastRouteService.getLastRoute();
-    
+
     if (isFirstLaunch) {
       Logger.debug('🚀 App starting (FIRST INSTALL) - will show splash screen');
-      // CRITICAL: Save flag IMMEDIATELY before preserving splash
-      // This ensures splash will never show again, even if app crashes
+      // CRITICAL: Save flag IMMEDIATELY so splash will never show again, even if app crashes
       await FirstLaunchService.markSplashShown();
       Logger.debug('✅ Splash flag saved - will never show again');
-      
-      // Only preserve native splash screen on first install
-  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
       Logger.debug('🚀 Native splash preserved (first install only)');
     } else {
-      // Not first install - remove splash immediately
+      // Not first install - remove the splash we preserved above
       FlutterNativeSplash.remove();
       Logger.debug('🚀 Skipping splash screen (already shown before)');
     }
