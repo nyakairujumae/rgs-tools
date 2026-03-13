@@ -397,12 +397,41 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ),
+                Builder(builder: (context) {
+                  final rawUrls = workflow.requestData?['image_urls'];
+                  final count = rawUrls is List ? rawUrls.length : 0;
+                  if (count == 0) return const SizedBox.shrink();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.attach_file,
+                        size: 13,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
             ),
           ],
         ),
@@ -970,6 +999,110 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
+              // Attachments
+              Builder(builder: (context) {
+                final rawUrls = workflow.requestData?['image_urls'];
+                final imageUrls = rawUrls is List
+                    ? rawUrls.whereType<String>().toList()
+                    : <String>[];
+                if (imageUrls.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.attach_file,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Attachments (${imageUrls.length})',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: imageUrls.length,
+                      itemBuilder: (context, i) {
+                        return GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => Dialog(
+                                backgroundColor: Colors.black,
+                                insetPadding: const EdgeInsets.all(12),
+                                child: Stack(
+                                  children: [
+                                    InteractiveViewer(
+                                      child: Image.network(
+                                        imageUrls[i],
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => const Center(
+                                          child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () => Navigator.pop(context),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrls[i],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              loadingBuilder: (_, child, progress) => progress == null
+                                  ? child
+                                  : Container(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                    ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
         ),
