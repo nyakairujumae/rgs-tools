@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { StatusBadge, PriorityBadge } from '@/components/shared/status-badge'
 import { formatDate, timeAgo, cn } from '@/lib/utils'
@@ -20,8 +20,11 @@ import {
   ArrowLeftRight,
   Trash2,
   RefreshCw,
+  ImageIcon,
+  Paperclip,
 } from 'lucide-react'
 import type { ApprovalWorkflow } from '@/lib/types/database'
+import Image from 'next/image'
 
 const REQUEST_TYPES = [
   'All',
@@ -36,7 +39,6 @@ const REQUEST_TYPES = [
 ] as const
 
 const STATUS_FILTERS = ['All', 'Pending', 'Approved', 'Rejected', 'Overdue'] as const
-
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'] as const
 
 type StatusFilter = (typeof STATUS_FILTERS)[number]
@@ -56,21 +58,17 @@ function getTypeColor(type: string) {
   }
 }
 
-function getTypeIcon(type: string) {
-  switch (type) {
-    case 'Tool Assignment': return <ArrowLeftRight className="w-4 h-4" />
-    case 'Tool Purchase': return <Package className="w-4 h-4" />
-    case 'Tool Disposal': return <Trash2 className="w-4 h-4" />
-    case 'Maintenance': return <Wrench className="w-4 h-4" />
-    case 'Transfer': return <RefreshCw className="w-4 h-4" />
-    default: return <Clock className="w-4 h-4" />
-  }
-}
-
 function isOverdue(wf: ApprovalWorkflow) {
   if (wf.status !== 'Pending') return false
   if (!wf.due_date) return false
   return new Date(wf.due_date) < new Date()
+}
+
+function getImageUrls(wf: ApprovalWorkflow): string[] {
+  const urls = (wf.request_data as any)?.image_urls
+  if (!urls) return []
+  if (Array.isArray(urls)) return urls.filter((u): u is string => typeof u === 'string')
+  return []
 }
 
 export default function RequestsPage() {
@@ -84,6 +82,7 @@ export default function RequestsPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [detailWorkflow, setDetailWorkflow] = useState<ApprovalWorkflow | null>(null)
   const [showNewRequest, setShowNewRequest] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     const supabase = createClient()
@@ -136,12 +135,8 @@ export default function RequestsPage() {
     const { approveWorkflow } = await import('@/lib/supabase/actions')
     const success = await approveWorkflow(id, user?.id || '', '')
     if (success) {
-      setWorkflows((prev) =>
-        prev.map((w) => (w.id === id ? { ...w, status: 'Approved' as const } : w))
-      )
-      if (detailWorkflow?.id === id) {
-        setDetailWorkflow((d) => d ? { ...d, status: 'Approved' as const } : d)
-      }
+      setWorkflows((prev) => prev.map((w) => (w.id === id ? { ...w, status: 'Approved' as const } : w)))
+      if (detailWorkflow?.id === id) setDetailWorkflow((d) => d ? { ...d, status: 'Approved' as const } : d)
     }
   }
 
@@ -153,9 +148,8 @@ export default function RequestsPage() {
       setWorkflows((prev) =>
         prev.map((w) => (w.id === id ? { ...w, status: 'Rejected' as const, rejection_reason: rejectReason } : w))
       )
-      if (detailWorkflow?.id === id) {
+      if (detailWorkflow?.id === id)
         setDetailWorkflow((d) => d ? { ...d, status: 'Rejected' as const, rejection_reason: rejectReason } : d)
-      }
     }
     setRejectId(null)
     setRejectReason('')
@@ -198,10 +192,7 @@ export default function RequestsPage() {
           className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {search && (
-          <button
-            onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -215,15 +206,11 @@ export default function RequestsPage() {
             onClick={() => setStatusFilter(s)}
             className={cn(
               'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              statusFilter === s
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              statusFilter === s ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
             {s}
-            <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-              {counts[s]}
-            </span>
+            <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">{counts[s]}</span>
           </button>
         ))}
       </div>
@@ -269,6 +256,7 @@ export default function RequestsPage() {
               onRejectReasonChange={setRejectReason}
               onRejectConfirm={handleReject}
               onRejectCancel={() => { setRejectId(null); setRejectReason('') }}
+              onImageClick={setLightboxUrl}
             />
           ))
         )}
@@ -286,6 +274,7 @@ export default function RequestsPage() {
           onRejectReasonChange={setRejectReason}
           onRejectConfirm={handleReject}
           onRejectCancel={() => { setRejectId(null); setRejectReason('') }}
+          onImageClick={setLightboxUrl}
         />
       )}
 
@@ -295,11 +284,26 @@ export default function RequestsPage() {
           userId={user?.id || ''}
           userName={user?.email || ''}
           onClose={() => setShowNewRequest(false)}
-          onCreated={(wf) => {
-            setWorkflows((prev) => [wf, ...prev])
-            setShowNewRequest(false)
-          }}
+          onCreated={(wf) => { setWorkflows((prev) => [wf, ...prev]); setShowNewRequest(false) }}
         />
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white/80 hover:text-white">
+            <X className="w-7 h-7" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Attachment"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   )
@@ -317,12 +321,14 @@ interface CardProps {
   onRejectReasonChange: (v: string) => void
   onRejectConfirm: (id: string) => void
   onRejectCancel: () => void
+  onImageClick: (url: string) => void
 }
 
-function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectToggle, onRejectReasonChange, onRejectConfirm, onRejectCancel }: CardProps) {
+function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectToggle, onRejectReasonChange, onRejectConfirm, onRejectCancel, onImageClick }: CardProps) {
   const initial = wf.title?.trim()[0]?.toUpperCase() || '?'
   const typeColor = getTypeColor(wf.request_type)
   const overdue = isOverdue(wf)
+  const imageUrls = getImageUrls(wf)
 
   return (
     <div
@@ -336,7 +342,6 @@ function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectTo
         </div>
 
         <div className="flex-1 min-w-0">
-          {/* Title row */}
           <div className="flex items-start gap-2 flex-wrap">
             <span className="font-semibold text-sm leading-snug">{wf.title}</span>
             {overdue && (
@@ -344,35 +349,34 @@ function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectTo
                 <AlertTriangle className="w-3 h-3" /> Overdue
               </span>
             )}
+            {imageUrls.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
+                <Paperclip className="w-3 h-3" /> {imageUrls.length} attachment{imageUrls.length !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
-          {/* Subtitle */}
           <p className="text-xs text-muted-foreground mt-0.5">
             {wf.request_type} • {wf.requester_role || 'Technician'}
           </p>
 
-          {/* Chips */}
           <div className="flex items-center gap-2 flex-wrap mt-2">
-            <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', typeColor)}>
-              {wf.request_type}
-            </span>
+            <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', typeColor)}>{wf.request_type}</span>
             <PriorityBadge priority={wf.priority} />
             <StatusBadge status={wf.status} />
           </div>
 
-          {/* Description */}
           {wf.description && (
             <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{wf.description}</p>
           )}
 
-          {/* Meta */}
           <p className="text-xs text-muted-foreground mt-2">
             Requested by {wf.requester_name} · {timeAgo(wf.request_date)}
             {wf.due_date && ` · Due ${formatDate(wf.due_date)}`}
           </p>
 
           {wf.rejection_reason && (
-            <div className="mt-2 px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/20 text-xs text-red-600">
+            <div className="mt-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600">
               <span className="font-medium">Rejection reason:</span> {wf.rejection_reason}
             </div>
           )}
@@ -380,10 +384,7 @@ function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectTo
 
         {/* Action buttons */}
         {wf.status === 'Pending' && (
-          <div
-            className="flex items-center gap-2 shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => onApprove(wf.id)}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
@@ -402,10 +403,7 @@ function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectTo
 
       {/* Inline reject form */}
       {rejectId === wf.id && (
-        <div
-          className="mt-3 pt-3 border-t border-border"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="mt-3 pt-3 border-t border-border" onClick={(e) => e.stopPropagation()}>
           <textarea
             value={rejectReason}
             onChange={(e) => onRejectReasonChange(e.target.value)}
@@ -414,10 +412,7 @@ function RequestCard({ wf, rejectId, rejectReason, onView, onApprove, onRejectTo
             autoFocus
           />
           <div className="flex justify-end gap-2 mt-2">
-            <button
-              onClick={onRejectCancel}
-              className="text-xs px-3 py-1.5 rounded-lg border border-input hover:bg-accent transition-colors"
-            >
+            <button onClick={onRejectCancel} className="text-xs px-3 py-1.5 rounded-lg border border-input hover:bg-accent transition-colors">
               Cancel
             </button>
             <button
@@ -446,11 +441,13 @@ interface DetailModalProps {
   onRejectReasonChange: (v: string) => void
   onRejectConfirm: (id: string) => void
   onRejectCancel: () => void
+  onImageClick: (url: string) => void
 }
 
-function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectToggle, onRejectReasonChange, onRejectConfirm, onRejectCancel }: DetailModalProps) {
+function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectToggle, onRejectReasonChange, onRejectConfirm, onRejectCancel, onImageClick }: DetailModalProps) {
   const typeColor = getTypeColor(wf.request_type)
   const overdue = isOverdue(wf)
+  const imageUrls = getImageUrls(wf)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -472,13 +469,10 @@ function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectT
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-4">
           {/* Chips */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', typeColor)}>
-              {wf.request_type}
-            </span>
+            <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', typeColor)}>{wf.request_type}</span>
             <PriorityBadge priority={wf.priority} />
             <StatusBadge status={wf.status} />
             {overdue && (
@@ -493,8 +487,8 @@ function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectT
             <p className="text-sm text-muted-foreground leading-relaxed">{wf.description}</p>
           )}
 
-          {/* Details grid */}
-          <div className="space-y-2 text-sm">
+          {/* Details */}
+          <div className="space-y-2">
             <DetailRow label="Requester" value={wf.requester_name} />
             <DetailRow label="Role" value={wf.requester_role} />
             <DetailRow label="Requested" value={wf.request_date ? formatDate(wf.request_date) : undefined} />
@@ -508,7 +502,7 @@ function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectT
 
           {/* Rejection reason */}
           {wf.rejection_reason && (
-            <div className="px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/20 text-xs text-red-600">
+            <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600">
               <span className="font-medium">Rejection reason:</span> {wf.rejection_reason}
             </div>
           )}
@@ -517,6 +511,35 @@ function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectT
           {wf.comments && (
             <div className="px-3 py-2 rounded-lg bg-muted text-xs">
               <span className="font-medium">Comments:</span> {wf.comments}
+            </div>
+          )}
+
+          {/* Attachments */}
+          {imageUrls.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5" /> Attachments ({imageUrls.length})
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {imageUrls.map((url, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onImageClick(url)}
+                    className="relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary/40 transition-colors bg-muted group"
+                  >
+                    <img
+                      src={url}
+                      alt={`Attachment ${i + 1}`}
+                      className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                      onError={(e) => {
+                        const el = e.currentTarget
+                        el.style.display = 'none'
+                        el.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>'
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -534,10 +557,7 @@ function DetailModal({ wf, onClose, onApprove, rejectId, rejectReason, onRejectT
                   autoFocus
                 />
                 <div className="flex gap-2">
-                  <button
-                    onClick={onRejectCancel}
-                    className="flex-1 text-sm py-2 rounded-lg border border-input hover:bg-accent transition-colors"
-                  >
+                  <button onClick={onRejectCancel} className="flex-1 text-sm py-2 rounded-lg border border-input hover:bg-accent transition-colors">
                     Cancel
                   </button>
                   <button
@@ -594,6 +614,7 @@ interface NewRequestModalProps {
 }
 
 const NEW_REQUEST_TYPES = REQUEST_TYPES.filter((t) => t !== 'All') as string[]
+const BUCKET = 'tool-images'
 
 function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestModalProps) {
   const [requestType, setRequestType] = useState(NEW_REQUEST_TYPES[0])
@@ -602,8 +623,27 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
   const [priority, setPriority] = useState<string>('Medium')
   const [dueDate, setDueDate] = useState('')
   const [location, setLocation] = useState('')
+  const [files, setFiles] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFiles = (selected: FileList | null) => {
+    if (!selected) return
+    const newFiles = Array.from(selected).filter((f) => f.type.startsWith('image/'))
+    setFiles((prev) => [...prev, ...newFiles].slice(0, 5)) // max 5
+    newFiles.forEach((f) => {
+      const reader = new FileReader()
+      reader.onload = (e) => setPreviews((prev) => [...prev, e.target?.result as string].slice(0, 5))
+      reader.readAsDataURL(f)
+    })
+  }
+
+  const removeFile = (i: number) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i))
+    setPreviews((prev) => prev.filter((_, idx) => idx !== i))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -612,7 +652,20 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
     setError('')
     try {
       const supabase = createClient()
-      const payload = {
+
+      // Upload images
+      const imageUrls: string[] = []
+      for (const file of files) {
+        const ext = file.name.split('.').pop()
+        const path = `requests/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(path, file)
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path)
+          if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl)
+        }
+      }
+
+      const payload: any = {
         title: title.trim(),
         description: description.trim(),
         request_type: requestType,
@@ -624,7 +677,9 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
         request_date: new Date().toISOString(),
         due_date: dueDate || null,
         location: location.trim() || null,
+        request_data: imageUrls.length > 0 ? { image_urls: imageUrls } : null,
       }
+
       const { data, error: err } = await supabase
         .from('approval_workflows')
         .insert(payload)
@@ -659,9 +714,7 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
                 onChange={(e) => setRequestType(e.target.value)}
                 className="w-full appearance-none px-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring pr-8"
               >
-                {NEW_REQUEST_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {NEW_REQUEST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
@@ -703,10 +756,8 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
                   className={cn(
                     'px-3 py-1.5 text-xs font-medium rounded-full border transition-colors',
                     priority === p
-                      ? p === 'Critical' || p === 'High'
-                        ? 'bg-red-500 text-white border-red-500'
-                        : p === 'Medium'
-                        ? 'bg-amber-500 text-white border-amber-500'
+                      ? p === 'Critical' || p === 'High' ? 'bg-red-500 text-white border-red-500'
+                        : p === 'Medium' ? 'bg-amber-500 text-white border-amber-500'
                         : 'bg-emerald-500 text-white border-emerald-500'
                       : 'bg-background text-muted-foreground border-input hover:border-foreground/30'
                   )}
@@ -740,9 +791,52 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-destructive">{error}</p>
-          )}
+          {/* Image Attachments */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Attachments <span className="text-muted-foreground/60">(optional, max 5 images)</span>
+            </label>
+
+            {previews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {previews.map((src, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border bg-muted group">
+                    <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {files.length < 5 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg border border-dashed border-input hover:border-primary/40 hover:bg-muted/50 transition-colors text-sm text-muted-foreground"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  Attach photo or spec
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+              </>
+            )}
+          </div>
+
+          {error && <p className="text-xs text-destructive">{error}</p>}
 
           <div className="flex gap-2 pt-1">
             <button
@@ -757,7 +851,7 @@ function NewRequestModal({ userId, userName, onClose, onCreated }: NewRequestMod
               disabled={submitting}
               className="flex-1 text-sm py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors font-medium flex items-center justify-center gap-2"
             >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               Submit Request
             </button>
           </div>
