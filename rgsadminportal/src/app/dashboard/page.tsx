@@ -288,7 +288,7 @@ export default function DashboardPage() {
         <QuickAction href="/dashboard/tools" icon={<Plus className="w-4 h-4" />} label="Add Tool" />
         <QuickAction href="/dashboard/technicians" icon={<UserPlus className="w-4 h-4" />} label="Add Technician" />
         <QuickAction href="/dashboard/reports" icon={<FileText className="w-4 h-4" />} label="Generate Report" />
-        <QuickAction href="/dashboard/approvals" icon={<CheckCircle className="w-4 h-4" />} label="Review Approvals" />
+        <QuickAction href="/dashboard/approvals" icon={<CheckCircle className="w-4 h-4" />} label="Requests" />
       </div>
 
       {/* Bottom Row */}
