@@ -21,7 +21,7 @@ import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/company_setup_wizard_screen.dart';
 import 'screens/admin_onboarding_wizard_screen.dart';
-// role_selection_screen removed — wizard is the entry point
+import 'screens/role_selection_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -549,7 +549,7 @@ class ErrorBoundary extends StatelessWidget {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                             MaterialPageRoute(
-                              builder: (context) => const AdminOnboardingWizardScreen(),
+                              builder: (context) => RoleSelectionScreen(),
                               settings: const RouteSettings(name: '/role-selection'),
                             ),
                             (route) => false,
@@ -1096,53 +1096,43 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => SupabaseCertificationProvider()),
         ChangeNotifierProvider(create: (_) => OrganizationProvider()),
       ],
-      child: Consumer3<AuthProvider, ThemeProvider, LocaleProvider>(
-        builder: (context, authProvider, themeProvider, localeProvider, child) {
-          // Load org config whenever org_id becomes available
-          final orgId = authProvider.organizationId;
-          if (orgId != null) {
+      child: Consumer2<ThemeProvider, LocaleProvider>(
+        builder: (context, themeProvider, localeProvider, child) {
+          // Auth side-effects run once per frame via postFrameCallback to avoid
+          // rebuilding MaterialApp on every auth state change (which crashes the navigator).
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final authProvider = context.read<AuthProvider>();
+            final orgId = authProvider.organizationId;
             final orgProvider = context.read<OrganizationProvider>();
-            if (!orgProvider.isLoaded || orgProvider.orgId != orgId) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (orgId != null) {
+              if (!orgProvider.isLoaded || orgProvider.orgId != orgId) {
                 orgProvider.loadOrganization(orgId);
-              });
+              }
+            } else if (authProvider.isLoggingOut) {
+              orgProvider.clear();
             }
-          } else if (authProvider.isLoggingOut) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<OrganizationProvider>().clear();
-            });
-          }
 
-          // Remove custom error widget to prevent blank error screens on back navigation
-          // Flutter will handle errors with its default behavior
-          ErrorWidget.builder = (FlutterErrorDetails details) {
-            // During logout, silently handle errors
-            if (authProvider.isLoggingOut) {
+            ErrorWidget.builder = (FlutterErrorDetails details) {
               return const SizedBox.shrink();
-            }
-            // For other errors, return empty widget to prevent blank screen
-            // This prevents users from getting stuck on error screens when pressing back
-            return const SizedBox.shrink();
-          };
-          
-          // Remove splash screen quickly - don't wait for initialization
-          if (!_splashRemoved) {
-            _splashRemoved = true;
-            // Remove splash immediately - initialization happens in background
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-            FlutterNativeSplash.remove();
+            };
+
+            if (!_splashRemoved) {
+              _splashRemoved = true;
+              FlutterNativeSplash.remove();
               Logger.debug('✅ Native splash removed immediately');
-            });
-          }
-          
-          // CRITICAL: Process initial deep link if we have one and haven't processed it yet
-          if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
-            Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
-            // Process in post frame callback to avoid setState during build
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            }
+
+            if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
+              Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
               _handleDeepLink(widget.initialDeepLink!);
-            });
-          }
+            }
+          });
+
+          // Determine initial route once at startup using current auth state.
+          // After login, navigation is handled imperatively via pushReplacementNamed —
+          // we must NOT recompute this during rebuilds or the navigator will crash.
+          final authProvider = context.read<AuthProvider>();
           
           // CRITICAL: Check session FIRST - if logged in, go directly to home screen
           // No intermediate screens, no waiting, no flashes
@@ -1219,11 +1209,11 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             } else if (widget.cachedLastRoute == '/pending-approval') {
               initialRoute = const PendingApprovalScreen();
             } else {
-              initialRoute = const AdminOnboardingWizardScreen();
+              initialRoute = RoleSelectionScreen();
             }
           } else {
             // No session - show role selection (only for logged out users)
-            initialRoute = const AdminOnboardingWizardScreen();
+            initialRoute = RoleSelectionScreen();
           }
           
           // Always render MaterialApp immediately
@@ -1297,7 +1287,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               return result;
             },
             routes: {
-              '/role-selection': (context) => const AdminOnboardingWizardScreen(),
+              '/role-selection': (context) => RoleSelectionScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/reset-password': (context) {

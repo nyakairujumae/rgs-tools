@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../config/app_config.dart';
 
-/// App logo widget - displays app name from config.
-/// Replace with image asset when custom logo is provided.
+/// App logo widget - displays the logo image based on current theme.
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key});
+  final double height;
+  const AppLogo({super.key, this.height = 48});
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontSize: 24,
-      fontWeight: FontWeight.w800,
-      color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white,
-      letterSpacing: 0.5,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Image.asset(
+      isDark
+          ? 'assets/images/logo_dark.png'
+          : 'assets/images/logo_light.png',
+      height: height,
+      fit: BoxFit.contain,
     );
-    return Text(AppConfig.appName, style: style);
   }
 }

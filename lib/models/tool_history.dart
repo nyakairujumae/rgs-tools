@@ -196,4 +196,7 @@ class ToolHistoryActions {
   static const String releasedToRequester = 'Released to Requester';
   static const String acceptedAssignment = 'Accepted Assignment';
   static const String declinedAssignment = 'Declined Assignment';
+  static const String edited = 'Edited';
+  static const String movedToShared = 'Moved to Shared';
+  static const String movedToInventory = 'Moved to Inventory';
 }

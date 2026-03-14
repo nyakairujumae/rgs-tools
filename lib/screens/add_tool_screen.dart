@@ -87,16 +87,14 @@ class _AddToolScreenState extends State<AddToolScreen> {
           color: theme.colorScheme.onSurface.withOpacity(0.8),
         ),
         const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            category,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
-            ),
-            overflow: TextOverflow.ellipsis,
+        Text(
+          category,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -361,7 +359,15 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             .map(
                               (category) => Align(
                                 alignment: Alignment.centerLeft,
-                                child: _buildCategoryDropdownRow(theme, category),
+                                child: Text(
+                                  category,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             )
                             .toList();
@@ -983,7 +989,15 @@ class _AddToolScreenState extends State<AddToolScreen> {
           .map(
             (item) => Align(
               alignment: Alignment.centerLeft,
-              child: _buildCategoryDropdownRow(theme, item),
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )
           .toList(),

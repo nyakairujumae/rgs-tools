@@ -386,9 +386,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
-        Icon(Icons.login, size: 64, color: theme.primaryColor),
+        Image.asset(
+          isDark
+              ? 'assets/images/logo_dark.png'
+              : 'assets/images/logo_light.png',
+          height: 72,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(height: 16),
         Text(
           'Welcome Back',

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import 'admin_dashboard_screen.dart';
@@ -139,6 +140,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   late int _selectedIndex;
   bool _isDisposed = false;
   late List<Widget> _screens;
+  DateTime? _lastBackPress;
   Timer? _notificationRefreshTimer;
   final TextEditingController _inviteNameController = TextEditingController();
   final TextEditingController _inviteEmailController = TextEditingController();
@@ -457,7 +459,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
             ),
     );
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          // Second press within 2 seconds — exit the app
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: context.scaffoldBackground,
       body: Container(
         color: context.scaffoldBackground,
@@ -490,7 +511,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                     child: contentScaffold,
                   )),
       ),
-    );
+    ));
   }
 
   // ---------------------------------------------------------------------------
@@ -834,8 +855,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   void _navigateToToolsWithFilter(String statusFilter) {
     setState(() {
       _selectedIndex = 1; // Tools tab
-      // Replace the ToolsScreen with a filtered version
-      _screens[1] = ToolsScreen(initialStatusFilter: statusFilter);
+      // Use a ValueKey so Flutter creates a fresh state when filter changes
+      _screens[1] = ToolsScreen(
+        key: ValueKey(statusFilter),
+        initialStatusFilter: statusFilter,
+      );
     });
   }
 
@@ -1975,23 +1999,27 @@ class DashboardScreen extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Available',
-                                    style: TextStyle(fontSize: 12, color: muted),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    availableCount.toString(),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.secondaryColor,
+                              child: GestureDetector(
+                                onTap: () => onNavigateToToolsWithFilter('Available'),
+                                behavior: HitTestBehavior.opaque,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Available',
+                                      style: TextStyle(fontSize: 12, color: muted),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      availableCount.toString(),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             Container(
@@ -2000,23 +2028,27 @@ class DashboardScreen extends StatelessWidget {
                               color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
                             ),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Assigned',
-                                    style: TextStyle(fontSize: 12, color: muted),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    assignedCount.toString(),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.primaryColor,
+                              child: GestureDetector(
+                                onTap: () => onNavigateToToolsWithFilter('Assigned'),
+                                behavior: HitTestBehavior.opaque,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Assigned',
+                                      style: TextStyle(fontSize: 12, color: muted),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      assignedCount.toString(),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -2686,12 +2718,14 @@ class DashboardScreen extends StatelessWidget {
                 availableCount.toString(),
                 _dashboardGreen,
                 context,
+                onTap: () => onNavigateToToolsWithFilter('Available'),
               ),
               _buildStatusItem(
                 'Assigned',
                 assignedCount.toString(),
                 Colors.blue,
                 context,
+                onTap: () => onNavigateToToolsWithFilter('Assigned'),
               ),
             ],
           ),
@@ -3208,7 +3242,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatusItem(
-      String status, String count, Color color, BuildContext context) {
+      String status, String count, Color color, BuildContext context, {VoidCallback? onTap}) {
     final isWebLayout = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -3217,7 +3251,10 @@ class DashboardScreen extends StatelessWidget {
     if (isWebLayout) {
       // Web: clean inline status with colour dot
       return Expanded(
-        child: Padding(
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             children: [
@@ -3251,12 +3288,16 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
+        ),
       );
     }
 
     // Mobile: original card style
     return Expanded(
-      child: Container(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.symmetric(
           vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
@@ -3296,6 +3337,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

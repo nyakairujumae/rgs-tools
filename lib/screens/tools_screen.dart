@@ -41,6 +41,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Set<String> _selectedTools = <String>{};
   /// Web: false = grid (marketplace), true = list. Default grid like Shared Tools.
   bool _webViewList = false;
+  /// Mobile: false = grid, true = list
+  bool _isListView = false;
 
   @override
   void initState() {
@@ -193,6 +195,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ],
                             ),
                           ),
+                          if (!kIsWeb)
+                            IconButton(
+                              icon: Icon(
+                                _isListView ? Icons.grid_view_rounded : Icons.view_list_rounded,
+                                size: 22,
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                              onPressed: () => setState(() => _isListView = !_isListView),
+                              tooltip: _isListView ? 'Grid view' : 'List view',
+                            ),
                           Material(
                             color: Colors.transparent,
                             child: IconButton(
@@ -477,6 +489,24 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                         ),
                                       ),
                                       DropdownMenuItem<String>(
+                                        value: 'Assigned',
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.person_outline,
+                                                size: 16,
+                                                color: Colors.teal,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Assigned'),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<String>(
                                         value: 'In Use',
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
@@ -738,6 +768,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                     itemBuilder: (context, index) {
                                       final toolGroup = toolGroups[index];
                                       return _buildToolCard(toolGroup);
+                                    },
+                                  );
+                                }
+
+                                // Mobile: list view
+                                if (_isListView) {
+                                  return ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                    itemCount: toolGroups.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                    itemBuilder: (context, index) {
+                                      return _buildToolListRow(toolGroups[index]);
                                     },
                                   );
                                 }
@@ -1139,6 +1181,96 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildToolListRow(ToolGroup toolGroup) {
+    final theme = Theme.of(context);
+    final representative = toolGroup.representativeTool ?? toolGroup.instances.first;
+    final imagePath = representative.imagePath;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
+
+    return InkWell(
+      onTap: () {
+        if (toolGroup.instances.length == 1) {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ToolDetailScreen(tool: toolGroup.instances.first),
+          ));
+        } else {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ToolInstancesScreen(toolGroup: toolGroup),
+          ));
+        }
+      },
+      onLongPress: () => _showToolActions(context, representative),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: context.cardDecoration.copyWith(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: hasImage && (imagePath.startsWith('http') || kIsWeb)
+                    ? Image.network(imagePath, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildPlaceholderImage())
+                    : _buildPlaceholderImage(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Name, category, count
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    representative.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    representative.category,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (toolGroup.instances.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '${toolGroup.instances.length} units',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildStatusPill(toolGroup.bestStatus),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 18,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+          ],
+        ),
       ),
     );
   }

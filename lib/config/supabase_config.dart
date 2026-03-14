@@ -2,9 +2,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Supabase config: .env (local) or --dart-define, else defaults so Codemagic builds work with no extra config.
 class SupabaseConfig {
-  static const String _defaultUrl = 'https://talzuhfantkxnwyahzyp.supabase.co';
+  // Default to the RGS Tools Supabase project so builds without .env
+  // (e.g. CI, TestFlight) still talk to the production RGS backend.
+  static const String _defaultUrl = 'https://npgwikkvtxebzwtpzwgx.supabase.co';
   static const String _defaultAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhbHp1aGZhbnRreG53eWFoenlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NDMzOTcsImV4cCI6MjA4NjIxOTM5N30.EYqpEjoe9PCirwGkynN6G8wq-U2LjrYYUg5CfrcfZqg';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wZ3dpa2t2dHhlYnp3dHB6d2d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NDgzOTAsImV4cCI6MjA3NjQyNDM5MH0.ucqQrk-5IcgF-wVLI2l1_CLYfu6ZDDrRuJ0Y3ugAaEU';
 
   static String get url {
     try {
@@ -26,5 +28,6 @@ class SupabaseConfig {
     return _defaultAnonKey;
   }
 
-  static const String authCallbackUrl = 'com.tools.app://auth/callback';
+  // Deep link scheme for Supabase auth callbacks (RGS app bundle id).
+  static const String authCallbackUrl = 'com.rgs.app://auth/callback';
 }

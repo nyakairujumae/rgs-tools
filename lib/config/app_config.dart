@@ -6,13 +6,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   static const String _defaultEnvironment = 'development';
 
-  /// App display name (from .env APP_NAME or default "Tools")
+  /// App display name (from .env APP_NAME or default "RGS Tools")
   static String get appName {
     try {
       final name = dotenv.env['APP_NAME'];
       if (name != null && name.isNotEmpty) return name;
     } catch (_) {}
-    return 'Tools';
+    return 'RGS Tools';
   }
 
   /// Short app name for compact UI (e.g. app bar)
@@ -36,13 +36,13 @@ class AppConfig {
   static String get databaseName {
     switch (environment) {
       case 'development':
-        return 'tools_dev.db';
+        return 'rgs_tools_dev.db';
       case 'staging':
-        return 'tools_staging.db';
+        return 'rgs_tools_staging.db';
       case 'production':
-        return 'tools_prod.db';
+        return 'rgs_tools_prod.db';
       default:
-        return 'tools.db';
+        return 'rgs_tools.db';
     }
   }
   

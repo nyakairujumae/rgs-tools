@@ -171,6 +171,30 @@ class TechnicianNotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Send a generic notification to a technician
+  Future<void> sendNotification({
+    required String technicianUserId,
+    required String title,
+    required String message,
+    String type = 'general',
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      await SupabaseService.client.from('technician_notifications').insert({
+        'user_id': technicianUserId,
+        'title': title,
+        'message': message,
+        'type': type,
+        'is_read': false,
+        'timestamp': DateTime.now().toIso8601String(),
+        if (data != null) 'data': data,
+      });
+      Logger.debug('✅ [TechnicianNotifications] Notification sent to $technicianUserId: $title');
+    } catch (e) {
+      Logger.debug('❌ [TechnicianNotifications] Error sending notification: $e');
+    }
+  }
+
   /// Mark notification as read
   Future<void> markAsRead(String notificationId) async {
     try {

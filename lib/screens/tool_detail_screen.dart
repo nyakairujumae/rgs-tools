@@ -20,6 +20,8 @@ import '../utils/auth_error_handler.dart';
 import '../services/push_notification_service.dart';
 import '../services/user_name_service.dart';
 import '../services/tool_history_service.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
 import '../models/tool_history.dart';
 import 'temporary_return_screen.dart';
 import 'reassign_tool_screen.dart';
@@ -524,28 +526,6 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                         );
                       },
                     ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ImageViewerScreen(
-                                imageUrls: imageUrls,
-                                initialIndex: _currentImageIndex,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Icon(
-                          Icons.open_in_full,
-                          size: 20,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ),
                     if (imageUrls.length > 1)
                       Positioned(
                         bottom: 12,
@@ -859,49 +839,6 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
             const SizedBox(height: 12),
 
-            // Secondary Action Buttons - Hide Edit button for technicians
-            if (!isTechnician)
-            Row(
-              children: [
-                Expanded(
-                  child: _buildOutlinedActionButton(
-                    label: _currentTool.status == 'Maintenance' 
-                        ? 'Complete Maint.' 
-                        : 'Mark for Maint.',
-                    icon: _currentTool.status == 'Maintenance' 
-                        ? Icons.check_circle 
-                        : Icons.build,
-                    color: _currentTool.status == 'Maintenance' 
-                        ? Colors.green 
-                        : AppTheme.primaryColor,
-                    onTap: _scheduleMaintenance,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildOutlinedActionButton(
-                    label: 'Edit',
-                    icon: Icons.edit,
-                    color: AppTheme.primaryColor,
-                    onTap: _editTool,
-                  ),
-                ),
-              ],
-              )
-            else
-              // For technicians, only show maintenance button
-              _buildOutlinedActionButton(
-                label: _currentTool.status == 'Maintenance' 
-                    ? 'Complete Maint.' 
-                    : 'Mark for Maint.',
-                icon: _currentTool.status == 'Maintenance' 
-                    ? Icons.check_circle 
-                    : Icons.build,
-                color: _currentTool.status == 'Maintenance' 
-                    ? Colors.green 
-                    : AppTheme.primaryColor,
-                onTap: _scheduleMaintenance,
-            ),
 
             // Additional Actions
             if (_currentTool.status == 'In Use' && _currentTool.assignedTo != null)
@@ -1065,6 +1002,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       case 'maintenance':
         _scheduleMaintenance();
         break;
+      case 'condition_lost':
+        _markCondition(_currentTool.condition == 'Lost' ? 'Good' : 'Lost');
+        break;
+      case 'condition_damaged':
+        _markCondition(_currentTool.condition == 'Damaged' ? 'Good' : 'Damaged');
+        break;
+      case 'condition_faulty':
+        _markCondition(_currentTool.condition == 'Faulty' ? 'Good' : 'Faulty');
+        break;
+      case 'condition_missing_parts':
+        _markCondition(_currentTool.condition == 'Missing Parts' ? 'Good' : 'Missing Parts');
+        break;
       case 'history':
         _viewHistory();
         break;
@@ -1075,6 +1024,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
   }
 
   void _editTool() {
+    final toolBeforeEdit = _currentTool;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1085,6 +1035,35 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         setState(() {
           _currentTool = updatedTool;
         });
+        // Record history for the edit
+        if (toolBeforeEdit.id != null) {
+          final authProvider = context.read<AuthProvider>();
+          final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
+          final performerRole = authProvider.isAdmin ? 'Admin' : 'Technician';
+          ToolHistoryService.record(
+            toolId: toolBeforeEdit.id!,
+            toolName: updatedTool.name,
+            action: ToolHistoryActions.edited,
+            description: '$performerName edited tool details for "${updatedTool.name}"',
+            oldValue: toolBeforeEdit.name,
+            newValue: updatedTool.name,
+            performedById: authProvider.userId,
+            performedByName: performerName,
+            performedByRole: performerRole,
+            location: updatedTool.location,
+          );
+          // Notify admins if triggered by a technician
+          if (!authProvider.isAdmin) {
+            context.read<AdminNotificationProvider>().createNotification(
+              technicianName: performerName,
+              technicianEmail: authProvider.user?.email ?? '',
+              type: NotificationType.general,
+              title: 'Tool Edited: ${updatedTool.name}',
+              message: '$performerName edited the details for "${updatedTool.name}"',
+              data: {'tool_id': toolBeforeEdit.id, 'tool_name': updatedTool.name},
+            );
+          }
+        }
       }
     });
   }
@@ -1136,9 +1115,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
   List<PopupMenuEntry<String>> _buildAppBarMenuItems(ThemeData theme) {
     final textColor = theme.colorScheme.onSurface;
-    final iconColor = textColor;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final isTechnician = authProvider.userRole != null && authProvider.userRole!.name == 'technician';
+    final isTechnician = !authProvider.isAdmin;
     
     return [
       // Hide Edit Tool menu item for technicians
@@ -1157,16 +1135,17 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         textColor: textColor,
         iconColor: AppTheme.secondaryColor, // Use app green
       ),
+      if (!isTechnician)
       _buildMenuItem(
         value: 'shared',
         icon: _currentTool.toolType == 'shared'
             ? Icons.share
             : Icons.share_outlined,
         label: _currentTool.toolType == 'shared'
-            ? 'Make Tool Inventory'
+            ? 'Return Tool to Inventory'
             : 'Make Tool Shared',
         textColor: textColor,
-        iconColor: AppTheme.secondaryColor, // Use app green
+        iconColor: AppTheme.secondaryColor,
       ),
       _buildMenuItem(
         value: 'maintenance',
@@ -1179,7 +1158,36 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         textColor: textColor,
         iconColor: _currentTool.status == 'Maintenance'
             ? Colors.green
-            : AppTheme.secondaryColor, // Use app green for mark, green for complete
+            : AppTheme.secondaryColor,
+      ),
+      _buildMenuDivider(),
+      _buildMenuItem(
+        value: 'condition_lost',
+        icon: Icons.search_off_outlined,
+        label: _currentTool.condition == 'Lost' ? 'Mark as Found' : 'Mark as Lost',
+        textColor: _currentTool.condition == 'Lost' ? Colors.green : Colors.red,
+        iconColor: _currentTool.condition == 'Lost' ? Colors.green : Colors.red,
+      ),
+      _buildMenuItem(
+        value: 'condition_damaged',
+        icon: Icons.broken_image_outlined,
+        label: _currentTool.condition == 'Damaged' ? 'Mark as Good Condition' : 'Mark as Damaged',
+        textColor: _currentTool.condition == 'Damaged' ? Colors.green : Colors.orange,
+        iconColor: _currentTool.condition == 'Damaged' ? Colors.green : Colors.orange,
+      ),
+      _buildMenuItem(
+        value: 'condition_faulty',
+        icon: Icons.warning_amber_outlined,
+        label: _currentTool.condition == 'Faulty' ? 'Mark as Good Condition' : 'Mark as Faulty',
+        textColor: _currentTool.condition == 'Faulty' ? Colors.green : Colors.orange,
+        iconColor: _currentTool.condition == 'Faulty' ? Colors.green : Colors.orange,
+      ),
+      _buildMenuItem(
+        value: 'condition_missing_parts',
+        icon: Icons.inventory_2_outlined,
+        label: _currentTool.condition == 'Missing Parts' ? 'Mark as Complete' : 'Mark as Missing Parts',
+        textColor: _currentTool.condition == 'Missing Parts' ? Colors.green : Colors.orange,
+        iconColor: _currentTool.condition == 'Missing Parts' ? Colors.green : Colors.orange,
       ),
       _buildMenuItem(
         value: 'history',
@@ -1271,7 +1279,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       );
 
       await toolProvider.updateTool(updatedTool);
-      
+
       // Reload tools to ensure the change is reflected everywhere
       await toolProvider.loadTools();
 
@@ -1279,6 +1287,42 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         _currentTool = updatedTool;
         _isLoading = false;
       });
+
+      // Record history
+      if (_currentTool.id != null && mounted) {
+        final authProvider = context.read<AuthProvider>();
+        final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
+        final performerRole = authProvider.isAdmin ? 'Admin' : 'Technician';
+        ToolHistoryService.record(
+          toolId: _currentTool.id!,
+          toolName: _currentTool.name,
+          action: isShared ? ToolHistoryActions.movedToInventory : ToolHistoryActions.movedToShared,
+          description: isShared
+              ? '$performerName returned "${_currentTool.name}" to inventory'
+              : '$performerName made "${_currentTool.name}" a shared tool',
+          oldValue: isShared ? 'shared' : 'inventory',
+          newValue: isShared ? 'inventory' : 'shared',
+          performedById: authProvider.userId,
+          performedByName: performerName,
+          performedByRole: performerRole,
+          location: _currentTool.location,
+        );
+        // Notify admins if triggered by a technician
+        if (!authProvider.isAdmin) {
+          context.read<AdminNotificationProvider>().createNotification(
+            technicianName: performerName,
+            technicianEmail: authProvider.user?.email ?? '',
+            type: NotificationType.general,
+            title: isShared
+                ? 'Tool Returned to Inventory: ${_currentTool.name}'
+                : 'Tool Made Shared: ${_currentTool.name}',
+            message: isShared
+                ? '$performerName returned "${_currentTool.name}" to inventory'
+                : '$performerName made "${_currentTool.name}" available as a shared tool',
+            data: {'tool_id': _currentTool.id, 'tool_name': _currentTool.name},
+          );
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1293,8 +1337,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    isShared 
-                        ? 'Tool changed to inventory. It will no longer appear in shared tools.' 
+                    isShared
+                        ? 'Tool returned to inventory. It will no longer appear in shared tools.'
                         : 'Tool is now shared! It will appear in the shared tools section.',
                     style: TextStyle(
                       color: Colors.white,
@@ -1390,12 +1434,50 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         _isLoading = false;
       });
 
+      final authProvider = context.read<AuthProvider>();
+      final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
+      final performerRole = authProvider.isAdmin ? 'Admin' : 'Technician';
+      final performerId = authProvider.userId;
+
+      // Record history
+      if (_currentTool.id != null) {
+        ToolHistoryService.record(
+          toolId: _currentTool.id!,
+          toolName: _currentTool.name,
+          action: isInMaintenance ? 'Maintenance Completed' : 'Marked for Maintenance',
+          description: isInMaintenance
+              ? '$performerName completed maintenance on "${_currentTool.name}"'
+              : '$performerName marked "${_currentTool.name}" for maintenance',
+          oldValue: isInMaintenance ? 'Maintenance' : _currentTool.status,
+          newValue: isInMaintenance ? 'Available' : 'Maintenance',
+          performedById: performerId,
+          performedByName: performerName,
+          performedByRole: performerRole,
+        );
+      }
+
+      // Notify admins if a technician triggered this
+      if (!authProvider.isAdmin) {
+        context.read<AdminNotificationProvider>().createNotification(
+          technicianName: performerName,
+          technicianEmail: authProvider.user?.email ?? '',
+          type: NotificationType.maintenanceRequest,
+          title: isInMaintenance
+              ? 'Maintenance Completed: ${_currentTool.name}'
+              : 'Maintenance Requested: ${_currentTool.name}',
+          message: isInMaintenance
+              ? '$performerName completed maintenance on "${_currentTool.name}"'
+              : '$performerName marked "${_currentTool.name}" for maintenance',
+          data: {'tool_id': _currentTool.id, 'tool_name': _currentTool.name},
+        );
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isInMaintenance 
-                  ? 'Maintenance completed! Tool is now available.' 
+              isInMaintenance
+                  ? 'Maintenance completed! Tool is now available.'
                   : 'Tool marked for maintenance.',
             ),
             backgroundColor: isInMaintenance ? Colors.green : Colors.orange,
@@ -1408,11 +1490,104 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating maintenance status: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _markCondition(String newCondition) async {
+    final toolProvider = context.read<SupabaseToolProvider>();
+    try {
+      setState(() => _isLoading = true);
+
+      // If marking as Lost, also set status to unavailable
+      String? newStatus;
+      if (newCondition == 'Lost') {
+        newStatus = 'Lost';
+      } else if (_currentTool.status == 'Lost') {
+        // Restoring from Lost — set back to Available
+        newStatus = 'Available';
+      }
+
+      final updatedTool = _currentTool.copyWith(
+        condition: newCondition,
+        status: newStatus ?? _currentTool.status,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+
+      await toolProvider.updateTool(updatedTool);
+      setState(() {
+        _currentTool = updatedTool;
+        _isLoading = false;
+      });
+
+      final authProvider = context.read<AuthProvider>();
+      final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
+      final performerRole = authProvider.isAdmin ? 'Admin' : 'Technician';
+      final performerId = authProvider.userId;
+      final isRestoring = newCondition == 'Good';
+
+      // Record history
+      if (_currentTool.id != null) {
+        ToolHistoryService.record(
+          toolId: _currentTool.id!,
+          toolName: _currentTool.name,
+          action: isRestoring ? 'Condition Restored' : 'Condition Updated',
+          description: isRestoring
+              ? '$performerName restored condition to Good'
+              : '$performerName marked tool as $newCondition',
+          oldValue: _currentTool.condition,
+          newValue: newCondition,
+          performedById: performerId,
+          performedByName: performerName,
+          performedByRole: performerRole,
+        );
+      }
+
+      // Notify admins (non-blocking)
+      if (!authProvider.isAdmin) {
+        final email = authProvider.user?.email ?? '';
+        context.read<AdminNotificationProvider>().createNotification(
+          technicianName: performerName,
+          technicianEmail: email,
+          type: NotificationType.issueReport,
+          title: 'Tool Condition Update: ${_currentTool.name}',
+          message: isRestoring
+              ? '$performerName restored "${_currentTool.name}" condition to Good'
+              : '$performerName marked "${_currentTool.name}" as $newCondition',
+          data: {'tool_id': _currentTool.id, 'tool_name': _currentTool.name, 'condition': newCondition},
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isRestoring
+                  ? 'Tool condition restored to Good.'
+                  : 'Tool marked as $newCondition.',
+            ),
+            backgroundColor: isRestoring ? Colors.green : Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating condition: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
@@ -1478,7 +1653,18 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
         performedByRole: authProvider.userRole?.name ?? 'technician',
         location: _currentTool.location,
       );
-      
+
+      // Notify admins that a technician badged this tool
+      final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
+      context.read<AdminNotificationProvider>().createNotification(
+        technicianName: performerName,
+        technicianEmail: authProvider.user?.email ?? '',
+        type: NotificationType.general,
+        title: 'Tool Badged: ${_currentTool.name}',
+        message: '$performerName has taken "${_currentTool.name}" (badged as in use)',
+        data: {'tool_id': _currentTool.id, 'tool_name': _currentTool.name},
+      );
+
       // Clear name cache for this user so fresh data is fetched
       UserNameService.clearCacheForUser(authProvider.userId!);
       

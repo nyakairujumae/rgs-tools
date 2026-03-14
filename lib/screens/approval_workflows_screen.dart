@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/approval_workflow.dart';
 import '../providers/approval_workflows_provider.dart';
+import '../providers/technician_notification_provider.dart';
+import '../services/push_notification_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/logger.dart';
 
 class ApprovalWorkflowsScreen extends StatefulWidget {
   const ApprovalWorkflowsScreen({super.key});
@@ -897,16 +900,60 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
 
   Future<void> _updateWorkflowStatus(ApprovalWorkflow workflow, String newStatus, {String? rejectionReason}) async {
     final provider = context.read<ApprovalWorkflowsProvider>();
+    final techNotifProvider = context.read<TechnicianNotificationProvider>();
     try {
       final workflowId = workflow.id?.toString();
       if (workflowId == null) {
         throw Exception('Workflow ID is null');
       }
-      
+
       if (newStatus == 'Approved') {
         await provider.approveWorkflow(workflowId, comments: null);
       } else if (newStatus == 'Rejected') {
         await provider.rejectWorkflow(workflowId, rejectionReason ?? 'No reason provided');
+      }
+
+      // Notify the requesting technician
+      final requesterId = workflow.requesterId;
+      // Only notify if requesterId looks like a UUID (actual user ID, not a placeholder)
+      if (requesterId.isNotEmpty && !requesterId.startsWith('REQ-')) {
+        final isApproved = newStatus == 'Approved';
+        final notifTitle = isApproved
+            ? 'Request Approved: ${workflow.title}'
+            : 'Request Rejected: ${workflow.title}';
+        final notifMessage = isApproved
+            ? 'Your request "${workflow.title}" has been approved.'
+            : 'Your request "${workflow.title}" was rejected. Reason: ${rejectionReason ?? 'No reason provided'}';
+
+        try {
+          await techNotifProvider.sendNotification(
+            technicianUserId: requesterId,
+            title: notifTitle,
+            message: notifMessage,
+            type: isApproved ? 'request_approved' : 'request_rejected',
+            data: {
+              'workflow_id': workflowId,
+              'request_type': workflow.requestType,
+              'status': newStatus,
+              if (!isApproved) 'rejection_reason': rejectionReason ?? 'No reason provided',
+            },
+          );
+          // Push notification to requester
+          PushNotificationService.sendToUser(
+            userId: requesterId,
+            title: notifTitle,
+            body: notifMessage,
+            data: {'type': isApproved ? 'request_approved' : 'request_rejected', 'workflow_id': workflowId},
+          ).then((ok) {
+            Logger.debug(ok
+                ? '✅ Push notification sent to requester: $requesterId'
+                : '⚠️ Push notification failed for requester: $requesterId');
+          }).catchError((e) {
+            Logger.debug('❌ Error sending push to requester: $e');
+          });
+        } catch (e) {
+          Logger.debug('⚠️ Could not send technician notification: $e');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -1029,16 +1076,11 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
-                      itemCount: imageUrls.length,
-                      itemBuilder: (context, i) {
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(imageUrls.length, (i) {
+                        const thumbSize = 90.0;
                         return GestureDetector(
                           onTap: () {
                             showDialog(
@@ -1077,28 +1119,32 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                               ),
                             );
                           },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imageUrls[i],
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                          child: SizedBox(
+                            width: thumbSize,
+                            height: thumbSize,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                imageUrls[i],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                  ),
                                 ),
+                                loadingBuilder: (_, child, progress) => progress == null
+                                    ? child
+                                    : Container(
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                      ),
                               ),
-                              loadingBuilder: (_, child, progress) => progress == null
-                                  ? child
-                                  : Container(
-                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                    ),
                             ),
                           ),
                         );
-                      },
+                      }),
                     ),
                   ],
                 );

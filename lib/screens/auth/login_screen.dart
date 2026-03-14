@@ -608,14 +608,13 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
         
-        // Navigate based on role (automatically determined from database)
+        // Navigate based on role — clear entire stack so back never returns to login
         if (authProvider.isAdmin) {
-          Navigator.pushReplacementNamed(context, '/admin');
+          Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
         } else if (authProvider.isPendingApproval) {
-          Navigator.pushReplacementNamed(context, '/pending-approval');
+          Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
         } else {
-          // Technician is approved - will check for initial setup in InitialToolSetupScreen
-          Navigator.pushReplacementNamed(context, '/technician');
+          Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
         }
       }
     } catch (e) {
