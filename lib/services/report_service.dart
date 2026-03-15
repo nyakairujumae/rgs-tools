@@ -52,7 +52,15 @@ class ReportService {
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
   }) async {
     try {
-      // All reports now use PDF format with table-based sheets
+      if (format == ReportFormat.excel) {
+        return await _generateExcelReport(
+          reportType: reportType,
+          tools: tools,
+          technicians: technicians,
+          startDate: startDate,
+          endDate: endDate,
+        );
+      }
       return await _generatePdfReport(
         reportType: reportType,
         tools: tools,
