@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/logger.dart';
 
-const _documentsChannelName = 'com.tools.app/documents_path';
+const _documentsChannelName = 'com.rgs.app/documents_path';
 
 FlutterAuthClientOptions createPlatformAuthOptions({
   required String persistSessionKey,
