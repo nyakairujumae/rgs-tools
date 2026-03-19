@@ -54,12 +54,12 @@ export default function LandingPage() {
               <Zap className="w-3.5 h-3.5" />
               Trusted by field teams across the Middle East
             </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] animate-fade-in-up">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] animate-fade-in-up text-gray-900">
               Track every tool.
               <br />
               <span className="text-primary">Empower every team.</span>
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
+            <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
               Assign, track, and manage every tool — from warehouse to field.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-200">
