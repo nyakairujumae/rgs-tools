@@ -15,27 +15,27 @@ import {
 
 export default function LandingPage() {
   return (
-    <div className="landing-light min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
+    <div className="min-h-screen bg-white text-foreground overflow-hidden">
       {/* ── Nav ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e5e5e5]">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
           <Link href="/" className="flex items-center gap-2.5">
             <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-lg" />
             <span className="font-semibold text-lg tracking-tight">ToolsPortal</span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm text-[#737373]">
-            <a href="#features" className="hover:text-[#0a0a0a] transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-[#0a0a0a] transition-colors">How it works</a>
-            <a href="#industries" className="hover:text-[#0a0a0a] transition-colors">Industries</a>
-            <Link href="/pricing" className="hover:text-[#0a0a0a] transition-colors">Pricing</Link>
+          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
+            <a href="#industries" className="hover:text-foreground transition-colors">Industries</a>
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-[#737373] hover:text-[#0a0a0a] transition-colors">
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="text-sm font-medium bg-[#047857] text-white px-4 py-2 rounded-lg hover:bg-[#047857]/90 transition-colors"
+              className="text-sm font-medium bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Get started free
             </Link>
@@ -50,53 +50,53 @@ export default function LandingPage() {
 
         <div className="relative max-w-7xl mx-auto">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-[#047857]/5 border border-[#047857]/20 rounded-full px-4 py-1.5 text-sm text-[#047857] font-medium mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-full px-4 py-1.5 text-sm text-primary font-medium mb-8 animate-fade-in">
               <Zap className="w-3.5 h-3.5" />
               Trusted by field teams across the Middle East
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] animate-fade-in-up">
               Track every tool.
               <br />
-              <span className="text-[#047857]">Empower every team.</span>
+              <span className="text-primary">Empower every team.</span>
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-[#737373] max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
+            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
               The all-in-one tools management platform for enterprises.
               Assign, track, maintain, and report — from warehouse to field site.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-200">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center gap-2 bg-[#047857] text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-[#047857]/90 transition-all text-base shadow-lg shadow-[#047857]/20"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-primary/90 transition-all text-base shadow-lg shadow-[#047857]/20"
               >
                 Start free trial
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <a
                 href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 bg-[#f5f5f5] text-[#171717] font-semibold px-8 py-3.5 rounded-xl hover:bg-[#ebebeb] transition-all text-base"
+                className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-secondary/80 transition-all text-base"
               >
                 See how it works
               </a>
             </div>
-            <div className="mt-10 flex items-center gap-6 text-sm text-[#737373] animate-fade-in-up animation-delay-300">
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> Free 14-day trial</span>
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> No credit card</span>
-              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> Setup in 5 min</span>
+            <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground animate-fade-in-up animation-delay-300">
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-primary" /> Free 14-day trial</span>
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-primary" /> No credit card</span>
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-primary" /> Setup in 5 min</span>
             </div>
           </div>
 
           {/* Floating dashboard preview */}
           <div className="hidden lg:block absolute top-8 right-0 w-[520px] animate-float">
-            <div className="bg-white rounded-2xl border border-[#e5e5e5] shadow-2xl shadow-black/5 p-6 rotate-[-2deg]">
+            <div className="bg-white rounded-2xl border border-border shadow-2xl shadow-black/5 p-6 rotate-[-2deg]">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-full bg-[#047857]/10 flex items-center justify-center">
-                  <span className="text-[#047857] font-bold text-sm">JD</span>
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-bold text-sm">JD</span>
                 </div>
                 <div>
                   <div className="text-sm font-semibold">Good morning, John!</div>
-                  <div className="text-xs text-[#737373]">Manage your tools and electricians</div>
+                  <div className="text-xs text-muted-foreground">Manage your tools and electricians</div>
                 </div>
-                <div className="ml-auto px-2.5 py-1 bg-[#047857]/10 rounded-full text-[10px] font-semibold text-[#047857]">Admin</div>
+                <div className="ml-auto px-2.5 py-1 bg-primary/10 rounded-full text-[10px] font-semibold text-primary">Admin</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -105,8 +105,8 @@ export default function LandingPage() {
                   { label: 'Total Value', value: 'AED 1.2M', color: 'text-amber-600' },
                   { label: 'Maintenance', value: '5', color: 'text-red-500' },
                 ].map((card) => (
-                  <div key={card.label} className="border border-[#e5e5e5] rounded-xl p-3">
-                    <div className="text-[10px] font-medium text-[#737373]">{card.label}</div>
+                  <div key={card.label} className="border border-border rounded-xl p-3">
+                    <div className="text-[10px] font-medium text-muted-foreground">{card.label}</div>
                     <div className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</div>
                   </div>
                 ))}
@@ -114,14 +114,14 @@ export default function LandingPage() {
             </div>
 
             {/* Floating notification */}
-            <div className="absolute -left-16 bottom-8 bg-white rounded-xl border border-[#e5e5e5] shadow-xl p-4 w-64 animate-float-delayed">
+            <div className="absolute -left-16 bottom-8 bg-white rounded-xl border border-border shadow-xl p-4 w-64 animate-float-delayed">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
                   <Bell className="w-4 h-4 text-amber-500" />
                 </div>
                 <div>
                   <div className="text-xs font-semibold">Calibration Due</div>
-                  <div className="text-[10px] text-[#737373]">Fluke T6-1000 — 2 days left</div>
+                  <div className="text-[10px] text-muted-foreground">Fluke T6-1000 — 2 days left</div>
                 </div>
               </div>
             </div>
@@ -130,15 +130,57 @@ export default function LandingPage() {
       </section>
 
       {/* ── Social proof ── */}
-      <section className="py-12 border-y border-[#e5e5e5] bg-[#fafafa]">
+      <section className="py-12 border-y border-border bg-muted/30">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-medium text-[#737373] uppercase tracking-widest mb-8">
+          <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-widest mb-8">
             Built for teams managing 50 to 5,000+ tools
           </p>
           <div className="flex items-center justify-center gap-12 md:gap-20 opacity-40">
             {['HVAC', 'Electrical', 'Facilities', 'Construction', 'MEP'].map((industry) => (
-              <span key={industry} className="text-lg md:text-xl font-bold tracking-tight text-[#0a0a0a]">{industry}</span>
+              <span key={industry} className="text-lg md:text-xl font-bold tracking-tight text-foreground">{industry}</span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Image showcase ── */}
+      <section className="py-16 md:py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] md:aspect-auto md:row-span-2">
+              <img
+                src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&q=80"
+                alt="Engineer checking equipment on site"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 text-white">
+                <p className="text-sm font-semibold">Field-ready</p>
+                <p className="text-xs text-white/70 mt-1">Built for teams working on construction sites, facilities, and industrial environments.</p>
+              </div>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+              <img
+                src="https://images.unsplash.com/photo-1504917595217-d4dc5ebb6681?w=800&q=80"
+                alt="Organized tools on workbench"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+              <div className="absolute bottom-4 left-4 text-white">
+                <p className="text-sm font-semibold">Track every asset</p>
+              </div>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+              <img
+                src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&q=80"
+                alt="Technician using tablet on site"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+              <div className="absolute bottom-4 left-4 text-white">
+                <p className="text-sm font-semibold">Real-time updates</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -147,11 +189,11 @@ export default function LandingPage() {
       <section id="features" className="py-20 md:py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-16">
-            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">Features</p>
+            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Features</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               Everything you need to manage tools at scale
             </h2>
-            <p className="mt-4 text-lg text-[#737373]">
+            <p className="mt-4 text-lg text-muted-foreground">
               From QR-based check-in to automated compliance alerts — one platform for your entire fleet.
             </p>
           </div>
@@ -197,13 +239,13 @@ export default function LandingPage() {
             ].map((feature) => (
               <div
                 key={feature.title}
-                className="group p-6 rounded-2xl border border-[#e5e5e5] bg-white hover:border-[#047857]/20 hover:shadow-lg hover:shadow-[#047857]/5 transition-all duration-300"
+                className="group p-6 rounded-2xl border border-border bg-white hover:border-primary/20 hover:shadow-lg hover:shadow-[#047857]/5 transition-all duration-300"
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${feature.color} mb-5`}>
                   <feature.icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm text-[#737373] leading-relaxed">{feature.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -211,14 +253,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how-it-works" className="py-20 md:py-32 px-6 bg-[#fafafa]">
+      <section id="how-it-works" className="py-20 md:py-32 px-6 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">How it works</p>
+            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">How it works</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               Up and running in minutes
             </h2>
-            <p className="mt-4 text-lg text-[#737373]">
+            <p className="mt-4 text-lg text-muted-foreground">
               No complex setup. No training needed. Your team will be productive from day one.
             </p>
           </div>
@@ -242,9 +284,9 @@ export default function LandingPage() {
               },
             ].map((item) => (
               <div key={item.step} className="relative">
-                <div className="text-6xl font-black text-[#047857]/10 mb-4">{item.step}</div>
+                <div className="text-6xl font-black text-primary/10 mb-4">{item.step}</div>
                 <h3 className="font-semibold text-xl mb-3">{item.title}</h3>
-                <p className="text-[#737373] leading-relaxed">{item.description}</p>
+                <p className="text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
@@ -255,7 +297,7 @@ export default function LandingPage() {
       <section id="industries" className="py-20 md:py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">Industries</p>
+            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Industries</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               Built for field service. Configured for yours.
             </h2>
@@ -271,11 +313,11 @@ export default function LandingPage() {
             ].map((industry) => (
               <div
                 key={industry.name}
-                className="p-6 rounded-2xl border border-[#e5e5e5] bg-white text-center hover:border-[#047857]/30 hover:shadow-md transition-all"
+                className="p-6 rounded-2xl border border-border bg-white text-center hover:border-primary/30 hover:shadow-md transition-all"
               >
                 <div className="text-3xl mb-3">{industry.emoji}</div>
                 <div className="font-semibold">{industry.name}</div>
-                <div className="text-xs text-[#737373] mt-1">{industry.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{industry.label}</div>
               </div>
             ))}
           </div>
@@ -283,7 +325,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Stats ── */}
-      <section className="py-20 px-6 bg-[#0a0a0a] text-white">
+      <section className="py-20 px-6 bg-foreground text-white">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
             {[
@@ -317,13 +359,13 @@ export default function LandingPage() {
           </blockquote>
           <div className="mt-8">
             <div className="font-semibold">Operations Manager</div>
-            <div className="text-sm text-[#737373]">MEP Contractor, Dubai</div>
+            <div className="text-sm text-muted-foreground">MEP Contractor, Dubai</div>
           </div>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 md:py-32 px-6 bg-[#047857]">
+      <section className="py-20 md:py-32 px-6 bg-primary">
         <div className="max-w-3xl mx-auto text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
             Ready to take control of your tools?
@@ -334,7 +376,7 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 bg-white text-[#047857] font-semibold px-8 py-3.5 rounded-xl hover:bg-white/90 transition-all text-base"
+              className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-8 py-3.5 rounded-xl hover:bg-white/90 transition-all text-base"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />
@@ -350,18 +392,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="py-12 px-6 border-t border-[#e5e5e5]">
+      <footer className="py-12 px-6 border-t border-border">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <Image src="/icon.png" alt="Logo" width={28} height={28} className="rounded-lg" />
             <span className="font-semibold">ToolsPortal</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-[#737373]">
-            <Link href="/privacy" className="hover:text-[#0a0a0a] transition-colors">Privacy</Link>
-            <Link href="/support" className="hover:text-[#0a0a0a] transition-colors">Support</Link>
-            <Link href="/pricing" className="hover:text-[#0a0a0a] transition-colors">Pricing</Link>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link href="/support" className="hover:text-foreground transition-colors">Support</Link>
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           </div>
-          <div className="text-sm text-[#737373]">
+          <div className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} ToolsPortal. All rights reserved.
           </div>
         </div>
