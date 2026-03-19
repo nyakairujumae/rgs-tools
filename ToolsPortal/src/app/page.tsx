@@ -2,188 +2,370 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   Wrench,
-  Users,
+  Shield,
   BarChart3,
+  Users,
+  QrCode,
+  Bell,
   CheckCircle,
   ArrowRight,
-  Shield,
   Zap,
   Globe,
 } from 'lucide-react'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Image src="/icon.png" alt="Logo" width={28} height={28} className="rounded-lg" />
-            <span className="font-semibold text-sm tracking-tight">Tools Admin Portal</span>
+    <div className="landing-light min-h-screen bg-white text-[#0a0a0a] overflow-hidden">
+      {/* ── Nav ── */}
+      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e5e5e5]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-lg" />
+            <span className="font-semibold text-lg tracking-tight">ToolsPortal</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8 text-sm text-[#737373]">
+            <a href="#features" className="hover:text-[#0a0a0a] transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-[#0a0a0a] transition-colors">How it works</a>
+            <a href="#industries" className="hover:text-[#0a0a0a] transition-colors">Industries</a>
+            <Link href="/pricing" className="hover:text-[#0a0a0a] transition-colors">Pricing</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Link href="/login" className="text-sm font-medium text-[#737373] hover:text-[#0a0a0a] transition-colors">
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              className="text-sm font-medium bg-[#047857] text-white px-4 py-2 rounded-lg hover:bg-[#047857]/90 transition-colors"
             >
-              Start free trial
+              Get started free
             </Link>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-24 pb-20 text-center">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-          <Zap className="w-3.5 h-3.5" />
-          Multi-tenant tools management platform
-        </div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-5 max-w-2xl mx-auto leading-tight">
-          Manage your team&apos;s tools with complete control
-        </h1>
-        <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10 leading-relaxed">
-          Track equipment, manage field teams, and stay on top of compliance — all from one
-          dashboard built for your industry.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
-          >
-            See pricing
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-lg font-medium hover:bg-secondary/80 transition-colors text-sm border border-border"
-          >
-            Sign in to your account
-          </Link>
-        </div>
-      </section>
+      {/* ── Hero ── */}
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 px-6">
+        {/* Background grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      {/* Feature highlights */}
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="grid md:grid-cols-3 gap-5">
-          <FeatureCard
-            icon={<Wrench className="w-5 h-5" />}
-            title="Tool tracking"
-            description="Know exactly where every tool is, who has it, and when it was last serviced. Full assignment history included."
-          />
-          <FeatureCard
-            icon={<Users className="w-5 h-5" />}
-            title="Team management"
-            description="Add technicians, assign roles, manage positions, and control access — all scoped to your organisation."
-          />
-          <FeatureCard
-            icon={<BarChart3 className="w-5 h-5" />}
-            title="Reports & exports"
-            description="Generate PDF and Excel reports on tool usage, compliance status, and team assignments in seconds."
-          />
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-border bg-card/40">
-        <div className="max-w-6xl mx-auto px-4 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Up and running in minutes</h2>
-            <p className="text-muted-foreground text-sm">No IT team required. Set up your company and start tracking.</p>
+        <div className="relative max-w-7xl mx-auto">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-[#047857]/5 border border-[#047857]/20 rounded-full px-4 py-1.5 text-sm text-[#047857] font-medium mb-8 animate-fade-in">
+              <Zap className="w-3.5 h-3.5" />
+              Trusted by field teams across the Middle East
+            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] animate-fade-in-up">
+              Track every tool.
+              <br />
+              <span className="text-[#047857]">Empower every team.</span>
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-[#737373] max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
+              The all-in-one tools management platform for enterprises.
+              Assign, track, maintain, and report — from warehouse to field site.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-200">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 bg-[#047857] text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-[#047857]/90 transition-all text-base shadow-lg shadow-[#047857]/20"
+              >
+                Start free trial
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 bg-[#f5f5f5] text-[#171717] font-semibold px-8 py-3.5 rounded-xl hover:bg-[#ebebeb] transition-all text-base"
+              >
+                See how it works
+              </a>
+            </div>
+            <div className="mt-10 flex items-center gap-6 text-sm text-[#737373] animate-fade-in-up animation-delay-300">
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> Free 14-day trial</span>
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> No credit card</span>
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-[#047857]" /> Setup in 5 min</span>
+            </div>
           </div>
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { step: '1', title: 'Create account', desc: 'Sign up with your name and email.' },
-              { step: '2', title: 'Set up company', desc: 'Add your company name and choose your industry.' },
-              { step: '3', title: 'Invite your team', desc: 'Add admins and field technicians.' },
-              { step: '4', title: 'Start tracking', desc: 'Add tools and assign them to your team.' },
-            ].map((item) => (
-              <div key={item.step} className="flex flex-col items-center text-center">
-                <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center mb-4">
-                  {item.step}
+
+          {/* Floating dashboard preview */}
+          <div className="hidden lg:block absolute top-8 right-0 w-[520px] animate-float">
+            <div className="bg-white rounded-2xl border border-[#e5e5e5] shadow-2xl shadow-black/5 p-6 rotate-[-2deg]">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-[#047857]/10 flex items-center justify-center">
+                  <span className="text-[#047857] font-bold text-sm">JD</span>
                 </div>
-                <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">{item.desc}</p>
+                <div>
+                  <div className="text-sm font-semibold">Good morning, John!</div>
+                  <div className="text-xs text-[#737373]">Manage your tools and electricians</div>
+                </div>
+                <div className="ml-auto px-2.5 py-1 bg-[#047857]/10 rounded-full text-[10px] font-semibold text-[#047857]">Admin</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Total Tools', value: '247', color: 'text-blue-600' },
+                  { label: 'Technicians', value: '32', color: 'text-emerald-600' },
+                  { label: 'Total Value', value: 'AED 1.2M', color: 'text-amber-600' },
+                  { label: 'Maintenance', value: '5', color: 'text-red-500' },
+                ].map((card) => (
+                  <div key={card.label} className="border border-[#e5e5e5] rounded-xl p-3">
+                    <div className="text-[10px] font-medium text-[#737373]">{card.label}</div>
+                    <div className={`text-xl font-bold mt-1 ${card.color}`}>{card.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating notification */}
+            <div className="absolute -left-16 bottom-8 bg-white rounded-xl border border-[#e5e5e5] shadow-xl p-4 w-64 animate-float-delayed">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                  <Bell className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold">Calibration Due</div>
+                  <div className="text-[10px] text-[#737373]">Fluke T6-1000 — 2 days left</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Social proof ── */}
+      <section className="py-12 border-y border-[#e5e5e5] bg-[#fafafa]">
+        <div className="max-w-7xl mx-auto px-6">
+          <p className="text-center text-xs font-medium text-[#737373] uppercase tracking-widest mb-8">
+            Built for teams managing 50 to 5,000+ tools
+          </p>
+          <div className="flex items-center justify-center gap-12 md:gap-20 opacity-40">
+            {['HVAC', 'Electrical', 'Facilities', 'Construction', 'MEP'].map((industry) => (
+              <span key={industry} className="text-lg md:text-xl font-bold tracking-tight text-[#0a0a0a]">{industry}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ── */}
+      <section id="features" className="py-20 md:py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-2xl mb-16">
+            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">Features</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Everything you need to manage tools at scale
+            </h2>
+            <p className="mt-4 text-lg text-[#737373]">
+              From QR-based check-in to automated compliance alerts — one platform for your entire fleet.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: QrCode,
+                title: 'QR Check-in / Check-out',
+                description: 'Scan to assign or return tools instantly. Full chain-of-custody history for every asset.',
+                color: 'text-blue-600 bg-blue-50',
+              },
+              {
+                icon: Users,
+                title: 'Team Management',
+                description: 'Invite technicians by email or CSV. Track who has what, from which department, at which site.',
+                color: 'text-emerald-600 bg-emerald-50',
+              },
+              {
+                icon: Shield,
+                title: 'Compliance & Calibration',
+                description: 'Automated alerts for calibration due dates, certifications, and safety inspections.',
+                color: 'text-violet-600 bg-violet-50',
+              },
+              {
+                icon: BarChart3,
+                title: 'Reports & Analytics',
+                description: 'Financial summaries, utilization rates, maintenance costs — exportable to PDF and CSV.',
+                color: 'text-amber-600 bg-amber-50',
+              },
+              {
+                icon: Bell,
+                title: 'Real-time Notifications',
+                description: 'Push alerts for tool requests, approvals, issues, and overdue returns. Never miss a beat.',
+                color: 'text-red-500 bg-red-50',
+              },
+              {
+                icon: Globe,
+                title: 'Multi-language Support',
+                description: 'English, Arabic, Spanish, and French built-in. Perfect for diverse field teams in the region.',
+                color: 'text-sky-600 bg-sky-50',
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="group p-6 rounded-2xl border border-[#e5e5e5] bg-white hover:border-[#047857]/20 hover:shadow-lg hover:shadow-[#047857]/5 transition-all duration-300"
+              >
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${feature.color} mb-5`}>
+                  <feature.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                <p className="text-sm text-[#737373] leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Trust bar */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="grid sm:grid-cols-3 gap-6 text-center">
-          <TrustItem icon={<Shield className="w-5 h-5" />} label="Role-based access control" />
-          <TrustItem icon={<Globe className="w-5 h-5" />} label="Works on web, iOS & Android" />
-          <TrustItem icon={<CheckCircle className="w-5 h-5" />} label="Calibration & compliance tracking" />
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-border bg-card/40">
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-          <h2 className="text-2xl font-bold tracking-tight mb-3">Ready to get started?</h2>
-          <p className="text-muted-foreground text-sm mb-8">
-            Set up your company in under 5 minutes. No credit card required.
-          </p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
-          >
-            Start free trial
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Image src="/icon.png" alt="Logo" width={20} height={20} className="rounded-md opacity-60" />
-            <span>Tools Admin Portal</span>
+      {/* ── How it works ── */}
+      <section id="how-it-works" className="py-20 md:py-32 px-6 bg-[#fafafa]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">How it works</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Up and running in minutes
+            </h2>
+            <p className="mt-4 text-lg text-[#737373]">
+              No complex setup. No training needed. Your team will be productive from day one.
+            </p>
           </div>
-          <div className="flex items-center gap-5">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/support" className="hover:text-foreground transition-colors">Support</Link>
-            <Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link>
+
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            {[
+              {
+                step: '01',
+                title: 'Create your workspace',
+                description: 'Sign up, name your company, pick your industry. We auto-configure departments and categories for you.',
+              },
+              {
+                step: '02',
+                title: 'Add your team & tools',
+                description: 'Invite technicians by email or bulk CSV upload. Add tools manually or import your existing inventory.',
+              },
+              {
+                step: '03',
+                title: 'Assign, track, report',
+                description: 'Your team uses the mobile app to check-in/out tools. You get real-time visibility and automated reports.',
+              },
+            ].map((item) => (
+              <div key={item.step} className="relative">
+                <div className="text-6xl font-black text-[#047857]/10 mb-4">{item.step}</div>
+                <h3 className="font-semibold text-xl mb-3">{item.title}</h3>
+                <p className="text-[#737373] leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Industries ── */}
+      <section id="industries" className="py-20 md:py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <p className="text-sm font-semibold text-[#047857] uppercase tracking-wider mb-3">Industries</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Built for field service. Configured for yours.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { name: 'HVAC', label: 'Technicians', emoji: '\u{1F321}\u{FE0F}' },
+              { name: 'Electrical', label: 'Electricians', emoji: '\u{26A1}' },
+              { name: 'Facilities', label: 'Operatives', emoji: '\u{1F3E2}' },
+              { name: 'Construction', label: 'Site Workers', emoji: '\u{1F3D7}\u{FE0F}' },
+              { name: 'General', label: 'Workers', emoji: '\u{1F527}' },
+            ].map((industry) => (
+              <div
+                key={industry.name}
+                className="p-6 rounded-2xl border border-[#e5e5e5] bg-white text-center hover:border-[#047857]/30 hover:shadow-md transition-all"
+              >
+                <div className="text-3xl mb-3">{industry.emoji}</div>
+                <div className="font-semibold">{industry.name}</div>
+                <div className="text-xs text-[#737373] mt-1">{industry.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats ── */}
+      <section className="py-20 px-6 bg-[#0a0a0a] text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
+            {[
+              { value: '99.9%', label: 'Uptime SLA' },
+              { value: '<2s', label: 'Average load time' },
+              { value: '4', label: 'Languages supported' },
+              { value: '24/7', label: 'Support availability' },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl md:text-4xl font-bold">{stat.value}</div>
+                <div className="text-sm text-white/60 mt-2">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Testimonial ── */}
+      <section className="py-20 md:py-32 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-1 mb-8">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <svg key={i} className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            ))}
+          </div>
+          <blockquote className="text-xl md:text-2xl font-medium leading-relaxed">
+            &ldquo;We went from tracking 400+ tools in spreadsheets to having full visibility in under a week.
+            Calibration alerts alone saved us from two compliance violations.&rdquo;
+          </blockquote>
+          <div className="mt-8">
+            <div className="font-semibold">Operations Manager</div>
+            <div className="text-sm text-[#737373]">MEP Contractor, Dubai</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="py-20 md:py-32 px-6 bg-[#047857]">
+        <div className="max-w-3xl mx-auto text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Ready to take control of your tools?
+          </h2>
+          <p className="mt-4 text-lg text-white/80">
+            Join companies across the Middle East who trust ToolsPortal to manage their field equipment.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 bg-white text-[#047857] font-semibold px-8 py-3.5 rounded-xl hover:bg-white/90 transition-all text-base"
+            >
+              Start free trial
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="#features"
+              className="inline-flex items-center gap-2 border-2 border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl hover:border-white/60 transition-all text-base"
+            >
+              Explore features
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="py-12 px-6 border-t border-[#e5e5e5]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <Image src="/icon.png" alt="Logo" width={28} height={28} className="rounded-lg" />
+            <span className="font-semibold">ToolsPortal</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-[#737373]">
+            <Link href="/privacy" className="hover:text-[#0a0a0a] transition-colors">Privacy</Link>
+            <Link href="/support" className="hover:text-[#0a0a0a] transition-colors">Support</Link>
+            <Link href="/pricing" className="hover:text-[#0a0a0a] transition-colors">Pricing</Link>
+          </div>
+          <div className="text-sm text-[#737373]">
+            &copy; {new Date().getFullYear()} ToolsPortal. All rights reserved.
           </div>
         </div>
       </footer>
-    </div>
-  )
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-6">
-      <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="font-semibold text-sm mb-2">{title}</h3>
-      <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-    </div>
-  )
-}
-
-function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex items-center justify-center gap-2.5 text-sm text-muted-foreground">
-      <span className="text-primary">{icon}</span>
-      {label}
     </div>
   )
 }
