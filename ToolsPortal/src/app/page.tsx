@@ -60,8 +60,7 @@ export default function LandingPage() {
               <span className="text-primary">Empower every team.</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up animation-delay-100">
-              The all-in-one tools management platform for enterprises.
-              Assign, track, maintain, and report — from warehouse to field site.
+              Assign, track, and manage every tool — from warehouse to field.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-200">
               <Link
@@ -156,7 +155,6 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
               <div className="absolute bottom-6 left-6 right-6 text-white">
                 <p className="text-sm font-semibold">Field-ready</p>
-                <p className="text-xs text-white/70 mt-1">Built for teams working on construction sites, facilities, and industrial environments.</p>
               </div>
             </div>
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
@@ -191,11 +189,8 @@ export default function LandingPage() {
           <div className="max-w-2xl mb-16">
             <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Features</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Everything you need to manage tools at scale
+              Everything you need at scale
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              From QR-based check-in to automated compliance alerts — one platform for your entire fleet.
-            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -203,37 +198,37 @@ export default function LandingPage() {
               {
                 icon: QrCode,
                 title: 'QR Check-in / Check-out',
-                description: 'Scan to assign or return tools instantly. Full chain-of-custody history for every asset.',
+                description: 'Scan to assign or return tools instantly. Full custody history.',
                 color: 'text-blue-600 bg-blue-50',
               },
               {
                 icon: Users,
                 title: 'Team Management',
-                description: 'Invite technicians by email or CSV. Track who has what, from which department, at which site.',
+                description: 'Invite by email or CSV. Track who has what, where.',
                 color: 'text-emerald-600 bg-emerald-50',
               },
               {
                 icon: Shield,
                 title: 'Compliance & Calibration',
-                description: 'Automated alerts for calibration due dates, certifications, and safety inspections.',
+                description: 'Auto-alerts for calibration, certifications, and inspections.',
                 color: 'text-violet-600 bg-violet-50',
               },
               {
                 icon: BarChart3,
                 title: 'Reports & Analytics',
-                description: 'Financial summaries, utilization rates, maintenance costs — exportable to PDF and CSV.',
+                description: 'Utilization, costs, and maintenance — export to PDF or CSV.',
                 color: 'text-amber-600 bg-amber-50',
               },
               {
                 icon: Bell,
                 title: 'Real-time Notifications',
-                description: 'Push alerts for tool requests, approvals, issues, and overdue returns. Never miss a beat.',
+                description: 'Push alerts for requests, approvals, and overdue returns.',
                 color: 'text-red-500 bg-red-50',
               },
               {
                 icon: Globe,
-                title: 'Multi-language Support',
-                description: 'English, Arabic, Spanish, and French built-in. Perfect for diverse field teams in the region.',
+                title: 'Multi-language',
+                description: 'English, Arabic, Spanish, and French built-in.',
                 color: 'text-sky-600 bg-sky-50',
               },
             ].map((feature) => (
@@ -260,9 +255,6 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               Up and running in minutes
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              No complex setup. No training needed. Your team will be productive from day one.
-            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 md:gap-12">
@@ -270,17 +262,17 @@ export default function LandingPage() {
               {
                 step: '01',
                 title: 'Create your workspace',
-                description: 'Sign up, name your company, pick your industry. We auto-configure departments and categories for you.',
+                description: 'Sign up, pick your industry — we configure the rest.',
               },
               {
                 step: '02',
                 title: 'Add your team & tools',
-                description: 'Invite technicians by email or bulk CSV upload. Add tools manually or import your existing inventory.',
+                description: 'Invite by email or CSV. Add tools or import inventory.',
               },
               {
                 step: '03',
                 title: 'Assign, track, report',
-                description: 'Your team uses the mobile app to check-in/out tools. You get real-time visibility and automated reports.',
+                description: 'Your team checks in/out via mobile. You get real-time visibility.',
               },
             ].map((item) => (
               <div key={item.step} className="relative">
@@ -299,7 +291,7 @@ export default function LandingPage() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Industries</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Built for field service. Configured for yours.
+              Configured for your industry
             </h2>
           </div>
 
@@ -354,8 +346,7 @@ export default function LandingPage() {
             ))}
           </div>
           <blockquote className="text-xl md:text-2xl font-medium leading-relaxed">
-            &ldquo;We went from tracking 400+ tools in spreadsheets to having full visibility in under a week.
-            Calibration alerts alone saved us from two compliance violations.&rdquo;
+            &ldquo;From spreadsheets to full visibility in under a week. Calibration alerts alone saved us from two compliance violations.&rdquo;
           </blockquote>
           <div className="mt-8">
             <div className="font-semibold">Operations Manager</div>
@@ -371,7 +362,7 @@ export default function LandingPage() {
             Ready to take control of your tools?
           </h2>
           <p className="mt-4 text-lg text-white/80">
-            Join companies across the Middle East who trust ToolsPortal to manage their field equipment.
+            Start your free 14-day trial. No credit card required.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
