@@ -112,7 +112,19 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         collapsed ? 'justify-center' : 'gap-3'
       )}>
         {orgLogoUrl ? (
-          <Image src={orgLogoUrl} alt={orgName} width={32} height={32} className="w-8 h-8 rounded-lg shrink-0 object-cover" unoptimized />
+          // Natural aspect ratio — wide logos stay wide, square logos stay square
+          <img
+            src={orgLogoUrl}
+            alt={orgName}
+            className={cn(
+              'shrink-0 object-contain',
+              collapsed ? 'max-h-[28px] max-w-[28px]' : 'max-h-[32px] max-w-[120px]'
+            )}
+          />
+        ) : collapsed ? (
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <span className="text-primary-foreground text-xs font-bold">{orgName.charAt(0).toUpperCase()}</span>
+          </div>
         ) : (
           <Image src="/icon.png" alt={orgName} width={32} height={32} className="w-8 h-8 rounded-lg shrink-0" />
         )}

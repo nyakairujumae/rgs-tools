@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Eye, EyeOff, AlertCircle, Loader2, ChevronLeft, ArrowLeft, Upload, ImageIcon, Mail, UserPlus, Plus, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, Loader2, ChevronLeft, ArrowLeft, Upload, ImageIcon, Mail, UserPlus, Plus, CheckCircle2, FileSpreadsheet } from 'lucide-react'
 import { inviteAdmin, addTechnician, fetchAdminPositions } from '@/lib/supabase/actions'
 import type { AdminPosition } from '@/lib/types/database'
 
@@ -52,6 +52,9 @@ export default function SignupPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const csvInputRef = useRef<HTMLInputElement>(null)
+  const [csvPreview, setCsvPreview] = useState<{ name: string; email: string }[]>([])
+  const [csvImporting, setCsvImporting] = useState(false)
 
   // Step 6 — invite admins
   const [positions, setPositions] = useState<AdminPosition[]>([])
@@ -188,6 +191,44 @@ export default function SignupPage() {
     setAddingMember(false)
   }
 
+  // ── CSV import ────────────────────────────────────────────────────────────
+  const handleCsvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+      // Skip header row if it contains "name"
+      const start = lines[0]?.toLowerCase().includes('name') ? 1 : 0
+      const parsed = lines.slice(start).map((line) => {
+        const [name, email] = line.split(',').map((s) => s.trim().replace(/^"|"$/g, ''))
+        return { name: name || '', email: email || '' }
+      }).filter((r) => r.name)
+      setCsvPreview(parsed)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const importCsvMembers = async () => {
+    if (csvPreview.length === 0) return
+    setCsvImporting(true)
+    const toImport = [...csvPreview]
+    setCsvPreview([])
+    for (const member of toImport) {
+      const entry: AddedMember = { name: member.name, email: member.email, status: 'pending' }
+      setAddedMembers((prev) => [...prev, entry])
+      const result = await addTechnician({ name: member.name, email: member.email || undefined, status: 'Active' })
+      setAddedMembers((prev) => prev.map((m) =>
+        m.name === member.name && m.email === member.email
+          ? { ...m, status: result ? 'saved' : 'error', error: result ? undefined : 'Failed' }
+          : m
+      ))
+    }
+    setCsvImporting(false)
+  }
+
   const finish = () => router.push('/dashboard')
 
   return (
@@ -203,13 +244,15 @@ export default function SignupPage() {
           ) : <div className="w-16" />}
           <div className="flex items-center gap-2.5">
             {logoPreview ? (
-              <img src={logoPreview} alt="Logo" className="w-8 h-8 rounded-xl object-cover" />
+              <img src={logoPreview} alt="Logo" className="max-h-[32px] max-w-[120px] object-contain" />
             ) : (
               <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
             )}
-            <span className="text-lg font-semibold tracking-tight">
-              {form.companyName || 'Tools Admin Portal'}
-            </span>
+            {!logoPreview && (
+              <span className="text-lg font-semibold tracking-tight">
+                {form.companyName || 'Tools Admin Portal'}
+              </span>
+            )}
           </div>
           <div className="w-16" />
         </div>
@@ -307,9 +350,9 @@ export default function SignupPage() {
               <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={handleLogoChange} className="hidden" />
               <div className="flex flex-col items-center gap-4">
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center overflow-hidden bg-muted/30 group">
+                  className="w-full max-w-xs h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center overflow-hidden bg-muted/30 group px-4">
                   {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                    <img src={logoPreview} alt="Logo preview" className="max-h-16 max-w-full object-contain" />
                   ) : (
                     <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
                       <ImageIcon className="w-8 h-8" />
@@ -386,7 +429,38 @@ export default function SignupPage() {
                   {addingMember ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   Add {form.workerLabel || 'member'}
                 </button>
+
+                {/* CSV import */}
+                <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={handleCsvChange} className="hidden" />
+                <button type="button" onClick={() => csvInputRef.current?.click()}
+                  className="w-full h-10 flex items-center justify-center gap-2 border border-dashed border-border text-muted-foreground rounded-lg text-sm hover:border-primary/50 hover:text-primary transition-colors">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Import from CSV
+                </button>
+                <p className="text-xs text-muted-foreground text-center">CSV format: name, email (one per row)</p>
               </div>
+
+              {/* CSV preview */}
+              {csvPreview.length > 0 && (
+                <div className="mb-4 border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b border-border">
+                    <span className="text-sm font-medium">{csvPreview.length} members to import</span>
+                    <button type="button" onClick={importCsvMembers} disabled={csvImporting}
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50">
+                      {csvImporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                      Confirm import
+                    </button>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto divide-y divide-border">
+                    {csvPreview.map((m, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 text-sm">
+                        <span className="font-medium flex-1 truncate">{m.name}</span>
+                        {m.email && <span className="text-xs text-muted-foreground truncate">{m.email}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {addedMembers.length > 0 && (
                 <div className="space-y-2">
                   {addedMembers.map((m, i) => (
