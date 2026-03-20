@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
-  AlertCircle, Loader2, ChevronLeft, Plus, X, CheckCircle2, Mail, UserPlus
+  AlertCircle, Loader2, ChevronLeft, Plus, CheckCircle2, Mail, UserPlus, Upload, ImageIcon
 } from 'lucide-react'
 import { inviteAdmin, addTechnician, fetchAdminPositions } from '@/lib/supabase/actions'
 import type { AdminPosition } from '@/lib/types/database'
@@ -20,13 +20,7 @@ const INDUSTRY_PRESETS = [
 ]
 
 function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 50)
+  return name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 50)
 }
 
 interface FormState {
@@ -40,14 +34,16 @@ interface FormState {
 interface InvitedAdmin { email: string; name: string; positionId: string; status: 'pending' | 'sent' | 'error'; error?: string }
 interface AddedMember { name: string; email: string; status: 'pending' | 'saved' | 'error'; error?: string }
 
-const TOTAL_STEPS = 5
+// Steps: 1=Company, 2=Industry, 3=Logo, 4=Team label, 5=Invite admins, 6=Add members
+const TOTAL_STEPS = 6
 
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [orgReady, setOrgReady] = useState(false) // true after step 3 submits the org
+  const [orgReady, setOrgReady] = useState(false)
+  const [orgId, setOrgId] = useState<string | null>(null)
 
   const [form, setForm] = useState<FormState>({
     companyName: '',
@@ -57,7 +53,14 @@ export default function OnboardingPage() {
     workerLabelPlural: 'Technicians',
   })
 
-  // Step 4 — admins
+  // Step 3 — logo
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Step 5 — admins
   const [positions, setPositions] = useState<AdminPosition[]>([])
   const [adminEmail, setAdminEmail] = useState('')
   const [adminName, setAdminName] = useState('')
@@ -65,7 +68,7 @@ export default function OnboardingPage() {
   const [invitedAdmins, setInvitedAdmins] = useState<InvitedAdmin[]>([])
   const [inviting, setInviting] = useState(false)
 
-  // Step 5 — team members
+  // Step 6 — team members
   const [memberName, setMemberName] = useState('')
   const [memberEmail, setMemberEmail] = useState('')
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([])
@@ -83,7 +86,7 @@ export default function OnboardingPage() {
     }))
   }
 
-  // Load positions once org is ready (after step 3)
+  // Load positions once org is ready
   useEffect(() => {
     if (orgReady) {
       fetchAdminPositions().then((p) => {
@@ -96,18 +99,47 @@ export default function OnboardingPage() {
   const canAdvance = (): boolean => {
     if (step === 1) return form.companyName.trim().length > 0 && form.companySlug.trim().length > 0
     if (step === 2) return form.industry.length > 0
-    if (step === 3) return form.workerLabel.trim().length > 0 && form.workerLabelPlural.trim().length > 0
-    // Steps 4 & 5 are always skippable
+    if (step === 3) return true // logo is optional
+    if (step === 4) return form.workerLabel.trim().length > 0 && form.workerLabelPlural.trim().length > 0
     return true
   }
 
-  // ── Submit org (step 3 → 4) ───────────────────────────────────────────────
+  // ── Handle logo file pick ─────────────────────────────────────────────────
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  // ── Upload logo to Supabase storage ──────────────────────────────────────
+  const uploadLogo = async (currentOrgId: string): Promise<string | null> => {
+    if (!logoFile) return null
+    setLogoUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = logoFile.name.split('.').pop()
+      const path = `${currentOrgId}/logo.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('organization-logos')
+        .upload(path, logoFile, { upsert: true })
+      if (uploadError) { setError(uploadError.message); return null }
+      const { data: { publicUrl } } = supabase.storage.from('organization-logos').getPublicUrl(path)
+      // Save logo_url to org record
+      await supabase.from('organizations').update({ logo_url: publicUrl }).eq('id', currentOrgId)
+      return publicUrl
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  // ── Submit org (step 4 → 5) ───────────────────────────────────────────────
   const submitOrg = async () => {
     setError('')
     setLoading(true)
     const supabase = createClient()
     try {
-      const { error: rpcError } = await supabase.rpc('create_organization_and_assign_user', {
+      const { data, error: rpcError } = await supabase.rpc('create_organization_and_assign_user', {
         p_name: form.companyName.trim(),
         p_slug: form.companySlug.trim(),
         p_industry: form.industry,
@@ -115,8 +147,28 @@ export default function OnboardingPage() {
         p_worker_label_plural: form.workerLabelPlural.trim(),
       })
       if (rpcError) { setError(rpcError.message); setLoading(false); return }
+
+      // Get the org id from the RPC result or re-fetch
+      let createdOrgId: string | null = null
+      if (data?.org_id) {
+        createdOrgId = data.org_id
+      } else {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user.id).single()
+          createdOrgId = profile?.organization_id ?? null
+        }
+      }
+
+      // Upload logo if one was selected
+      if (createdOrgId && logoFile) {
+        const url = await uploadLogo(createdOrgId)
+        if (url) setLogoUrl(url)
+      }
+
+      setOrgId(createdOrgId)
       setOrgReady(true)
-      setStep(4)
+      setStep(5)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -126,14 +178,13 @@ export default function OnboardingPage() {
 
   const advance = () => {
     setError('')
-    if (step === 3) { submitOrg(); return }
+    if (step === 4) { submitOrg(); return }
     setStep((s) => s + 1)
   }
 
   const back = () => {
     setError('')
-    // Can't go back past step 4 once org is submitted
-    if (step === 4) return
+    if (step === 5) return // can't go back after org submitted
     setStep((s) => s - 1)
   }
 
@@ -141,23 +192,13 @@ export default function OnboardingPage() {
   const handleInviteAdmin = async () => {
     if (!adminEmail.trim() || !adminName.trim()) return
     setInviting(true)
-    const entry: InvitedAdmin = {
-      email: adminEmail.trim(),
-      name: adminName.trim(),
-      positionId: adminPositionId,
-      status: 'pending',
-    }
+    const entry: InvitedAdmin = { email: adminEmail.trim(), name: adminName.trim(), positionId: adminPositionId, status: 'pending' }
     setInvitedAdmins((prev) => [...prev, entry])
     setAdminEmail('')
     setAdminName('')
-
     const result = await inviteAdmin(entry.email, entry.name, entry.positionId)
     setInvitedAdmins((prev) =>
-      prev.map((a) =>
-        a.email === entry.email
-          ? { ...a, status: result.error ? 'error' : 'sent', error: result.error }
-          : a
-      )
+      prev.map((a) => a.email === entry.email ? { ...a, status: result.error ? 'error' : 'sent', error: result.error } : a)
     )
     setInviting(false)
   }
@@ -170,17 +211,11 @@ export default function OnboardingPage() {
     setAddedMembers((prev) => [...prev, entry])
     setMemberName('')
     setMemberEmail('')
-
-    const result = await addTechnician({
-      name: entry.name,
-      email: entry.email || undefined,
-      status: 'Active',
-    })
+    const result = await addTechnician({ name: entry.name, email: entry.email || undefined, status: 'Active' })
     setAddedMembers((prev) =>
-      prev.map((m) =>
-        m.name === entry.name && m.email === entry.email
-          ? { ...m, status: result ? 'saved' : 'error', error: result ? undefined : 'Failed to add' }
-          : m
+      prev.map((m) => m.name === entry.name && m.email === entry.email
+        ? { ...m, status: result ? 'saved' : 'error', error: result ? undefined : 'Failed to add' }
+        : m
       )
     )
     setAddingMember(false)
@@ -188,13 +223,22 @@ export default function OnboardingPage() {
 
   const finish = () => router.push('/dashboard')
 
+  // The logo to show in the header: uploaded preview > default icon
+  const headerLogo = logoPreview || logoUrl || null
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-[480px]">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
-          <span className="text-lg font-semibold tracking-tight">Tools Admin Portal</span>
+          {headerLogo ? (
+            <img src={headerLogo} alt="Company logo" className="w-8 h-8 rounded-xl object-cover" />
+          ) : (
+            <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
+          )}
+          <span className="text-lg font-semibold tracking-tight">
+            {form.companyName || 'Tools Admin Portal'}
+          </span>
         </div>
 
         {/* Progress */}
@@ -202,9 +246,7 @@ export default function OnboardingPage() {
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <div
               key={i}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                i + 1 <= step ? 'bg-primary' : 'bg-border'
-              }`}
+              className={`h-1 flex-1 rounded-full transition-colors ${i + 1 <= step ? 'bg-primary' : 'bg-border'}`}
             />
           ))}
         </div>
@@ -212,7 +254,7 @@ export default function OnboardingPage() {
         <div className="bg-card border border-border rounded-xl p-8">
           <p className="text-xs text-muted-foreground mb-1">Step {step} of {TOTAL_STEPS}</p>
 
-          {/* ── Step 1: Company ─────────────────────────────────────────── */}
+          {/* ── Step 1: Company ────────────────────────────────────────── */}
           {step === 1 && (
             <>
               <h1 className="text-lg font-semibold mb-1">Set up your company</h1>
@@ -246,7 +288,7 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 2: Industry ─────────────────────────────────────────── */}
+          {/* ── Step 2: Industry ───────────────────────────────────────── */}
           {step === 2 && (
             <>
               <h1 className="text-lg font-semibold mb-1">Your industry</h1>
@@ -273,8 +315,52 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 3: Team label ───────────────────────────────────────── */}
+          {/* ── Step 3: Logo ───────────────────────────────────────────── */}
           {step === 3 && (
+            <>
+              <h1 className="text-lg font-semibold mb-1">Add your company logo</h1>
+              <p className="text-sm text-muted-foreground mb-5">
+                Shows in the sidebar and mobile app. You can skip this and add it later.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                onChange={handleLogoChange}
+                className="hidden"
+              />
+              <div className="flex flex-col items-center gap-4">
+                {/* Preview circle */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center overflow-hidden bg-muted/30 group"
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
+                      <ImageIcon className="w-8 h-8" />
+                      <span className="text-xs">Upload</span>
+                    </div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                >
+                  <Upload className="w-4 h-4" />
+                  {logoPreview ? 'Change logo' : 'Choose file'}
+                </button>
+                <p className="text-xs text-muted-foreground">PNG, JPG, SVG or WebP — max 2MB</p>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 4: Team label ─────────────────────────────────────── */}
+          {step === 4 && (
             <>
               <h1 className="text-lg font-semibold mb-1">What do you call your team members?</h1>
               <p className="text-sm text-muted-foreground mb-5">
@@ -293,8 +379,8 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 4: Invite admins ────────────────────────────────────── */}
-          {step === 4 && (
+          {/* ── Step 5: Invite admins ──────────────────────────────────── */}
+          {step === 5 && (
             <>
               <div className="flex items-center gap-2 mb-1">
                 <UserPlus className="w-4 h-4 text-primary" />
@@ -303,48 +389,22 @@ export default function OnboardingPage() {
               <p className="text-sm text-muted-foreground mb-5">
                 Add other people who will manage this portal. They&apos;ll receive an email invite.
               </p>
-
-              {/* Input row */}
               <div className="space-y-3 mb-4">
-                <input
-                  type="text"
-                  value={adminName}
-                  onChange={(e) => setAdminName(e.target.value)}
-                  placeholder="Full name"
-                  className={inputClass}
-                />
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="Email address"
-                  className={inputClass}
-                  onKeyDown={(e) => e.key === 'Enter' && handleInviteAdmin()}
-                />
+                <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Full name" className={inputClass} />
+                <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="Email address" className={inputClass} onKeyDown={(e) => e.key === 'Enter' && handleInviteAdmin()} />
                 {positions.length > 0 && (
                   <div className="relative">
-                    <select
-                      value={adminPositionId}
-                      onChange={(e) => setAdminPositionId(e.target.value)}
-                      className={`${inputClass} appearance-none pr-8`}
-                    >
+                    <select value={adminPositionId} onChange={(e) => setAdminPositionId(e.target.value)} className={`${inputClass} appearance-none pr-8`}>
                       {positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleInviteAdmin}
-                  disabled={inviting || !adminEmail.trim() || !adminName.trim()}
-                  className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50"
-                >
+                <button type="button" onClick={handleInviteAdmin} disabled={inviting || !adminEmail.trim() || !adminName.trim()} className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50">
                   {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                   Send invite
                 </button>
               </div>
-
-              {/* Invited list */}
               {invitedAdmins.length > 0 && (
                 <div className="space-y-2">
                   {invitedAdmins.map((a, i) => (
@@ -364,8 +424,8 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 5: Add team members ─────────────────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 6: Add team members ───────────────────────────────── */}
+          {step === 6 && (
             <>
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-4 h-4 text-primary" />
@@ -374,36 +434,14 @@ export default function OnboardingPage() {
               <p className="text-sm text-muted-foreground mb-5">
                 Add your first team members now, or skip and do it later from the dashboard.
               </p>
-
-              {/* Input row */}
               <div className="space-y-3 mb-4">
-                <input
-                  type="text"
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
-                  placeholder={`Full name (required)`}
-                  className={inputClass}
-                />
-                <input
-                  type="email"
-                  value={memberEmail}
-                  onChange={(e) => setMemberEmail(e.target.value)}
-                  placeholder="Email (optional)"
-                  className={inputClass}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddMember()}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddMember}
-                  disabled={addingMember || !memberName.trim()}
-                  className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50"
-                >
+                <input type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Full name (required)" className={inputClass} />
+                <input type="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="Email (optional)" className={inputClass} onKeyDown={(e) => e.key === 'Enter' && handleAddMember()} />
+                <button type="button" onClick={handleAddMember} disabled={addingMember || !memberName.trim()} className="w-full h-10 flex items-center justify-center gap-2 border border-primary text-primary rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50">
                   {addingMember ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   Add {form.workerLabel || 'member'}
                 </button>
               </div>
-
-              {/* Added list */}
               {addedMembers.length > 0 && (
                 <div className="space-y-2">
                   {addedMembers.map((m, i) => (
@@ -433,40 +471,30 @@ export default function OnboardingPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3 mt-6">
-            {step > 1 && step < 4 && (
-              <button
-                type="button"
-                onClick={back}
-                disabled={loading}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
+            {step > 1 && step < 5 && (
+              <button type="button" onClick={back} disabled={loading} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
                 <ChevronLeft className="w-4 h-4" />
                 Back
               </button>
             )}
 
-            {/* Skip button for steps 4 & 5 */}
-            {(step === 4 || step === 5) && (
-              <button
-                type="button"
-                onClick={step === 5 ? finish : () => setStep(5)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+            {(step === 5 || step === 6) && (
+              <button type="button" onClick={step === 6 ? finish : () => setStep(6)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Skip for now
               </button>
             )}
 
             <button
               type="button"
-              onClick={step === 5 ? finish : advance}
-              disabled={!canAdvance() || loading}
+              onClick={step === 6 ? finish : advance}
+              disabled={!canAdvance() || loading || logoUploading}
               className="ml-auto flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
             >
-              {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Setting up...</>
-              ) : step === 3 ? (
+              {loading || logoUploading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {logoUploading ? 'Uploading...' : 'Setting up...'}</>
+              ) : step === 4 ? (
                 'Finish setup'
-              ) : step === 5 ? (
+              ) : step === 6 ? (
                 'Go to dashboard'
               ) : (
                 'Continue'
