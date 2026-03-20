@@ -128,8 +128,8 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         ) : (
           <Image src="/icon.png" alt={orgName} width={32} height={32} className="w-8 h-8 rounded-lg shrink-0" />
         )}
-        {!collapsed && (
-          <span className="font-semibold text-foreground tracking-tight truncate">{orgName}</span>
+        {!collapsed && !orgLogoUrl && (
+          <span className="font-black text-foreground tracking-tight truncate text-[15px] leading-none">{orgName}</span>
         )}
         {/* Mobile close button */}
         <button

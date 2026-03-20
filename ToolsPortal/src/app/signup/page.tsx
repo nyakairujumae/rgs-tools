@@ -249,7 +249,7 @@ export default function SignupPage() {
               <Image src="/icon.png" alt="Logo" width={32} height={32} className="rounded-xl" />
             )}
             {!logoPreview && (
-              <span className="text-lg font-semibold tracking-tight">
+              <span className="font-black text-[15px] tracking-tight leading-none">
                 {form.companyName || 'Tools Admin Portal'}
               </span>
             )}
