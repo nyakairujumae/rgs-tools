@@ -94,7 +94,8 @@ class SupabaseToolProvider with ChangeNotifier {
   Future<Tool> addTool(Tool tool) async {
     try {
       final toolMap = tool.toMap();
-      debugPrint('🔍 Attempting to add tool with data: $toolMap');
+      debugPrint('🔍 Attempting to add tool. organization_id in map: ${toolMap['organization_id']}');
+      debugPrint('🔍 Full tool map: $toolMap');
       
       final response = await SupabaseService.client
           .from('tools')
@@ -301,6 +302,14 @@ class SupabaseToolProvider with ChangeNotifier {
         performedById: userId,
         performedByRole: 'admin',
       );
+
+      // Notify the technician
+      PushNotificationService.sendToUser(
+        userId: technicianId,
+        title: 'Tool Assigned',
+        body: '${tool?.name ?? 'A tool'} has been assigned to you.',
+        data: {'type': 'tool_assignment', 'tool_id': toolId},
+      ).catchError((e) => debugPrint('Push to technician failed: $e'));
     } catch (e) {
       debugPrint('Error assigning tool: $e');
       rethrow;
@@ -343,6 +352,7 @@ class SupabaseToolProvider with ChangeNotifier {
 
       // Record in audit trail
       final tool = getToolById(toolId);
+      final previousTechnicianId = tool?.assignedTo;
       final userId = SupabaseService.client.auth.currentUser?.id;
       await ToolHistoryService.record(
         toolId: toolId,
@@ -352,6 +362,16 @@ class SupabaseToolProvider with ChangeNotifier {
         performedById: userId,
         performedByRole: 'admin',
       );
+
+      // Notify the technician if the admin initiated the return
+      if (previousTechnicianId != null && previousTechnicianId != userId) {
+        PushNotificationService.sendToUser(
+          userId: previousTechnicianId,
+          title: 'Tool Returned',
+          body: '${tool?.name ?? 'A tool'} has been returned to inventory.',
+          data: {'type': 'tool_returned', 'tool_id': toolId},
+        ).catchError((e) => debugPrint('Push to technician failed: $e'));
+      }
     } catch (e) {
       debugPrint('Error returning tool: $e');
       rethrow;

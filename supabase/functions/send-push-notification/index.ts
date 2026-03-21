@@ -532,7 +532,7 @@ serve(async (req) => {
           priority: "high",
           notification: {
             sound: "default",
-            channelId: "rgs_notifications",
+            channelId: "app_notifications",
           },
         };
       }
@@ -563,7 +563,7 @@ serve(async (req) => {
           priority: "high",
           notification: {
             sound: "default",
-            channelId: "rgs_notifications",
+            channelId: "app_notifications",
           },
         };
         fcmPayload.message.apns = {
