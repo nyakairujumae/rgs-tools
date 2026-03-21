@@ -112,15 +112,20 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         collapsed ? 'justify-center' : 'gap-3'
       )}>
         {orgLogoUrl ? (
-          // Natural aspect ratio — wide logos stay wide, square logos stay square
-          <img
-            src={orgLogoUrl}
-            alt={orgName}
-            className={cn(
-              'shrink-0 object-contain',
-              collapsed ? 'max-h-[28px] max-w-[28px]' : 'max-h-[32px] max-w-[120px]'
-            )}
-          />
+          // White pill background so dark logos stay visible on dark sidebar
+          <div className={cn(
+            'shrink-0 flex items-center justify-center bg-white rounded-lg px-2 py-1',
+            collapsed ? 'w-8 h-8 px-1 py-1' : 'max-w-[130px] h-9'
+          )}>
+            <img
+              src={orgLogoUrl}
+              alt={orgName}
+              className={cn(
+                'object-contain',
+                collapsed ? 'max-h-[22px] max-w-[22px]' : 'max-h-[28px] max-w-[110px]'
+              )}
+            />
+          </div>
         ) : collapsed ? (
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <span className="text-primary-foreground text-xs font-bold">{orgName.charAt(0).toUpperCase()}</span>
