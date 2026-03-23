@@ -15,6 +15,8 @@ import 'technician_my_requests_screen.dart';
 import 'technician_my_issues_screen.dart';
 import 'technician_add_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
+import 'request_new_tool_screen.dart';
+import 'add_tool_issue_screen.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
@@ -965,6 +967,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
       ),
       ),
       bottomNavigationBar: _buildTechBottomNav(context),
+    ),
     );
   }
 

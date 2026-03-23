@@ -1116,17 +1116,15 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           }
 
           // Remove custom error widget to prevent blank error screens on back navigation
-          // Flutter will handle errors with its default behavior
           ErrorWidget.builder = (FlutterErrorDetails details) {
-            // During logout, silently handle errors
             if (authProvider.isLoggingOut) {
               return const SizedBox.shrink();
             }
+            return const SizedBox.shrink();
+          };
 
-            ErrorWidget.builder = (FlutterErrorDetails details) {
-              return const SizedBox.shrink();
-            };
-
+          // Remove splash and process initial deep link
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!_splashRemoved) {
               _splashRemoved = true;
               FlutterNativeSplash.remove();
@@ -1142,8 +1140,6 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           // Determine initial route once at startup using current auth state.
           // After login, navigation is handled imperatively via pushReplacementNamed —
           // we must NOT recompute this during rebuilds or the navigator will crash.
-          final authProvider = context.read<AuthProvider>();
-          
           // CRITICAL: Check session FIRST - if logged in, go directly to home screen
           // No intermediate screens, no waiting, no flashes
           final hasSession = SupabaseService.client.auth.currentSession != null;
