@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/approval_workflow.dart';
 import '../providers/approval_workflows_provider.dart';
+import '../providers/technician_notification_provider.dart';
+import '../services/push_notification_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/logger.dart';
 
 class ApprovalWorkflowsScreen extends StatefulWidget {
   const ApprovalWorkflowsScreen({super.key});
@@ -397,12 +400,41 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Requested by ${workflow.requesterName} • ${_formatDate(workflow.requestDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ),
+                Builder(builder: (context) {
+                  final rawUrls = workflow.requestData?['image_urls'];
+                  final count = rawUrls is List ? rawUrls.length : 0;
+                  if (count == 0) return const SizedBox.shrink();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.attach_file,
+                        size: 13,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
             ),
           ],
         ),
@@ -868,16 +900,60 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
 
   Future<void> _updateWorkflowStatus(ApprovalWorkflow workflow, String newStatus, {String? rejectionReason}) async {
     final provider = context.read<ApprovalWorkflowsProvider>();
+    final techNotifProvider = context.read<TechnicianNotificationProvider>();
     try {
       final workflowId = workflow.id?.toString();
       if (workflowId == null) {
         throw Exception('Workflow ID is null');
       }
-      
+
       if (newStatus == 'Approved') {
         await provider.approveWorkflow(workflowId, comments: null);
       } else if (newStatus == 'Rejected') {
         await provider.rejectWorkflow(workflowId, rejectionReason ?? 'No reason provided');
+      }
+
+      // Notify the requesting technician
+      final requesterId = workflow.requesterId;
+      // Only notify if requesterId looks like a UUID (actual user ID, not a placeholder)
+      if (requesterId.isNotEmpty && !requesterId.startsWith('REQ-')) {
+        final isApproved = newStatus == 'Approved';
+        final notifTitle = isApproved
+            ? 'Request Approved: ${workflow.title}'
+            : 'Request Rejected: ${workflow.title}';
+        final notifMessage = isApproved
+            ? 'Your request "${workflow.title}" has been approved.'
+            : 'Your request "${workflow.title}" was rejected. Reason: ${rejectionReason ?? 'No reason provided'}';
+
+        try {
+          await techNotifProvider.sendNotification(
+            technicianUserId: requesterId,
+            title: notifTitle,
+            message: notifMessage,
+            type: isApproved ? 'request_approved' : 'request_rejected',
+            data: {
+              'workflow_id': workflowId,
+              'request_type': workflow.requestType,
+              'status': newStatus,
+              if (!isApproved) 'rejection_reason': rejectionReason ?? 'No reason provided',
+            },
+          );
+          // Push notification to requester
+          PushNotificationService.sendToUser(
+            userId: requesterId,
+            title: notifTitle,
+            body: notifMessage,
+            data: {'type': isApproved ? 'request_approved' : 'request_rejected', 'workflow_id': workflowId},
+          ).then((ok) {
+            Logger.debug(ok
+                ? '✅ Push notification sent to requester: $requesterId'
+                : '⚠️ Push notification failed for requester: $requesterId');
+          }).catchError((e) {
+            Logger.debug('❌ Error sending push to requester: $e');
+          });
+        } catch (e) {
+          Logger.debug('⚠️ Could not send technician notification: $e');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -970,6 +1046,109 @@ class _ApprovalWorkflowsScreenState extends State<ApprovalWorkflowsScreen> {
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
+              // Attachments
+              Builder(builder: (context) {
+                final rawUrls = workflow.requestData?['image_urls'];
+                final imageUrls = rawUrls is List
+                    ? rawUrls.whereType<String>().toList()
+                    : <String>[];
+                if (imageUrls.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.attach_file,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Attachments (${imageUrls.length})',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(imageUrls.length, (i) {
+                        const thumbSize = 90.0;
+                        return GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => Dialog(
+                                backgroundColor: Colors.black,
+                                insetPadding: const EdgeInsets.all(12),
+                                child: Stack(
+                                  children: [
+                                    InteractiveViewer(
+                                      child: Image.network(
+                                        imageUrls[i],
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => const Center(
+                                          child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () => Navigator.pop(context),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            width: thumbSize,
+                            height: thumbSize,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                imageUrls[i],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                loadingBuilder: (_, child, progress) => progress == null
+                                    ? child
+                                    : Container(
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
         ),

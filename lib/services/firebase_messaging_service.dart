@@ -904,23 +904,22 @@ class FirebaseMessagingService {
     });
   }
 
-  /// Update app badge by syncing with actual unread count from database.
-  /// Falls back to increment if DB sync fails (e.g. no auth session).
+  /// Update app badge — increment immediately then sync with DB after a short delay.
+  /// Increment-first avoids the race condition where the new notification row
+  /// isn't committed yet when we query the DB.
   static Future<void> _updateBadge() async {
     try {
-      // Sync with database to get the real unread count
-      await BadgeService.syncBadgeWithDatabase(null);
+      await BadgeService.incrementBadge();
       final badgeCount = await BadgeService.getBadgeCount();
-      Logger.debug('✅ [FCM] Badge synced with database: $badgeCount');
+      Logger.debug('✅ [FCM] Badge incremented to: $badgeCount');
+      // Delayed sync to correct the count once the DB row is committed
+      Future.delayed(const Duration(seconds: 3), () async {
+        try {
+          await BadgeService.syncBadgeWithDatabase(null);
+        } catch (_) {}
+      });
     } catch (e) {
-      // Fallback: increment by 1 if DB sync fails (e.g. background/no session)
-      try {
-        await BadgeService.incrementBadge();
-        final badgeCount = await BadgeService.getBadgeCount();
-        Logger.debug('✅ [FCM] Badge incremented (fallback): $badgeCount');
-      } catch (e2) {
-        Logger.debug('❌ [FCM] Error updating badge: $e2');
-      }
+      Logger.debug('❌ [FCM] Error updating badge: $e');
     }
   }
 
@@ -1087,13 +1086,16 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(androidChannel);
     
-    // Update badge — try to sync with DB for accurate count, fallback to increment
-    try {
-      await BadgeService.syncBadgeWithDatabase(null);
-    } catch (_) {
-      await BadgeService.incrementBadge();
-    }
+    // Increment badge immediately (guaranteed correct), then try to sync with DB
+    // Do NOT sync-first: the new notification row may not be committed yet (race condition)
+    await BadgeService.incrementBadge();
     final badgeCount = await BadgeService.getBadgeCount();
+    // Best-effort DB sync after a short delay to let the row commit
+    Future.delayed(const Duration(seconds: 3), () async {
+      try {
+        await BadgeService.syncBadgeWithDatabase(null);
+      } catch (_) {}
+    });
     
     // CRITICAL RULE: Check if message has notification payload
     if (message.notification != null) {

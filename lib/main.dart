@@ -1122,29 +1122,27 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             if (authProvider.isLoggingOut) {
               return const SizedBox.shrink();
             }
-            // For other errors, return empty widget to prevent blank screen
-            // This prevents users from getting stuck on error screens when pressing back
-            return const SizedBox.shrink();
-          };
-          
-          // Remove splash screen quickly - don't wait for initialization
-          if (!_splashRemoved) {
-            _splashRemoved = true;
-            // Remove splash immediately - initialization happens in background
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-            FlutterNativeSplash.remove();
+
+            ErrorWidget.builder = (FlutterErrorDetails details) {
+              return const SizedBox.shrink();
+            };
+
+            if (!_splashRemoved) {
+              _splashRemoved = true;
+              FlutterNativeSplash.remove();
               Logger.debug('✅ Native splash removed immediately');
-            });
-          }
-          
-          // CRITICAL: Process initial deep link if we have one and haven't processed it yet
-          if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
-            Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
-            // Process in post frame callback to avoid setState during build
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            }
+
+            if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
+              Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
               _handleDeepLink(widget.initialDeepLink!);
-            });
-          }
+            }
+          });
+
+          // Determine initial route once at startup using current auth state.
+          // After login, navigation is handled imperatively via pushReplacementNamed —
+          // we must NOT recompute this during rebuilds or the navigator will crash.
+          final authProvider = context.read<AuthProvider>();
           
           // CRITICAL: Check session FIRST - if logged in, go directly to home screen
           // No intermediate screens, no waiting, no flashes

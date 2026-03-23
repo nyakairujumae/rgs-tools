@@ -34,6 +34,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   String _selectedCategory = 'Category';
   String _selectedStatus = 'All';
   String _searchQuery = '';
+  bool _isListView = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -63,8 +64,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     final theme = Theme.of(context);
     final toolProviderWatch = context.watch<SupabaseToolProvider>();
     final categories = ['Category', ...toolProviderWatch.getCategories()];
-    final authProvider = context.watch<AuthProvider>();
-    final isTechnician = authProvider.userRole == UserRole.technician;
+    context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
@@ -87,7 +87,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                   children: [
                     Row(
                       children: [
-                        if (isTechnician)
+                        if (Navigator.canPop(context))
                           Padding(
                             padding: const EdgeInsets.only(right: 12.0),
                             child: IconButton(
@@ -124,8 +124,17 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                             ],
                           ),
                         ),
-                        if (!isTechnician)
-                          Material(
+                        if (!kIsWeb)
+                          IconButton(
+                            icon: Icon(
+                              _isListView ? Icons.grid_view_rounded : Icons.view_list_rounded,
+                              size: 22,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                            onPressed: () => setState(() => _isListView = !_isListView),
+                            tooltip: _isListView ? 'Grid view' : 'List view',
+                          ),
+                        Material(
                             color: Colors.transparent,
                             child: IconButton(
                               onPressed: () async {
@@ -263,6 +272,18 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         final isDesktop = ResponsiveHelper.isDesktop(context);
         final screenWidth = constraints.maxWidth;
 
+        // Mobile list view
+        if (!isDesktop && _isListView) {
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            itemCount: tools.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              return _buildSharedToolListRow(tools[index], technicianProvider);
+            },
+          );
+        }
+
         int crossAxisCount = 2;
         double crossAxisSpacing = 10.0;
         double mainAxisSpacing = 12.0;
@@ -300,6 +321,74 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildSharedToolListRow(Tool tool, SupabaseTechnicianProvider technicianProvider) {
+    final theme = Theme.of(context);
+    final imageUrls = _getToolImageUrls(tool);
+    final imageUrl = imageUrls.isNotEmpty ? imageUrls.first : null;
+
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ToolDetailScreen(tool: tool),
+      )),
+      onLongPress: () => _showToolActions(tool, technicianProvider),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: context.cardDecoration.copyWith(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: imageUrl != null
+                    ? Image.network(imageUrl, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildPlaceholderImage())
+                    : _buildPlaceholderImage(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tool.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    tool.category,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildStatusPill(tool.status),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 18,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+          ],
+        ),
+      ),
     );
   }
 

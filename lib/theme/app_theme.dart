@@ -779,6 +779,16 @@ class AppTheme {
         return conditionPoor;
       case 'needs repair':
         return conditionNeedsRepair;
+      case 'lost':
+        return const Color(0xFFE53935); // red
+      case 'damaged':
+        return const Color(0xFFE65100); // deep orange
+      case 'faulty':
+        return const Color(0xFFF57C00); // orange
+      case 'missing parts':
+        return const Color(0xFF6D4C41); // brown
+      case 'maintenance required':
+        return const Color(0xFF1565C0); // blue
       default:
         return textSecondary;
     }

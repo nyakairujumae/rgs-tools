@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -9,9 +10,9 @@ import '../providers/auth_provider.dart';
 import 'role_selection_screen.dart';
 import 'checkin_screen.dart';
 import 'shared_tools_screen.dart';
-import 'add_tool_issue_screen.dart';
 import 'add_tool_screen.dart';
-import 'request_new_tool_screen.dart';
+import 'technician_my_requests_screen.dart';
+import 'technician_my_issues_screen.dart';
 import 'technician_add_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
 import '../models/tool.dart';
@@ -58,6 +59,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   Timer? _notificationRefreshTimer;
   int _selectedIndex = 0;
   bool _isDisposed = false;
+  DateTime? _lastBackPress;
   int _notificationRefreshKey = 0;
   late final List<Widget> _screens;
   TechnicianNotificationProvider? _notificationProviderRef;
@@ -872,11 +874,27 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastBackPress == null ||
+            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+          _lastBackPress = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Press back again to exit'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
         backgroundColor: context.scaffoldBackground,
-        appBar: (_selectedIndex == 1 || _selectedIndex == 2)
-          ? null
-          : AppBar(
+        appBar: AppBar(
         backgroundColor: context.appBarBackground,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
@@ -904,6 +922,18 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
             ),
             onPressed: () => _showNotifications(context),
             tooltip: 'Notifications',
+          ),
+        ),
+        title: Text(
+          [
+            'Dashboard',
+            'My Requests',
+            'My Issues',
+          ][_selectedIndex.clamp(0, 2)],
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         shape: const RoundedRectangleBorder(

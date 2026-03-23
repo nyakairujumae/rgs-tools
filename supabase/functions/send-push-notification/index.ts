@@ -355,7 +355,7 @@ serve(async (req) => {
       );
     }
     
-    const { token, user_id, platform, title, body, data } = requestBody;
+    const { token, user_id, platform, title, body, data, badge: badgeOverride } = requestBody;
     
     // Validate required fields
     if (!title || !body) {
@@ -455,6 +455,42 @@ serve(async (req) => {
     
     await cleanupOldTokens();
 
+    // Determine badge count for this user
+    let badgeCount = badgeOverride ?? 1;
+    if (user_id && supabase && badgeOverride === undefined) {
+      try {
+        // Get user role to decide which table to count
+        const { data: userRecord } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user_id)
+          .maybeSingle();
+        const role = userRecord?.role;
+
+        let unread = 0;
+        if (role === "admin") {
+          const { count } = await supabase
+            .from("admin_notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("is_read", false);
+          unread = count ?? 0;
+        } else if (role === "technician") {
+          const { count } = await supabase
+            .from("technician_notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user_id)
+            .eq("is_read", false);
+          unread = count ?? 0;
+        }
+        // Add 1 for the notification being delivered right now
+        badgeCount = unread + 1;
+        console.log(`✅ Badge count for user ${user_id} (${role}): ${badgeCount} (${unread} existing + 1 new)`);
+      } catch (e) {
+        console.warn("⚠️ Could not get badge count, defaulting to 1:", e);
+        badgeCount = 1;
+      }
+    }
+
     const safeData = data ? Object.fromEntries(
       Object.entries(data).map(([key, value]) => [key, String(value)])
     ) : undefined;
@@ -551,7 +587,7 @@ serve(async (req) => {
                 body,
               },
               sound: "default",
-              badge: 1,
+              badge: badgeCount,
             },
           },
         };
@@ -578,7 +614,7 @@ serve(async (req) => {
                 body,
               },
               sound: "default",
-              badge: 1,
+              badge: badgeCount,
             },
           },
         };

@@ -60,6 +60,22 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     'Other',
   ];
 
+  final Map<String, IconData> _categoryIcons = const {
+    'Hand Tools': Icons.build_outlined,
+    'Power Tools': Icons.power_outlined,
+    'Testing Equipment': Icons.science_outlined,
+    'Safety Equipment': Icons.shield_outlined,
+    'Measuring Tools': Icons.straighten_outlined,
+    'Cutting Tools': Icons.cut_outlined,
+    'Fastening Tools': Icons.construction_outlined,
+    'Electrical Tools': Icons.electrical_services_outlined,
+    'Plumbing Tools': Icons.plumbing_outlined,
+    'Carpentry Tools': Icons.hardware_outlined,
+    'Automotive Tools': Icons.car_repair_outlined,
+    'Garden Tools': Icons.yard_outlined,
+    'Other': Icons.category_outlined,
+  };
+
   final List<String> _conditions = const ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'];
 
   BoxDecoration _outlineDecoration(
@@ -267,6 +283,11 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                             color: Colors.grey[700],
                             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                           ),
+                          prefixIcon: Icon(
+                            _categoryIcons[_selectedCategory.isEmpty ? 'Other' : _selectedCategory] ?? Icons.category_outlined,
+                            size: 22,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
                           contentPadding: ResponsiveHelper.getResponsivePadding(
                             context,
                             horizontal: 20,
@@ -274,17 +295,42 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                           ),
                         ),
                         items: _categories.map((category) {
+                          final icon = _categoryIcons[category] ?? Icons.category_outlined;
                           return DropdownMenuItem(
                             value: category,
-                            child: Text(
-                              category,
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface,
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon, size: 18, color: theme.colorScheme.onSurface.withOpacity(0.8)),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    category,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
+                        selectedItemBuilder: (context) {
+                          return _categories.map((category) => Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )).toList();
+                        },
                         onChanged: (value) {
                           setState(() {
                             _selectedCategory = value ?? '';

@@ -449,23 +449,27 @@ class DashboardScreen extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Available',
-                                    style: TextStyle(fontSize: 12, color: muted),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    availableCount.toString(),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.secondaryColor,
+                              child: GestureDetector(
+                                onTap: () => onNavigateToToolsWithFilter('Available'),
+                                behavior: HitTestBehavior.opaque,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Available',
+                                      style: TextStyle(fontSize: 12, color: muted),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      availableCount.toString(),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             Container(
@@ -474,23 +478,27 @@ class DashboardScreen extends StatelessWidget {
                               color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
                             ),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Assigned',
-                                    style: TextStyle(fontSize: 12, color: muted),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    assignedCount.toString(),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.primaryColor,
+                              child: GestureDetector(
+                                onTap: () => onNavigateToToolsWithFilter('Assigned'),
+                                behavior: HitTestBehavior.opaque,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Assigned',
+                                      style: TextStyle(fontSize: 12, color: muted),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      assignedCount.toString(),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -1704,7 +1712,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatusItem(
-      String status, String count, Color color, BuildContext context) {
+      String status, String count, Color color, BuildContext context, {VoidCallback? onTap}) {
     final isWebLayout = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -1713,7 +1721,10 @@ class DashboardScreen extends StatelessWidget {
     if (isWebLayout) {
       // Web: clean inline status with colour dot
       return Expanded(
-        child: Padding(
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             children: [
@@ -1746,6 +1757,7 @@ class DashboardScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       );
     }
@@ -1780,6 +1792,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

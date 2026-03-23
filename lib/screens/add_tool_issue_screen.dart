@@ -36,6 +36,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   String _selectedIssueType = 'Faulty';
   String _selectedPriority = 'Medium';
   bool _isLoading = false;
+  String _toolSearchQuery = '';
   
   // Image upload
   final ImagePicker _picker = ImagePicker();
@@ -151,37 +152,83 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                         // Tool Information Section
                         _SectionCard(
                           title: 'Tool Information',
-                          child: Consumer<SupabaseToolProvider>(
-                            builder: (context, toolProvider, child) {
-                              final tools = toolProvider.tools;
-                              return _dropdown(
-                                label: 'Select Tool *',
-                                value: _selectedToolId.isEmpty ? null : _selectedToolId,
-                                items: tools.map((tool) {
-                                  return DropdownMenuItem(
-                                    value: tool.id,
-                                    child: Text(
-                                      '${tool.name} (${tool.category})',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        color: theme.colorScheme.onSurface,
-                                      ),
+                          child: Consumer2<SupabaseToolProvider, AuthProvider>(
+                            builder: (context, toolProvider, authProvider, child) {
+                              final userId = authProvider.userId;
+                              // Filter to tools assigned to this technician
+                              final myTools = userId != null
+                                  ? toolProvider.tools
+                                      .where((t) => t.assignedTo == userId)
+                                      .toList()
+                                  : toolProvider.tools;
+                              final filtered = _toolSearchQuery.isEmpty
+                                  ? myTools
+                                  : myTools
+                                      .where((t) => t.name
+                                          .toLowerCase()
+                                          .contains(_toolSearchQuery.toLowerCase()))
+                                      .toList();
+                              // Reset selection if it's no longer in the filtered list
+                              final validId = filtered.any((t) => t.id == _selectedToolId)
+                                  ? _selectedToolId
+                                  : null;
+                              return Column(
+                                children: [
+                                  TextField(
+                                    decoration: context.chatGPTInputDecoration.copyWith(
+                                      labelText: 'Search tools',
+                                      prefixIcon: const Icon(Icons.search),
                                     ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedToolId = value ?? '';
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select a tool';
-                                  }
-                                  return null;
-                                },
-                                icon: Icons.build,
+                                    onChanged: (v) => setState(() {
+                                      _toolSearchQuery = v;
+                                      if (validId == null) _selectedToolId = '';
+                                    }),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (filtered.isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(
+                                        myTools.isEmpty
+                                            ? 'No tools are currently assigned to you'
+                                            : 'No tools match your search',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    _dropdown(
+                                      label: 'Select Tool *',
+                                      value: validId,
+                                      items: filtered.map((tool) {
+                                        return DropdownMenuItem(
+                                          value: tool.id,
+                                          child: Text(
+                                            '${tool.name} (${tool.category})',
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              color: theme.colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedToolId = value ?? '';
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a tool';
+                                        }
+                                        return null;
+                                      },
+                                      icon: Icons.build,
+                                    ),
+                                ],
                               );
                             },
                           ),
