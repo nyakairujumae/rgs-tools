@@ -10,6 +10,7 @@ import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/approval_workflows_provider.dart';
 import '../providers/supabase_certification_provider.dart';
+import '../providers/organization_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
@@ -2646,6 +2647,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? ReportFormat.pdf
           : format;
 
+      final orgProvider = context.read<OrganizationProvider>();
       final file = await ReportService.generateReport(
         reportType: _selectedReportType,
         tools: toolProvider.tools,
@@ -2657,6 +2659,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         startDate: startDate,
         endDate: endDate,
         format: effectiveFormat,
+        orgName: orgProvider.orgName,
+        logoUrl: orgProvider.logoUrl,
+        workerLabel: orgProvider.workerLabel,
+        workerLabelPlural: orgProvider.workerLabelPlural,
       );
 
       if (file == null) {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { generatePDF, generateCSV, generateExcel, type ReportType, type ReportData } from '@/lib/reports/generate-report'
+import { useOrgContext } from '@/contexts/organization-context'
 import { cn } from '@/lib/utils'
 import {
   FileText,
@@ -31,6 +32,7 @@ const reportTypes: { id: ReportType; label: string; description: string; icon: R
 ]
 
 export default function ReportsPage() {
+  const { org, workerLabel, workerLabelPlural } = useOrgContext()
   const [selected, setSelected] = useState<ReportType | null>(null)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -93,6 +95,12 @@ export default function ReportsPage() {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         data,
+        branding: {
+          orgName: org?.name,
+          logoUrl: org?.logo_url,
+          workerLabel,
+          workerLabelPlural,
+        },
       }
 
       if (format === 'pdf') {

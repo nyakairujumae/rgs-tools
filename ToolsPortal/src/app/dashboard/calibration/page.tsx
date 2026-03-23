@@ -17,6 +17,7 @@ import {
   Trash2,
   CalendarPlus,
   FileCheck,
+  Bell,
 } from 'lucide-react'
 import { RecordCalibrationDialog } from '@/components/calibration/record-calibration-dialog'
 import { ScheduleCalibrationDialog } from '@/components/calibration/schedule-calibration-dialog'
@@ -46,6 +47,7 @@ export default function CalibrationPage() {
   const [editCert, setEditCert] = useState<Certification | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<Certification | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [reminderDismissed, setReminderDismissed] = useState(false)
 
   const fetchData = async () => {
     const supabase = createClient()
@@ -184,6 +186,39 @@ export default function CalibrationPage() {
           </button>
         </div>
       </div>
+
+      {/* Calibration reminder banner */}
+      {!reminderDismissed && (counts.Overdue > 0 || counts['Due Soon'] > 0) && (
+        <div className={cn(
+          'flex items-start gap-3 rounded-xl px-4 py-3 text-sm',
+          counts.Overdue > 0
+            ? 'bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400'
+            : 'bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400'
+        )}>
+          <Bell className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold">
+              {counts.Overdue > 0
+                ? `${counts.Overdue} overdue calibration${counts.Overdue === 1 ? '' : 's'}`
+                : `${counts['Due Soon']} calibration${counts['Due Soon'] === 1 ? '' : 's'} due soon`}
+            </p>
+            <p className="text-xs opacity-80 mt-0.5">
+              {counts.Overdue > 0 && counts['Due Soon'] > 0
+                ? `${counts.Overdue} overdue and ${counts['Due Soon']} expiring within 30 days — action required.`
+                : counts.Overdue > 0
+                ? 'These tools have expired calibration certificates and may not be compliant.'
+                : `${counts['Due Soon']} tool${counts['Due Soon'] === 1 ? '' : 's'} will need recalibration within 30 days.`}
+            </p>
+          </div>
+          <button
+            onClick={() => setReminderDismissed(true)}
+            className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

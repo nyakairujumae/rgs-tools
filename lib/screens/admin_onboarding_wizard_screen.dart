@@ -1,8 +1,10 @@
 import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
+import 'dart:convert' show utf8;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
@@ -79,8 +81,8 @@ class _AdminOnboardingWizardScreenState
     with SingleTickerProviderStateMixin {
   static const int _totalSteps = 6; // _Step.values.length
 
-  final _pageController = PageController();
-  _Step _currentStep = _Step.welcome;
+  final _pageController = PageController(initialPage: 1);
+  _Step _currentStep = _Step.industry;
   bool _isLoading = false;
   String? _error;
 
@@ -182,6 +184,8 @@ class _AdminOnboardingWizardScreenState
 
   void _next() => _goTo(_Step.values[_currentStep.index + 1]);
   void _back() {
+    // welcome step is skipped — back from industry goes to onboarding
+    if (_currentStep == _Step.industry) { Navigator.of(context).pop(); return; }
     if (_currentStep.index == 0) { Navigator.of(context).pop(); return; }
     _goTo(_Step.values[_currentStep.index - 1]);
   }
@@ -352,7 +356,6 @@ class _AdminOnboardingWizardScreenState
             child: Column(
               children: [
                 _buildTopBar(theme),
-                if (_currentStep != _Step.welcome) _buildProgress(theme),
                 Expanded(
                   child: PageView(
                     controller: _pageController,
@@ -378,56 +381,55 @@ class _AdminOnboardingWizardScreenState
   // ── Top bar ───────────────────────────────────────────────────────────────
 
   Widget _buildTopBar(ThemeData theme) {
-    final stepNum = _currentStep.index;
+    // Steps after welcome: industry(1), teamLabel(2), company(3), account(4), invite(5)
+    // Dot index = _currentStep.index - 1, total = 5 dots
+    final dotIndex = _currentStep.index - 1;
+    const totalDots = 5;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(8, 12, 16, 8),
       child: Row(
         children: [
           if (_currentStep != _Step.welcome)
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
               onPressed: _isLoading ? null : _back,
-              color: theme.colorScheme.onSurface,
+              color: const Color(0xFF0F172A),
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFFF1F5F9),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
+              ),
             )
           else
-            const SizedBox(width: 48),
+            const SizedBox(width: 36),
           const Spacer(),
           if (_currentStep != _Step.welcome)
-            Text(
-              '$stepNum of ${_totalSteps - 1}',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(totalDots, (i) {
+                final isFilled = i <= dotIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: isFilled ? 20 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isFilled
+                        ? AppTheme.primaryColor
+                        : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
             ),
           const Spacer(),
-          const SizedBox(width: 48),
+          const SizedBox(width: 36),
         ],
-      ),
-    );
-  }
-
-  // ── Progress bar ──────────────────────────────────────────────────────────
-
-  Widget _buildProgress(ThemeData theme) {
-    final filled = _currentStep.index;
-    final total  = _totalSteps - 1;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
-      child: Row(
-        children: List.generate(total, (i) => Expanded(
-          child: Container(
-            height: 3,
-            margin: EdgeInsets.only(right: i < total - 1 ? 6 : 0),
-            decoration: BoxDecoration(
-              color: i < filled
-                  ? AppTheme.primaryColor
-                  : context.cardBorder,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        )),
       ),
     );
   }
@@ -546,62 +548,116 @@ class _AdminOnboardingWizardScreenState
 
   // ── Step 1: Industry ──────────────────────────────────────────────────────
 
-  Widget _buildIndustry(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _stepHeader(theme, 'What kind of business\ndo you run?',
-              "We'll pre-configure departments and tool categories for you."),
-          const SizedBox(height: 28),
+  static const _industryDescriptions = {
+    'hvac':         'Heating, cooling & ventilation services',
+    'electrical':   'Electrical installation & maintenance',
+    'fm':           'Building operations & facility services',
+    'construction': 'Site works, civil & structural projects',
+    'plumbing':     'Pipework, drainage & water systems',
+    'general':      'Any other field service operation',
+  };
 
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.55,
+  Widget _buildIndustry(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          child: _stepHeader(
+            theme,
+            'What industry\nare you in?',
+            "We'll pre-configure your workspace to match your business.",
+          ),
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
             children: _presets.map((p) {
               final sel = _selectedPreset.key == p.key;
+              final desc = _industryDescriptions[p.key] ?? '';
               return GestureDetector(
                 onTap: () => _pickPreset(p),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.all(14),
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: sel
                         ? AppTheme.primaryColor.withOpacity(0.06)
-                        : context.cardBackground,
-                    borderRadius: BorderRadius.circular(context.borderRadiusMedium),
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: sel ? AppTheme.primaryColor : context.cardBorder,
-                      width: sel ? 1.5 : 1,
+                      color: sel ? AppTheme.primaryColor : const Color(0xFFE2E8F0),
+                      width: sel ? 2 : 1,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Row(
                     children: [
-                      Icon(
-                        p.icon,
-                        size: 22,
-                        color: sel
-                            ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.45),
-                      ),
-                      Text(
-                        p.label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      // Icon container
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: sel
+                              ? AppTheme.primaryColor.withOpacity(0.12)
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          p.icon,
+                          size: 22,
                           color: sel
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface,
+                              : const Color(0xFF64748B),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(width: 14),
+                      // Label + description
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: sel
+                                    ? AppTheme.primaryColor
+                                    : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              desc,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Check dot
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 180),
+                        opacity: sel ? 1.0 : 0.0,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -609,172 +665,207 @@ class _AdminOnboardingWizardScreenState
               );
             }).toList(),
           ),
-          const SizedBox(height: 32),
-          ThemedButton(
-            onPressed: _submitIndustry,
-            child: const Text('Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          child: SizedBox(
+            height: 54,
+            child: ThemedButton(
+              onPressed: _submitIndustry,
+              child: const Text('Continue',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   // ── Step 2: Team label ────────────────────────────────────────────────────
 
   Widget _buildTeamLabel(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _stepHeader(theme, 'What do you call\nyour field team?',
-              'This label is used throughout the app wherever team members appear.'),
-          const SizedBox(height: 28),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _stepHeader(theme, 'What do you call\nyour team?',
+                    'This label appears throughout the app wherever team members are shown.'),
+                const SizedBox(height: 28),
 
-          // Quick-select chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _presets.where((p) => p.key != 'general').map((p) {
-              final active = _workerLabelCtrl.text.trim() == p.workerLabel;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _workerLabelCtrl.text       = p.workerLabel;
-                  _workerLabelPluralCtrl.text = p.workerLabelPlural;
-                  _error = null;
-                }),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: active ? AppTheme.primaryColor : context.cardBackground,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: active ? AppTheme.primaryColor : context.cardBorder,
-                    ),
-                  ),
-                  child: Text(
-                    p.workerLabel,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: active ? Colors.white : theme.colorScheme.onSurface,
-                    ),
+                // Horizontal scroll preset chips
+                SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: _presets.where((p) => p.key != 'general').map((p) {
+                      final active = _workerLabelCtrl.text.trim() == p.workerLabel;
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          _workerLabelCtrl.text       = p.workerLabel;
+                          _workerLabelPluralCtrl.text = p.workerLabelPlural;
+                          _error = null;
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 140),
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: active ? AppTheme.primaryColor : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: active ? AppTheme.primaryColor : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Text(
+                            p.workerLabel,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: active ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-          ThemedTextField(
-            controller: _workerLabelCtrl,
-            label: 'Singular (e.g. Technician)',
-            hint: 'Technician',
-            onChanged: (_) => setState(() => _error = null),
-          ),
-          const SizedBox(height: 14),
-          ThemedTextField(
-            controller: _workerLabelPluralCtrl,
-            label: 'Plural (e.g. Technicians)',
-            hint: 'Technicians',
-            onChanged: (_) => setState(() => _error = null),
-          ),
+                ThemedTextField(
+                  controller: _workerLabelCtrl,
+                  label: 'Singular (e.g. Technician)',
+                  hint: 'Technician',
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+                const SizedBox(height: 14),
+                ThemedTextField(
+                  controller: _workerLabelPluralCtrl,
+                  label: 'Plural (e.g. Technicians)',
+                  hint: 'Technicians',
+                  onChanged: (_) => setState(() => _error = null),
+                ),
 
-          if (_error != null) _errorBanner(_error!),
-          const SizedBox(height: 32),
-
-          ThemedButton(
-            onPressed: _submitTeamLabel,
-            child: const Text('Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                if (_error != null) _errorBanner(_error!),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          child: SizedBox(
+            height: 54,
+            child: ThemedButton(
+              onPressed: _submitTeamLabel,
+              child: const Text('Continue',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   // ── Step 3: Company name ──────────────────────────────────────────────────
 
   Widget _buildCompany(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _stepHeader(theme, "What's your\ncompany called?",
-              'This will appear in your workspace and on reports.'),
-          const SizedBox(height: 28),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _stepHeader(theme, 'Name your\nworkspace',
+                    'Your company name appears on reports and in your workspace.'),
+                const SizedBox(height: 36),
 
-          // Logo picker
-          GestureDetector(
-            onTap: _pickLogo,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: context.cardBackground,
-                borderRadius: BorderRadius.circular(context.borderRadiusMedium),
-                border: Border.all(color: context.cardBorder),
-              ),
-              child: Row(
-                children: [
-                  // Preview
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: theme.scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: context.cardBorder),
+                // Centered dashed logo upload area
+                Center(
+                  child: GestureDetector(
+                    onTap: _pickLogo,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: _logoFile != null || _logoBytes != null
+                            ? Colors.transparent
+                            : const Color(0xFFF8FAFC),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _logoFile != null || _logoBytes != null
+                              ? AppTheme.primaryColor
+                              : const Color(0xFFCBD5E1),
+                          width: 2,
+                          strokeAlign: BorderSide.strokeAlignOutside,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _logoFile != null || _logoBytes != null
+                          ? _logoPreview(theme)
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  size: 28,
+                                  color: AppTheme.primaryColor.withOpacity(0.6),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Logo',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _logoPreview(theme),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Add company logo',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface)),
-                        const SizedBox(height: 2),
-                        Text('Optional · PNG or JPG',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(0.45))),
-                      ],
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Text(
+                    'Optional · PNG or JPG',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                   ),
-                  Icon(Icons.chevron_right_rounded,
-                      color: theme.colorScheme.onSurface.withOpacity(0.3), size: 20),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+
+                ThemedTextField(
+                  controller: _companyNameCtrl,
+                  label: 'Company name',
+                  hint: 'e.g. Acme Field Services',
+                  prefixIcon: Icons.business_outlined,
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+
+                if (_error != null) _errorBanner(_error!),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          ThemedTextField(
-            controller: _companyNameCtrl,
-            label: 'Company name',
-            hint: 'e.g. Acme Field Services',
-            prefixIcon: Icons.business_outlined,
-            onChanged: (_) => setState(() => _error = null),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          child: SizedBox(
+            height: 54,
+            child: ThemedButton(
+              onPressed: _submitCompany,
+              child: const Text('Continue',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+            ),
           ),
-
-          if (_error != null) _errorBanner(_error!),
-          const SizedBox(height: 32),
-
-          ThemedButton(
-            onPressed: _submitCompany,
-            child: const Text('Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -792,129 +883,151 @@ class _AdminOnboardingWizardScreenState
   // ── Step 4: Create account ────────────────────────────────────────────────
 
   Widget _buildAccount(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Summary card
-          _buildSummaryCard(theme),
-          const SizedBox(height: 24),
-
-          _stepHeader(theme, 'Create your account',
-              "You're almost done. Enter your details below."),
-          const SizedBox(height: 24),
-
-          Form(
-            key: _accountFormKey,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ThemedTextField(
-                  controller: _fullNameCtrl,
-                  label: 'Full name',
-                  hint: 'Your full name',
-                  prefixIcon: Icons.person_outline_rounded,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter your full name'
-                      : null,
-                ),
-                const SizedBox(height: 14),
-                ThemedTextField(
-                  controller: _emailCtrl,
-                  label: 'Work email',
-                  hint: 'you@company.com',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Please enter your email';
-                    if (!AppConfig.isAdminEmailDomain(v)) {
-                      return 'Invalid email domain. Use ${AppConfig.adminDomainsDisplay}';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-                ThemedTextField(
-                  controller: _passwordCtrl,
-                  label: 'Password',
-                  hint: 'Minimum 6 characters',
-                  prefixIcon: Icons.lock_outline_rounded,
-                  obscureText: _obscurePass,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePass ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                // Summary pill
+                _buildSummaryCard(theme),
+                const SizedBox(height: 24),
+
+                _stepHeader(theme, 'Create your\naccount',
+                    "Almost there. Enter your details to set up your workspace."),
+                const SizedBox(height: 28),
+
+                Form(
+                  key: _accountFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ThemedTextField(
+                        controller: _fullNameCtrl,
+                        label: 'Full name',
+                        hint: 'Your full name',
+                        prefixIcon: Icons.person_outline_rounded,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Please enter your full name'
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      ThemedTextField(
+                        controller: _emailCtrl,
+                        label: 'Work email',
+                        hint: 'you@company.com',
+                        prefixIcon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'Please enter your email';
+                          if (!AppConfig.isAdminEmailDomain(v)) {
+                            return 'Invalid email domain. Use ${AppConfig.adminDomainsDisplay}';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      ThemedTextField(
+                        controller: _passwordCtrl,
+                        label: 'Password',
+                        hint: 'Minimum 6 characters',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        obscureText: _obscurePass,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePass ? Icons.visibility_off : Icons.visibility,
+                            size: 20,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                          onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Please enter a password';
+                          if (v.length < 6) return 'Password must be at least 6 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      ThemedTextField(
+                        controller: _confirmCtrl,
+                        label: 'Confirm password',
+                        hint: 'Re-enter password',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        obscureText: _obscureConfirm,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            size: 20,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Please confirm your password';
+                          if (v != _passwordCtrl.text) return 'Passwords do not match';
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please enter a password';
-                    if (v.length < 6) return 'Password must be at least 6 characters';
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 14),
-                ThemedTextField(
-                  controller: _confirmCtrl,
-                  label: 'Confirm password',
-                  hint: 'Re-enter password',
-                  prefixIcon: Icons.lock_outline_rounded,
-                  obscureText: _obscureConfirm,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please confirm your password';
-                    if (v != _passwordCtrl.text) return 'Passwords do not match';
-                    return null;
-                  },
-                ),
+
+                if (_error != null) _errorBanner(_error!),
               ],
             ),
           ),
-
-          if (_error != null) _errorBanner(_error!),
-          const SizedBox(height: 28),
-
-          ThemedButton(
-            onPressed: _isLoading ? null : _submitAccount,
-            isLoading: _isLoading,
-            child: const Text(
-              'Create workspace',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+          child: Text(
             'By continuing you agree to our Terms of Service and Privacy Policy.',
-            style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurface.withOpacity(0.35)),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF94A3B8),
+            ),
             textAlign: TextAlign.center,
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+          child: SizedBox(
+            height: 54,
+            child: ThemedButton(
+              onPressed: _isLoading ? null : _submitAccount,
+              isLoading: _isLoading,
+              child: const Text(
+                'Create workspace',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSummaryCard(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(context.borderRadiusMedium),
-        border: Border.all(color: context.cardBorder),
+        color: AppTheme.primaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.18)),
       ),
       child: Row(
         children: [
-          Icon(_selectedPreset.icon, size: 18, color: AppTheme.primaryColor),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(_selectedPreset.icon, size: 15, color: AppTheme.primaryColor),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -924,24 +1037,39 @@ class _AdminOnboardingWizardScreenState
                   _companyNameCtrl.text.trim().isEmpty
                       ? 'Your workspace'
                       : _companyNameCtrl.text.trim(),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
                 ),
                 Text(
                   '${_selectedPreset.label} · ${_workerLabelCtrl.text.trim()}',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
           ),
           GestureDetector(
             onTap: () => _goTo(_Step.industry),
-            child: Text('Edit',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Edit',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.w600)),
+                  fontSize: 11,
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -956,19 +1084,22 @@ class _AdminOnboardingWizardScreenState
       children: [
         Text(
           title,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-            height: 1.25,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+            height: 1.15,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           subtitle,
-          style: TextStyle(
-              fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
-              height: 1.4),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF64748B),
+            height: 1.5,
+          ),
         ),
       ],
     );
@@ -990,11 +1121,137 @@ class _AdminOnboardingWizardScreenState
     );
   }
 
+  // ── CSV upload ─────────────────────────────────────────────────────────────
+
+  Future<void> _pickAndParseCSV() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final bytes = result.files.first.bytes;
+      if (bytes == null) return;
+
+      final content = utf8.decode(bytes);
+      final lines = content
+          .split(RegExp(r'\r?\n'))
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
+
+      if (lines.isEmpty) {
+        setState(() => _inviteError = 'CSV file is empty.');
+        return;
+      }
+
+      // Detect header row
+      final firstRow = lines.first.toLowerCase();
+      final hasHeader = firstRow.contains('name') || firstRow.contains('email');
+      final dataLines = hasHeader ? lines.sublist(1) : lines;
+
+      if (dataLines.isEmpty) {
+        setState(() => _inviteError = 'No data rows found in CSV.');
+        return;
+      }
+
+      // Parse rows — expected: name, email, phone (optional), department (optional)
+      final parsed = <_InviteRow>[];
+      for (final line in dataLines) {
+        final cols = _parseCSVLine(line);
+        if (cols.isEmpty) continue;
+
+        final row = _InviteRow();
+        row.name.text = cols.isNotEmpty ? cols[0].trim() : '';
+        row.email.text = cols.length > 1 ? cols[1].trim() : '';
+        row.phone.text = cols.length > 2 ? cols[2].trim() : '';
+        row.department.text = cols.length > 3 ? cols[3].trim() : '';
+
+        // Skip rows without email
+        if (row.email.text.isEmpty) {
+          row.dispose();
+          continue;
+        }
+        parsed.add(row);
+      }
+
+      if (parsed.isEmpty) {
+        setState(() => _inviteError = 'No valid rows found. Ensure CSV has at least name and email columns.');
+        return;
+      }
+
+      setState(() {
+        _inviteError = null;
+        if (_inviteTab == 0) {
+          // Dispose old rows
+          for (final r in _adminInvites) { r.dispose(); }
+          _adminInvites.clear();
+          _adminInvites.addAll(parsed);
+          _adminResults.clear();
+        } else {
+          for (final r in _techInvites) { r.dispose(); }
+          _techInvites.clear();
+          _techInvites.addAll(parsed);
+          _techResults.clear();
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${parsed.length} ${parsed.length == 1 ? 'person' : 'people'} loaded from CSV'),
+            backgroundColor: AppTheme.secondaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _inviteError = 'Failed to read CSV: $e');
+    }
+  }
+
+  /// Parse a single CSV line handling quoted fields
+  List<String> _parseCSVLine(String line) {
+    final result = <String>[];
+    final sb = StringBuffer();
+    bool inQuotes = false;
+    for (int i = 0; i < line.length; i++) {
+      final c = line[i];
+      if (c == '"') {
+        inQuotes = !inQuotes;
+      } else if (c == ',' && !inQuotes) {
+        result.add(sb.toString());
+        sb.clear();
+      } else {
+        sb.write(c);
+      }
+    }
+    result.add(sb.toString());
+    return result;
+  }
+
+  /// Generate a template CSV string
+  void _downloadTemplate() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'CSV format: name, email, phone, department\n'
+          'Example row: John Doe, john@company.com, +971501234567, Maintenance',
+        ),
+        backgroundColor: AppTheme.primaryColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   // ── Step 5: Invite admins & technicians ───────────────────────────────────
 
   Future<void> _sendInvites() async {
     final auth = context.read<AuthProvider>();
-    final orgProvider = context.read<OrganizationProvider>();
     setState(() { _inviteSending = true; _inviteError = null; });
 
     // Send admin invites
@@ -1078,7 +1335,47 @@ class _AdminOnboardingWizardScreenState
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // CSV upload row
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _inviteSending ? null : _pickAndParseCSV,
+                  icon: const Icon(Icons.upload_file_rounded, size: 18),
+                  label: const Text('Upload CSV'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                    side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: _downloadTemplate,
+                icon: const Icon(Icons.description_outlined, size: 18),
+                label: const Text('Format'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.15)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'CSV columns: name, email, phone, department',
+            style: TextStyle(
+              fontSize: 11,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Admin rows
           if (_inviteTab == 0) ...[

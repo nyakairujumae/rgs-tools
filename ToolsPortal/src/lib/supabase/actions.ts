@@ -128,6 +128,83 @@ async function sendPushToAdmins(
   }
 }
 
+// ── Calibration Reminder Push Notifications ──
+
+const CALIBRATION_THRESHOLDS = [1, 7, 30] // days
+
+/**
+ * Fetch certifications for the org, find overdue/expiring ones,
+ * and send FCM push notifications to all admins.
+ *
+ * Uses a localStorage key to avoid re-firing on every page load —
+ * reminders are sent at most once per calendar day per org.
+ */
+export async function sendCalibrationReminderPush(orgId: string): Promise<void> {
+  try {
+    // Throttle: only fire once per day per org
+    const storageKey = `cal_reminder_sent_${orgId}`
+    const today = new Date().toISOString().slice(0, 10)
+    if (typeof window !== 'undefined') {
+      const lastSent = localStorage.getItem(storageKey)
+      if (lastSent === today) return
+    }
+
+    // Fetch all certifications for this org's tools
+    const { data: certs } = await supabase()
+      .from('certifications')
+      .select('tool_name, certification_type, expiry_date, certification_number')
+      .order('expiry_date', { ascending: true })
+
+    if (!certs || certs.length === 0) return
+
+    const now = Date.now()
+    const overdue: typeof certs = []
+    const dueSoon: typeof certs = []
+
+    for (const cert of certs) {
+      const days = Math.ceil((new Date(cert.expiry_date).getTime() - now) / (1000 * 60 * 60 * 24))
+      if (days < 0) {
+        overdue.push(cert)
+      } else if (days <= Math.max(...CALIBRATION_THRESHOLDS)) {
+        dueSoon.push(cert)
+      }
+    }
+
+    if (overdue.length === 0 && dueSoon.length === 0) return
+
+    // Build a single summary push for admins
+    let title: string
+    let body: string
+
+    if (overdue.length > 0 && dueSoon.length > 0) {
+      title = `⚠️ Calibration Alert — Action Required`
+      body = `${overdue.length} overdue and ${dueSoon.length} expiring soon. Check the Calibration screen.`
+    } else if (overdue.length > 0) {
+      const first = overdue[0]
+      title = `🔴 Calibration Overdue`
+      body = overdue.length === 1
+        ? `${first.tool_name} — ${first.certification_type} has expired.`
+        : `${overdue.length} tools have expired calibration certificates.`
+    } else {
+      const first = dueSoon[0]
+      const days = Math.ceil((new Date(first.expiry_date).getTime() - now) / (1000 * 60 * 60 * 24))
+      title = `🟡 Calibration Due Soon`
+      body = dueSoon.length === 1
+        ? `${first.tool_name} — ${first.certification_type} expires in ${days} day${days === 1 ? '' : 's'}.`
+        : `${dueSoon.length} tools need recalibration within 30 days.`
+    }
+
+    await sendPushToAdmins(title, body, { screen: 'calibration' })
+
+    // Mark as sent for today
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, today)
+    }
+  } catch (e) {
+    console.error('Calibration reminder push error:', e)
+  }
+}
+
 // ── TOOL CRUD ──
 
 export async function addTool(

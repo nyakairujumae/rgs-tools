@@ -50,6 +50,12 @@ class ReportService {
     DateTime? startDate,
     DateTime? endDate,
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
+    // Org branding
+    String? orgName,
+    String? logoUrl,
+    String? workerLabel,
+    String? workerLabelPlural,
+    String? currencySymbol,
   }) async {
     try {
       // All reports now use PDF format with table-based sheets
@@ -63,6 +69,11 @@ class ReportService {
         maintenanceSchedules: maintenanceSchedules,
         startDate: startDate,
         endDate: endDate,
+        orgName: orgName,
+        logoUrl: logoUrl,
+        workerLabel: workerLabel,
+        workerLabelPlural: workerLabelPlural,
+        currencySymbol: currencySymbol,
       );
     } catch (e, stackTrace) {
       debugPrint('❌ Error generating report: $e');
@@ -309,11 +320,43 @@ class ReportService {
     List<dynamic>? maintenanceSchedules,
     DateTime? startDate,
     DateTime? endDate,
+    String? orgName,
+    String? logoUrl,
+    String? workerLabel,
+    String? workerLabelPlural,
+    String? currencySymbol,
   }) async {
     final pdf = pw.Document();
 
-    final reportTitle = _getReportTitle(reportType);
     final dateRangeText = _buildDateRangeText(startDate, endDate);
+
+    // Resolve org branding values
+    final effectiveOrgName = (orgName != null && orgName.isNotEmpty) ? orgName : AppConfig.appName;
+    final effectiveWorkerLabel = (workerLabel != null && workerLabel.isNotEmpty) ? workerLabel : 'Technician';
+    final effectiveWorkerLabelPlural = (workerLabelPlural != null && workerLabelPlural.isNotEmpty) ? workerLabelPlural : 'Technicians';
+
+    // Build report title (dynamic for worker-specific reports)
+    String reportTitle = _getReportTitle(reportType);
+    if (reportType == ReportType.technicianSummary) {
+      reportTitle = '$effectiveWorkerLabelPlural Summary Report';
+    }
+
+    // Load logo image bytes if a URL is provided
+    pw.MemoryImage? logoImage;
+    if (logoUrl != null && logoUrl.isNotEmpty) {
+      try {
+        final httpClient = HttpClient();
+        final request = await httpClient.getUrl(Uri.parse(logoUrl));
+        final response = await request.close();
+        final builder = await response.fold<BytesBuilder>(
+          BytesBuilder(),
+          (builder, chunk) => builder..add(chunk),
+        );
+        logoImage = pw.MemoryImage(builder.takeBytes());
+      } catch (e) {
+        debugPrint('⚠️ Could not load org logo for report: $e');
+      }
+    }
 
     // Use provided issues or fetch from database if not provided
     List<dynamic> toolIssues = [];
@@ -371,7 +414,8 @@ class ReportService {
           build: (context) {
             try {
               final widgets = <pw.Widget>[
-                _buildPdfHeader(reportTitle, dateRangeText),
+                _buildPdfHeader(reportTitle, dateRangeText,
+                    orgName: effectiveOrgName, logoImage: logoImage),
                 pw.SizedBox(height: 8), // Reduced gap after header
               ];
 
@@ -392,7 +436,10 @@ class ReportService {
               widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate, showTitle: false));
               break;
             case ReportType.technicianSummary:
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians, showTitle: false));
+              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians,
+                  showTitle: false,
+                  workerLabel: effectiveWorkerLabel,
+                  workerLabelPlural: effectiveWorkerLabelPlural));
               break;
             case ReportType.financialSummary:
               widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues, showTitle: false));
@@ -444,7 +491,9 @@ class ReportService {
               widgets.add(pw.SizedBox(height: 16));
               
               // Technician Summary Section
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
+              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians,
+                  workerLabel: effectiveWorkerLabel,
+                  workerLabelPlural: effectiveWorkerLabelPlural));
               widgets.add(pw.SizedBox(height: 16));
               
               // Financial Summary Section
@@ -1600,19 +1649,44 @@ class ReportService {
     return '$startText - $endText'; // Use ASCII hyphen instead of en dash
   }
 
-  static pw.Widget _buildPdfHeader(String title, String dateRangeText) {
+  static pw.Widget _buildPdfHeader(
+    String title,
+    String dateRangeText, {
+    String? orgName,
+    pw.MemoryImage? logoImage,
+  }) {
+    final displayName = (orgName != null && orgName.isNotEmpty) ? orgName : AppConfig.appName;
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          AppConfig.appName,
-          style: pw.TextStyle(
-            fontSize: 13,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.blueGrey700,
-          ),
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            if (logoImage != null) ...[
+              pw.Container(
+                width: 36,
+                height: 36,
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.white,
+                  shape: pw.BoxShape.circle,
+                ),
+                child: pw.ClipOval(
+                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                ),
+              ),
+              pw.SizedBox(width: 10),
+            ],
+            pw.Text(
+              _sanitizePdfText(displayName),
+              style: pw.TextStyle(
+                fontSize: 13,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.blueGrey700,
+              ),
+            ),
+          ],
         ),
-        pw.SizedBox(height: 2), // Reduced spacing
+        pw.SizedBox(height: 6),
         pw.Text(
           _sanitizePdfText(title),
           style: pw.TextStyle(
@@ -1621,7 +1695,7 @@ class ReportService {
             color: PdfColors.blueGrey900,
           ),
         ),
-        pw.SizedBox(height: 4), // Reduced spacing
+        pw.SizedBox(height: 4),
         pw.Row(
           children: [
             pw.Text(
@@ -1641,7 +1715,7 @@ class ReportService {
             ),
           ],
         ),
-        pw.SizedBox(height: 8), // Reduced spacing before divider
+        pw.SizedBox(height: 8),
         pw.Divider(color: PdfColors.blueGrey200, height: 1),
       ],
     );
@@ -2169,7 +2243,7 @@ class ReportService {
     );
   }
 
-  static pw.Widget _buildTechnicianSummaryTable(List<Tool> tools, List<dynamic> technicians) {
+  static pw.Widget _buildTechnicianSummaryTable(List<Tool> tools, List<dynamic> technicians, {String workerLabel = 'Technician'}) {
     final techToolCounts = <String, int>{};
     final techToolNames = <String, List<String>>{};
 
@@ -2198,10 +2272,10 @@ class ReportService {
     }
 
     if (techToolCounts.isEmpty) {
-      return _buildPdfPlaceholder('No technician assignments found.');
+      return _buildPdfPlaceholder('No ${workerLabel.toLowerCase()} assignments found.');
     }
 
-    final headers = ['Technician', 'Tools Assigned', 'Tool Names'];
+    final headers = [workerLabel, 'Tools Assigned', 'Tool Names'];
     final sortedEntries = techToolCounts.entries.toList()
       ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()));
     final rows = sortedEntries.map<pw.TableRow>((entry) {
@@ -2263,6 +2337,8 @@ class ReportService {
     List<Tool> tools,
     List<dynamic> technicians, {
     bool showTitle = true,
+    String workerLabel = 'Technician',
+    String workerLabelPlural = 'Technicians',
   }) {
     final techToolCounts = <String, int>{};
     final techToolNames = <String, List<String>>{};
@@ -2292,7 +2368,7 @@ class ReportService {
     }
 
     if (techToolCounts.isEmpty) {
-      return _buildPdfPlaceholder('No technician assignments found.');
+      return _buildPdfPlaceholder('No ${workerLabel.toLowerCase()} assignments found.');
     }
 
     return pw.Column(
@@ -2300,17 +2376,17 @@ class ReportService {
       children: [
         if (showTitle) ...[
           pw.Text(
-            'Technician Summary',
+            '$workerLabelPlural Summary',
             style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
           ),
           pw.SizedBox(height: 12),
         ],
         pw.Text(
-          'Total Technicians: ${techToolCounts.length}',
+          'Total $workerLabelPlural: ${techToolCounts.length}',
           style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
         ),
         pw.SizedBox(height: 12),
-        _buildTechnicianSummaryTable(tools, technicians),
+        _buildTechnicianSummaryTable(tools, technicians, workerLabel: workerLabel),
       ],
     );
   }
@@ -2755,8 +2831,10 @@ class ReportService {
     List<dynamic> technicians,
     List<dynamic> toolIssues,
     DateTime? startDate,
-    DateTime? endDate,
-  ) {
+    DateTime? endDate, {
+    String workerLabel = 'Technician',
+    String workerLabelPlural = 'Technicians',
+  }) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -2769,7 +2847,8 @@ class ReportService {
         pw.SizedBox(height: 24),
         _buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate),
         pw.SizedBox(height: 24),
-        _buildTechnicianSummaryPdfSection(tools, technicians),
+        _buildTechnicianSummaryPdfSection(tools, technicians,
+            workerLabel: workerLabel, workerLabelPlural: workerLabelPlural),
         pw.SizedBox(height: 24),
         _buildFinancialSummaryPdfSection(tools, toolIssues),
         if (toolIssues.isNotEmpty) ...[

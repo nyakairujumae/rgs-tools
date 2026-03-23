@@ -142,11 +142,14 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                                   await context.read<SupabaseToolProvider>().loadTools();
                                 }
                               },
-                              icon: const Icon(Icons.add, size: 26, color: Colors.white),
+                              icon: const Icon(Icons.add, size: 16, color: Colors.white),
                               tooltip: 'Add shared tool',
                               style: IconButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
                                 foregroundColor: Colors.white,
+                                minimumSize: const Size(30, 30),
+                                fixedSize: const Size(30, 30),
+                                padding: EdgeInsets.zero,
                               ),
                             ),
                           ),

@@ -1153,9 +1153,11 @@ class _AddToolScreenState extends State<AddToolScreen> {
       // Get current user ID if adding from My Tools
       final authProvider = context.read<AuthProvider>();
       final currentUserId = widget.isFromMyTools ? authProvider.userId : null;
-      
+      final orgId = authProvider.organizationId;
+
       // First, create the tool without image
       final tool = Tool(
+        organizationId: orgId,
         name: _nameController.text.trim().toUpperCase(),
         category: _categoryController.text.trim(),
         brand: _brandController.text.trim().isEmpty

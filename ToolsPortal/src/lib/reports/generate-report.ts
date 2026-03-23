@@ -15,11 +15,19 @@ export interface ReportData {
   maintenanceSchedules: MaintenanceSchedule[]
 }
 
+export interface OrgBranding {
+  orgName?: string
+  logoUrl?: string
+  workerLabel?: string
+  workerLabelPlural?: string
+}
+
 interface ReportOptions {
   type: ReportType
   dateFrom?: string
   dateTo?: string
   data: ReportData
+  branding?: OrgBranding
 }
 
 // ── Helpers ──
@@ -84,12 +92,30 @@ async function loadJsPDF() {
   return { jsPDF, autoTable: autoTableModule.default }
 }
 
-function addReportHeader(doc: any, title: string, dateFrom?: string, dateTo?: string) {
-  // Company name
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...COLORS.companyName)
-  doc.text('RGS HVAC SERVICES', 14, 18)
+function addReportHeader(doc: any, title: string, dateFrom?: string, dateTo?: string, branding?: OrgBranding) {
+  // Company logo (if available)
+  let headerY = 18
+  if (branding?.logoUrl) {
+    try {
+      // Logo is loaded async before calling this; use pre-loaded imageData if passed
+      // We embed logo at top-left as a small square
+      doc.addImage(branding.logoUrl, 'JPEG', 14, 10, 12, 12)
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...COLORS.companyName)
+      doc.text(branding.orgName || 'Tools Manager', 30, 18)
+    } catch {
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...COLORS.companyName)
+      doc.text(branding?.orgName || 'Tools Manager', 14, 18)
+    }
+  } else {
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...COLORS.companyName)
+    doc.text(branding?.orgName || 'Tools Manager', 14, 18)
+  }
 
   // Report title
   doc.setFontSize(20)
@@ -215,7 +241,7 @@ async function generateInventoryPDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l') // landscape for wide table
   const tools = filterByDate(opts.data.tools, 'created_at', opts.dateFrom, opts.dateTo)
-  let y = addReportHeader(doc, 'Tools Inventory Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Tools Inventory Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Tools Inventory')
   y = addSubtitle(doc, y, `Total Tools: ${tools.length}`)
@@ -237,7 +263,7 @@ async function generateAssignmentsPDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l')
   const assigned = opts.data.tools.filter((t) => t.assigned_to)
-  let y = addReportHeader(doc, 'Tool Assignments Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Tool Assignments Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Tool Assignments')
   y = addSubtitle(doc, y, `Total Assignments: ${assigned.length}`)
@@ -259,7 +285,7 @@ async function generateIssuesPDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l')
   const issues = filterByDate(opts.data.issues, 'reported_at', opts.dateFrom, opts.dateTo)
-  let y = addReportHeader(doc, 'Tool Issues Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Tool Issues Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Tool Issues')
   y = addSubtitle(doc, y, `Total Issues: ${issues.length}`)
@@ -281,7 +307,7 @@ async function generateFinancialPDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF()
   const { tools, issues } = opts.data
-  let y = addReportHeader(doc, 'Financial Summary', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Financial Summary', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Financial Summary')
 
@@ -317,7 +343,7 @@ async function generateHistoryPDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l')
   const history = filterByDate(opts.data.history, 'timestamp', opts.dateFrom, opts.dateTo)
-  let y = addReportHeader(doc, 'Audit Trail Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Audit Trail Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Tool History')
   y = addSubtitle(doc, y, `Total Records: ${history.length}`)
@@ -346,7 +372,7 @@ async function generateCalibrationPDF(opts: ReportOptions) {
   )
   const calibrationSchedules = maintenanceSchedules.filter((s) => s.maintenance_type === 'Calibration')
 
-  let y = addReportHeader(doc, 'Calibration Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Calibration Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Calibration Overview')
   const valid = calibrationCerts.filter((c) => c.status === 'Valid').length
@@ -414,7 +440,7 @@ async function generateCompliancePDF(opts: ReportOptions) {
 
   const certs = filterByDate(certifications, 'issue_date', opts.dateFrom, opts.dateTo)
 
-  let y = addReportHeader(doc, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   y = addSectionTitle(doc, y, 'Compliance Overview')
   const valid = certs.filter((c) => c.status === 'Valid').length
@@ -495,7 +521,7 @@ async function generateComprehensivePDF(opts: ReportOptions) {
   const { jsPDF, autoTable } = await loadJsPDF()
   const doc = new jsPDF('l') // landscape for wide tables
   const { tools, issues, technicians, history, approvals } = opts.data
-  let y = addReportHeader(doc, 'Comprehensive Tool Report', opts.dateFrom, opts.dateTo)
+  let y = addReportHeader(doc, 'Comprehensive Tool Report', opts.dateFrom, opts.dateTo, opts.branding)
 
   // ── 1. Tools Inventory ──
   y = addSectionTitle(doc, y, 'Tools Inventory')
@@ -529,8 +555,8 @@ async function generateComprehensivePDF(opts: ReportOptions) {
 
   // ── 3. Technician Summary ──
   y = ensureSpace(doc, y, 60)
-  y = addSectionTitle(doc, y, 'Technician Summary')
-  y = addSubtitle(doc, y, `Total Technicians: ${technicians.length}`)
+  y = addSectionTitle(doc, y, `${opts.branding?.workerLabel || 'Technician'} Summary`)
+  y = addSubtitle(doc, y, `Total ${opts.branding?.workerLabelPlural || 'Technicians'}: ${technicians.length}`)
 
   const techToolCounts: Record<string, { count: number; names: string[] }> = {}
   technicians.forEach((t) => { techToolCounts[t.name] = { count: 0, names: [] } })
@@ -544,7 +570,7 @@ async function generateComprehensivePDF(opts: ReportOptions) {
   })
 
   y = dataTable(doc, autoTable, y,
-    ['Technician', 'Tools Assigned', 'Tool Names'],
+    [opts.branding?.workerLabel || 'Technician', 'Tools Assigned', 'Tool Names'],
     Object.entries(techToolCounts)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([name, d]) => [name, String(d.count), d.names.join(', ')])
@@ -768,7 +794,7 @@ async function loadExcelJS() {
   return mod.default || mod
 }
 
-function addExcelHeader(sheet: any, title: string, dateFrom?: string, dateTo?: string) {
+function addExcelHeader(sheet: any, title: string, dateFrom?: string, dateTo?: string, branding?: OrgBranding) {
   // Insert 5 rows at the top for the header
   sheet.insertRow(1, [])
   sheet.insertRow(1, [])
@@ -778,7 +804,7 @@ function addExcelHeader(sheet: any, title: string, dateFrom?: string, dateTo?: s
 
   // Row 1: Company name
   const r1 = sheet.getRow(1)
-  r1.getCell(1).value = 'RGS HVAC SERVICES'
+  r1.getCell(1).value = branding?.orgName || 'Tools Manager'
   r1.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF546E7A' } }
   r1.height = 22
 
@@ -838,7 +864,7 @@ async function generateInventoryExcel(opts: ReportOptions) {
     location: t.location || '', assigned: getTechName(t.assigned_to, opts.data.technicians),
     date: fmt(t.purchase_date), price: t.purchase_price || 0,
   }))
-  addExcelHeader(sheet, 'Tools Inventory Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'Tools Inventory Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   return wb
@@ -865,7 +891,7 @@ async function generateAssignmentsExcel(opts: ReportOptions) {
     status: t.status, condition: t.condition, location: t.location || '',
     date: fmtDT(t.updated_at),
   }))
-  addExcelHeader(sheet, 'Tool Assignments Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'Tool Assignments Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   return wb
@@ -893,7 +919,7 @@ async function generateIssuesExcel(opts: ReportOptions) {
     reported_by: i.reported_by, reported_at: fmt(i.reported_at), resolved_at: fmt(i.resolved_at),
     cost: i.estimated_cost || 0, desc: i.description,
   }))
-  addExcelHeader(sheet, 'Tool Issues Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'Tool Issues Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   return wb
@@ -914,7 +940,7 @@ async function generateFinancialExcel(opts: ReportOptions) {
     { metric: 'Total Expenditures', value: totalExp },
     { metric: 'Total Investment', value: totalPurchase + totalExp },
   ])
-  addExcelHeader(summary, 'Financial Summary', opts.dateFrom, opts.dateTo)
+  addExcelHeader(summary, 'Financial Summary', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(summary, undefined, 6)
 
   const sheet = wb.addWorksheet('Tools')
@@ -953,7 +979,7 @@ async function generateHistoryExcel(opts: ReportOptions) {
     date: fmt(h.timestamp), tool: h.tool_name, action: h.action, desc: h.description,
     old: h.old_value || '', new: h.new_value || '', by: h.performed_by || '',
   }))
-  addExcelHeader(sheet, 'Audit Trail Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'Audit Trail Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   return wb
@@ -1004,7 +1030,7 @@ async function generateCalibrationExcel(opts: ReportOptions) {
       })
     }
   })
-  addExcelHeader(statusSheet, 'Tool Calibration Status', opts.dateFrom, opts.dateTo)
+  addExcelHeader(statusSheet, 'Tool Calibration Status', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(statusSheet, undefined, 6)
 
   const sheet = wb.addWorksheet('Calibration Certificates')
@@ -1028,7 +1054,7 @@ async function generateCalibrationExcel(opts: ReportOptions) {
       status: c.status, notes: c.notes || '',
     })
   })
-  addExcelHeader(sheet, 'Calibration Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'Calibration Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   const schedSheet = wb.addWorksheet('Scheduled Calibrations')
@@ -1045,7 +1071,7 @@ async function generateCalibrationExcel(opts: ReportOptions) {
     tool: s.tool_name, date: fmt(s.scheduled_date), priority: s.priority,
     status: s.status, assigned: s.assigned_to || '', notes: s.notes || '',
   }))
-  addExcelHeader(schedSheet, 'Scheduled Calibrations', opts.dateFrom, opts.dateTo)
+  addExcelHeader(schedSheet, 'Scheduled Calibrations', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(schedSheet, undefined, 6)
 
   return wb
@@ -1070,7 +1096,7 @@ async function generateComplianceExcel(opts: ReportOptions) {
     { metric: 'Revoked', value: revoked },
     { metric: 'Compliance Rate', value: certs.length > 0 ? `${Math.round((valid / certs.length) * 100)}%` : 'N/A' },
   ])
-  addExcelHeader(summarySheet, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo)
+  addExcelHeader(summarySheet, 'Compliance & Certification Report', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(summarySheet, undefined, 6)
 
   // Tool compliance status sheet
@@ -1101,7 +1127,7 @@ async function generateComplianceExcel(opts: ReportOptions) {
       total: toolCerts.length, valid: v, expiring: ex, expired_count: exp, compliance: status,
     })
   })
-  addExcelHeader(toolSheet, 'Tool Compliance Status', opts.dateFrom, opts.dateTo)
+  addExcelHeader(toolSheet, 'Tool Compliance Status', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(toolSheet, undefined, 6)
 
   const sheet = wb.addWorksheet('All Certifications')
@@ -1127,7 +1153,7 @@ async function generateComplianceExcel(opts: ReportOptions) {
       status: c.status, location: c.location || '',
     })
   })
-  addExcelHeader(sheet, 'All Certifications', opts.dateFrom, opts.dateTo)
+  addExcelHeader(sheet, 'All Certifications', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(sheet, undefined, 6)
 
   return wb
@@ -1143,7 +1169,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
   summarySheet.columns = [{ header: '', key: 'label', width: 30 }, { header: '', key: 'value', width: 25 }]
 
   // Header info
-  summarySheet.addRow({ label: 'RGS HVAC SERVICES' })
+  summarySheet.addRow({ label: opts.branding?.orgName || 'Tools Manager' })
   summarySheet.getRow(1).getCell(1).font = { bold: true, size: 16, color: { argb: 'FF546E7A' } }
   summarySheet.addRow({ label: 'Comprehensive Tool Report' })
   summarySheet.getRow(2).getCell(1).font = { bold: true, size: 20, color: { argb: 'FF37474F' } }
@@ -1166,7 +1192,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
 
   summarySheet.addRow({ label: 'Total Tools', value: tools.length })
   summarySheet.addRow({ label: 'Assigned Tools', value: assigned.length })
-  summarySheet.addRow({ label: 'Total Technicians', value: technicians.length })
+  summarySheet.addRow({ label: `Total ${opts.branding?.workerLabelPlural || 'Technicians'}`, value: technicians.length })
   summarySheet.addRow({ label: 'Total Issues', value: issues.length })
   summarySheet.addRow({ label: 'Total Approvals', value: approvals.length })
   summarySheet.addRow({ label: 'History Records', value: history.length })
@@ -1207,7 +1233,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
     location: t.location || '', assigned: getTechName(t.assigned_to, technicians),
     date: fmt(t.purchase_date), price: t.purchase_price || 0,
   }))
-  addExcelHeader(toolsSheet, 'Tools Inventory', opts.dateFrom, opts.dateTo)
+  addExcelHeader(toolsSheet, 'Tools Inventory', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(toolsSheet, undefined, 6)
 
   // ── Issues Sheet ──
@@ -1227,7 +1253,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
     by: i.reported_by, date: fmt(i.reported_at), cost: i.estimated_cost || 0,
     desc: i.description,
   }))
-  addExcelHeader(issuesSheet, 'Tool Issues', opts.dateFrom, opts.dateTo)
+  addExcelHeader(issuesSheet, 'Tool Issues', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(issuesSheet, undefined, 6)
 
   // ── Technicians Sheet ──
@@ -1247,7 +1273,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
       status: t.status, tools_count: toolCount,
     })
   })
-  addExcelHeader(techSheet, 'Technician Summary', opts.dateFrom, opts.dateTo)
+  addExcelHeader(techSheet, 'Technician Summary', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(techSheet, undefined, 6)
 
   // ── Approvals Sheet ──
@@ -1264,7 +1290,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
     title: a.title, type: a.request_type, status: a.status, priority: a.priority,
     requester: a.requester_name, date: fmt(a.request_date),
   }))
-  addExcelHeader(appSheet, 'Approval Workflows', opts.dateFrom, opts.dateTo)
+  addExcelHeader(appSheet, 'Approval Workflows', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(appSheet, undefined, 6)
 
   // ── History Sheet ──
@@ -1282,7 +1308,7 @@ async function generateComprehensiveExcel(opts: ReportOptions) {
     date: fmt(h.timestamp), tool: h.tool_name, action: h.action, desc: h.description,
     old: h.old_value || '', new: h.new_value || '', by: h.performed_by || '',
   }))
-  addExcelHeader(histSheet, 'Tool History / Audit Trail', opts.dateFrom, opts.dateTo)
+  addExcelHeader(histSheet, 'Tool History / Audit Trail', opts.dateFrom, opts.dateTo, opts.branding)
   styleHeader(histSheet, undefined, 6)
 
   return wb
@@ -1315,7 +1341,8 @@ export async function generateExcel(opts: ReportOptions): Promise<void> {
 
   const wb = await generators[opts.type](opts)
   const label = opts.type.charAt(0).toUpperCase() + opts.type.slice(1)
-  await saveWorkbook(wb, `RGS_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+  const prefix = opts.branding?.orgName ? opts.branding.orgName.replace(/\s+/g, '_').slice(0, 20) : 'Report'
+  await saveWorkbook(wb, `${prefix}_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
 }
 
 export async function generatePDF(opts: ReportOptions): Promise<void> {
@@ -1332,7 +1359,8 @@ export async function generatePDF(opts: ReportOptions): Promise<void> {
 
   const doc = await generators[opts.type](opts)
   const label = opts.type.charAt(0).toUpperCase() + opts.type.slice(1)
-  doc.save(`RGS_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+  const prefix = opts.branding?.orgName ? opts.branding.orgName.replace(/\s+/g, '_').slice(0, 20) : 'Report'
+  doc.save(`${prefix}_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`)
 }
 
 export function generateCSV(opts: ReportOptions): void {
@@ -1349,11 +1377,12 @@ export function generateCSV(opts: ReportOptions): void {
 
   const csv = generators[opts.type](opts)
   const label = opts.type.charAt(0).toUpperCase() + opts.type.slice(1)
+  const prefix = opts.branding?.orgName ? opts.branding.orgName.replace(/\s+/g, '_').slice(0, 20) : 'Report'
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `RGS_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.csv`
+  a.download = `${prefix}_${label}_Report_${format(new Date(), 'yyyy-MM-dd')}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }

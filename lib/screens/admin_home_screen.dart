@@ -28,6 +28,8 @@ import 'calibration_screen.dart';
 import 'compliance_screen.dart';
 import 'add_tool_screen.dart';
 import 'checkin_screen.dart';
+import '../services/calibration_reminder_service.dart';
+import '../providers/supabase_certification_provider.dart';
 import 'reports_screen.dart';
 import 'report_detail_screen.dart';
 import 'permanent_assignment_screen.dart';
@@ -47,7 +49,9 @@ import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
 import 'all_tool_history_screen.dart';
+import 'profile_screen.dart';
 import 'technician_my_tools_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../models/user_role.dart';
@@ -153,7 +157,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedIndex =
-        widget.initialTab.clamp(0, 3); // Ensure index is within bounds
+        widget.initialTab.clamp(0, 4); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
@@ -167,6 +171,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       const ToolsScreen(),
       const SharedToolsScreen(),
       const TechniciansScreen(),
+      const ProfileScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LastRouteService.saveLastRoute('/admin');
@@ -207,6 +212,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     try {
       final toolProvider = context.read<SupabaseToolProvider>();
       final techProvider = context.read<SupabaseTechnicianProvider>();
+      final certProvider = context.read<SupabaseCertificationProvider>();
       await Future.wait([
         toolProvider.loadTools(),
         techProvider.loadTechnicians(),
@@ -214,10 +220,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         // Notifications are loaded eagerly in _loadNotificationsWithRetry,
         // but also included here so they refresh on app resume via _loadData
         context.read<AdminNotificationProvider>().loadNotifications(),
+        certProvider.loadAll(),
       ]);
       // Subscribe to realtime after initial load
       toolProvider.subscribeToRealtime();
       techProvider.subscribeToRealtime();
+
+      // Fire calibration reminders for overdue / expiring certs
+      unawaited(CalibrationReminderService.instance
+          .checkAndNotify(certProvider.certifications));
     } catch (e) {
       Logger.debug('Error loading admin data: $e');
     }
@@ -414,47 +425,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       ),
       bottomNavigationBar: isWebDesktop
           ? null
-          : ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-              child: BottomNavigationBar(
-                currentIndex: _selectedIndex,
-                onTap: (index) =>
-                    setState(() => _selectedIndex = index.clamp(0, 3)),
-                type: BottomNavigationBarType.fixed,
-                backgroundColor:
-                    Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
-                        Theme.of(context).colorScheme.surface,
-                selectedItemColor: Theme.of(context).colorScheme.secondary,
-                unselectedItemColor: Theme.of(context)
-                        .bottomNavigationBarTheme
-                        .unselectedItemColor ??
-                    Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.5),
-                items: [
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.dashboard),
-                    label: AppLocalizations.of(context).adminHome_dashboard,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.build),
-                    label: AppLocalizations.of(context).adminHome_tools,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.share),
-                    label: AppLocalizations.of(context).adminHome_sharedTools,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.people),
-                    label: context.watch<OrganizationProvider>().workerLabelPlural,
-                  ),
-                ],
-              ),
-            ),
+          : _buildAdminBottomNav(context),
     );
 
     return Scaffold(
@@ -489,6 +460,127 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 : SafeArea(
                     child: contentScaffold,
                   )),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mobile bottom nav – pill indicator style
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAdminBottomNav(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0A0A0A) : Colors.white;
+    final onSurface = theme.colorScheme.onSurface;
+    final green = AppTheme.secondaryColor;
+    final workerLabel = context.watch<OrganizationProvider>().workerLabelPlural;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: [
+              _adminNavItem(context, 0, Icons.grid_view_rounded, Icons.grid_view_outlined,
+                  AppLocalizations.of(context).adminHome_dashboard, green, onSurface),
+              _adminNavItem(context, 1, Icons.construction_rounded, Icons.construction_outlined,
+                  AppLocalizations.of(context).adminHome_tools, green, onSurface),
+              _adminNavItem(context, 2, Icons.hub_rounded, Icons.hub_outlined,
+                  AppLocalizations.of(context).adminHome_sharedTools, green, onSurface),
+              _adminNavItem(context, 3, Icons.groups_rounded, Icons.groups_outlined,
+                  workerLabel, green, onSurface),
+              _adminNavItem(context, 4, Icons.person_rounded, Icons.person_outline_rounded,
+                  'Profile', green, onSurface),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _adminNavItem(
+    BuildContext context,
+    int index,
+    IconData activeIcon,
+    IconData inactiveIcon,
+    String label,
+    Color activeColor,
+    Color onSurface,
+  ) {
+    final isSelected = _selectedIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? activeColor.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  border: isSelected
+                      ? Border.all(
+                          color: activeColor.withValues(alpha: 0.25),
+                          width: 1,
+                        )
+                      : null,
+                ),
+                child: Icon(
+                  isSelected ? activeIcon : inactiveIcon,
+                  size: 22,
+                  color: isSelected
+                      ? activeColor
+                      : onSurface.withValues(alpha: 0.38),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                  color: isSelected
+                      ? activeColor
+                      : onSurface.withValues(alpha: 0.38),
+                  letterSpacing: 0.1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 3),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isSelected ? 16 : 0,
+                height: 2.5,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -660,8 +752,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
     final l10n = AppLocalizations.of(context);
     final workerLabelPlural = context.watch<OrganizationProvider>().workerLabelPlural;
-    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, workerLabelPlural];
-    final title = titles[_selectedIndex.clamp(0, 3)];
+    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, workerLabelPlural, 'Profile'];
+    final title = titles[_selectedIndex.clamp(0, 4)];
     final today = DateFormat('MMM d, yyyy').format(DateTime.now());
 
     return Container(
@@ -709,7 +801,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(

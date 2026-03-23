@@ -7,6 +7,7 @@ class LocaleProvider with ChangeNotifier {
   static const List<Locale> supportedLocales = [
     Locale('en'),
     Locale('ar'),
+    Locale('hi'),
     Locale('fr'),
     Locale('es'),
   ];
@@ -14,9 +15,15 @@ class LocaleProvider with ChangeNotifier {
   static const Map<String, String> localeDisplayNames = {
     'en': 'English',
     'ar': 'العربية',
+    'hi': 'हिन्दी',
     'fr': 'Français',
     'es': 'Español',
   };
+
+  /// RTL languages
+  static const Set<String> rtlLocales = {'ar'};
+
+  static bool isRtl(String languageCode) => rtlLocales.contains(languageCode);
 
   Locale? _locale;
 

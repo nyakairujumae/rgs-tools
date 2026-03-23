@@ -92,11 +92,23 @@ class SupabaseToolProvider with ChangeNotifier {
   }
 
   Future<Tool> addTool(Tool tool) async {
+    // ── Offline: queue and optimistically add to local list ──
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final tempId = 'offline_${DateTime.now().millisecondsSinceEpoch}';
+      final offlineTool = Tool.fromMap({...tool.toMap(), 'id': tempId});
+      _tools.add(offlineTool);
+      unawaited(_cache.cacheSingleTool(offlineTool));
+      unawaited(_cache.queueOperation('tools', 'insert', tool.toMap()));
+      notifyListeners();
+      debugPrint('📦 Tool queued for sync (offline)');
+      return offlineTool;
+    }
+
     try {
       final toolMap = tool.toMap();
       debugPrint('🔍 Attempting to add tool. organization_id in map: ${toolMap['organization_id']}');
       debugPrint('🔍 Full tool map: $toolMap');
-      
+
       final response = await SupabaseService.client
           .from('tools')
           .insert(toolMap)
@@ -136,13 +148,13 @@ class SupabaseToolProvider with ChangeNotifier {
       } catch (pushError) {
         debugPrint('⚠️ Could not send push notification for new tool: $pushError');
       }
-      
+
       return createdTool;
     } catch (e, stackTrace) {
       debugPrint('❌ Error adding tool: $e');
       debugPrint('❌ Error type: ${e.runtimeType}');
       debugPrint('❌ Stack trace: $stackTrace');
-      
+
       // Provide more detailed error information
       String errorMessage = 'Failed to add tool';
       if (e.toString().contains('permission denied') || e.toString().contains('PGRST301')) {
@@ -156,17 +168,30 @@ class SupabaseToolProvider with ChangeNotifier {
       } else {
         errorMessage = 'Error adding tool: ${e.toString()}';
       }
-      
+
       throw Exception(errorMessage);
     }
   }
 
   Future<void> updateTool(Tool tool) async {
+    // ── Offline: queue and update local cache ──
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final index = _tools.indexWhere((t) => t.id == tool.id);
+      if (index != -1) {
+        _tools[index] = tool;
+        unawaited(_cache.cacheSingleTool(tool));
+      }
+      unawaited(_cache.queueOperation('tools', 'update', tool.toMap(), recordId: tool.id));
+      notifyListeners();
+      debugPrint('📦 Tool update queued for sync (offline)');
+      return;
+    }
+
     try {
       final updateMap = tool.toMap();
       debugPrint('🔧 [UpdateTool] Updating tool ${tool.id} with data: $updateMap');
       debugPrint('   - assignedTo: ${tool.assignedTo}');
-      
+
       await SupabaseService.client
           .from('tools')
           .update(updateMap)
@@ -178,10 +203,10 @@ class SupabaseToolProvider with ChangeNotifier {
           .select()
           .eq('id', tool.id!)
           .single();
-      
+
       final updatedTool = Tool.fromMap(updatedResponse);
       debugPrint('✅ [UpdateTool] Tool updated. Database assignedTo: ${updatedTool.assignedTo}');
-      
+
       // Clear name cache for the assigned user so fresh data is fetched when other users view the tool
       if (updatedTool.assignedTo != null) {
         UserNameService.clearCacheForUser(updatedTool.assignedTo!);
@@ -199,6 +224,16 @@ class SupabaseToolProvider with ChangeNotifier {
   }
 
   Future<void> deleteTool(String toolId) async {
+    // ── Offline: queue and remove from local list ──
+    if (!_connectivity.isOnline && !kIsWeb) {
+      _tools.removeWhere((t) => t.id == toolId);
+      unawaited(_cache.removeCachedTool(toolId));
+      unawaited(_cache.queueOperation('tools', 'delete', {}, recordId: toolId));
+      notifyListeners();
+      debugPrint('📦 Tool delete queued for sync (offline)');
+      return;
+    }
+
     try {
       debugPrint('🗑️ Provider: Deleting tool from database: $toolId');
 
@@ -259,6 +294,27 @@ class SupabaseToolProvider with ChangeNotifier {
 
   Future<void> assignTool(
       String toolId, String technicianId, String assignmentType) async {
+    // ── Offline: queue and update local state immediately ──
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({
+          ..._tools[index].toMap(),
+          'status': 'Assigned',
+          'assigned_to': technicianId,
+        });
+        unawaited(_cache.cacheSingleTool(_tools[index]));
+      }
+      unawaited(_cache.queueOperation(
+        'tools', 'update',
+        {'status': 'Assigned', 'assigned_to': technicianId, 'updated_at': DateTime.now().toIso8601String()},
+        recordId: toolId,
+      ));
+      notifyListeners();
+      debugPrint('📦 Tool assignment queued for sync (offline)');
+      return;
+    }
+
     try {
       // Update tool status and assigned_to field
       await SupabaseService.client.from('tools').update(
@@ -317,6 +373,27 @@ class SupabaseToolProvider with ChangeNotifier {
   }
 
   Future<void> returnTool(String toolId) async {
+    // ── Offline: queue and update local state immediately ──
+    if (!_connectivity.isOnline && !kIsWeb) {
+      final index = _tools.indexWhere((t) => t.id == toolId);
+      if (index != -1) {
+        _tools[index] = Tool.fromMap({
+          ..._tools[index].toMap(),
+          'status': 'Available',
+          'assigned_to': null,
+        });
+        unawaited(_cache.cacheSingleTool(_tools[index]));
+      }
+      unawaited(_cache.queueOperation(
+        'tools', 'update',
+        {'status': 'Available', 'assigned_to': null, 'updated_at': DateTime.now().toIso8601String()},
+        recordId: toolId,
+      ));
+      notifyListeners();
+      debugPrint('📦 Tool return queued for sync (offline)');
+      return;
+    }
+
     try {
       // Update tool status and clear assigned_to field
       await SupabaseService.client.from('tools').update(

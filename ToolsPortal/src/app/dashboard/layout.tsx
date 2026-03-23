@@ -10,6 +10,7 @@ import { Topbar } from '@/components/layout/topbar'
 import { BreadcrumbLabelProvider } from '@/components/layout/breadcrumb-context'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { sendCalibrationReminderPush } from '@/lib/supabase/actions'
 
 export default function DashboardLayout({
   children,
@@ -39,6 +40,12 @@ export default function DashboardLayout({
       router.replace('/onboarding')
     }
   }, [loading, user, profile, orgState, router])
+
+  // Calibration reminders — fire once per day after org resolves
+  useEffect(() => {
+    if (!profile?.organization_id || orgState.loading) return
+    sendCalibrationReminderPush(profile.organization_id)
+  }, [profile?.organization_id, orgState.loading])
 
   // Paywall: check subscription status and redirect to billing if expired
   useEffect(() => {

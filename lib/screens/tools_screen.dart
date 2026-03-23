@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
+import '../widgets/common/offline_sync_banner.dart';
 import '../providers/connectivity_provider.dart';
 import '../utils/navigation_helper.dart';
 
@@ -209,13 +210,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               },
                               icon: const Icon(
                                 Icons.add,
-                                size: 26,
+                                size: 16,
                                 color: Colors.white,
                               ),
                               tooltip: 'Add Tool',
                               style: IconButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
                                 foregroundColor: Colors.white,
+                                minimumSize: const Size(30, 30),
+                                fixedSize: const Size(30, 30),
+                                padding: EdgeInsets.zero,
                               ),
                             ),
                           ),
@@ -601,27 +605,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Material(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withValues(alpha: 0.8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 10,
-                                    ),
-                                    child: Text(
-                                      'Offline — showing cached data',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                OfflineSyncBanner(isOffline: isOffline),
                                 const Expanded(
                                   child: OfflineToolGridSkeleton(
                                     itemCount: 6,
@@ -770,41 +754,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              if (showOfflineBanner)
-                                Material(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withValues(alpha: 0.8),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 10,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.wifi_off,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Offline — showing cached data',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                              OfflineSyncBanner(isOffline: isOffline),
                               Expanded(child: content),
                             ],
                           );
