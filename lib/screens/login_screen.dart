@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: PremiumFieldStyles.fieldTextStyle(context),
                           decoration: PremiumFieldStyles.inputDecoration(
                             context,
-                            hintText: 'e.g., you@company.com',
+                            hintText: 'e.g., user@royalgulf.ae',
                             prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
@@ -386,16 +386,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
-        Image.asset(
-          isDark
-              ? 'assets/images/logo_dark.png'
-              : 'assets/images/logo_light.png',
-          height: 72,
-          fit: BoxFit.contain,
-        ),
+        Icon(Icons.login, size: 64, color: theme.primaryColor),
         const SizedBox(height: 16),
         Text(
           'Welcome Back',
@@ -403,7 +396,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sign in to your ${AppConfig.appName} account',
+          'Sign in to your RGS HVAC Services account',
           style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),

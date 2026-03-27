@@ -6,8 +6,6 @@ import "../providers/supabase_tool_provider.dart";
 import 'admin_dashboard_screen.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/organization_provider.dart';
-import '../config/app_config.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/admin_notification_provider.dart';
@@ -450,7 +448,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                   ),
                   BottomNavigationBarItem(
                     icon: const Icon(Icons.people),
-                    label: context.watch<OrganizationProvider>().workerLabelPlural,
+                    label: AppLocalizations.of(context).adminHome_technicians,
                   ),
                 ],
               ),
@@ -535,7 +533,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        AppConfig.appName,
+                        'RGS Tools',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -571,7 +569,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 const SizedBox(height: 2),
                 _buildSidebarNavItem(context, 2, 'Shared Tools', Icons.share_outlined, Icons.share_rounded),
                 const SizedBox(height: 2),
-                _buildSidebarNavItem(context, 3, context.watch<OrganizationProvider>().workerLabelPlural, Icons.people_outline, Icons.people_rounded),
+                _buildSidebarNavItem(context, 3, 'Technicians', Icons.people_outline, Icons.people_rounded),
               ],
             ),
           ),
@@ -659,8 +657,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final isDark = theme.brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
     final l10n = AppLocalizations.of(context);
-    final workerLabelPlural = context.watch<OrganizationProvider>().workerLabelPlural;
-    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, workerLabelPlural];
+    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, l10n.adminHome_technicians];
     final title = titles[_selectedIndex.clamp(0, 3)];
     final today = DateFormat('MMM d, yyyy').format(DateTime.now());
 
@@ -1583,7 +1580,7 @@ class DashboardScreen extends StatelessWidget {
                                   () => onNavigateToTab(1),
                                 ),
                                 _buildStatCard(
-                                  context.read<OrganizationProvider>().workerLabelPlural,
+                                  'Technicians',
                                   Text(
                                     technicians.length.toString(),
                                     style: statValueStyle.copyWith(color: _dashboardGreen),
@@ -1897,7 +1894,7 @@ class DashboardScreen extends StatelessWidget {
                   context,
                   icon: Icons.people_rounded,
                   value: technicianCount.toString(),
-                  label: context.read<OrganizationProvider>().workerLabelPlural,
+                  label: 'Technicians',
                   color: AppTheme.secondaryColor,
                   onTap: () => onNavigateToTab(3),
                   isFirst: false,
@@ -2389,7 +2386,7 @@ class DashboardScreen extends StatelessWidget {
         Expanded(
           child: _buildB2BStatCard(
             context,
-            label: context.read<OrganizationProvider>().workerLabelPlural,
+            label: 'Technicians',
             value: technicianCount.toString(),
             accentColor: AppTheme.secondaryColor,
             onTap: () => onNavigateToTab(3),
@@ -2592,7 +2589,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                 Text(
-                  'Manage your tools and ${context.read<OrganizationProvider>().workerLabelPlural.toLowerCase()}',
+                  'Manage your HVAC tools and technicians',
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),

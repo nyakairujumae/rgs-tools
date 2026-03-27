@@ -243,7 +243,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
             .insert({
               'user_id': approval.userId,
               'title': 'Account Approved',
-              'message': 'Your account has been approved! You can now access all features of the app.',
+              'message': 'Your account has been approved! You can now access all features of the RGS app.',
               'type': 'account_approved',
               'is_read': false,
               'timestamp': DateTime.now().toIso8601String(),
@@ -260,7 +260,7 @@ class PendingApprovalsProvider extends ChangeNotifier {
           await PushNotificationService.sendToUser(
             userId: approval.userId,
             title: 'Account Approved',
-            body: 'Your account has been approved! You can now access all features of the app.',
+            body: 'Your account has been approved! You can now access all features of the RGS app.',
             data: {
               'type': 'account_approved',
               'approval_id': approval.id,

@@ -364,7 +364,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            AppConfig.appShortName,
+                            'RGS',
                             style: TextStyle(
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 48),
                               fontWeight: FontWeight.w900,
@@ -374,7 +374,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                           Text(
-                            'Professional Tools Management',
+                            'HVAC SERVICES',
                             style: TextStyle(
                               fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
                               fontWeight: FontWeight.w600,

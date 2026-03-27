@@ -5,7 +5,6 @@ import 'package:shimmer/shimmer.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/organization_provider.dart';
 import '../providers/pending_approvals_provider.dart';
 import '../providers/connectivity_provider.dart';
 import '../theme/app_theme.dart';
@@ -1202,7 +1201,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
                 Text(
-                  'Manage your tools and ${context.read<OrganizationProvider>().workerLabelPlural.toLowerCase()}',
+                  'Manage your HVAC tools and technicians',
                   style: TextStyle(
                     fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),

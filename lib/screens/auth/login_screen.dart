@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/theme_extensions.dart';
 import '../../utils/auth_error_handler.dart';
 import '../../config/app_config.dart';
-import '../../widgets/common/app_logo.dart';
+import '../../utils/logo_assets.dart';
 import '../../utils/responsive_helper.dart';
 import '../../services/supabase_service.dart';
 import '../../services/user_profile_service.dart';
@@ -224,6 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final logoAsset = getThemeLogoAsset(theme.brightness);
     final mediaQuery = MediaQuery.of(context);
     final size = mediaQuery.size;
     final bool isDesktopLayout = size.width >= 900;
@@ -316,8 +317,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           : context.spacingLarge * 5.625,
                     ), // ~48px / ~90px
                     
-                    // Logo centered
-                    const Center(child: AppLogo()),
+                    // Logo centered - width 110-130px
+                    Center(
+                      child: Image.asset(
+                        logoAsset,
+                        width: isTabletLayout ? 140 : 120,
+                        height: null,
+                      fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          Logger.debug('❌ Error loading logo: $error');
+                          Logger.debug('❌ Logo asset path: $logoAsset');
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
                     
                     // Spacing ~34px
                     SizedBox(height: context.spacingLarge * 2.125), // ~34px
@@ -608,13 +621,14 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
         
-        // Navigate based on role — clear entire stack so back never returns to login
+        // Navigate based on role (automatically determined from database)
         if (authProvider.isAdmin) {
-          Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+          Navigator.pushReplacementNamed(context, '/admin');
         } else if (authProvider.isPendingApproval) {
-          Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
+          Navigator.pushReplacementNamed(context, '/pending-approval');
         } else {
-          Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
+          // Technician is approved - will check for initial setup in InitialToolSetupScreen
+          Navigator.pushReplacementNamed(context, '/technician');
         }
       }
     } catch (e) {

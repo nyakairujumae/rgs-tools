@@ -34,12 +34,8 @@ class AuthProvider with ChangeNotifier {
   static const Duration _approvalBypassCacheDuration = Duration(minutes: 5);
   bool? _appleApprovalBypassEnabled;
   DateTime? _appleApprovalBypassFetchedAt;
-  bool _needsCompanySetup = false;
-  String? _organizationId;
 
   User? get user => _user;
-  bool get needsCompanySetup => _needsCompanySetup;
-  String? get organizationId => _organizationId;
   UserRole get userRole => _userRole;
   String? get userEmail =>
       (_user ?? SupabaseService.client.auth.currentUser)?.email;
@@ -820,12 +816,17 @@ class AuthProvider with ChangeNotifier {
   Future<AuthResponse> registerAdmin(
     String name,
     String email,
-    String password, {
-    String? positionId,
-  }) async {
+    String password,
+    String positionId, // Changed from position name to position_id
+  ) async {
     // Validate email domain
     if (!_isAdminEmailAllowed(email)) {
       throw Exception('Invalid email domain for admin registration. Use ${AppConfig.adminDomainsDisplay}');
+    }
+
+    final bootstrapAllowed = await canBootstrapAdmin();
+    if (!bootstrapAllowed) {
+      throw Exception('Admin registration is closed. Please request an admin invite.');
     }
 
     Logger.debug('🔍 Starting admin registration for: $email with position_id: $positionId');
@@ -1219,7 +1220,15 @@ class AuthProvider with ChangeNotifier {
       Logger.debug('🔍 Supabase URL: ${SupabaseConfig.url}');
       Logger.debug('🔍 Supabase Anon Key (first 20 chars): ${SupabaseConfig.anonKey.substring(0, 20)}...');
       
-
+      // Verify we're using the correct database by checking the URL
+      final expectedUrl = 'https://npgwikkvtxebzwtpzwgx.supabase.co';
+      if (SupabaseConfig.url != expectedUrl) {
+        Logger.debug('⚠️ WARNING: Supabase URL mismatch!');
+        Logger.debug('⚠️ Expected: $expectedUrl');
+        Logger.debug('⚠️ Actual: ${SupabaseConfig.url}');
+      } else {
+        Logger.debug('✅ Supabase URL matches expected: $expectedUrl');
+      }
       
       // Skip connection test - just try to login directly
       // The login itself will test the connection
@@ -1650,9 +1659,7 @@ class AuthProvider with ChangeNotifier {
       
       // Clear user data first to prevent widget tree issues
       _user = null;
-      _userRole = UserRole.pending;
-      _needsCompanySetup = false;
-      _organizationId = null;
+      _userRole = UserRole.pending; // Reset to pending (unknown) after logout
       notifyListeners();
       
       // Then sign out from Supabase
@@ -1664,9 +1671,7 @@ class AuthProvider with ChangeNotifier {
       Logger.debug('❌ AuthProvider: Error type: ${e.runtimeType}');
       // Ensure user data is cleared even on error
       _user = null;
-      _userRole = UserRole.pending;
-      _needsCompanySetup = false;
-      _organizationId = null;
+      _userRole = UserRole.pending; // Reset to pending on error
       // Still try to clear badge on error
       try {
         await BadgeService.clearBadge();
@@ -1677,20 +1682,6 @@ _isLoading = false;
       notifyListeners();
       Logger.debug('✅ AuthProvider: signOut process completed');
     }
-  }
-
-  /// Called after company setup wizard completes - clears flag and refreshes auth state.
-  void clearNeedsCompanySetup() {
-    _needsCompanySetup = false;
-    notifyListeners();
-  }
-
-  /// Refresh auth state (e.g. after company setup) - reloads user role and org.
-  Future<void> refreshAuthState() async {
-    if (_user != null) {
-      await _loadUserRole();
-    }
-    notifyListeners();
   }
 
   Future<void> deleteAccount() async {
@@ -2186,7 +2177,7 @@ _isLoading = false;
         try {
           final response = await SupabaseService.client
               .from('users')
-              .select('role, position_id, organization_id')
+              .select('role, position_id')
               .eq('id', _user!.id)
               .maybeSingle() // Use maybeSingle instead of single to avoid errors if user doesn't exist
               .timeout(
@@ -2200,9 +2191,6 @@ _isLoading = false;
             final roleFromDb = response['role'] as String;
             final newRole = UserRoleExtension.fromString(roleFromDb);
             final positionId = response['position_id'] as String?;
-            final orgId = response['organization_id'];
-            _needsCompanySetup = orgId == null || (orgId is String && orgId.isEmpty);
-            _organizationId = (orgId is String && orgId.isNotEmpty) ? orgId : null;
             
             // CRITICAL: If role is 'technician', check pending approvals FIRST
             // Technicians with pending approval should have UserRole.pending, not UserRole.technician
