@@ -620,7 +620,7 @@ class AuthProvider with ChangeNotifier {
               'role': role.value, // Role must be explicitly set - no default
               if (positionId != null && positionId.isNotEmpty) 'position_id': positionId,
             },
-            emailRedirectTo: 'com.tools.app://auth/callback',
+            emailRedirectTo: 'com.rgs.app://auth/callback',
           ).timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -1726,7 +1726,7 @@ _isLoading = false;
     try {
       // Use direct deep link (simpler, no web page needed)
       // If you want to use web redirect later, change to: 'https://rgstools.app/reset-password'
-      final redirectUrl = redirectTo ?? 'com.tools.app://reset-password';
+      final redirectUrl = redirectTo ?? 'com.rgs.app://reset-password';
       
       Logger.debug('🔍 Sending password reset email to: $email');
       Logger.debug('🔍 Redirect URL: $redirectUrl');
@@ -2092,7 +2092,7 @@ _isLoading = false;
       // The redirect URL must match what's configured in Supabase dashboard
       await client.auth.signInWithOAuth(
         provider,
-        redirectTo: 'com.tools.app://auth/callback',
+        redirectTo: 'com.rgs.app://auth/callback',
       );
 
       final authState = await authCompleter.future.timeout(

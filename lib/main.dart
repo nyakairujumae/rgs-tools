@@ -248,7 +248,7 @@ Future<void> _initializeServicesInBackground() async {
       } catch (e) {
         // Not initialized yet, try to initialize it
         Logger.debug('🔍 Supabase not initialized, initializing now...');
-        Logger.debug('🔍 Using bundle ID: com.tools.app');
+        Logger.debug('🔍 Using bundle ID: com.rgs.app');
         
         try {
           // Minimal delay to allow native plugins to initialize
