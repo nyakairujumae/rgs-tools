@@ -87,14 +87,16 @@ class _AddToolScreenState extends State<AddToolScreen> {
           color: theme.colorScheme.onSurface.withOpacity(0.8),
         ),
         const SizedBox(width: 12),
-        Text(
-          category,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface,
+        Flexible(
+          child: Text(
+            category,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurface,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -359,15 +361,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
                             .map(
                               (category) => Align(
                                 alignment: Alignment.centerLeft,
-                                child: Text(
-                                  category,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                child: _buildCategoryDropdownRow(theme, category),
                               ),
                             )
                             .toList();
@@ -989,15 +983,7 @@ class _AddToolScreenState extends State<AddToolScreen> {
           .map(
             (item) => Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                item,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: _buildCategoryDropdownRow(theme, item),
             ),
           )
           .toList(),
@@ -1167,11 +1153,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
       // Get current user ID if adding from My Tools
       final authProvider = context.read<AuthProvider>();
       final currentUserId = widget.isFromMyTools ? authProvider.userId : null;
-      final orgId = authProvider.organizationId;
-
+      
       // First, create the tool without image
       final tool = Tool(
-        organizationId: orgId,
         name: _nameController.text.trim().toUpperCase(),
         category: _categoryController.text.trim(),
         brand: _brandController.text.trim().isEmpty

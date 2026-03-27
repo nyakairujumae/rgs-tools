@@ -2,9 +2,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Supabase config: .env (local) or --dart-define, else defaults so Codemagic builds work with no extra config.
 class SupabaseConfig {
-  static const String _defaultUrl = 'https://talzuhfantkxnwyahzyp.supabase.co';
+  static const String _defaultUrl = 'https://npgwikkvtxebzwtpzwgx.supabase.co';
   static const String _defaultAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhbHp1aGZhbnRreG53eWFoenlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NDMzOTcsImV4cCI6MjA4NjIxOTM5N30.EYqpEjoe9PCirwGkynN6G8wq-U2LjrYYUg5CfrcfZqg';
+      'YOUR_NPGWIKKVTXEBZWTPZWGX_ANON_KEY_HERE';
 
   static String get url {
     try {
@@ -26,5 +26,5 @@ class SupabaseConfig {
     return _defaultAnonKey;
   }
 
-  static const String authCallbackUrl = 'com.tools.app://auth/callback';
+  static const String authCallbackUrl = 'com.rgs.app://auth/callback';
 }

@@ -1,6 +1,5 @@
 class Tool {
   final String? id;
-  final String? organizationId;
   final String name;
   final String category;
   final String? brand;
@@ -21,7 +20,6 @@ class Tool {
 
   Tool({
     this.id,
-    this.organizationId,
     required this.name,
     required this.category,
     this.brand,
@@ -34,7 +32,7 @@ class Tool {
     this.location,
     this.assignedTo,
     this.status = 'Available',
-    this.toolType = 'inventory',
+    this.toolType = 'inventory', // Default to inventory when adding new tools
     this.imagePath,
     this.notes,
     this.createdAt,
@@ -43,7 +41,6 @@ class Tool {
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> map = {
-      if (organizationId != null) 'organization_id': organizationId,
       'name': name,
       'category': category,
       'brand': brand,
@@ -76,7 +73,6 @@ class Tool {
   factory Tool.fromMap(Map<String, dynamic> map) {
     return Tool(
       id: map['id'],
-      organizationId: map['organization_id'],
       name: map['name'],
       category: map['category'],
       brand: map['brand'],
@@ -99,7 +95,6 @@ class Tool {
 
   Tool copyWith({
     String? id,
-    String? organizationId,
     String? name,
     String? category,
     String? brand,
@@ -120,7 +115,6 @@ class Tool {
   }) {
     return Tool(
       id: id ?? this.id,
-      organizationId: organizationId ?? this.organizationId,
       name: name ?? this.name,
       category: category ?? this.category,
       brand: brand ?? this.brand,

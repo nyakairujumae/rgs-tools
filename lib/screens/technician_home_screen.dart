@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -10,19 +9,16 @@ import '../providers/auth_provider.dart';
 import 'role_selection_screen.dart';
 import 'checkin_screen.dart';
 import 'shared_tools_screen.dart';
+import 'add_tool_issue_screen.dart';
 import 'add_tool_screen.dart';
-import 'technician_my_requests_screen.dart';
-import 'technician_my_issues_screen.dart';
+import 'request_new_tool_screen.dart';
 import 'technician_add_tool_screen.dart';
 import 'technician_my_tools_screen.dart';
-import 'request_new_tool_screen.dart';
-import 'add_tool_issue_screen.dart';
 import '../models/tool.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/user_name_service.dart';
 import 'settings_screen.dart';
-import 'profile_screen.dart';
 import '../services/firebase_messaging_service.dart' if (dart.library.html) '../services/firebase_messaging_service_stub.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
@@ -61,7 +57,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
   Timer? _notificationRefreshTimer;
   int _selectedIndex = 0;
   bool _isDisposed = false;
-  DateTime? _lastBackPress;
   int _notificationRefreshKey = 0;
   late final List<Widget> _screens;
   TechnicianNotificationProvider? _notificationProviderRef;
@@ -89,9 +84,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           });
         },
       ),
-      // Index 3 = Return — navigates to CheckinScreen, never shown in IndexedStack
-      const SizedBox.shrink(),
-      const ProfileScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       LastRouteService.saveLastRoute('/technician');
@@ -876,27 +868,11 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        final now = DateTime.now();
-        if (_lastBackPress == null ||
-            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
-          _lastBackPress = now;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Press back again to exit'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: context.scaffoldBackground,
-        appBar: AppBar(
+        appBar: (_selectedIndex == 1 || _selectedIndex == 2)
+          ? null
+          : AppBar(
         backgroundColor: context.appBarBackground,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
@@ -924,18 +900,6 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
             ),
             onPressed: () => _showNotifications(context),
             tooltip: 'Notifications',
-          ),
-        ),
-        title: Text(
-          [
-            'Dashboard',
-            'My Requests',
-            'My Issues',
-          ][_selectedIndex.clamp(0, 2)],
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         shape: const RoundedRectangleBorder(
@@ -966,123 +930,52 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
         children: _screens,
       ),
       ),
-      bottomNavigationBar: _buildTechBottomNav(context),
-    ),
-    );
-  }
-
-  Widget _buildTechBottomNav(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0A) : Colors.white;
-    final onSurface = theme.colorScheme.onSurface;
-    final green = AppTheme.secondaryColor;
-
-    final items = [
-      (0, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Dashboard'),
-      (1, Icons.add_circle_rounded, Icons.add_circle_outline_rounded, 'Request'),
-      (2, Icons.report_rounded, Icons.report_outlined, 'Report'),
-      (3, Icons.keyboard_return_rounded, Icons.keyboard_return_outlined, 'Return'),
-      (4, Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-            width: 0.5,
-          ),
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: items.map((item) {
-              final (idx, activeIcon, inactiveIcon, label) = item;
-              final isSelected = _selectedIndex == idx;
-
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (idx == 3) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CheckinScreen()),
-                      );
-                    } else {
-                      setState(() => _selectedIndex = idx.clamp(0, 4));
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeInOut,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? green.withValues(alpha: 0.15)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                            border: isSelected
-                                ? Border.all(
-                                    color: green.withValues(alpha: 0.25),
-                                    width: 1,
-                                  )
-                                : null,
-                          ),
-                          child: Icon(
-                            isSelected ? activeIcon : inactiveIcon,
-                            size: 22,
-                            color: isSelected
-                                ? green
-                                : onSurface.withValues(alpha: 0.38),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                            color: isSelected
-                                ? green
-                                : onSurface.withValues(alpha: 0.38),
-                            letterSpacing: 0.1,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: isSelected ? 16 : 0,
-                          height: 2.5,
-                          decoration: BoxDecoration(
-                            color: green,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+        child: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          if (index == 3) {
+            // Check In button - navigate to CheckinScreen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CheckinScreen(),
+              ),
+            );
+          } else {
+            setState(() => _selectedIndex = index.clamp(0, 2));
+          }
+        },
+        type: BottomNavigationBarType.fixed,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          selectedItemColor: Theme.of(context).colorScheme.secondary,
+          unselectedItemColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
           ),
-        ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Request Tool',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.report_problem),
+            label: 'Report Issue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.keyboard_return, color: Colors.green),
+            label: 'Return',
+            activeIcon: Icon(Icons.keyboard_return, color: Colors.green),
+          ),
+        ],
       ),
-    );
+    ));
   }
 
   void _showNotifications(BuildContext context) async {

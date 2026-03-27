@@ -14,7 +14,6 @@ import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
-import '../widgets/common/offline_sync_banner.dart';
 import '../providers/connectivity_provider.dart';
 import '../utils/navigation_helper.dart';
 
@@ -42,8 +41,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Set<String> _selectedTools = <String>{};
   /// Web: false = grid (marketplace), true = list. Default grid like Shared Tools.
   bool _webViewList = false;
-  /// Mobile: false = grid, true = list
-  bool _isListView = false;
 
   @override
   void initState() {
@@ -196,16 +193,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               ],
                             ),
                           ),
-                          if (!kIsWeb)
-                            IconButton(
-                              icon: Icon(
-                                _isListView ? Icons.grid_view_rounded : Icons.view_list_rounded,
-                                size: 22,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                              ),
-                              onPressed: () => setState(() => _isListView = !_isListView),
-                              tooltip: _isListView ? 'Grid view' : 'List view',
-                            ),
                           Material(
                             color: Colors.transparent,
                             child: IconButton(
@@ -222,16 +209,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
                               },
                               icon: const Icon(
                                 Icons.add,
-                                size: 16,
+                                size: 26,
                                 color: Colors.white,
                               ),
                               tooltip: 'Add Tool',
                               style: IconButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(30, 30),
-                                fixedSize: const Size(30, 30),
-                                padding: EdgeInsets.zero,
                               ),
                             ),
                           ),
@@ -493,24 +477,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                         ),
                                       ),
                                       DropdownMenuItem<String>(
-                                        value: 'Assigned',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.person_outline,
-                                                size: 16,
-                                                color: Colors.teal,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text('Assigned'),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem<String>(
                                         value: 'In Use',
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
@@ -635,7 +601,27 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                OfflineSyncBanner(isOffline: isOffline),
+                                Material(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    child: Text(
+                                      'Offline — showing cached data',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 const Expanded(
                                   child: OfflineToolGridSkeleton(
                                     itemCount: 6,
@@ -756,18 +742,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   );
                                 }
 
-                                // Mobile: list view
-                                if (_isListView) {
-                                  return ListView.separated(
-                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                                    itemCount: toolGroups.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      return _buildToolListRow(toolGroups[index]);
-                                    },
-                                  );
-                                }
-
                                 // Mobile: card grid
                                 return GridView.builder(
                                   padding: const EdgeInsets.fromLTRB(
@@ -796,7 +770,41 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              OfflineSyncBanner(isOffline: isOffline),
+                              if (showOfflineBanner)
+                                Material(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.wifi_off,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Offline — showing cached data',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               Expanded(child: content),
                             ],
                           );
@@ -1131,96 +1139,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildToolListRow(ToolGroup toolGroup) {
-    final theme = Theme.of(context);
-    final representative = toolGroup.representativeTool ?? toolGroup.instances.first;
-    final imagePath = representative.imagePath;
-    final hasImage = imagePath != null && imagePath.isNotEmpty;
-
-    return InkWell(
-      onTap: () {
-        if (toolGroup.instances.length == 1) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => ToolDetailScreen(tool: toolGroup.instances.first),
-          ));
-        } else {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => ToolInstancesScreen(toolGroup: toolGroup),
-          ));
-        }
-      },
-      onLongPress: () => _showToolActions(context, representative),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: context.cardDecoration.copyWith(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 52,
-                height: 52,
-                child: hasImage && (imagePath.startsWith('http') || kIsWeb)
-                    ? Image.network(imagePath, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholderImage())
-                    : _buildPlaceholderImage(),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Name, category, count
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    representative.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    representative.category,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (toolGroup.instances.length > 1)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '${toolGroup.instances.length} units',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _buildStatusPill(toolGroup.bestStatus),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right, size: 18,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
-          ],
-        ),
       ),
     );
   }

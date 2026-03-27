@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
 import 'admin_dashboard_screen.dart';
@@ -29,8 +28,6 @@ import 'calibration_screen.dart';
 import 'compliance_screen.dart';
 import 'add_tool_screen.dart';
 import 'checkin_screen.dart';
-import '../services/calibration_reminder_service.dart';
-import '../providers/supabase_certification_provider.dart';
 import 'reports_screen.dart';
 import 'report_detail_screen.dart';
 import 'permanent_assignment_screen.dart';
@@ -50,9 +47,7 @@ import 'admin_approval_screen.dart';
 import 'admin_notification_screen.dart';
 import 'tool_issues_screen.dart';
 import 'all_tool_history_screen.dart';
-import 'profile_screen.dart';
 import 'technician_my_tools_screen.dart';
-import 'profile_screen.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 import '../models/user_role.dart';
@@ -144,7 +139,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   late int _selectedIndex;
   bool _isDisposed = false;
   late List<Widget> _screens;
-  DateTime? _lastBackPress;
   Timer? _notificationRefreshTimer;
   final TextEditingController _inviteNameController = TextEditingController();
   final TextEditingController _inviteEmailController = TextEditingController();
@@ -159,7 +153,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedIndex =
-        widget.initialTab.clamp(0, 4); // Ensure index is within bounds
+        widget.initialTab.clamp(0, 3); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
@@ -173,7 +167,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       const ToolsScreen(),
       const SharedToolsScreen(),
       const TechniciansScreen(),
-      const ProfileScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LastRouteService.saveLastRoute('/admin');
@@ -214,7 +207,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     try {
       final toolProvider = context.read<SupabaseToolProvider>();
       final techProvider = context.read<SupabaseTechnicianProvider>();
-      final certProvider = context.read<SupabaseCertificationProvider>();
       await Future.wait([
         toolProvider.loadTools(),
         techProvider.loadTechnicians(),
@@ -222,15 +214,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
         // Notifications are loaded eagerly in _loadNotificationsWithRetry,
         // but also included here so they refresh on app resume via _loadData
         context.read<AdminNotificationProvider>().loadNotifications(),
-        certProvider.loadAll(),
       ]);
       // Subscribe to realtime after initial load
       toolProvider.subscribeToRealtime();
       techProvider.subscribeToRealtime();
-
-      // Fire calibration reminders for overdue / expiring certs
-      unawaited(CalibrationReminderService.instance
-          .checkAndNotify(certProvider.certifications));
     } catch (e) {
       Logger.debug('Error loading admin data: $e');
     }
@@ -427,29 +414,50 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       ),
       bottomNavigationBar: isWebDesktop
           ? null
-          : _buildAdminBottomNav(context),
+          : ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _selectedIndex,
+                onTap: (index) =>
+                    setState(() => _selectedIndex = index.clamp(0, 3)),
+                type: BottomNavigationBarType.fixed,
+                backgroundColor:
+                    Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
+                        Theme.of(context).colorScheme.surface,
+                selectedItemColor: Theme.of(context).colorScheme.secondary,
+                unselectedItemColor: Theme.of(context)
+                        .bottomNavigationBarTheme
+                        .unselectedItemColor ??
+                    Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.dashboard),
+                    label: AppLocalizations.of(context).adminHome_dashboard,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.build),
+                    label: AppLocalizations.of(context).adminHome_tools,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.share),
+                    label: AppLocalizations.of(context).adminHome_sharedTools,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.people),
+                    label: context.watch<OrganizationProvider>().workerLabelPlural,
+                  ),
+                ],
+              ),
+            ),
     );
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        final now = DateTime.now();
-        if (_lastBackPress == null ||
-            now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
-          _lastBackPress = now;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Press back again to exit'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          // Second press within 2 seconds — exit the app
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: context.scaffoldBackground,
       body: Container(
         color: context.scaffoldBackground,
@@ -481,127 +489,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 : SafeArea(
                     child: contentScaffold,
                   )),
-      ),
-    ));
-  }
-
-  // ---------------------------------------------------------------------------
-  // Mobile bottom nav – pill indicator style
-  // ---------------------------------------------------------------------------
-
-  Widget _buildAdminBottomNav(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0A) : Colors.white;
-    final onSurface = theme.colorScheme.onSurface;
-    final green = AppTheme.secondaryColor;
-    final workerLabel = context.watch<OrganizationProvider>().workerLabelPlural;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: [
-              _adminNavItem(context, 0, Icons.grid_view_rounded, Icons.grid_view_outlined,
-                  AppLocalizations.of(context).adminHome_dashboard, green, onSurface),
-              _adminNavItem(context, 1, Icons.construction_rounded, Icons.construction_outlined,
-                  AppLocalizations.of(context).adminHome_tools, green, onSurface),
-              _adminNavItem(context, 2, Icons.hub_rounded, Icons.hub_outlined,
-                  AppLocalizations.of(context).adminHome_sharedTools, green, onSurface),
-              _adminNavItem(context, 3, Icons.groups_rounded, Icons.groups_outlined,
-                  workerLabel, green, onSurface),
-              _adminNavItem(context, 4, Icons.person_rounded, Icons.person_outline_rounded,
-                  'Profile', green, onSurface),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _adminNavItem(
-    BuildContext context,
-    int index,
-    IconData activeIcon,
-    IconData inactiveIcon,
-    String label,
-    Color activeColor,
-    Color onSurface,
-  ) {
-    final isSelected = _selectedIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? activeColor.withValues(alpha: 0.15)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: isSelected
-                      ? Border.all(
-                          color: activeColor.withValues(alpha: 0.25),
-                          width: 1,
-                        )
-                      : null,
-                ),
-                child: Icon(
-                  isSelected ? activeIcon : inactiveIcon,
-                  size: 22,
-                  color: isSelected
-                      ? activeColor
-                      : onSurface.withValues(alpha: 0.38),
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                  color: isSelected
-                      ? activeColor
-                      : onSurface.withValues(alpha: 0.38),
-                  letterSpacing: 0.1,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 3),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: isSelected ? 16 : 0,
-                height: 2.5,
-                decoration: BoxDecoration(
-                  color: activeColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -773,8 +660,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
     final l10n = AppLocalizations.of(context);
     final workerLabelPlural = context.watch<OrganizationProvider>().workerLabelPlural;
-    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, workerLabelPlural, 'Profile'];
-    final title = titles[_selectedIndex.clamp(0, 4)];
+    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, workerLabelPlural];
+    final title = titles[_selectedIndex.clamp(0, 3)];
     final today = DateFormat('MMM d, yyyy').format(DateTime.now());
 
     return Container(
@@ -822,7 +709,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
@@ -947,11 +834,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
   void _navigateToToolsWithFilter(String statusFilter) {
     setState(() {
       _selectedIndex = 1; // Tools tab
-      // Use a ValueKey so Flutter creates a fresh state when filter changes
-      _screens[1] = ToolsScreen(
-        key: ValueKey(statusFilter),
-        initialStatusFilter: statusFilter,
-      );
+      // Replace the ToolsScreen with a filtered version
+      _screens[1] = ToolsScreen(initialStatusFilter: statusFilter);
     });
   }
 
@@ -2091,27 +1975,23 @@ class DashboardScreen extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: GestureDetector(
-                                onTap: () => onNavigateToToolsWithFilter('Available'),
-                                behavior: HitTestBehavior.opaque,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Available',
-                                      style: TextStyle(fontSize: 12, color: muted),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Available',
+                                    style: TextStyle(fontSize: 12, color: muted),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    availableCount.toString(),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.secondaryColor,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      availableCount.toString(),
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.secondaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
@@ -2120,27 +2000,23 @@ class DashboardScreen extends StatelessWidget {
                               color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED),
                             ),
                             Expanded(
-                              child: GestureDetector(
-                                onTap: () => onNavigateToToolsWithFilter('Assigned'),
-                                behavior: HitTestBehavior.opaque,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'Assigned',
-                                      style: TextStyle(fontSize: 12, color: muted),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Assigned',
+                                    style: TextStyle(fontSize: 12, color: muted),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    assignedCount.toString(),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.primaryColor,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      assignedCount.toString(),
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.primaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -2810,14 +2686,12 @@ class DashboardScreen extends StatelessWidget {
                 availableCount.toString(),
                 _dashboardGreen,
                 context,
-                onTap: () => onNavigateToToolsWithFilter('Available'),
               ),
               _buildStatusItem(
                 'Assigned',
                 assignedCount.toString(),
                 Colors.blue,
                 context,
-                onTap: () => onNavigateToToolsWithFilter('Assigned'),
               ),
             ],
           ),
@@ -3334,7 +3208,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatusItem(
-      String status, String count, Color color, BuildContext context, {VoidCallback? onTap}) {
+      String status, String count, Color color, BuildContext context) {
     final isWebLayout = ResponsiveHelper.isWeb;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -3343,10 +3217,7 @@ class DashboardScreen extends StatelessWidget {
     if (isWebLayout) {
       // Web: clean inline status with colour dot
       return Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Padding(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             children: [
@@ -3380,16 +3251,12 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
-        ),
       );
     }
 
     // Mobile: original card style
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
+      child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.symmetric(
           vertical: ResponsiveHelper.getResponsiveSpacing(context, 12),
@@ -3429,7 +3296,6 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
       ),
     );
   }

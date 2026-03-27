@@ -12,7 +12,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'l10n/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
 
 // Import all the actual classes
@@ -24,7 +23,6 @@ import 'screens/company_setup_wizard_screen.dart';
 import 'screens/admin_onboarding_wizard_screen.dart';
 // role_selection_screen removed — wizard is the entry point
 import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
@@ -697,7 +695,7 @@ class _EmailConfirmationLoadingScreenState extends State<_EmailConfirmationLoadi
 
   @override
   Widget build(BuildContext context) {
-    const greenColor = Color(0xFF16A34A); // App's secondary green color
+    const greenColor = Color(0xFF047857); // App's secondary green color
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1116,30 +1114,36 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           }
 
           // Remove custom error widget to prevent blank error screens on back navigation
+          // Flutter will handle errors with its default behavior
           ErrorWidget.builder = (FlutterErrorDetails details) {
+            // During logout, silently handle errors
             if (authProvider.isLoggingOut) {
               return const SizedBox.shrink();
             }
+            // For other errors, return empty widget to prevent blank screen
+            // This prevents users from getting stuck on error screens when pressing back
             return const SizedBox.shrink();
           };
-
-          // Remove splash and process initial deep link
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!_splashRemoved) {
-              _splashRemoved = true;
-              FlutterNativeSplash.remove();
+          
+          // Remove splash screen quickly - don't wait for initialization
+          if (!_splashRemoved) {
+            _splashRemoved = true;
+            // Remove splash immediately - initialization happens in background
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+            FlutterNativeSplash.remove();
               Logger.debug('✅ Native splash removed immediately');
-            }
-
-            if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
-              Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
+            });
+          }
+          
+          // CRITICAL: Process initial deep link if we have one and haven't processed it yet
+          if (widget.initialDeepLink != null && !_deepLinkProcessed && !_isProcessingDeepLink) {
+            Logger.debug('🔐 Processing initial deep link from cold start: ${widget.initialDeepLink}');
+            // Process in post frame callback to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
               _handleDeepLink(widget.initialDeepLink!);
-            }
-          });
-
-          // Determine initial route once at startup using current auth state.
-          // After login, navigation is handled imperatively via pushReplacementNamed —
-          // we must NOT recompute this during rebuilds or the navigator will crash.
+            });
+          }
+          
           // CRITICAL: Check session FIRST - if logged in, go directly to home screen
           // No intermediate screens, no waiting, no flashes
           final hasSession = SupabaseService.client.auth.currentSession != null;
@@ -1215,11 +1219,11 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             } else if (widget.cachedLastRoute == '/pending-approval') {
               initialRoute = const PendingApprovalScreen();
             } else {
-              initialRoute = const OnboardingScreen();
+              initialRoute = const AdminOnboardingWizardScreen();
             }
           } else {
-            // No session - show onboarding for new users
-            initialRoute = const OnboardingScreen();
+            // No session - show role selection (only for logged out users)
+            initialRoute = const AdminOnboardingWizardScreen();
           }
           
           // Always render MaterialApp immediately
@@ -1234,27 +1238,13 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            localizationsDelegates: [
-              ...AppLocalizations.localizationsDelegates,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: localeProvider.locale,
             // Don't use home - let onGenerateRoute handle everything including deep links
             initialRoute: defaultRoute,
             builder: (context, child) {
-              // Cap text scaling to 1.0 — prevents large system font settings
-              // from breaking card/layout sizing on mobile
-              final content = MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: MediaQuery.of(context).textScaler.clamp(
-                    minScaleFactor: 0.8,
-                    maxScaleFactor: 1.0,
-                  ),
-                ),
-                child: ErrorBoundary(child: child!),
-              );
+              final content = ErrorBoundary(child: child!);
               // Android: match iOS - use SystemChrome (global, persistent) so system bars
               // follow app theme on all screens including those without AppBar
               final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -1307,7 +1297,6 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               return result;
             },
             routes: {
-              '/onboarding': (context) => const OnboardingScreen(),
               '/role-selection': (context) => const AdminOnboardingWizardScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),

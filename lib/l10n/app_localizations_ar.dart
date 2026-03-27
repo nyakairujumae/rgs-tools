@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => 'الأدوات';
+  String get appTitle => 'أدوات';
 
   @override
   String get common_cancel => 'إلغاء';
@@ -60,22 +60,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get common_notAvailable => 'غير متاح';
 
   @override
-  String get common_required => 'مطلوب';
+  String get common_required => 'Required';
 
   @override
-  String get common_optional => 'اختياري';
+  String get common_optional => 'Optional';
 
   @override
-  String get common_all => 'الكل';
+  String get common_all => 'All';
 
   @override
-  String get common_none => 'لا شيء';
+  String get common_none => 'None';
 
   @override
-  String get common_yes => 'نعم';
+  String get common_yes => 'Yes';
 
   @override
-  String get common_no => 'لا';
+  String get common_no => 'No';
 
   @override
   String get common_signOut => 'تسجيل الخروج';
@@ -99,7 +99,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get common_name => 'الاسم';
 
   @override
-  String get common_phone => 'الهاتف';
+  String get common_phone => 'Phone';
 
   @override
   String get common_status => 'الحالة';
@@ -111,147 +111,148 @@ class AppLocalizationsAr extends AppLocalizations {
   String get common_inactive => 'غير نشط';
 
   @override
-  String get common_camera => 'الكاميرا';
+  String get common_camera => 'Camera';
 
   @override
-  String get common_gallery => 'المعرض';
+  String get common_gallery => 'Gallery';
 
   @override
-  String get common_addImage => 'إضافة صورة';
+  String get common_addImage => 'Add Image';
 
   @override
-  String get common_selectImageSource => 'اختر مصدر الصورة';
+  String get common_selectImageSource => 'Select Image Source';
 
   @override
   String common_failedToPickImage(String error) {
-    return 'فشل في اختيار الصورة: $error';
+    return 'Failed to pick image: $error';
   }
 
   @override
   String get common_somethingWentWrong =>
-      'عذراً! حدث خطأ ما. يرجى المحاولة مجدداً.';
+      'Oops! Something went wrong. Please try again.';
 
   @override
   String get common_offlineBanner => 'غير متصل — عرض البيانات المخزنة';
 
   @override
-  String get common_noImage => 'لا توجد صورة';
+  String get common_noImage => 'No Image';
 
   @override
-  String get status_available => 'متاح';
+  String get status_available => 'Available';
 
   @override
-  String get status_assigned => 'مُسنَد';
+  String get status_assigned => 'Assigned';
 
   @override
-  String get status_inUse => 'قيد الاستخدام';
+  String get status_inUse => 'In Use';
 
   @override
-  String get status_maintenance => 'صيانة';
+  String get status_maintenance => 'Maintenance';
 
   @override
-  String get status_retired => 'مُستبعَد';
+  String get status_retired => 'Retired';
 
   @override
-  String get status_lost => 'مفقود';
+  String get status_lost => 'Lost';
 
   @override
-  String get priority_low => 'منخفض';
+  String get priority_low => 'Low';
 
   @override
-  String get priority_medium => 'متوسط';
+  String get priority_medium => 'Medium';
 
   @override
-  String get priority_high => 'عالٍ';
+  String get priority_high => 'High';
 
   @override
-  String get priority_critical => 'حرج';
+  String get priority_critical => 'Critical';
 
   @override
-  String get priority_normal => 'عادي';
+  String get priority_normal => 'Normal';
 
   @override
-  String get priority_urgent => 'عاجل';
+  String get priority_urgent => 'Urgent';
 
   @override
-  String get validation_required => 'هذا الحقل مطلوب';
+  String get validation_required => 'This field is required';
 
   @override
-  String get validation_emailRequired => 'يرجى إدخال بريدك الإلكتروني';
+  String get validation_emailRequired => 'Please enter your email';
 
   @override
-  String get validation_emailInvalid => 'يرجى إدخال عنوان بريد إلكتروني صحيح';
+  String get validation_emailInvalid => 'Please enter a valid email address';
 
   @override
-  String get validation_passwordRequired => 'يرجى إدخال كلمة المرور';
+  String get validation_passwordRequired => 'Please enter your password';
 
   @override
   String get validation_passwordMinLength =>
-      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+      'Password must be at least 6 characters';
 
   @override
-  String get validation_passwordMismatch => 'كلمتا المرور غير متطابقتين';
+  String get validation_passwordMismatch => 'Passwords do not match';
 
   @override
-  String get validation_nameRequired => 'يرجى إدخال اسمك الكامل';
+  String get validation_nameRequired => 'Please enter your full name';
 
   @override
-  String get validation_phoneRequired => 'يرجى إدخال رقم هاتفك';
+  String get validation_phoneRequired => 'Please enter your phone number';
 
   @override
-  String get validation_pleaseSelectTool => 'يرجى اختيار أداة';
+  String get validation_pleaseSelectTool => 'Please select a tool';
 
   @override
-  String get roleSelection_subtitle => 'تتبع الأدوات • الإسنادات • المخزون';
+  String get roleSelection_subtitle =>
+      'Tool Tracking • Assignments • Inventory';
 
   @override
-  String get roleSelection_registerAdmin => 'التسجيل كمسؤول';
+  String get roleSelection_registerAdmin => 'Register as Admin';
 
   @override
-  String get roleSelection_continueAdmin => 'المتابعة كمسؤول';
+  String get roleSelection_continueAdmin => 'Continue as Admin';
 
   @override
-  String get roleSelection_registerTechnician => 'التسجيل كفني';
+  String get roleSelection_registerTechnician => 'Register as Technician';
 
   @override
-  String get roleSelection_continueTechnician => 'المتابعة كفني';
+  String get roleSelection_continueTechnician => 'Continue as Technician';
 
   @override
-  String get roleSelection_alreadyHaveAccount => 'هل لديك حساب بالفعل؟ ';
+  String get roleSelection_alreadyHaveAccount => 'Already have an account? ';
 
   @override
-  String get roleSelection_signIn => 'تسجيل الدخول';
+  String get roleSelection_signIn => 'Sign in';
 
   @override
   String get roleSelection_adminClosedError =>
-      'تسجيل المسؤولين مغلق. يرجى طلب دعوة من المسؤول.';
+      'Admin registration is closed. Please request an admin invite.';
 
   @override
-  String get login_title => 'تسجيل الدخول';
+  String get login_title => 'Sign In';
 
   @override
-  String get login_emailLabel => 'عنوان البريد الإلكتروني';
+  String get login_emailLabel => 'Email Address';
 
   @override
-  String get login_emailHint => 'أدخل بريدك الإلكتروني';
+  String get login_emailHint => 'Enter your email';
 
   @override
-  String get login_passwordLabel => 'كلمة المرور';
+  String get login_passwordLabel => 'Password';
 
   @override
-  String get login_passwordHint => 'أدخل كلمة المرور';
+  String get login_passwordHint => 'Enter your password';
 
   @override
-  String get login_signInButton => 'تسجيل الدخول';
+  String get login_signInButton => 'Sign In';
 
   @override
-  String get login_forgotPassword => 'نسيت كلمة المرور؟';
+  String get login_forgotPassword => 'Forgot Password?';
 
   @override
-  String get login_orContinueWith => 'أو المتابعة باستخدام';
+  String get login_orContinueWith => 'Or continue with';
 
   @override
-  String get login_or => 'أو';
+  String get login_or => 'OR';
 
   @override
   String get login_google => 'Google';
@@ -260,1578 +261,1581 @@ class AppLocalizationsAr extends AppLocalizations {
   String get login_apple => 'Apple';
 
   @override
-  String get login_registerPrompt => 'ليس لديك حساب؟ سجّل هنا';
+  String get login_registerPrompt => 'Don\'t have an account? Register Here';
 
   @override
-  String get login_registerSubtext => 'اختر تسجيل مسؤول أو فني';
+  String get login_registerSubtext => 'Choose Admin or Technician registration';
 
   @override
-  String get login_welcomeBack => 'مرحباً بعودتك';
+  String get login_welcomeBack => 'Welcome Back';
 
   @override
-  String get login_welcomeBackSubtitle => 'سجّل دخولك إلى حسابك';
+  String get login_welcomeBackSubtitle => 'Sign in to your account';
 
   @override
-  String get login_successMessage => 'مرحباً بعودتك! تم تسجيل الدخول بنجاح.';
+  String get login_successMessage => 'Welcome back! Successfully signed in.';
 
   @override
-  String get login_accessDenied =>
-      'تم رفض الوصول: بيانات اعتماد المسؤول غير صحيحة';
+  String get login_accessDenied => 'Access denied: Invalid admin credentials';
 
   @override
   String get login_emailRequiredFirst =>
-      'يرجى إدخال عنوان بريدك الإلكتروني أولاً';
+      'Please enter your email address first';
 
   @override
   String get login_passwordResetSent =>
-      'تم إرسال رسالة إعادة تعيين كلمة المرور! تحقق من بريدك الوارد.';
+      'Password reset email sent! Check your inbox.';
 
   @override
-  String get login_appleCancelled => 'تم إلغاء تسجيل الدخول عبر Apple.';
+  String get login_appleCancelled => 'Apple sign-in was cancelled.';
 
   @override
-  String get login_appleFailed => 'فشل تسجيل الدخول عبر Apple.';
+  String get login_appleFailed => 'Apple sign-in failed.';
 
   @override
   String get login_oauthAccountExists =>
-      'هذا البريد الإلكتروني مسجّل بالفعل. يرجى تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور.';
+      'This email is already registered. Please sign in with your email and password.';
 
   @override
   String get login_emailDomainNotAllowed =>
-      'نطاق البريد الإلكتروني غير مسموح به. يرجى استخدام عنوان بريد إلكتروني معتمد.';
+      'Email domain not allowed. Please use an approved email address.';
 
   @override
-  String get login_resetPasswordDialogTitle => 'إعادة تعيين كلمة المرور';
+  String get login_resetPasswordDialogTitle => 'Reset Password';
 
   @override
   String get login_resetPasswordDialogMessage =>
-      'أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.';
+      'Enter your email address and we\'ll send you a link to reset your password.';
 
   @override
   String get login_resetPasswordEmailHint => 'your.email@example.com';
 
   @override
-  String get login_resetPasswordSendButton => 'إرسال رابط الإعادة';
+  String get login_resetPasswordSendButton => 'Send Reset Link';
 
   @override
-  String get login_resetPasswordSuccessTitle => 'تم الإرسال!';
+  String get login_resetPasswordSuccessTitle => 'Email Sent!';
 
   @override
   String login_resetPasswordSuccessMessage(String email) {
-    return 'لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى $email. يرجى التحقق من بريدك الوارد واتباع التعليمات لإعادة تعيين كلمة المرور.';
+    return 'We\'ve sent a password reset link to $email. Please check your inbox and follow the instructions to reset your password.';
   }
 
   @override
-  String get register_createAccount => 'أنشئ حسابك للبدء.';
+  String get register_createAccount => 'Create your account to get started.';
 
   @override
-  String get register_fullNameLabel => 'الاسم الكامل';
+  String get register_fullNameLabel => 'Full Name';
 
   @override
-  String get register_emailLabel => 'البريد الإلكتروني';
+  String get register_emailLabel => 'Email';
 
   @override
-  String get register_passwordLabel => 'كلمة المرور';
+  String get register_passwordLabel => 'Password';
 
   @override
-  String get register_confirmPasswordLabel => 'تأكيد كلمة المرور';
+  String get register_confirmPasswordLabel => 'Confirm Password';
 
   @override
-  String get register_phoneLabel => 'رقم الهاتف';
+  String get register_phoneLabel => 'Phone Number';
 
   @override
-  String get register_departmentLabel => 'القسم';
+  String get register_departmentLabel => 'Department';
 
   @override
-  String get register_roleLabel => 'الدور الوظيفي';
+  String get register_roleLabel => 'Role';
 
   @override
-  String get register_createAccountButton => 'إنشاء حساب';
+  String get register_createAccountButton => 'Create Account';
 
   @override
-  String get register_signInLink => 'هل لديك حساب بالفعل؟ تسجيل الدخول';
+  String get register_signInLink => 'Already have an account? Sign In';
 
   @override
-  String get register_backToRoleSelection => 'العودة إلى اختيار الدور';
+  String get register_backToRoleSelection => 'Back to Role Selection';
 
   @override
-  String get register_checkYourEmail => 'تحقق من بريدك الإلكتروني';
+  String get register_checkYourEmail => 'Check Your Email';
 
   @override
-  String get register_confirmationEmailSent => 'لقد أرسلنا رسالة تأكيد إلى:';
+  String get register_confirmationEmailSent =>
+      'We\'ve sent a confirmation email to:';
 
   @override
   String get register_confirmationInstructions =>
-      'يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد للتحقق من حسابك. بعد التحقق، سيكون حسابك في انتظار موافقة المسؤول.';
+      'Please check your email and click the confirmation link to verify your account. After verification, your account will be pending admin approval.';
 
   @override
-  String get register_goToLogin => 'الانتقال إلى تسجيل الدخول';
+  String get register_goToLogin => 'Go to Login';
 
   @override
   String get register_pendingApproval =>
-      'حسابك في انتظار موافقة المسؤول. ستتلقى إشعاراً عند الموافقة.';
+      'Your account is pending admin approval. You will be notified once approved.';
 
   @override
   String get register_emailFormatValidation =>
-      'يرجى إدخال عنوان بريد إلكتروني صحيح (مثال: name@example.com)';
+      'Please enter a valid email address (e.g., name@example.com)';
 
   @override
-  String get resetPassword_title => 'إعادة تعيين كلمة المرور';
+  String get resetPassword_title => 'Reset Password';
 
   @override
-  String get resetPassword_subtitle => 'أدخل كلمة مرورك الجديدة أدناه';
+  String get resetPassword_subtitle => 'Enter your new password below';
 
   @override
-  String get resetPassword_newPasswordLabel => 'كلمة المرور الجديدة';
+  String get resetPassword_newPasswordLabel => 'New Password';
 
   @override
-  String get resetPassword_confirmLabel => 'تأكيد كلمة المرور الجديدة';
+  String get resetPassword_confirmLabel => 'Confirm New Password';
 
   @override
-  String get resetPassword_button => 'إعادة تعيين كلمة المرور';
+  String get resetPassword_button => 'Reset Password';
 
   @override
-  String get resetPassword_backToLogin => 'العودة إلى تسجيل الدخول';
+  String get resetPassword_backToLogin => 'Back to Login';
 
   @override
   String get resetPassword_successMessage =>
-      'تم تعيين كلمة المرور بنجاح! جارٍ إعادة التوجيه...';
+      'Password set successfully! Redirecting...';
 
   @override
   String get resetPassword_sessionExpired =>
-      'انتهت صلاحية الجلسة. يرجى فتح رابط الدعوة مجدداً.';
+      'Session expired. Please open the invite link again.';
 
   @override
-  String get adminRegistration_title => 'تسجيل المسؤول';
+  String get adminRegistration_title => 'Admin Registration';
 
   @override
-  String get adminRegistration_subtitle => 'التسجيل كمسؤول نظام';
+  String get adminRegistration_subtitle => 'Register as an administrator';
 
   @override
-  String get adminRegistration_fullNameLabel => 'الاسم الكامل';
+  String get adminRegistration_fullNameLabel => 'Full Name';
 
   @override
-  String get adminRegistration_fullNameHint => 'أدخل الاسم الكامل';
+  String get adminRegistration_fullNameHint => 'Enter full name';
 
   @override
-  String get adminRegistration_emailLabel => 'عنوان البريد الإلكتروني';
+  String get adminRegistration_emailLabel => 'Email Address';
 
   @override
-  String get adminRegistration_emailHint => 'أدخل البريد الإلكتروني للشركة';
+  String get adminRegistration_emailHint => 'Enter company email';
 
   @override
-  String get adminRegistration_passwordLabel => 'كلمة المرور';
+  String get adminRegistration_passwordLabel => 'Password';
 
   @override
-  String get adminRegistration_passwordHint => '6 أحرف كحد أدنى';
+  String get adminRegistration_passwordHint => 'Minimum 6 characters';
 
   @override
-  String get adminRegistration_confirmPasswordLabel => 'تأكيد كلمة المرور';
+  String get adminRegistration_confirmPasswordLabel => 'Confirm Password';
 
   @override
-  String get adminRegistration_confirmPasswordHint => 'أعد إدخال كلمة المرور';
+  String get adminRegistration_confirmPasswordHint => 'Re-enter password';
 
   @override
-  String get adminRegistration_registerButton => 'التسجيل كمسؤول';
+  String get adminRegistration_registerButton => 'Register as Admin';
 
   @override
-  String get adminRegistration_alreadyHaveAccount => 'هل لديك حساب بالفعل؟';
+  String get adminRegistration_alreadyHaveAccount => 'Already have an account?';
 
   @override
-  String get adminRegistration_loadingRole => 'جارٍ تحميل صلاحيات المسؤول...';
+  String get adminRegistration_loadingRole => 'Loading admin role...';
 
   @override
   String get adminRegistration_positionNotConfigured =>
-      'منصب المسؤول الرئيسي غير مُهيَّأ. يرجى تشغيل ترحيل مناصب المسؤولين.';
+      'Super Admin position not configured. Please run the admin positions migration.';
 
   @override
   String get adminRegistration_accountCreated =>
-      'تم إنشاء حساب المسؤول بنجاح! مرحباً بك.';
+      'Admin account created successfully! Welcome.';
 
   @override
   String adminRegistration_invalidDomain(String domains) {
-    return 'نطاق البريد الإلكتروني غير صالح لتسجيل المسؤول. استخدم $domains';
+    return 'Invalid email domain for admin registration. Use $domains';
   }
 
   @override
   String get adminRegistration_checkEmailConfirmation =>
-      'يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد للتحقق من حساب المسؤول. يجب تأكيد بريدك الإلكتروني قبل تسجيل الدخول.';
+      'Please check your email and click the confirmation link to verify your admin account. You must confirm your email before you can log in.';
 
   @override
   String get adminRegistration_afterConfirmation =>
-      'بعد تأكيد بريدك الإلكتروني، يمكنك تسجيل الدخول ببيانات اعتماد المسؤول.';
+      'After confirming your email, you can log in with your admin credentials.';
 
   @override
   String get adminRegistration_connectionError =>
-      'خطأ في الاتصال: يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً.';
+      'Connection error: Please check your internet connection and try again.';
 
   @override
   String get adminRegistration_emailAlreadyRegistered =>
-      'هذا البريد الإلكتروني مسجّل بالفعل. يرجى استخدام بريد إلكتروني مختلف أو محاولة تسجيل الدخول.';
+      'This email is already registered. Please use a different email or try logging in.';
 
   @override
   String get adminRegistration_invalidEmail =>
-      'عنوان البريد الإلكتروني غير صالح. يرجى المراجعة والمحاولة مجدداً.';
+      'Invalid email address. Please check and try again.';
 
   @override
   String get adminRegistration_weakPassword =>
-      'كلمة المرور ضعيفة جداً. يرجى استخدام كلمة مرور أقوى.';
+      'Password is too weak. Please use a stronger password.';
 
   @override
-  String get techRegistration_title => 'تسجيل الفني';
+  String get techRegistration_title => 'Technician Registration';
 
   @override
-  String get techRegistration_subtitle => 'التسجيل كفني';
+  String get techRegistration_subtitle => 'Register as a technician';
 
   @override
-  String get techRegistration_fullNameLabel => 'الاسم الكامل';
+  String get techRegistration_fullNameLabel => 'Full Name';
 
   @override
-  String get techRegistration_fullNameHint => 'أدخل الاسم الكامل';
+  String get techRegistration_fullNameHint => 'Enter full name';
 
   @override
-  String get techRegistration_emailLabel => 'عنوان البريد الإلكتروني';
+  String get techRegistration_emailLabel => 'Email Address';
 
   @override
-  String get techRegistration_emailHint => 'أدخل عنوان البريد الإلكتروني';
+  String get techRegistration_emailHint => 'Enter email address';
 
   @override
-  String get techRegistration_phoneLabel => 'رقم الهاتف';
+  String get techRegistration_phoneLabel => 'Phone Number';
 
   @override
-  String get techRegistration_phoneHint => 'أدخل رقم الهاتف';
+  String get techRegistration_phoneHint => 'Enter phone number';
 
   @override
-  String get techRegistration_departmentLabel => 'القسم';
+  String get techRegistration_departmentLabel => 'Department';
 
   @override
-  String get techRegistration_departmentHint => 'اختر القسم';
+  String get techRegistration_departmentHint => 'Select department';
 
   @override
-  String get techRegistration_passwordLabel => 'كلمة المرور';
+  String get techRegistration_passwordLabel => 'Password';
 
   @override
-  String get techRegistration_passwordHint => '6 أحرف كحد أدنى';
+  String get techRegistration_passwordHint => 'Minimum 6 characters';
 
   @override
-  String get techRegistration_confirmPasswordLabel => 'تأكيد كلمة المرور';
+  String get techRegistration_confirmPasswordLabel => 'Confirm Password';
 
   @override
-  String get techRegistration_confirmPasswordHint => 'أعد إدخال كلمة المرور';
+  String get techRegistration_confirmPasswordHint => 'Re-enter password';
 
   @override
-  String get techRegistration_registerButton => 'التسجيل كفني';
+  String get techRegistration_registerButton => 'Register as Technician';
 
   @override
-  String get techRegistration_alreadyHaveAccount => 'هل لديك حساب بالفعل؟';
+  String get techRegistration_alreadyHaveAccount => 'Already have an account?';
 
   @override
-  String get pendingApproval_titlePending => 'الحساب في انتظار الموافقة';
+  String get pendingApproval_titlePending => 'Account Pending Approval';
 
   @override
-  String get pendingApproval_titleRejected => 'تم رفض الموافقة على الحساب';
+  String get pendingApproval_titleRejected => 'Account Approval Rejected';
 
   @override
   String get pendingApproval_descriptionPending =>
-      'تم إنشاء حساب الفني الخاص بك وتقديمه للموافقة من قِبل المسؤول. ستتلقى إشعاراً عند الموافقة على حسابك وتمكينك من الوصول إلى النظام.';
+      'Your technician account has been created and submitted for admin approval. You will be notified once your account is approved and you can access the system.';
 
   @override
   String get pendingApproval_descriptionRejected =>
-      'تم رفض طلب حساب الفني الخاص بك. يرجى مراجعة سبب الرفض أدناه والتواصل مع المسؤول إذا كان لديك استفسارات.';
+      'Your technician account request has been rejected. Please review the reason below and contact your administrator if you have questions.';
 
   @override
-  String get pendingApproval_currentStatus => 'الحالة الحالية';
+  String get pendingApproval_currentStatus => 'Current Status';
 
   @override
-  String get pendingApproval_statusPending => 'في انتظار موافقة المسؤول';
+  String get pendingApproval_statusPending => 'Pending Admin Approval';
 
   @override
-  String get pendingApproval_statusRejected => 'مرفوض';
+  String get pendingApproval_statusRejected => 'Rejected';
 
   @override
-  String get pendingApproval_rejectionReason => 'سبب الرفض:';
+  String get pendingApproval_rejectionReason => 'Rejection Reason:';
 
   @override
   String pendingApproval_rejectionWarning(int count) {
-    return 'تحذير: هذا هو الرفض رقم $count. بعد 3 رفضات، سيُحذف حسابك نهائياً.';
+    return 'Warning: This is rejection #$count. After 3 rejections, your account will be permanently deleted.';
   }
 
   @override
-  String get pendingApproval_checkStatus => 'التحقق من حالة الموافقة';
+  String get pendingApproval_checkStatus => 'Check Approval Status';
 
   @override
-  String get pendingApproval_checking => 'جارٍ التحقق...';
+  String get pendingApproval_checking => 'Checking...';
 
   @override
   String get pendingApproval_autoRefresh =>
-      'يتم التحقق من الحالة تلقائياً كل 5 ثوانٍ';
+      'Status is checked automatically every 5 seconds';
 
   @override
   String get pendingApproval_contactAdmin =>
-      'هل لديك استفسارات؟ تواصل مع المسؤول';
+      'Questions? Contact your administrator';
 
   @override
-  String get pendingApproval_approved => 'تمت الموافقة على حسابك! مرحباً بك.';
+  String get pendingApproval_approved =>
+      'Your account has been approved! Welcome.';
 
   @override
   String pendingApproval_errorSigningOut(String error) {
-    return 'خطأ في تسجيل الخروج: $error';
+    return 'Error signing out: $error';
   }
 
   @override
-  String get adminHome_dashboard => 'لوحة التحكم';
+  String get adminHome_dashboard => 'Dashboard';
 
   @override
-  String get adminHome_tools => 'الأدوات';
+  String get adminHome_tools => 'Tools';
 
   @override
-  String get adminHome_sharedTools => 'الأدوات المشتركة';
+  String get adminHome_sharedTools => 'Shared Tools';
 
   @override
-  String get adminHome_technicians => 'الفنيون';
+  String get adminHome_technicians => 'Technicians';
 
   @override
-  String get adminHome_reports => 'التقارير';
+  String get adminHome_reports => 'Reports';
 
   @override
-  String get adminHome_maintenance => 'الصيانة';
+  String get adminHome_maintenance => 'Maintenance';
 
   @override
-  String get adminHome_approvals => 'الموافقات';
+  String get adminHome_approvals => 'Approvals';
 
   @override
-  String get adminHome_toolIssues => 'مشاكل الأدوات';
+  String get adminHome_toolIssues => 'Tool Issues';
 
   @override
-  String get adminHome_toolHistory => 'سجل الأدوات';
+  String get adminHome_toolHistory => 'Tool History';
 
   @override
-  String get adminHome_notifications => 'الإشعارات';
+  String get adminHome_notifications => 'Notifications';
 
   @override
-  String get adminHome_myTools => 'أدواتي';
+  String get adminHome_myTools => 'My Tools';
 
   @override
-  String get adminHome_manageAdmins => 'إدارة المسؤولين';
+  String get adminHome_manageAdmins => 'Manage Admins';
 
   @override
-  String get adminHome_settings => 'الإعدادات';
+  String get adminHome_settings => 'Settings';
 
   @override
-  String get adminHome_deleteAccount => 'حذف الحساب';
+  String get adminHome_deleteAccount => 'Delete Account';
 
   @override
-  String get adminHome_account => 'الحساب';
+  String get adminHome_account => 'Account';
 
   @override
-  String get adminHome_accountDetails => 'تفاصيل الحساب';
+  String get adminHome_accountDetails => 'Account Details';
 
   @override
-  String get adminHome_preferences => 'التفضيلات';
+  String get adminHome_preferences => 'Preferences';
 
   @override
-  String get adminHome_security => 'الأمان';
+  String get adminHome_security => 'Security';
 
   @override
-  String get adminHome_editName => 'تعديل الاسم';
+  String get adminHome_editName => 'Edit Name';
 
   @override
-  String get adminHome_fullName => 'الاسم الكامل';
+  String get adminHome_fullName => 'Full Name';
 
   @override
-  String get adminHome_enterFullName => 'أدخل اسمك الكامل';
+  String get adminHome_enterFullName => 'Enter your full name';
 
   @override
-  String get adminHome_nameUpdated => 'تم تحديث الاسم بنجاح';
+  String get adminHome_nameUpdated => 'Name updated successfully';
 
   @override
-  String get adminHome_failedToUpdateName => 'فشل في تحديث الاسم';
+  String get adminHome_failedToUpdateName => 'Failed to update name';
 
   @override
-  String get adminHome_memberSince => 'عضو منذ';
+  String get adminHome_memberSince => 'Member Since';
 
   @override
-  String get adminHome_role => 'الدور الوظيفي';
+  String get adminHome_role => 'Role';
 
   @override
-  String get adminHome_adminPanel => 'لوحة المسؤول';
+  String get adminHome_adminPanel => 'Admin Panel';
 
   @override
-  String get adminHome_somethingWentWrong => 'حدث خطأ ما';
+  String get adminHome_somethingWentWrong => 'Something went wrong';
 
   @override
-  String get adminHome_tryLoggingOut => 'يرجى تسجيل الخروج والدخول مجدداً';
+  String get adminHome_tryLoggingOut => 'Please try logging out and back in';
 
   @override
-  String get adminHome_logoutAndTryAgain => 'تسجيل الخروج والمحاولة مجدداً';
+  String get adminHome_logoutAndTryAgain => 'Logout & Try Again';
 
   @override
-  String get adminDashboard_title => 'لوحة التحكم';
+  String get adminDashboard_title => 'Dashboard';
 
   @override
   String get adminDashboard_overview =>
-      'نظرة عامة على أدواتك وفنييك وموافقاتك.';
+      'Overview of your tools, technicians, and approvals.';
 
   @override
-  String get adminDashboard_keyMetrics => 'المقاييس الرئيسية';
+  String get adminDashboard_keyMetrics => 'Key Metrics';
 
   @override
-  String get adminDashboard_totalTools => 'إجمالي الأدوات';
+  String get adminDashboard_totalTools => 'Total Tools';
 
   @override
-  String get adminDashboard_technicians => 'الفنيون';
+  String get adminDashboard_technicians => 'Technicians';
 
   @override
-  String get adminDashboard_totalValue => 'القيمة الإجمالية';
+  String get adminDashboard_totalValue => 'Total Value';
 
   @override
-  String get adminDashboard_maintenance => 'الصيانة';
+  String get adminDashboard_maintenance => 'Maintenance';
 
   @override
-  String get adminDashboard_last30Days => 'آخر 30 يوماً';
+  String get adminDashboard_last30Days => 'Last 30 Days';
 
   @override
-  String get adminDashboard_quickActions => 'الإجراءات السريعة';
+  String get adminDashboard_quickActions => 'Quick Actions';
 
   @override
-  String get adminDashboard_addTool => 'إضافة أداة';
+  String get adminDashboard_addTool => 'Add Tool';
 
   @override
-  String get adminDashboard_assignTool => 'إسناد أداة';
+  String get adminDashboard_assignTool => 'Assign Tool';
 
   @override
-  String get adminDashboard_authorizeUsers => 'تفويض المستخدمين';
+  String get adminDashboard_authorizeUsers => 'Authorize Users';
 
   @override
-  String get adminDashboard_reports => 'التقارير';
+  String get adminDashboard_reports => 'Reports';
 
   @override
-  String get adminDashboard_toolIssues => 'مشاكل الأدوات';
+  String get adminDashboard_toolIssues => 'Tool Issues';
 
   @override
-  String get adminDashboard_approvals => 'الموافقات';
+  String get adminDashboard_approvals => 'Approvals';
 
   @override
-  String get adminDashboard_maintenanceSchedule => 'جدول الصيانة';
+  String get adminDashboard_maintenanceSchedule => 'Maintenance Schedule';
 
   @override
-  String get adminDashboard_toolHistory => 'سجل الأدوات';
+  String get adminDashboard_toolHistory => 'Tool History';
 
   @override
-  String get adminDashboard_fleetStatus => 'حالة الأسطول';
+  String get adminDashboard_fleetStatus => 'Fleet status';
 
   @override
-  String get adminDashboard_toolStatus => 'حالة الأداة';
+  String get adminDashboard_toolStatus => 'Tool Status';
 
   @override
-  String get adminDashboard_greetingMorning => 'صباح الخير';
+  String get adminDashboard_greetingMorning => 'Good Morning';
 
   @override
-  String get adminDashboard_greetingAfternoon => 'مساء الخير';
+  String get adminDashboard_greetingAfternoon => 'Good Afternoon';
 
   @override
-  String get adminDashboard_greetingEvening => 'مساء النور';
+  String get adminDashboard_greetingEvening => 'Good Evening';
 
   @override
-  String get adminDashboard_manageTools => 'إدارة أدواتك وفريقك الميداني';
+  String get adminDashboard_manageTools => 'Manage your tools and field team';
 
   @override
-  String get adminManagement_title => 'المسؤولون';
+  String get adminManagement_title => 'Admins';
 
   @override
-  String get adminManagement_loading => 'جارٍ تحميل المسؤولين...';
+  String get adminManagement_loading => 'Loading admins...';
 
   @override
-  String get adminManagement_noAdmins => 'لا يوجد مسؤولون بعد';
+  String get adminManagement_noAdmins => 'No admins yet';
 
   @override
-  String get adminManagement_tapPlusToAdd => 'انقر + لإضافة مسؤول';
+  String get adminManagement_tapPlusToAdd => 'Tap + to add an admin';
 
   @override
-  String get adminManagement_removeAdmin => 'إزالة المسؤول';
+  String get adminManagement_removeAdmin => 'Remove Admin';
 
   @override
   String adminManagement_removeConfirm(String name) {
-    return 'هل أنت متأكد من رغبتك في إزالة $name من صلاحيات المسؤول؟';
+    return 'Are you sure you want to remove $name from admin access?';
   }
 
   @override
   String get adminManagement_removeNote =>
-      'سيظل حساب المصادقة الخاص به قائماً لكنه سيفقد امتيازات المسؤول.';
+      'Their authentication account will remain but they will lose admin privileges.';
 
   @override
   String adminManagement_removed(String name) {
-    return 'تمت إزالة $name من صلاحيات المسؤول';
+    return '$name has been removed from admin access';
   }
 
   @override
-  String get adminManagement_removeFailed => 'فشل في إزالة المسؤول';
+  String get adminManagement_removeFailed => 'Failed to remove admin';
 
   @override
-  String get adminManagement_unassigned => 'غير مُسنَد';
+  String get adminManagement_unassigned => 'Unassigned';
 
   @override
-  String get adminNotification_title => 'الإشعارات';
+  String get adminNotification_title => 'Notifications';
 
   @override
-  String get adminNotification_markAllRead => 'تحديد الكل كمقروء';
+  String get adminNotification_markAllRead => 'Mark All Read';
 
   @override
-  String get adminNotification_errorLoading => 'خطأ في تحميل الإشعارات';
+  String get adminNotification_errorLoading => 'Error loading notifications';
 
   @override
-  String get adminNotification_empty => 'لا توجد إشعارات';
+  String get adminNotification_empty => 'No notifications';
 
   @override
-  String get adminNotification_emptyHint => 'ستظهر هنا طلبات الفنيين';
+  String get adminNotification_emptyHint =>
+      'You\'ll see technician requests here';
 
   @override
-  String get adminNotification_technicianDetails => 'تفاصيل الفني:';
+  String get adminNotification_technicianDetails => 'Technician Details:';
 
   @override
-  String get adminNotification_time => 'الوقت';
+  String get adminNotification_time => 'Time';
 
   @override
-  String get adminNotification_justNow => 'الآن';
+  String get adminNotification_justNow => 'Just now';
 
   @override
   String adminNotification_minutesAgo(int count) {
-    return 'منذ $count د';
+    return '${count}m ago';
   }
 
   @override
   String adminNotification_hoursAgo(int count) {
-    return 'منذ $count س';
+    return '${count}h ago';
   }
 
   @override
   String adminNotification_daysAgo(int count) {
-    return 'منذ $count ي';
+    return '${count}d ago';
   }
 
   @override
-  String get adminNotification_markRead => 'تحديد كمقروء';
+  String get adminNotification_markRead => 'Mark Read';
 
   @override
-  String get adminNotification_markUnread => 'تحديد كغير مقروء';
+  String get adminNotification_markUnread => 'Mark Unread';
 
   @override
-  String get tools_title => 'الأدوات';
+  String get tools_title => 'Tools';
 
   @override
-  String get tools_searchHint => 'البحث في الأدوات...';
+  String get tools_searchHint => 'Search tools...';
 
   @override
-  String get tools_emptyTitle => 'لم يتم العثور على أدوات';
+  String get tools_emptyTitle => 'No tools found';
 
   @override
-  String get tools_emptySubtitle => 'أضف أول أداة للبدء';
+  String get tools_emptySubtitle => 'Add your first tool to get started';
 
   @override
-  String get tools_addTool => 'إضافة أداة';
+  String get tools_addTool => 'Add Tool';
 
   @override
-  String get tools_filterAll => 'الكل';
+  String get tools_filterAll => 'All';
 
   @override
-  String get tools_filterAvailable => 'متاح';
+  String get tools_filterAvailable => 'Available';
 
   @override
-  String get tools_filterAssigned => 'مُسنَد';
+  String get tools_filterAssigned => 'Assigned';
 
   @override
-  String get tools_filterMaintenance => 'صيانة';
+  String get tools_filterMaintenance => 'Maintenance';
 
   @override
-  String get tools_deleteTool => 'حذف الأداة';
+  String get tools_deleteTool => 'Delete Tool';
 
   @override
   String get tools_deleteConfirm =>
-      'هل أنت متأكد من رغبتك في حذف هذه الأداة؟ لا يمكن التراجع عن هذا الإجراء.';
+      'Are you sure you want to delete this tool? This action cannot be undone.';
 
   @override
-  String get toolDetail_title => 'تفاصيل الأداة';
+  String get toolDetail_title => 'Tool Details';
 
   @override
-  String get toolDetail_brand => 'العلامة التجارية';
+  String get toolDetail_brand => 'Brand';
 
   @override
-  String get toolDetail_model => 'الطراز';
+  String get toolDetail_model => 'Model';
 
   @override
-  String get toolDetail_serialNumber => 'الرقم التسلسلي';
+  String get toolDetail_serialNumber => 'Serial Number';
 
   @override
-  String get toolDetail_category => 'الفئة';
+  String get toolDetail_category => 'Category';
 
   @override
-  String get toolDetail_condition => 'الحالة';
+  String get toolDetail_condition => 'Condition';
 
   @override
-  String get toolDetail_location => 'الموقع';
+  String get toolDetail_location => 'Location';
 
   @override
-  String get toolDetail_assignedTo => 'مُسنَدة إلى';
+  String get toolDetail_assignedTo => 'Assigned To';
 
   @override
-  String get toolDetail_purchaseDate => 'تاريخ الشراء';
+  String get toolDetail_purchaseDate => 'Purchase Date';
 
   @override
-  String get toolDetail_purchasePrice => 'سعر الشراء';
+  String get toolDetail_purchasePrice => 'Purchase Price';
 
   @override
-  String get toolDetail_currentValue => 'القيمة الحالية';
+  String get toolDetail_currentValue => 'Current Value';
 
   @override
-  String get toolDetail_notes => 'ملاحظات';
+  String get toolDetail_notes => 'Notes';
 
   @override
-  String get toolDetail_status => 'الحالة';
+  String get toolDetail_status => 'Status';
 
   @override
-  String get toolDetail_toolType => 'نوع الأداة';
+  String get toolDetail_toolType => 'Tool Type';
 
   @override
-  String get toolDetail_history => 'السجل';
+  String get toolDetail_history => 'History';
 
   @override
-  String get toolDetail_noHistory => 'لا يوجد سجل متاح';
+  String get toolDetail_noHistory => 'No history available';
 
   @override
-  String get toolDetail_unassigned => 'غير مُسنَدة';
+  String get toolDetail_unassigned => 'Unassigned';
 
   @override
-  String get toolDetail_returnTool => 'إعادة الأداة';
+  String get toolDetail_returnTool => 'Return Tool';
 
   @override
-  String get toolDetail_assignTool => 'إسناد الأداة';
+  String get toolDetail_assignTool => 'Assign Tool';
 
   @override
-  String get toolDetail_editTool => 'تعديل الأداة';
+  String get toolDetail_editTool => 'Edit Tool';
 
   @override
-  String get toolDetail_deleteTool => 'حذف الأداة';
+  String get toolDetail_deleteTool => 'Delete Tool';
 
   @override
-  String get addTool_title => 'إضافة أداة';
+  String get addTool_title => 'Add Tool';
 
   @override
-  String get addTool_nameLabel => 'اسم الأداة';
+  String get addTool_nameLabel => 'Tool Name';
 
   @override
-  String get addTool_nameHint => 'أدخل اسم الأداة';
+  String get addTool_nameHint => 'Enter tool name';
 
   @override
-  String get addTool_nameRequired => 'يرجى إدخال اسم الأداة';
+  String get addTool_nameRequired => 'Please enter a tool name';
 
   @override
-  String get addTool_categoryLabel => 'الفئة';
+  String get addTool_categoryLabel => 'Category';
 
   @override
-  String get addTool_categoryHint => 'اختر الفئة';
+  String get addTool_categoryHint => 'Select category';
 
   @override
-  String get addTool_categoryRequired => 'يرجى اختيار فئة';
+  String get addTool_categoryRequired => 'Please select a category';
 
   @override
-  String get addTool_brandLabel => 'العلامة التجارية';
+  String get addTool_brandLabel => 'Brand';
 
   @override
-  String get addTool_brandHint => 'أدخل العلامة التجارية';
+  String get addTool_brandHint => 'Enter brand';
 
   @override
-  String get addTool_modelLabel => 'الطراز';
+  String get addTool_modelLabel => 'Model';
 
   @override
-  String get addTool_modelHint => 'أدخل الطراز';
+  String get addTool_modelHint => 'Enter model';
 
   @override
-  String get addTool_serialNumberLabel => 'الرقم التسلسلي';
+  String get addTool_serialNumberLabel => 'Serial Number';
 
   @override
-  String get addTool_serialNumberHint => 'أدخل الرقم التسلسلي';
+  String get addTool_serialNumberHint => 'Enter serial number';
 
   @override
-  String get addTool_purchaseDateLabel => 'تاريخ الشراء';
+  String get addTool_purchaseDateLabel => 'Purchase Date';
 
   @override
-  String get addTool_purchasePriceLabel => 'سعر الشراء';
+  String get addTool_purchasePriceLabel => 'Purchase Price';
 
   @override
-  String get addTool_currentValueLabel => 'القيمة الحالية';
+  String get addTool_currentValueLabel => 'Current Value';
 
   @override
-  String get addTool_conditionLabel => 'الحالة';
+  String get addTool_conditionLabel => 'Condition';
 
   @override
-  String get addTool_conditionHint => 'اختر الحالة';
+  String get addTool_conditionHint => 'Select condition';
 
   @override
-  String get addTool_locationLabel => 'الموقع';
+  String get addTool_locationLabel => 'Location';
 
   @override
-  String get addTool_locationHint => 'أدخل الموقع';
+  String get addTool_locationHint => 'Enter location';
 
   @override
-  String get addTool_toolTypeLabel => 'نوع الأداة';
+  String get addTool_toolTypeLabel => 'Tool Type';
 
   @override
-  String get addTool_notesLabel => 'ملاحظات';
+  String get addTool_notesLabel => 'Notes';
 
   @override
-  String get addTool_notesHint => 'أدخل الملاحظات (اختياري)';
+  String get addTool_notesHint => 'Enter notes (optional)';
 
   @override
-  String get addTool_saveButton => 'حفظ الأداة';
+  String get addTool_saveButton => 'Save Tool';
 
   @override
-  String get addTool_success => 'تمت إضافة الأداة بنجاح!';
+  String get addTool_success => 'Tool added successfully!';
 
   @override
-  String get addTool_attachPhoto => 'إرفاق صورة (اختياري)';
+  String get addTool_attachPhoto => 'Attach photo (optional)';
 
   @override
-  String get editTool_title => 'تعديل الأداة';
+  String get editTool_title => 'Edit Tool';
 
   @override
-  String get editTool_saveButton => 'تحديث الأداة';
+  String get editTool_saveButton => 'Update Tool';
 
   @override
-  String get editTool_success => 'تم تحديث الأداة بنجاح!';
+  String get editTool_success => 'Tool updated successfully!';
 
   @override
-  String get toolHistory_title => 'سجل الأدوات';
+  String get toolHistory_title => 'Tool History';
 
   @override
-  String get toolHistory_noHistory => 'لم يتم العثور على سجلات';
+  String get toolHistory_noHistory => 'No history records found';
 
   @override
-  String get toolHistory_allHistory => 'سجل جميع الأدوات';
+  String get toolHistory_allHistory => 'All Tool History';
 
   @override
-  String get toolInstances_title => 'نسخ الأداة';
+  String get toolInstances_title => 'Tool Instances';
 
   @override
-  String get toolInstances_empty => 'لم يتم العثور على نسخ';
+  String get toolInstances_empty => 'No instances found';
 
   @override
-  String get toolIssues_title => 'مشاكل الأدوات';
+  String get toolIssues_title => 'Tool Issues';
 
   @override
-  String get toolIssues_all => 'الكل';
+  String get toolIssues_all => 'All';
 
   @override
-  String get toolIssues_open => 'مفتوح';
+  String get toolIssues_open => 'Open';
 
   @override
-  String get toolIssues_inProgress => 'قيد التنفيذ';
+  String get toolIssues_inProgress => 'In Progress';
 
   @override
-  String get toolIssues_resolved => 'محلول';
+  String get toolIssues_resolved => 'Resolved';
 
   @override
-  String get toolIssues_closed => 'مغلق';
+  String get toolIssues_closed => 'Closed';
 
   @override
-  String get toolIssues_empty => 'لم يتم العثور على مشاكل';
+  String get toolIssues_empty => 'No issues found';
 
   @override
-  String get toolIssues_emptyHint => 'لم يتم الإبلاغ عن أي مشاكل في الأدوات';
+  String get toolIssues_emptyHint => 'No tool issues have been reported';
 
   @override
-  String get toolIssues_reportIssue => 'الإبلاغ عن مشكلة';
+  String get toolIssues_reportIssue => 'Report Issue';
 
   @override
-  String get addToolIssue_title => 'الإبلاغ عن مشكلة في أداة';
+  String get addToolIssue_title => 'Report Tool Issue';
 
   @override
-  String get addToolIssue_selectTool => 'اختر الأداة *';
+  String get addToolIssue_selectTool => 'Select Tool *';
 
   @override
-  String get addToolIssue_issueDetails => 'تفاصيل المشكلة';
+  String get addToolIssue_issueDetails => 'Issue Details';
 
   @override
-  String get addToolIssue_issueType => 'نوع المشكلة';
+  String get addToolIssue_issueType => 'Issue Type';
 
   @override
-  String get addToolIssue_priority => 'الأولوية';
+  String get addToolIssue_priority => 'Priority';
 
   @override
-  String get addToolIssue_description => 'الوصف *';
+  String get addToolIssue_description => 'Description *';
 
   @override
-  String get addToolIssue_descriptionHint => 'صف المشكلة بالتفصيل';
+  String get addToolIssue_descriptionHint => 'Describe the issue in detail';
 
   @override
-  String get addToolIssue_descriptionRequired => 'يرجى تقديم وصف للمشكلة';
+  String get addToolIssue_descriptionRequired =>
+      'Please provide a description of the issue';
 
   @override
-  String get addToolIssue_additionalInfo => 'معلومات إضافية';
+  String get addToolIssue_additionalInfo => 'Additional Information';
 
   @override
-  String get addToolIssue_location => 'الموقع';
+  String get addToolIssue_location => 'Location';
 
   @override
-  String get addToolIssue_locationHint => 'أين حدثت المشكلة؟ (اختياري)';
+  String get addToolIssue_locationHint => 'Where did this occur? (optional)';
 
   @override
-  String get addToolIssue_estimatedCost => 'التكلفة التقديرية';
+  String get addToolIssue_estimatedCost => 'Estimated Cost';
 
   @override
-  String get addToolIssue_estimatedCostHint =>
-      'تكلفة الإصلاح/الاستبدال (اختياري)';
+  String get addToolIssue_estimatedCostHint => 'Cost to fix/replace (optional)';
 
   @override
-  String get addToolIssue_priorityGuidelines => 'إرشادات الأولوية';
+  String get addToolIssue_priorityGuidelines => 'Priority Guidelines';
 
   @override
   String get addToolIssue_criticalGuideline =>
-      'خطر على السلامة أو تعطل كامل للأداة';
+      'Safety hazard or complete tool failure';
 
   @override
-  String get addToolIssue_highGuideline =>
-      'الأداة غير قابلة للاستخدام دون خطر على السلامة';
+  String get addToolIssue_highGuideline => 'Tool unusable but no safety risk';
 
   @override
-  String get addToolIssue_mediumGuideline => 'الأداة تعمل جزئياً';
+  String get addToolIssue_mediumGuideline => 'Tool partially functional';
 
   @override
-  String get addToolIssue_lowGuideline =>
-      'مشكلة طفيفة والأداة لا تزال قابلة للاستخدام';
+  String get addToolIssue_lowGuideline => 'Minor issue, tool still usable';
 
   @override
-  String get addToolIssue_submitButton => 'إرسال التقرير';
+  String get addToolIssue_submitButton => 'Submit Report';
 
   @override
-  String get addToolIssue_success => 'تم الإبلاغ عن المشكلة بنجاح!';
+  String get addToolIssue_success => 'Issue reported successfully!';
 
   @override
   String get addToolIssue_toolNotFound =>
-      'الأداة المختارة غير موجودة. يرجى التحديث والمحاولة مجدداً.';
+      'Selected tool not found. Please refresh and try again.';
 
   @override
   String get addToolIssue_tableNotFound =>
-      'جدول مشاكل الأدوات غير موجود. يرجى التواصل مع المسؤول.';
+      'Tool issues table not found. Please contact administrator.';
 
   @override
   String get addToolIssue_sessionExpired =>
-      'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجدداً.';
+      'Session expired. Please log in again.';
 
   @override
   String get addToolIssue_permissionDenied =>
-      'تم رفض الإذن. قد لا تملك صلاحية الإبلاغ عن المشاكل.';
+      'Permission denied. You may not have permission to report issues.';
 
   @override
-  String get addToolIssue_fillRequired => 'يرجى تعبئة جميع الحقول المطلوبة.';
+  String get addToolIssue_fillRequired => 'Please fill in all required fields.';
 
   @override
   String get addToolIssue_networkError =>
-      'خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مجدداً.';
+      'Network error. Please check your connection and try again.';
 
   @override
-  String get technicians_title => 'الفنيون';
+  String get technicians_title => 'Technicians';
 
   @override
   String get technicians_subtitle =>
-      'إدارة الفنيين النشطين وغير النشطين والمُسنَدة إليهم أدوات';
+      'Manage active, inactive, and assigned technicians';
 
   @override
-  String get technicians_searchHint => 'البحث في الفنيين...';
+  String get technicians_searchHint => 'Search technicians...';
 
   @override
-  String get technicians_emptyTitle => 'لم يتم العثور على فنيين';
+  String get technicians_emptyTitle => 'No technicians found';
 
   @override
-  String get technicians_emptySubtitle => 'أضف أول فني للبدء';
+  String get technicians_emptySubtitle =>
+      'Add your first technician to get started';
 
   @override
-  String get technicians_filterAll => 'الكل';
+  String get technicians_filterAll => 'All';
 
   @override
-  String get technicians_filterActive => 'نشط';
+  String get technicians_filterActive => 'Active';
 
   @override
-  String get technicians_filterInactive => 'غير نشط';
+  String get technicians_filterInactive => 'Inactive';
 
   @override
-  String get technicians_filterWithTools => 'لديهم أدوات';
+  String get technicians_filterWithTools => 'With Tools';
 
   @override
-  String get technicians_filterWithoutTools => 'بدون أدوات';
+  String get technicians_filterWithoutTools => 'Without Tools';
 
   @override
-  String get technicians_deleteTitle => 'حذف الفني';
+  String get technicians_deleteTitle => 'Delete Technician';
 
   @override
   String technicians_deleteConfirm(String name) {
-    return 'هل أنت متأكد من رغبتك في حذف $name؟';
+    return 'Are you sure you want to delete $name?';
   }
 
   @override
-  String get technicians_noTools => 'لا توجد أدوات';
+  String get technicians_noTools => 'No tools';
 
   @override
-  String get technicians_noDepartment => 'لا يوجد قسم';
+  String get technicians_noDepartment => 'No department';
 
   @override
-  String get technicianDetail_profile => 'الملف الشخصي';
+  String get technicianDetail_profile => 'Profile';
 
   @override
-  String get technicianDetail_tools => 'الأدوات';
+  String get technicianDetail_tools => 'Tools';
 
   @override
-  String get technicianDetail_issues => 'المشاكل';
+  String get technicianDetail_issues => 'Issues';
 
   @override
-  String get technicianDetail_editTechnician => 'تعديل الفني';
+  String get technicianDetail_editTechnician => 'Edit Technician';
 
   @override
-  String get technicianDetail_deleteTechnician => 'حذف الفني';
+  String get technicianDetail_deleteTechnician => 'Delete Technician';
 
   @override
-  String get technicianDetail_contactInfo => 'معلومات التواصل';
+  String get technicianDetail_contactInfo => 'Contact Information';
 
   @override
-  String get technicianDetail_employmentDetails => 'تفاصيل التوظيف';
+  String get technicianDetail_employmentDetails => 'Employment Details';
 
   @override
-  String get technicianDetail_statusInfo => 'معلومات الحالة';
+  String get technicianDetail_statusInfo => 'Status Information';
 
   @override
-  String get technicianDetail_employeeId => 'رقم الموظف';
+  String get technicianDetail_employeeId => 'Employee ID';
 
   @override
-  String get technicianDetail_department => 'القسم';
+  String get technicianDetail_department => 'Department';
 
   @override
-  String get technicianDetail_hireDate => 'تاريخ التعيين';
+  String get technicianDetail_hireDate => 'Hire Date';
 
   @override
-  String get technicianDetail_created => 'تاريخ الإنشاء';
+  String get technicianDetail_created => 'Created';
 
   @override
-  String get technicianDetail_noTools => 'لا توجد أدوات مُسنَدة';
+  String get technicianDetail_noTools => 'No tools assigned';
 
   @override
-  String get technicianDetail_noToolsDesc => 'لم يتم إسناد أي أدوات لهذا الفني';
+  String get technicianDetail_noToolsDesc =>
+      'This technician has no tools assigned to them';
 
   @override
-  String get technicianDetail_noIssues => 'لا توجد مشاكل مُبلَّغ عنها';
+  String get technicianDetail_noIssues => 'No issues reported';
 
   @override
   String get technicianDetail_noIssuesDesc =>
-      'لم يُبلَّغ عن أي مشاكل في الأدوات لهذا الفني';
+      'This technician has not reported any tool issues';
 
   @override
-  String get technicianDetail_deleteWarning => 'سيتم حذف ما يلي نهائياً:';
+  String get technicianDetail_deleteWarning => 'This will permanently delete:';
 
   @override
-  String get technicianDetail_deleteLine1 => 'سجل الفني';
+  String get technicianDetail_deleteLine1 => 'The technician record';
 
   @override
-  String get technicianDetail_deleteLine2 => 'جميع البيانات المرتبطة';
+  String get technicianDetail_deleteLine2 => 'All associated data';
 
   @override
   String get technicianDetail_deleteCannotUndo =>
-      'لا يمكن التراجع عن هذا الإجراء!';
+      'This action cannot be undone!';
 
   @override
   String get technicianDetail_deleteHasTools =>
-      'لا يمكن حذف فني لديه أدوات مُسنَدة. يرجى إعادة إسناد الأدوات أو استردادها أولاً.';
+      'Cannot delete technician with assigned tools. Please reassign or return them first.';
 
   @override
-  String get technicianHome_account => 'الحساب';
+  String get technicianHome_account => 'Account';
 
   @override
-  String get technicianHome_accountDetails => 'تفاصيل الحساب';
+  String get technicianHome_accountDetails => 'Account Details';
 
   @override
-  String get technicianHome_preferences => 'التفضيلات';
+  String get technicianHome_preferences => 'Preferences';
 
   @override
-  String get technicianHome_security => 'الأمان';
+  String get technicianHome_security => 'Security';
 
   @override
-  String get technicianHome_editName => 'تعديل الاسم';
+  String get technicianHome_editName => 'Edit Name';
 
   @override
-  String get technicianHome_fullName => 'الاسم الكامل';
+  String get technicianHome_fullName => 'Full Name';
 
   @override
-  String get technicianHome_enterFullName => 'أدخل اسمك الكامل';
+  String get technicianHome_enterFullName => 'Enter your full name';
 
   @override
-  String get technicianHome_memberSince => 'عضو منذ';
+  String get technicianHome_memberSince => 'Member Since';
 
   @override
-  String get technicianHome_role => 'الدور الوظيفي';
+  String get technicianHome_role => 'Role';
 
   @override
-  String get technicianHome_administrator => 'مسؤول';
+  String get technicianHome_administrator => 'Administrator';
 
   @override
-  String get technicianHome_technician => 'فني';
+  String get technicianHome_technician => 'Technician';
 
   @override
-  String get technicianHome_noNotifications => 'لا توجد إشعارات';
+  String get technicianHome_noNotifications => 'No notifications';
 
   @override
   String get technicianHome_notificationsHint =>
-      'ستظهر هنا الإشعارات عند استلام طلبات الأدوات';
+      'You\'ll see notifications here when you receive tool requests';
 
   @override
-  String get technicianHome_requestAccountDeletion => 'طلب حذف الحساب';
+  String get technicianHome_requestAccountDeletion =>
+      'Request Account Deletion';
 
   @override
-  String get techDashboard_greetingMorning => 'صباح الخير';
+  String get techDashboard_greetingMorning => 'Good Morning';
 
   @override
-  String get techDashboard_greetingAfternoon => 'مساء الخير';
+  String get techDashboard_greetingAfternoon => 'Good Afternoon';
 
   @override
-  String get techDashboard_greetingEvening => 'مساء النور';
+  String get techDashboard_greetingEvening => 'Good Evening';
 
   @override
   String get techDashboard_welcome =>
-      'إدارة أدواتك والوصول إلى الموارد المشتركة';
+      'Manage your tools and access shared resources';
 
   @override
-  String get techDashboard_sharedTools => 'الأدوات المشتركة';
+  String get techDashboard_sharedTools => 'Shared Tools';
 
   @override
-  String get techDashboard_seeAll => 'عرض الكل';
+  String get techDashboard_seeAll => 'See All';
 
   @override
-  String get techDashboard_myTools => 'أدواتي';
+  String get techDashboard_myTools => 'My Tools';
 
   @override
-  String get techDashboard_noTools => 'لا توجد أدوات متاحة';
+  String get techDashboard_noTools => 'No tools available';
 
   @override
   String get techDashboard_noToolsHint =>
-      'ليس لديك أدوات مُسنَدة. يمكنك إضافة أول أداة أو طلب إسناد أداة.';
+      'You have no assigned tools. You can add your first tool or request tool assignment.';
 
   @override
-  String get techDashboard_noSharedTools => 'لا توجد أدوات مشتركة متاحة';
+  String get techDashboard_noSharedTools => 'No shared tools available';
 
   @override
-  String get techDashboard_noAssignedTools => 'لم يتم إسناد أي أدوات بعد';
+  String get techDashboard_noAssignedTools => 'No tools assigned yet';
 
   @override
   String get techDashboard_noAssignedToolsHint =>
-      'أضف أو سجّل الأدوات التي بحوزتك لتظهر هنا.';
+      'Add or badge tools you currently have to see them here.';
 
   @override
-  String get techDashboard_shared => 'مشترك';
+  String get techDashboard_shared => 'SHARED';
 
   @override
-  String get techDashboard_request => 'طلب';
+  String get techDashboard_request => 'Request';
 
   @override
-  String get myTools_title => 'أدواتي';
+  String get myTools_title => 'My Tools';
 
   @override
-  String get myTools_searchHint => 'البحث في الأدوات...';
+  String get myTools_searchHint => 'Search tools...';
 
   @override
-  String get myTools_categoryFilter => 'الفئة';
+  String get myTools_categoryFilter => 'Category';
 
   @override
-  String get myTools_statusFilter => 'الحالة';
+  String get myTools_statusFilter => 'Status';
 
   @override
-  String get myTools_empty => 'لم يتم العثور على أدوات';
+  String get myTools_empty => 'No tools found';
 
   @override
-  String get myTools_emptyHint => 'أضف أول أداة للبدء';
+  String get myTools_emptyHint => 'Add your first tool to get started';
 
   @override
-  String get myTools_addButton => 'إضافة أداة';
+  String get myTools_addButton => 'Add Tool';
 
   @override
-  String get addTechnician_addTitle => 'إضافة فني';
+  String get addTechnician_addTitle => 'Add Technician';
 
   @override
-  String get addTechnician_editTitle => 'تعديل الفني';
+  String get addTechnician_editTitle => 'Edit Technician';
 
   @override
   String get addTechnician_addSubtitle =>
-      'أضف الفنيين ليتمكنوا من استلام الإسنادات والوصول إلى الأدوات.';
+      'Add technicians so they can receive assignments and tool access.';
 
   @override
   String get addTechnician_editSubtitle =>
-      'حدّث بيانات الفني للحفاظ على دقة الإسنادات.';
+      'Update technician details to keep assignments current.';
 
   @override
-  String get addTechnician_nameLabel => 'الاسم الكامل';
+  String get addTechnician_nameLabel => 'Full Name';
 
   @override
-  String get addTechnician_nameHint => 'أدخل الاسم الكامل';
+  String get addTechnician_nameHint => 'Enter full name';
 
   @override
-  String get addTechnician_employeeIdLabel => 'رقم الموظف';
+  String get addTechnician_employeeIdLabel => 'Employee ID';
 
   @override
-  String get addTechnician_employeeIdHint => 'أدخل رقم الموظف (اختياري)';
+  String get addTechnician_employeeIdHint => 'Enter employee ID (optional)';
 
   @override
-  String get addTechnician_phoneLabel => 'رقم الهاتف';
+  String get addTechnician_phoneLabel => 'Phone Number';
 
   @override
-  String get addTechnician_phoneHint => 'أدخل رقم الهاتف';
+  String get addTechnician_phoneHint => 'Enter phone number';
 
   @override
-  String get addTechnician_emailLabel => 'عنوان البريد الإلكتروني';
+  String get addTechnician_emailLabel => 'Email Address';
 
   @override
-  String get addTechnician_emailHint => 'أدخل عنوان البريد الإلكتروني';
+  String get addTechnician_emailHint => 'Enter email address';
 
   @override
-  String get addTechnician_emailInvalid => 'أدخل عنوان بريد إلكتروني صحيح';
+  String get addTechnician_emailInvalid => 'Enter a valid email address';
 
   @override
-  String get addTechnician_departmentLabel => 'القسم';
+  String get addTechnician_departmentLabel => 'Department';
 
   @override
-  String get addTechnician_departmentHint => 'اختر القسم';
+  String get addTechnician_departmentHint => 'Select department';
 
   @override
-  String get addTechnician_statusLabel => 'الحالة';
+  String get addTechnician_statusLabel => 'Status';
 
   @override
-  String get addTechnician_hireDateHint => 'اختر تاريخ التعيين';
+  String get addTechnician_hireDateHint => 'Select hire date';
 
   @override
-  String get addTechnician_addButton => 'إضافة فني';
+  String get addTechnician_addButton => 'Add Technician';
 
   @override
-  String get addTechnician_updateButton => 'تحديث الفني';
+  String get addTechnician_updateButton => 'Update Technician';
 
   @override
-  String get addTechnician_addSuccess => 'تمت إضافة الفني بنجاح!';
+  String get addTechnician_addSuccess => 'Technician added successfully!';
 
   @override
   String addTechnician_inviteEmailSent(String email) {
-    return 'تم إرسال بريد الدعوة إلى $email';
+    return 'Invite email sent to $email';
   }
 
   @override
   String get addTechnician_inviteHint =>
-      'يجب على الفني استخدام بريد الدعوة لتعيين كلمة المرور.';
+      'Technician should use the invite email to set their password.';
 
   @override
-  String get addTechnician_updateSuccess => 'تم تحديث الفني بنجاح!';
+  String get addTechnician_updateSuccess => 'Technician updated successfully!';
 
   @override
-  String get addTechnician_nameRequired => 'يرجى إدخال اسم الفني';
+  String get addTechnician_nameRequired => 'Please enter technician\'s name';
 
   @override
-  String get addTechnician_chooseFromGallery => 'الاختيار من المعرض';
+  String get addTechnician_chooseFromGallery => 'Choose from Gallery';
 
   @override
-  String get addTechnician_takePhoto => 'التقاط صورة';
+  String get addTechnician_takePhoto => 'Take Photo';
 
   @override
-  String get addTechnician_removePhoto => 'إزالة الصورة';
+  String get addTechnician_removePhoto => 'Remove Photo';
 
   @override
-  String get settings_title => 'الإعدادات';
+  String get settings_title => 'Settings';
 
   @override
-  String get settings_accountSection => 'الحساب';
+  String get settings_accountSection => 'Account';
 
   @override
-  String get settings_accountDetailsSection => 'تفاصيل الحساب';
+  String get settings_accountDetailsSection => 'Account Details';
 
   @override
-  String get settings_accountManagementSection => 'إدارة الحساب';
+  String get settings_accountManagementSection => 'Account Management';
 
   @override
-  String get settings_preferencesSection => 'التفضيلات';
+  String get settings_preferencesSection => 'Preferences';
 
   @override
-  String get settings_notificationsSection => 'الإشعارات';
+  String get settings_notificationsSection => 'Notifications';
 
   @override
-  String get settings_dataBackupSection => 'البيانات والنسخ الاحتياطي';
+  String get settings_dataBackupSection => 'Data & Backup';
 
   @override
-  String get settings_aboutSection => 'حول التطبيق';
+  String get settings_aboutSection => 'About';
 
   @override
-  String get settings_languageLabel => 'اللغة';
+  String get settings_languageLabel => 'Language';
 
   @override
-  String get settings_currencyLabel => 'العملة';
+  String get settings_currencyLabel => 'Currency';
 
   @override
-  String get settings_pushNotifications => 'إشعارات الدفع';
+  String get settings_pushNotifications => 'Push Notifications';
 
   @override
   String get settings_pushNotificationsSubtitle =>
-      'استلام تذكيرات الصيانة والتحديثات';
+      'Receive maintenance reminders and updates';
 
   @override
-  String get settings_autoBackup => 'النسخ الاحتياطي التلقائي';
+  String get settings_autoBackup => 'Auto Backup';
 
   @override
   String get settings_autoBackupSubtitle =>
-      'نسخ البيانات احتياطياً تلقائياً إلى السحابة';
+      'Automatically backup data to cloud';
 
   @override
-  String get settings_exportData => 'تصدير البيانات';
+  String get settings_exportData => 'Export Data';
 
   @override
-  String get settings_exportDataSubtitle => 'تنزيل بياناتك بصيغة CSV';
+  String get settings_exportDataSubtitle => 'Download your data as CSV';
 
   @override
-  String get settings_importData => 'استيراد البيانات';
+  String get settings_importData => 'Import Data';
 
   @override
-  String get settings_importDataSubtitle => 'الاستعادة من ملف النسخ الاحتياطي';
+  String get settings_importDataSubtitle => 'Restore from backup file';
 
   @override
   String get settings_importDataMessage =>
-      'لاستيراد البيانات، يرجى التواصل مع الدعم الفني. سنساعدك في استعادة بياناتك من ملف النسخ الاحتياطي.';
+      'To import data, please contact support. We will help you restore your data from a backup file.';
 
   @override
-  String get settings_appVersion => 'إصدار التطبيق';
+  String get settings_appVersion => 'App Version';
 
   @override
-  String get settings_helpSupport => 'المساعدة والدعم';
+  String get settings_helpSupport => 'Help & Support';
 
   @override
-  String get settings_helpSupportSubtitle =>
-      'الحصول على المساعدة والتواصل مع الدعم';
+  String get settings_helpSupportSubtitle => 'Get help and contact support';
 
   @override
-  String get settings_privacyPolicy => 'سياسة الخصوصية';
+  String get settings_privacyPolicy => 'Privacy Policy';
 
   @override
-  String get settings_privacyPolicySubtitle => 'قراءة سياسة الخصوصية';
+  String get settings_privacyPolicySubtitle => 'Read our privacy policy';
 
   @override
-  String get settings_termsOfService => 'شروط الخدمة';
+  String get settings_termsOfService => 'Terms of Service';
 
   @override
-  String get settings_termsOfServiceSubtitle => 'قراءة شروط الخدمة';
+  String get settings_termsOfServiceSubtitle => 'Read our terms of service';
 
   @override
-  String get settings_selectLanguage => 'اختر اللغة';
+  String get settings_selectLanguage => 'Select Language';
 
   @override
-  String get settings_selectCurrency => 'اختر العملة';
+  String get settings_selectCurrency => 'Select Currency';
 
   @override
-  String get settings_deleteAccount => 'حذف الحساب';
+  String get settings_deleteAccount => 'Delete Account';
 
   @override
-  String get settings_deleteAccountSubtitle => 'حذف حسابك وبياناتك نهائياً';
+  String get settings_deleteAccountSubtitle =>
+      'Permanently delete your account and data';
 
   @override
-  String get settings_requestAccountDeletion => 'طلب حذف الحساب';
+  String get settings_requestAccountDeletion => 'Request Account Deletion';
 
   @override
   String get settings_requestAccountDeletionSubtitle =>
-      'اطلب من مسؤولك حذف حسابك';
+      'Ask your administrator to delete your account';
 
   @override
-  String get settings_versionInfo => 'معلومات الإصدار';
+  String get settings_versionInfo => 'Version Information';
 
   @override
-  String get settings_rgsToolsManager => 'مدير الأدوات';
+  String get settings_rgsToolsManager => 'Tools Manager';
 
   @override
-  String get settings_couldNotOpenPage => 'تعذّر فتح صفحة الدعم';
+  String get settings_couldNotOpenPage => 'Could not open support page';
 
   @override
   String settings_exportSuccess(int count) {
-    return 'تم تصدير البيانات بنجاح! تم إنشاء $count ملف/ملفات.';
+    return 'Data exported successfully! $count file(s) created.';
   }
 
   @override
   String settings_exportError(String error) {
-    return 'خطأ في تصدير البيانات: $error';
+    return 'Error exporting data: $error';
   }
 
   @override
-  String get currency_usd => 'الدولار الأمريكي';
+  String get currency_usd => 'US Dollar';
 
   @override
-  String get currency_eur => 'اليورو';
+  String get currency_eur => 'Euro';
 
   @override
-  String get currency_gbp => 'الجنيه الإسترليني';
+  String get currency_gbp => 'British Pound';
 
   @override
-  String get currency_aed => 'الدرهم الإماراتي';
+  String get currency_aed => 'UAE Dirham';
 
   @override
-  String get reports_title => 'التقارير';
+  String get reports_title => 'Reports';
 
   @override
-  String get reports_toolsOverview => 'نظرة عامة على الأدوات';
+  String get reports_toolsOverview => 'Tools Overview';
 
   @override
-  String get reports_technicianActivity => 'نشاط الفنيين';
+  String get reports_technicianActivity => 'Technician Activity';
 
   @override
-  String get reports_maintenanceReport => 'تقرير الصيانة';
+  String get reports_maintenanceReport => 'Maintenance Report';
 
   @override
-  String get reports_exportReport => 'تصدير التقرير';
+  String get reports_exportReport => 'Export Report';
 
   @override
-  String get reports_generateReport => 'إنشاء تقرير';
+  String get reports_generateReport => 'Generate Report';
 
   @override
-  String get reports_noData => 'لا تتوفر بيانات لهذا التقرير';
+  String get reports_noData => 'No data available for this report';
 
   @override
-  String get reports_dateRange => 'نطاق التاريخ';
+  String get reports_dateRange => 'Date Range';
 
   @override
-  String get reports_last7Days => 'آخر 7 أيام';
+  String get reports_last7Days => 'Last 7 Days';
 
   @override
-  String get reports_last30Days => 'آخر 30 يوماً';
+  String get reports_last30Days => 'Last 30 Days';
 
   @override
-  String get reports_last90Days => 'آخر 90 يوماً';
+  String get reports_last90Days => 'Last 90 Days';
 
   @override
-  String get reports_custom => 'مخصص';
+  String get reports_custom => 'Custom';
 
   @override
-  String get maintenance_title => 'الصيانة';
+  String get maintenance_title => 'Maintenance';
 
   @override
-  String get maintenance_schedule => 'جدولة الصيانة';
+  String get maintenance_schedule => 'Schedule Maintenance';
 
   @override
-  String get maintenance_noScheduled => 'لا توجد صيانة مجدولة';
+  String get maintenance_noScheduled => 'No maintenance scheduled';
 
   @override
-  String get maintenance_upcoming => 'قادمة';
+  String get maintenance_upcoming => 'Upcoming';
 
   @override
-  String get maintenance_overdue => 'متأخرة';
+  String get maintenance_overdue => 'Overdue';
 
   @override
-  String get maintenance_completed => 'مكتملة';
+  String get maintenance_completed => 'Completed';
 
   @override
-  String get checkin_title => 'تسجيل الدخول / الخروج';
+  String get checkin_title => 'Check In / Check Out';
 
   @override
-  String get checkin_scanBarcode => 'مسح الباركود';
+  String get checkin_scanBarcode => 'Scan Barcode';
 
   @override
-  String get checkin_manualEntry => 'إدخال يدوي';
+  String get checkin_manualEntry => 'Manual Entry';
 
   @override
-  String get checkin_toolId => 'ID الأداة';
+  String get checkin_toolId => 'Tool ID';
 
   @override
-  String get checkin_checkInButton => 'تسجيل الدخول';
+  String get checkin_checkInButton => 'Check In';
 
   @override
-  String get checkin_checkOutButton => 'تسجيل الخروج';
+  String get checkin_checkOutButton => 'Check Out';
 
   @override
-  String get sharedTools_title => 'الأدوات المشتركة';
+  String get sharedTools_title => 'Shared Tools';
 
   @override
-  String get sharedTools_empty => 'لا توجد أدوات مشتركة متاحة';
+  String get sharedTools_empty => 'No shared tools available';
 
   @override
-  String get sharedTools_emptyHint => 'الأدوات المحددة كمشتركة ستظهر هنا';
+  String get sharedTools_emptyHint => 'Tools marked as shared will appear here';
 
   @override
-  String get sharedTools_badgeIn => 'تسجيل الاستلام';
+  String get sharedTools_badgeIn => 'Badge In';
 
   @override
-  String get sharedTools_badgeOut => 'تسجيل الإرجاع';
+  String get sharedTools_badgeOut => 'Badge Out';
 
   @override
-  String get sharedTools_currentHolder => 'الحائز الحالي';
+  String get sharedTools_currentHolder => 'Current Holder';
 
   @override
-  String get sharedTools_noCurrentHolder => 'لا يوجد حائز حالي';
+  String get sharedTools_noCurrentHolder => 'No current holder';
 
   @override
-  String get bulkImport_title => 'الاستيراد الجماعي';
+  String get bulkImport_title => 'Bulk Import';
 
   @override
-  String get bulkImport_selectFile => 'اختر ملف CSV';
+  String get bulkImport_selectFile => 'Select CSV File';
 
   @override
-  String get bulkImport_importButton => 'استيراد';
+  String get bulkImport_importButton => 'Import';
 
   @override
-  String get bulkImport_preview => 'معاينة';
+  String get bulkImport_preview => 'Preview';
 
   @override
   String bulkImport_rowsFound(int count) {
-    return 'تم العثور على $count صفوف';
+    return '$count rows found';
   }
 
   @override
   String bulkImport_success(int count) {
-    return 'تم استيراد $count أداة بنجاح';
+    return 'Successfully imported $count tools';
   }
 
   @override
   String bulkImport_error(String error) {
-    return 'فشل الاستيراد: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get permanentAssignment_title => 'الإسناد الدائم';
+  String get permanentAssignment_title => 'Permanent Assignment';
 
   @override
-  String get permanentAssignment_selectTechnician => 'اختر الفني';
+  String get permanentAssignment_selectTechnician => 'Select Technician';
 
   @override
-  String get permanentAssignment_selectTools => 'اختر الأدوات';
+  String get permanentAssignment_selectTools => 'Select Tools';
 
   @override
-  String get permanentAssignment_assignButton => 'إسناد';
+  String get permanentAssignment_assignButton => 'Assign';
 
   @override
-  String get permanentAssignment_success => 'تم إسناد الأدوات بنجاح';
+  String get permanentAssignment_success => 'Tools assigned successfully';
 
   @override
-  String get reassignTool_title => 'إعادة إسناد الأداة';
+  String get reassignTool_title => 'Reassign Tool';
 
   @override
-  String get reassignTool_currentTechnician => 'الفني الحالي';
+  String get reassignTool_currentTechnician => 'Current Technician';
 
   @override
-  String get reassignTool_newTechnician => 'الفني الجديد';
+  String get reassignTool_newTechnician => 'New Technician';
 
   @override
-  String get reassignTool_reassignButton => 'إعادة الإسناد';
+  String get reassignTool_reassignButton => 'Reassign';
 
   @override
-  String get reassignTool_success => 'تمت إعادة إسناد الأداة بنجاح';
+  String get reassignTool_success => 'Tool reassigned successfully';
 
   @override
-  String get requestNewTool_title => 'طلب جديد';
+  String get requestNewTool_title => 'New Request';
 
   @override
   String get requestNewTool_subtitle =>
-      'قدّم طلباً للأدوات أو الإسنادات أو النقل أو الصيانة';
+      'Submit a request for tools, assignments, transfers, or maintenance';
 
   @override
-  String get requestNewTool_requestType => 'نوع الطلب';
+  String get requestNewTool_requestType => 'Request Type';
 
   @override
-  String get requestNewTool_requestInfo => 'معلومات الطلب';
+  String get requestNewTool_requestInfo => 'Request Information';
 
   @override
-  String get requestNewTool_titleLabel => 'العنوان (اختياري)';
+  String get requestNewTool_titleLabel => 'Title (Optional)';
 
   @override
-  String get requestNewTool_titleHint => 'يتم إنشاؤه تلقائياً إذا تُرك فارغاً';
+  String get requestNewTool_titleHint => 'Auto-generated if left blank';
 
   @override
-  String get requestNewTool_descriptionLabel => 'الوصف (اختياري)';
+  String get requestNewTool_descriptionLabel => 'Description (Optional)';
 
   @override
-  String get requestNewTool_descriptionHint =>
-      'يتم إنشاؤه تلقائياً إذا تُرك فارغاً';
+  String get requestNewTool_descriptionHint => 'Auto-generated if left blank';
 
   @override
-  String get requestNewTool_justification => 'المبرر / السبب *';
+  String get requestNewTool_justification => 'Justification / Reason *';
 
   @override
-  String get requestNewTool_neededBy => 'مطلوب بحلول (اختياري)';
+  String get requestNewTool_neededBy => 'Needed By (Optional)';
 
   @override
-  String get requestNewTool_selectDate => 'اختر التاريخ';
+  String get requestNewTool_selectDate => 'Select date';
 
   @override
-  String get requestNewTool_siteLocation => 'الموقع / المنشأة';
+  String get requestNewTool_siteLocation => 'Site / Location';
 
   @override
-  String get requestNewTool_siteLocationHint => 'مثال: المبنى أ، الطابق 3';
+  String get requestNewTool_siteLocationHint => 'e.g., Building A, Floor 3';
 
   @override
-  String get requestNewTool_submitButton => 'إرسال الطلب';
+  String get requestNewTool_submitButton => 'Submit Request';
 
   @override
-  String get requestNewTool_success => 'تم إرسال الطلب بنجاح!';
+  String get requestNewTool_success => 'Request submitted successfully!';
 
   @override
-  String get requestNewTool_toolDetails => 'تفاصيل الأداة';
+  String get requestNewTool_toolDetails => 'Tool Details';
 
   @override
-  String get requestNewTool_assignmentDetails => 'تفاصيل الإسناد';
+  String get requestNewTool_assignmentDetails => 'Assignment Details';
 
   @override
-  String get requestNewTool_transferDetails => 'تفاصيل النقل';
+  String get requestNewTool_transferDetails => 'Transfer Details';
 
   @override
-  String get requestNewTool_maintenanceDetails => 'تفاصيل الصيانة';
+  String get requestNewTool_maintenanceDetails => 'Maintenance Details';
 
   @override
-  String get requestNewTool_disposalDetails => 'تفاصيل الإتلاف';
+  String get requestNewTool_disposalDetails => 'Disposal Details';
 
   @override
-  String get requestNewTool_toolName => 'اسم الأداة';
+  String get requestNewTool_toolName => 'Tool Name';
 
   @override
-  String get requestNewTool_toolSerial => 'الرقم التسلسلي للأداة (اختياري)';
+  String get requestNewTool_toolSerial => 'Tool Serial Number (Optional)';
 
   @override
-  String get requestNewTool_quantity => 'الكمية';
+  String get requestNewTool_quantity => 'Quantity';
 
   @override
-  String get requestNewTool_unitPrice => 'سعر الوحدة (AED)';
+  String get requestNewTool_unitPrice => 'Unit Price (AED)';
 
   @override
-  String get requestNewTool_totalCost => 'التكلفة الإجمالية (AED)';
+  String get requestNewTool_totalCost => 'Total Cost (AED)';
 
   @override
-  String get requestNewTool_supplier => 'المورّد (اختياري)';
+  String get requestNewTool_supplier => 'Supplier (Optional)';
 
   @override
-  String get requestNewTool_assignTo => 'إسناد إلى (اسمك أو اسم فني آخر)';
+  String get requestNewTool_assignTo =>
+      'Assign To (Your Name or Another Technician)';
 
   @override
-  String get requestNewTool_project => 'المشروع / الموقع';
+  String get requestNewTool_project => 'Project/Site';
 
   @override
-  String get requestNewTool_fromLocation => 'من الموقع';
+  String get requestNewTool_fromLocation => 'From Location';
 
   @override
-  String get requestNewTool_toLocation => 'إلى الموقع';
+  String get requestNewTool_toLocation => 'To Location';
 
   @override
-  String get requestNewTool_maintenanceType => 'نوع الصيانة';
+  String get requestNewTool_maintenanceType => 'Maintenance Type';
 
   @override
-  String get requestNewTool_currentCondition => 'الحالة الراهنة';
+  String get requestNewTool_currentCondition => 'Current Condition';
 
   @override
-  String get requestNewTool_attachPhoto => 'إرفاق صورة أو مواصفات (اختياري)';
+  String get requestNewTool_attachPhoto => 'Attach photo or spec (optional)';
 
   @override
-  String get requestNewTool_enterValidNumber => 'أدخل رقماً صحيحاً';
+  String get requestNewTool_enterValidNumber => 'Enter a valid number';
 
   @override
-  String get requestType_toolPurchase => 'شراء أداة';
+  String get requestType_toolPurchase => 'Tool Purchase';
 
   @override
-  String get requestType_toolAssignment => 'إسناد أداة';
+  String get requestType_toolAssignment => 'Tool Assignment';
 
   @override
-  String get requestType_transfer => 'نقل';
+  String get requestType_transfer => 'Transfer';
 
   @override
-  String get requestType_maintenance => 'صيانة';
+  String get requestType_maintenance => 'Maintenance';
 
   @override
-  String get requestType_toolDisposal => 'إتلاف أداة';
+  String get requestType_toolDisposal => 'Tool Disposal';
 }

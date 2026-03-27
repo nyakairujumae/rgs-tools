@@ -547,7 +547,7 @@ class _EditToolScreenState extends State<EditToolScreen> with ErrorHandlingMixin
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF16A34A), // AppTheme.secondaryColor
+            backgroundColor: const Color(0xFF047857), // AppTheme.secondaryColor
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

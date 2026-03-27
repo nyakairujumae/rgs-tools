@@ -2201,10 +2201,8 @@ _isLoading = false;
             final newRole = UserRoleExtension.fromString(roleFromDb);
             final positionId = response['position_id'] as String?;
             final orgId = response['organization_id'];
-            final orgIdStr = orgId?.toString();
-            _needsCompanySetup = orgIdStr == null || orgIdStr.isEmpty;
-            _organizationId = (orgIdStr != null && orgIdStr.isNotEmpty) ? orgIdStr : null;
-            Logger.debug('🏢 org_id from DB: $orgId (${orgId?.runtimeType}) → _organizationId: $_organizationId');
+            _needsCompanySetup = orgId == null || (orgId is String && orgId.isEmpty);
+            _organizationId = (orgId is String && orgId.isNotEmpty) ? orgId : null;
             
             // CRITICAL: If role is 'technician', check pending approvals FIRST
             // Technicians with pending approval should have UserRole.pending, not UserRole.technician

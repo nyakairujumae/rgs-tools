@@ -1,9 +1,7 @@
-import 'dart:convert' show utf8;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:file_picker/file_picker.dart';
 
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
@@ -14,7 +12,6 @@ import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../widgets/common/offline_skeleton.dart';
-import '../widgets/common/offline_sync_banner.dart';
 import '../providers/connectivity_provider.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
@@ -262,47 +259,19 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           ),
                         ),
                         if (_selectedTools == null)
-                          PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'add') {
-                                _showAddTechnicianDialog();
-                              } else if (value == 'csv') {
-                                _bulkImportCSV();
-                              }
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            itemBuilder: (ctx) => [
-                              PopupMenuItem(
-                                value: 'add',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.person_add_rounded, size: 20),
-                                    const SizedBox(width: 10),
-                                    Text('Add ${context.read<OrganizationProvider>().workerLabel}'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'csv',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.upload_file_rounded, size: 20),
-                                    SizedBox(width: 10),
-                                    Text('Bulk import CSV'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.secondaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
+                          Material(
+                            color: Colors.transparent,
+                            child: IconButton(
+                              onPressed: _showAddTechnicianDialog,
+                              icon: const Icon(
                                 Icons.add,
-                                size: 14,
+                                size: 26,
                                 color: Colors.white,
+                              ),
+                              tooltip: 'Add ${context.read<OrganizationProvider>().workerLabel}',
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.white,
                               ),
                             ),
                           ),
@@ -441,8 +410,27 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Offline / sync banner
-                  OfflineSyncBanner(isOffline: isOffline),
+                  // Offline banner
+                  if (isOffline)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context).common_offlineBanner,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Technicians List
                   Expanded(
@@ -1083,183 +1071,6 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const AddTechnicianScreen(),
-      ),
-    );
-  }
-
-  Future<void> _bulkImportCSV() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final bytes = result.files.first.bytes;
-      if (bytes == null) return;
-
-      final content = utf8.decode(bytes);
-      final lines = content
-          .split(RegExp(r'\r?\n'))
-          .map((l) => l.trim())
-          .where((l) => l.isNotEmpty)
-          .toList();
-
-      if (lines.isEmpty) {
-        _showCSVError('CSV file is empty.');
-        return;
-      }
-
-      // Detect header
-      final firstRow = lines.first.toLowerCase();
-      final hasHeader = firstRow.contains('name') || firstRow.contains('email');
-      final dataLines = hasHeader ? lines.sublist(1) : lines;
-
-      if (dataLines.isEmpty) {
-        _showCSVError('No data rows found.');
-        return;
-      }
-
-      // Parse: name, email, phone, department
-      final rows = <Map<String, String>>[];
-      for (final line in dataLines) {
-        final cols = _parseCSVLine(line);
-        if (cols.isEmpty) continue;
-        final name = cols.isNotEmpty ? cols[0].trim() : '';
-        final email = cols.length > 1 ? cols[1].trim() : '';
-        if (email.isEmpty) continue;
-        rows.add({
-          'name': name.isEmpty ? email.split('@').first : name,
-          'email': email,
-          'phone': cols.length > 2 ? cols[2].trim() : '',
-          'department': cols.length > 3 ? cols[3].trim() : '',
-        });
-      }
-
-      if (rows.isEmpty) {
-        _showCSVError('No valid rows found. Ensure CSV has name and email columns.');
-        return;
-      }
-
-      // Show confirmation dialog
-      if (!mounted) return;
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Text('Import ${rows.length} ${rows.length == 1 ? 'person' : 'people'}?'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: (rows.length * 48.0).clamp(48.0, 300.0),
-            child: ListView.builder(
-              itemCount: rows.length,
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                      child: Text(
-                        rows[i]['name']![0].toUpperCase(),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.secondaryColor),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(rows[i]['name']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          Text(rows[i]['email']!, style: TextStyle(fontSize: 11, color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.5))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: TextButton.styleFrom(foregroundColor: AppTheme.secondaryColor),
-              child: const Text('Import & Send Invites'),
-            ),
-          ],
-        ),
-      );
-
-      if (confirm != true || !mounted) return;
-
-      // Send invites
-      final auth = context.read<AuthProvider>();
-      int success = 0;
-      int failed = 0;
-
-      for (final row in rows) {
-        try {
-          await auth.createTechnicianAuthAccount(
-            email: row['email']!,
-            name: row['name']!,
-            department: row['department']!.isEmpty ? null : row['department'],
-          );
-          success++;
-        } catch (_) {
-          failed++;
-        }
-      }
-
-      if (mounted) {
-        // Refresh the list
-        context.read<SupabaseTechnicianProvider>().loadTechnicians();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              failed == 0
-                  ? '$success invite${success == 1 ? '' : 's'} sent successfully!'
-                  : '$success sent, $failed failed.',
-            ),
-            backgroundColor: failed == 0 ? AppTheme.secondaryColor : Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
-      }
-    } catch (e) {
-      _showCSVError('Failed to read CSV: $e');
-    }
-  }
-
-  List<String> _parseCSVLine(String line) {
-    final result = <String>[];
-    final sb = StringBuffer();
-    bool inQuotes = false;
-    for (int i = 0; i < line.length; i++) {
-      final c = line[i];
-      if (c == '"') {
-        inQuotes = !inQuotes;
-      } else if (c == ',' && !inQuotes) {
-        result.add(sb.toString());
-        sb.clear();
-      } else {
-        sb.write(c);
-      }
-    }
-    result.add(sb.toString());
-    return result;
-  }
-
-  void _showCSVError(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: AppTheme.errorColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
