@@ -1211,14 +1211,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 final toolGroup = entry.value;
                 final tool = toolGroup.representativeTool ?? toolGroup.instances.first;
                 final isLast = index == toolGroups.length - 1;
-                final isSelected = widget.isSelectionMode &&
-                    toolGroup.instances.any((t) => t.id != null && _selectedTools.contains(t.id!));
                 return Column(
                   children: [
                     Material(
-                      color: isSelected
-                          ? AppTheme.secondaryColor.withOpacity(0.08)
-                          : Colors.transparent,
+                      color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
                           if (widget.isSelectionMode) {
@@ -1358,24 +1354,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                 width: 100,
                                 child: _buildStatusPill(toolGroup.bestStatus),
                               ),
-                              // Actions / selection indicator
+                              // Actions
                               SizedBox(
                                 width: 36,
-                                child: widget.isSelectionMode
-                                    ? Icon(
-                                        isSelected
-                                            ? Icons.check_circle_rounded
-                                            : Icons.radio_button_unchecked_rounded,
-                                        size: 22,
-                                        color: isSelected
-                                            ? AppTheme.secondaryColor
-                                            : theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                                      )
-                                    : Icon(
-                                        Icons.arrow_forward_ios_rounded,
-                                        size: 13,
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                                      ),
+                                child: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 13,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                                ),
                               ),
                             ],
                           ),
