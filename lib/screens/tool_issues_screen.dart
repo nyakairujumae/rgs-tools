@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../models/tool_issue.dart';
@@ -10,7 +11,6 @@ import '../utils/responsive_helper.dart';
 import '../utils/currency_formatter.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
-import '../widgets/common/loading_widget.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
 
@@ -90,10 +90,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
 
                   Widget content;
                   if (issueProvider.isLoading) {
-                    content = ListSkeletonLoader(
-                      itemCount: 5,
-                      itemHeight: 120,
-                    );
+                    content = _buildIssuesSkeleton(context);
                   } else if (issueProvider.error != null) {
                     content = Center(
                       child: Column(
@@ -134,7 +131,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(color: AppTheme.secondaryColor),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                                 child: const Text('Retry'),
@@ -156,7 +153,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                                     backgroundColor: AppTheme.secondaryColor,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     elevation: 0,
                                   ),
@@ -213,35 +210,90 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 0, kIsWeb ? 24 : 16, 20),
-        child: SizedBox(
-          height: 50,
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddToolIssueScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add, size: 20),
-            label: const Text(
-              'Report New Issue',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              elevation: 0,
-            ),
+        padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 8, kIsWeb ? 24 : 16, 20),
+        child: FilledButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddToolIssueScreen()),
+            );
+          },
+          icon: const Icon(Icons.add, size: 20),
+          label: const Text('Report New Issue', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.secondaryColor,
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildIssuesSkeleton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF252525) : const Color(0xFFE6EAF1);
+    final highlight = isDark ? const Color(0xFF323232) : const Color(0xFFD8DBE0);
+
+    Widget line(double w, {double h = 11}) => Shimmer.fromColors(
+          baseColor: base,
+          highlightColor: highlight,
+          child: Container(
+            width: w,
+            height: h,
+            decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(6)),
+          ),
+        );
+
+    Widget card() {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: context.cardDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Shimmer.fromColors(
+                  baseColor: base,
+                  highlightColor: highlight,
+                  child: Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      line(double.infinity, h: 13),
+                      const SizedBox(height: 6),
+                      line(140, h: 10),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(children: [line(70, h: 22), const SizedBox(width: 8), line(60, h: 22), const SizedBox(width: 8), line(55, h: 22)]),
+            const SizedBox(height: 10),
+            line(double.infinity, h: 10),
+            const SizedBox(height: 5),
+            line(200, h: 10),
+            const SizedBox(height: 8),
+            line(160, h: 9),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (_, __) => card(),
     );
   }
 
@@ -324,7 +376,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     ].join(' • ');
 
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(12),
       onTap: () => _showIssueDetails(issue),
       child: Container(
         decoration: context.cardDecoration,
@@ -420,7 +472,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       builder: (context) => AlertDialog(
         backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Row(
           children: [
@@ -496,41 +548,20 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('Close'),
           ),
-          if (issue.status == 'Open')
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _showAssignDialog(issue);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                elevation: 0,
-              ),
+          if (issue.status == 'Open') FilledButton(
+              onPressed: () { Navigator.pop(context); _showAssignDialog(issue); },
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
               child: const Text('Assign'),
             ),
           if (issue.status == 'In Progress')
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _showResolveDialog(issue);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                elevation: 0,
-              ),
+            FilledButton(
+              onPressed: () { Navigator.pop(context); _showResolveDialog(issue); },
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
               child: const Text('Resolve'),
             ),
         ],
@@ -572,7 +603,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       builder: (context) => AlertDialog(
         backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Row(
           children: [
@@ -607,12 +638,12 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               if (assignController.text.trim().isNotEmpty) {
                 context.read<ToolIssueProvider>().assignIssue(
@@ -620,20 +651,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                   assignController.text.trim(),
                 );
                 Navigator.pop(context);
-                AuthErrorHandler.showSuccessSnackBar(
-                  context,
-                  'Issue assigned successfully',
-                );
+                AuthErrorHandler.showSuccessSnackBar(context, 'Issue assigned successfully');
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              elevation: 0,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
             child: const Text('Assign'),
           ),
         ],
@@ -649,7 +670,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
       builder: (context) => AlertDialog(
         backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Row(
           children: [
@@ -685,12 +706,12 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               if (resolutionController.text.trim().isNotEmpty) {
                 context.read<ToolIssueProvider>().resolveIssue(
@@ -699,20 +720,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                   issue.assignedTo ?? 'Admin',
                 );
                 Navigator.pop(context);
-                AuthErrorHandler.showSuccessSnackBar(
-                  context,
-                  'Issue resolved successfully',
-                );
+                AuthErrorHandler.showSuccessSnackBar(context, 'Issue resolved successfully');
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              elevation: 0,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
             child: const Text('Resolve'),
           ),
         ],
@@ -795,25 +806,30 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
 
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: context.scaffoldBackground,
+      backgroundColor: context.appBarBackground,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
-      titleSpacing: 0,
-      title: const Text(
+      centerTitle: false,
+      titleSpacing: 4,
+      leading: IconButton(
+        icon: Icon(Icons.chevron_left, size: 28, color: Theme.of(context).colorScheme.onSurface),
+        onPressed: () => Navigator.of(context).maybePop(),
+      ),
+      title: Text(
         'Tool Issues',
         style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.3,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
-      actions: [],
     );
   }
 
   Widget _buildFilterPills() {
     return SizedBox(
-      height: 32,
+      height: 30,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
@@ -821,41 +837,35 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
         itemBuilder: (context, index) {
           final filter = _filters[index];
           final isSelected = _selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              showCheckmark: false,
-              label: Text(
-                filter,
-                style: TextStyle(
-                  color: isSelected
-                      ? AppTheme.secondaryColor
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-              selected: isSelected,
-              onSelected: (_) {
+            child: GestureDetector(
+              onTap: () {
                 final targetIndex = _filters.indexOf(filter);
                 if (targetIndex >= 0 && targetIndex < _tabController.length) {
                   _tabController.animateTo(targetIndex);
                 }
                 setState(() => _selectedFilter = filter);
               },
-              backgroundColor: context.cardBackground,
-              selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
-              side: BorderSide(
-                color: isSelected
-                    ? AppTheme.secondaryColor
-                    : Colors.black.withValues(alpha: 0.04),
-                width: isSelected ? 1.2 : 0.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.secondaryColor
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ),
           );
@@ -867,28 +877,25 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
   Widget _buildSearchBar() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 24 : 16),
-      child: Container(
-        decoration: context.cardDecoration,
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => _searchQuery = value),
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-          decoration: context.chatGPTInputDecoration.copyWith(
-            hintText: 'Search issues, tools, reporters...',
-            prefixIcon: const Icon(Icons.search, size: 20),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                : null,
-          ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: TextStyle(
+          fontSize: 14,
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+        ),
+        decoration: context.chatGPTInputDecoration.copyWith(
+          hintText: 'Search issues, tools, reporters...',
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
         ),
       ),
     );
@@ -896,10 +903,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
 
   Widget _buildIssueTypePill(String type) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: context.cardBackground,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: Colors.black.withValues(alpha: 0.04),
           width: 0.5,
@@ -919,10 +926,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
   Widget _buildPriorityPill(String priority) {
     final color = _getPriorityAccentColor(priority);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         priority,
@@ -938,9 +945,9 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
   Widget _buildStatusOutlineChip(String status) {
     final color = _getStatusColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color, width: 1.2),
       ),
       child: Text(

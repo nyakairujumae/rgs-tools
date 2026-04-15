@@ -193,6 +193,9 @@ class _AddToolScreenState extends State<AddToolScreen> {
         leading: IconButton(
           icon: Icon(Icons.chevron_left, size: 28, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.of(context).maybePop(),
+          style: ButtonStyle(
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
+          ),
         ),
         titleSpacing: 4,
         title: Text(

@@ -109,28 +109,40 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
     }).toList();
   }
 
+  static const Color _roleTechBlue = Color(0xFF2563EB);
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final muted = cs.onSurface.withValues(alpha: 0.5);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       appBar: AppBar(
-        title: Text('User Role Management'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+        title: const Text('User Role Management'),
+        backgroundColor: context.appBarBackground,
+        foregroundColor: cs.onSurface,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, size: 28, color: cs.onSurface),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: cs.onSurface),
             onPressed: _loadUsers,
           ),
         ],
       ),
       body: Column(
         children: [
-          // Search Bar
-          Builder(
-            builder: (builderContext) => Padding(
-              padding: const EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Container(
+              decoration: AppTheme.groupedCardDecoration(context),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -138,235 +150,268 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
                     _searchQuery = value;
                   });
                 },
-                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-                decoration: builderContext.chatGPTInputDecoration.copyWith(
-                  hintText: 'Search users by email or name...',
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-                  ),
+                style: TextStyle(color: cs.onSurface, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: 'Search users by email or name…',
+                  hintStyle: TextStyle(color: muted, fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: muted, size: 22),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: Icon(
-                            Icons.clear,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
-                          ),
+                          icon: Icon(Icons.clear, color: muted, size: 20),
                           onPressed: () {
                             _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
+                            setState(() => _searchQuery = '');
                           },
                         )
                       : null,
+                  border: InputBorder.none,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                 ),
               ),
             ),
           ),
-
-          // Users List
           Expanded(
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      strokeWidth: 2.5,
+                      color: AppTheme.primaryColor,
                     ),
                   )
                 : _filteredUsers.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 80,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isEmpty ? 'No users found' : 'No users match your search',
-                              style: AppTheme.heading3.copyWith(
-                                color: Colors.grey[400],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.people_outline, size: 56, color: muted),
+                              const SizedBox(height: 16),
+                              Text(
+                                _searchQuery.isEmpty
+                                    ? 'No users found'
+                                    : 'No users match your search',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurface,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              _searchQuery.isEmpty 
-                                  ? 'Users will appear here once they register'
-                                  : 'Try a different search term',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: Colors.grey[500],
+                              const SizedBox(height: 8),
+                              Text(
+                                _searchQuery.isEmpty
+                                    ? 'Users will appear here once they register'
+                                    : 'Try a different search term',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: muted,
+                                  height: 1.4,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         itemCount: _filteredUsers.length,
                         itemBuilder: (context, index) {
                           final user = _filteredUsers[index];
-                          final currentRole = UserRoleExtension.fromString(user['role'] ?? 'technician');
-                          final currentUserId = context.read<AuthProvider>().userId;
+                          final currentRole = UserRoleExtension.fromString(
+                              user['role'] ?? 'technician');
+                          final currentUserId =
+                              context.read<AuthProvider>().userId;
                           final isCurrentUser = user['id'] == currentUserId;
+                          final isAdmin = currentRole == UserRole.admin;
+                          final roleAccent =
+                              isAdmin ? AppTheme.primaryColor : _roleTechBlue;
 
-                          return Card(
-                            color: Theme.of(context).cardTheme.color,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: isCurrentUser 
-                                    ? AppTheme.primaryColor.withValues(alpha: 0.5)
-                                    : Colors.grey.withValues(alpha: 0.55),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // User Avatar
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      color: currentRole == UserRole.admin 
-                                          ? Colors.blue.withValues(alpha: 0.2)
-                                          : Colors.green.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(25),
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Container(
+                              decoration:
+                                  AppTheme.groupedCardDecoration(context),
+                              foregroundDecoration: isCurrentUser
+                                  ? BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: AppTheme.primaryColor
+                                            .withValues(alpha: 0.45),
+                                        width: 1,
+                                      ),
+                                    )
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: roleAccent.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Icon(
+                                        isAdmin
+                                            ? Icons.admin_panel_settings_outlined
+                                            : Icons.person_outline,
+                                        color: roleAccent,
+                                        size: 24,
+                                      ),
                                     ),
-                                    child: Icon(
-                                      currentRole == UserRole.admin 
-                                          ? Icons.admin_panel_settings 
-                                          : Icons.person,
-                                      color: currentRole == UserRole.admin ? Colors.blue : Colors.green,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  
-                                  SizedBox(width: 16),
-                                  
-                                  // User Info
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              user['full_name'] ?? 'Unknown User',
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  user['full_name'] ??
+                                                      'Unknown User',
+                                                  style: TextStyle(
+                                                    color: cs.onSurface,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (isCurrentUser) ...[
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme.primaryColor
+                                                        .withValues(alpha: 0.18),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Text(
+                                                    'You',
+                                                    style: TextStyle(
+                                                      color: AppTheme
+                                                          .primaryColor,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            user['email'] ?? '',
+                                            style: TextStyle(
+                                              color: muted,
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: roleAccent
+                                                  .withValues(alpha: 0.14),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              currentRole.displayName,
                                               style: TextStyle(
-                                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                                                fontSize: 16,
+                                                color: roleAccent,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            if (isCurrentUser) ...[
-                                              SizedBox(width: 8),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                                                  borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isCurrentUser)
+                                      PopupMenuButton<UserRole>(
+                                        icon: Icon(Icons.more_vert,
+                                            color: muted),
+                                        onSelected: (UserRole newRole) {
+                                          _showRoleChangeDialog(
+                                              user, currentRole, newRole);
+                                        },
+                                        itemBuilder: (BuildContext menuContext) =>
+                                            [
+                                          PopupMenuItem<UserRole>(
+                                            value: UserRole.admin,
+                                            enabled:
+                                                currentRole != UserRole.admin,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons
+                                                      .admin_panel_settings_outlined,
+                                                  color: currentRole ==
+                                                          UserRole.admin
+                                                      ? muted
+                                                      : AppTheme.primaryColor,
+                                                  size: 20,
                                                 ),
-                                                child: Text(
-                                                  'You',
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  'Make Admin',
                                                   style: TextStyle(
-                                                    color: AppTheme.primaryColor,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
+                                                    color: currentRole ==
+                                                            UserRole.admin
+                                                        ? muted
+                                                        : cs.onSurface,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          user['email'] ?? '',
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: currentRole == UserRole.admin 
-                                                    ? Colors.blue.withValues(alpha: 0.2)
-                                                    : Colors.green.withValues(alpha: 0.2),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                currentRole.displayName,
-                                                style: TextStyle(
-                                                  color: currentRole == UserRole.admin ? Colors.blue : Colors.green,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  
-                                  // Role Change Button
-                                  if (!isCurrentUser)
-                                    PopupMenuButton<UserRole>(
-                                      icon: Icon(Icons.more_vert, color: Colors.grey),
-                                      onSelected: (UserRole newRole) {
-                                        _showRoleChangeDialog(user, currentRole, newRole);
-                                      },
-                                      itemBuilder: (BuildContext context) => [
-                                        PopupMenuItem<UserRole>(
-                                          value: UserRole.admin,
-                                          enabled: currentRole != UserRole.admin,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.admin_panel_settings,
-                                                color: currentRole == UserRole.admin ? Colors.grey : Colors.blue,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text(
-                                                'Make Admin',
-                                                style: TextStyle(
-                                                  color: currentRole == UserRole.admin ? Colors.grey : Theme.of(context).textTheme.bodyLarge?.color,
-                                                ),
-                                              ),
-                                            ],
                                           ),
-                                        ),
-                                        PopupMenuItem<UserRole>(
-                                          value: UserRole.technician,
-                                          enabled: currentRole != UserRole.technician,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.person,
-                                                color: currentRole == UserRole.technician ? Colors.grey : Colors.green,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text(
-                                                'Make Technician',
-                                                style: TextStyle(
-                                                  color: currentRole == UserRole.technician ? Colors.grey : Theme.of(context).textTheme.bodyLarge?.color,
+                                          PopupMenuItem<UserRole>(
+                                            value: UserRole.technician,
+                                            enabled: currentRole !=
+                                                UserRole.technician,
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person_outline,
+                                                  color: currentRole ==
+                                                          UserRole.technician
+                                                      ? muted
+                                                      : _roleTechBlue,
+                                                  size: 20,
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  'Make Technician',
+                                                  style: TextStyle(
+                                                    color: currentRole ==
+                                                            UserRole.technician
+                                                        ? muted
+                                                        : cs.onSurface,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                                        ],
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -385,37 +430,50 @@ class _AdminRoleManagementScreenState extends State<AdminRoleManagementScreen> {
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        title: Text(
-          'Change User Role',
-          style: AppTheme.heading3.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
-        ),
-        content: Text(
-          'Are you sure you want to change ${user['full_name'] ?? 'this user'}\'s role from ${currentRole.displayName} to ${newRole.displayName}?',
-          style: AppTheme.bodyMedium.copyWith(color: Colors.grey[300]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey),
+      builder: (dialogContext) {
+        final cs = Theme.of(dialogContext).colorScheme;
+        final confirmBg = newRole == UserRole.admin
+            ? AppTheme.primaryColor
+            : _roleTechBlue;
+        return AlertDialog(
+          title: Text(
+            'Change User Role',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _updateUserRole(user['id'], newRole);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newRole == UserRole.admin ? Colors.blue : Colors.green,
-              foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+          content: Text(
+            'Are you sure you want to change ${user['full_name'] ?? 'this user'}\'s role from ${currentRole.displayName} to ${newRole.displayName}?',
+            style: TextStyle(
+              fontSize: 14,
+              color: cs.onSurface.withValues(alpha: 0.75),
+              height: 1.4,
             ),
-            child: Text('Change to ${newRole.displayName}'),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.65)),
+              ),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _updateUserRole(user['id'], newRole);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: confirmBg,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Change to ${newRole.displayName}'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

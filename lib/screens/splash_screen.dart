@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../config/app_config.dart';
+import '../theme/app_theme.dart';
 
 /// Simple animated splash used while the auth/profile providers warm up.
 class SplashScreen extends StatefulWidget {
@@ -49,6 +51,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    // Remove native splash so Flutter splash screen is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
     _statusTimer = Timer.periodic(
       const Duration(seconds: 2),
       (_) => setState(
@@ -79,9 +85,9 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0D47A1),
-              Color(0xFF1976D2),
-              Color(0xFF42A5F5),
+              Color(0xFF034732),
+              Color(0xFF047857),
+              Color(0xFF059669),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

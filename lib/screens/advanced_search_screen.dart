@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import "../providers/supabase_tool_provider.dart";
-import '../providers/organization_provider.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/empty_state.dart';
@@ -820,10 +819,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   List<DropdownMenuItem<String>> _getCategoryOptions(BuildContext context) {
-    final orgCats = context.read<OrganizationProvider>().toolCategories;
-    final cats = orgCats.isNotEmpty
-        ? orgCats
-        : ['Hand Tools', 'Power Tools', 'Testing Equipment', 'Safety Equipment', 'Measuring Tools'];
+    const cats = ['Hand Tools', 'Power Tools', 'Testing Equipment', 'Safety Equipment', 'Measuring Tools'];
     return [
       const DropdownMenuItem(value: 'All', child: Text('All Categories')),
       ...cats.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))),

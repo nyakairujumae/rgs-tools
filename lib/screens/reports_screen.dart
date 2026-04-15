@@ -10,6 +10,7 @@ import '../providers/supabase_technician_provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/approval_workflows_provider.dart';
 import '../providers/supabase_certification_provider.dart';
+import '../providers/organization_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
@@ -31,18 +32,22 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   String _selectedPeriod = 'Last 30 Days';
+  static const String _customPeriod = 'Custom Range';
   ReportType _selectedReportType = ReportType.comprehensive;
   ReportFormat _selectedFormat = ReportFormat.pdf;
   bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _hasScrolled = false;
+  DateTime? _customFromDate;
+  DateTime? _customToDate;
 
   final List<String> _periods = [
     'Last 7 Days',
     'Last 30 Days',
     'Last 90 Days',
     'Last Year',
+    _customPeriod,
     'All Time',
   ];
 
@@ -51,56 +56,67 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'name': 'Comprehensive Report',
       'description': 'Complete overview with all tool data, assignments, and summaries',
       'icon': Icons.assessment,
+      'color': Color(0xFF6366F1),
     },
     ReportType.toolsInventory: {
       'name': 'Tools Inventory',
       'description': 'Complete list of all tools with specifications and status',
       'icon': Icons.build_circle,
+      'color': Color(0xFF0FA958),
     },
     ReportType.toolAssignments: {
       'name': 'Tool Assignments',
       'description': 'History of tool assignments and current holders',
       'icon': Icons.assignment_ind,
+      'color': Color(0xFF3B82F6),
     },
     ReportType.technicianSummary: {
       'name': 'Technician Summary',
       'description': 'Technician information and their assigned tools',
       'icon': Icons.people,
+      'color': Color(0xFFF59E0B),
     },
     ReportType.toolIssues: {
       'name': 'Tool Issues',
       'description': 'Reported issues, maintenance requests, and resolutions',
       'icon': Icons.warning_amber,
+      'color': Color(0xFFEF4444),
     },
     ReportType.toolIssuesSummary: {
       'name': 'Tool Issues Summary',
       'description': 'Summary statistics and analytics for tool issues',
       'icon': Icons.analytics,
+      'color': Color(0xFFEC4899),
     },
     ReportType.approvalWorkflowsSummary: {
       'name': 'Approval Workflows Summary',
       'description': 'Summary statistics and analytics for approval workflows',
       'icon': Icons.summarize,
+      'color': Color(0xFF8B5CF6),
     },
     ReportType.financialSummary: {
       'name': 'Financial Summary',
       'description': 'Financial overview: purchase costs and total investment',
       'icon': Icons.account_balance,
+      'color': Color(0xFF0EA5E9),
     },
     ReportType.toolHistory: {
       'name': 'Tool History',
       'description': 'Complete transaction history and status changes',
       'icon': Icons.history,
+      'color': Color(0xFF64748B),
     },
     ReportType.calibration: {
       'name': 'Calibration Report',
       'description': 'Calibration certificates status, expiry tracking and scheduled calibrations',
       'icon': Icons.straighten,
+      'color': Color(0xFF14B8A6),
     },
     ReportType.compliance: {
       'name': 'Compliance Report',
       'description': 'All certification types, compliance rate and attention-required items',
       'icon': Icons.verified_outlined,
+      'color': Color(0xFF10B981),
     },
   };
 
@@ -131,58 +147,389 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isWebDesktop = kIsWeb && ResponsiveHelper.isDesktop(context);
     final contentPadding = isWebDesktop ? 32.0 : 16.0;
 
+    if (kIsWeb) {
+      // Keep original web layout unchanged
+      return Scaffold(
+        backgroundColor: context.scaffoldBackground,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildReportsHeader(context, theme, contentPadding, showBorder: _hasScrolled),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: EdgeInsets.fromLTRB(contentPadding, 0, contentPadding, 24),
+                  child: Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
+                    builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
+                      if (toolProvider.isLoading || technicianProvider.isLoading || issueProvider.isLoading || workflowProvider.isLoading) {
+                        return _buildReportSkeleton(context);
+                      }
+                      final tools = toolProvider.tools;
+                      final technicians = technicianProvider.technicians;
+                      final issues = issueProvider.issues;
+                      final workflows = workflowProvider.workflows;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildConfigurationSection(context),
+                          const SizedBox(height: 20),
+                          _buildDataPreviewSection(context, tools, technicians, issues, workflows,
+                              toolProvider, technicianProvider, issueProvider, workflowProvider),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Mobile: web-matching layout ─────────────────────────────────────
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // B2B header - border only visible when scrolled
-            _buildReportsHeader(context, theme, contentPadding, showBorder: _hasScrolled),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.chevron_left, size: 28, color: colorScheme.onSurface),
+                    onPressed: () => NavigationHelper.safePop(context),
+                  ),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Reports',
+                            style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5, color: colorScheme.onSurface)),
+                        Text('Generate and export reports',
+                            style: TextStyle(fontSize: 12,
+                                color: colorScheme.onSurface.withValues(alpha: 0.5))),
+                      ],
+                    ),
+                  ),
+                  if (_isExporting)
+                    SizedBox(
+                      width: 22, height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppTheme.secondaryColor)),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
-                padding: EdgeInsets.fromLTRB(contentPadding, 0, contentPadding, 24),
-                child: Consumer4<SupabaseToolProvider, SupabaseTechnicianProvider, ToolIssueProvider, ApprovalWorkflowsProvider>(
-                  builder: (context, toolProvider, technicianProvider, issueProvider, workflowProvider, child) {
-                    if (toolProvider.isLoading || technicianProvider.isLoading || issueProvider.isLoading || workflowProvider.isLoading) {
-                      return _buildReportSkeleton(context);
-                    }
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Report type cards — 2-column grid
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.15,
+                      children: _reportTypes.entries.map((e) {
+                        final type = e.key;
+                        final info = e.value as Map<String, dynamic>;
+                        final isSelected = _selectedReportType == type;
+                        final cardColor = (info['color'] as Color?) ?? AppTheme.secondaryColor;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedReportType = type);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _scrollController.animateTo(
+                                _scrollController.position.maxScrollExtent,
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeOut,
+                              );
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: isSelected
+                                  ? Border.all(color: cardColor, width: 1.5)
+                                  : null,
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: cardColor.withValues(alpha: 0.15),
+                                  blurRadius: 8, offset: const Offset(0, 2),
+                                ),
+                              ] : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                                  blurRadius: 6, offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 38, height: 38,
+                                  decoration: BoxDecoration(
+                                    color: cardColor.withValues(alpha: isDark ? 0.18 : 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    info['icon'] as IconData,
+                                    size: 18,
+                                    color: cardColor,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  info['name'] as String,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  info['description'] as String,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.45),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
 
-                    final tools = toolProvider.tools;
-                    final technicians = technicianProvider.technicians;
-                    final issues = issueProvider.issues;
-                    final workflows = workflowProvider.workflows;
+                    const SizedBox(height: 16),
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildConfigurationSection(context),
-                        const SizedBox(height: 20),
-                        _buildDataPreviewSection(
-                          context,
-                          tools,
-                          technicians,
-                          issues,
-                          workflows,
-                          toolProvider,
-                          technicianProvider,
-                          issueProvider,
-                          workflowProvider,
-                        ),
-                      ],
-                    );
-                  },
+                    // Generate panel — always visible
+                    _buildMobileGeneratePanel(colorScheme, isDark),
+                  ],
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileGeneratePanel(ColorScheme colorScheme, bool isDark) {
+    final reportInfo = _reportTypes[_selectedReportType] as Map<String, dynamic>?;
+    final reportName = (reportInfo?['name'] as String?) ?? 'Report';
+    final isPdfOnly = _selectedReportType == ReportType.calibration ||
+        _selectedReportType == ReportType.compliance;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 6, offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Generate $reportName',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface),
+          ),
+          const SizedBox(height: 14),
+
+          // Date range
+          Row(
+            children: [
+              Expanded(
+                child: _buildDateField(
+                  label: 'From',
+                  value: _selectedPeriod == 'All Time'
+                      ? ''
+                      : _formatDateForDisplay(_getStartDate()),
+                  colorScheme: colorScheme,
+                  isDark: isDark,
+                  onTap: _selectedPeriod == 'All Time'
+                      ? null
+                      : () => _pickCustomDate(isStart: true),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildDateField(
+                  label: 'To',
+                  value: _formatDateForDisplay(_getEndDate()),
+                  colorScheme: colorScheme,
+                  isDark: isDark,
+                  onTap: _selectedPeriod == 'All Time'
+                      ? null
+                      : () => _pickCustomDate(isStart: false),
+                ),
+              ),
+            ],
+          ),
+
+          // Period selector
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => _showPeriodSelector(context),
+            child: Container(
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 15,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(_selectedPeriod,
+                        style: TextStyle(fontSize: 13, color: colorScheme.onSurface)),
+                  ),
+                  Icon(Icons.keyboard_arrow_down, size: 18,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4)),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Export buttons
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: FilledButton.icon(
+              onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.pdf),
+              icon: _isExporting
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.download_rounded, size: 16),
+              label: const Text('Generate PDF', style: TextStyle(fontSize: 13)),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+
+          if (!isPdfOnly) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.excel),
+                icon: const Icon(Icons.table_chart_outlined, size: 15),
+                label: const Text('Export Excel', style: TextStyle(fontSize: 13)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1D6F42),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required String value,
+    required ColorScheme colorScheme,
+    required bool isDark,
+    required VoidCallback? onTap,
+  }) {
+    final isInteractive = onTap != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withValues(alpha: 0.5))),
+        const SizedBox(height: 4),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.onSurface.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value.isEmpty ? 'All time' : value,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: value.isEmpty
+                            ? colorScheme.onSurface.withValues(alpha: 0.4)
+                            : colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (isInteractive)
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: colorScheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -213,8 +560,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Text(
                   'Reports & Analytics',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
@@ -738,6 +1086,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     onTap: () {
                       setState(() {
                         _selectedPeriod = period;
+                        if (period != _customPeriod) {
+                          _customFromDate = null;
+                          _customToDate = null;
+                        } else {
+                          _customFromDate ??=
+                              DateTime.now().subtract(const Duration(days: 30));
+                          _customToDate ??= DateTime.now();
+                        }
                       });
                       Navigator.pop(context);
                     },
@@ -918,6 +1274,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
               if (value != null) {
                 setState(() {
                   _selectedPeriod = value;
+                  if (value != _customPeriod) {
+                    _customFromDate = null;
+                    _customToDate = null;
+                  } else {
+                    _customFromDate ??=
+                        DateTime.now().subtract(const Duration(days: 30));
+                    _customToDate ??= DateTime.now();
+                  }
                 });
               }
             },
@@ -1555,21 +1919,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 16),
         
         // Financial Cards
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _buildFinancialCard(
-              'Total Purchase Value',
-              CurrencyFormatter.formatCurrency(totalPurchasePrice),
-              Icons.shopping_cart,
-              Colors.blue,
-            ),
-          ],
+        _buildFinancialCard(
+          'Total Purchase Value',
+          CurrencyFormatter.formatCurrency(totalPurchasePrice),
+          Icons.shopping_cart,
+          Colors.blue,
         ),
         
         const SizedBox(height: 24),
@@ -1599,11 +1953,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildFinancialCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1719,40 +2073,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 16),
         
         // Overview Stats
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _buildFinancialCard(
-              'Total Issues',
-              issues.length.toString(),
-              Icons.warning_amber,
-              Colors.red,
-            ),
-            _buildFinancialCard(
-              'Open Issues',
-              openIssues.toString(),
-              Icons.error_outline,
-              Colors.orange,
-            ),
-            _buildFinancialCard(
-              'Resolved Issues',
-              resolvedIssues.toString(),
-              Icons.check_circle,
-              Colors.green,
-            ),
-            _buildFinancialCard(
-              'Estimated Cost',
-              CurrencyFormatter.formatCurrency(totalCost),
-              Icons.attach_money,
-              Colors.teal,
-            ),
-          ],
-        ),
+        _buildStatRow([
+          _buildFinancialCard('Total Issues',    issues.length.toString(),                     Icons.warning_amber,  Colors.red),
+          _buildFinancialCard('Open Issues',     openIssues.toString(),                        Icons.error_outline,  Colors.orange),
+        ]),
+        const SizedBox(height: 12),
+        _buildStatRow([
+          _buildFinancialCard('Resolved Issues', resolvedIssues.toString(),                    Icons.check_circle,   Colors.green),
+          _buildFinancialCard('Estimated Cost',  CurrencyFormatter.formatCurrency(totalCost),  Icons.attach_money,   Colors.teal),
+        ]),
         
         const SizedBox(height: 24),
         
@@ -1885,40 +2214,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
         const SizedBox(height: 16),
         
         // Overview Stats
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _buildFinancialCard(
-              'Total Workflows',
-              workflows.length.toString(),
-              Icons.approval,
-              Colors.purple,
-            ),
-            _buildFinancialCard(
-              'Pending',
-              pendingWorkflows.toString(),
-              Icons.pending,
-              Colors.orange,
-            ),
-            _buildFinancialCard(
-              'Approved',
-              approvedWorkflows.toString(),
-              Icons.check_circle,
-              Colors.green,
-            ),
-            _buildFinancialCard(
-              'Rejected',
-              rejectedWorkflows.toString(),
-              Icons.cancel,
-              Colors.red,
-            ),
-          ],
-        ),
+        _buildStatRow([
+          _buildFinancialCard('Total Workflows', workflows.length.toString(),     Icons.approval,       Colors.purple),
+          _buildFinancialCard('Pending',         pendingWorkflows.toString(),     Icons.pending,        Colors.orange),
+        ]),
+        const SizedBox(height: 12),
+        _buildStatRow([
+          _buildFinancialCard('Approved',        approvedWorkflows.toString(),    Icons.check_circle,   Colors.green),
+          _buildFinancialCard('Rejected',        rejectedWorkflows.toString(),    Icons.cancel,         Colors.red),
+        ]),
         
         const SizedBox(height: 24),
         
@@ -2345,23 +2649,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Overview Stats
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.4,
-          children: [
-            _buildInfoCard(Icons.build_circle, 'Tools Inventory', tools.length, Colors.blue),
-            _buildInfoCard(Icons.assignment_ind, 'Tool Assignments', assignedTools, Colors.green),
-            _buildInfoCard(Icons.people, 'Technician Summary', technicians.length, Colors.orange),
-            _buildInfoCard(Icons.warning_amber, 'Tool Issues', issues.length, Colors.red),
-            _buildInfoCard(Icons.approval, 'Approval Workflows', workflows.length, Colors.purple),
-            _buildInfoCard(Icons.account_balance, 'Financial Summary', 1, Colors.teal),
-          ],
-        ),
+        // Overview stat rows — two per row, fixed height, no overflow
+        _buildStatRow([
+          _buildInfoCard(Icons.build_circle,   'Tools Inventory',    tools.length,       Colors.blue),
+          _buildInfoCard(Icons.assignment_ind,  'Tool Assignments',   assignedTools,      Colors.green),
+        ]),
+        const SizedBox(height: 12),
+        _buildStatRow([
+          _buildInfoCard(Icons.people,          'Technician Summary', technicians.length, Colors.orange),
+          _buildInfoCard(Icons.warning_amber,   'Tool Issues',        issues.length,      Colors.red),
+        ]),
+        const SizedBox(height: 12),
+        _buildStatRow([
+          _buildInfoCard(Icons.approval,        'Approval Workflows', workflows.length,   Colors.purple),
+          _buildInfoCard(Icons.account_balance, 'Financial Summary',  1,                  Colors.teal),
+        ]),
         const SizedBox(height: 16),
         _buildComprehensiveSection(
           'Tools Inventory',
@@ -2478,42 +2780,59 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
+  Widget _buildStatRow(List<Widget> children) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: children[0]),
+          const SizedBox(width: 12),
+          Expanded(child: children[1]),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoCard(IconData icon, String title, int count, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: context.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 18),
               ),
               const Spacer(),
               Text(
                 count.toString(),
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             title,
-                      style: TextStyle(
-              fontSize: 13,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w500,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w500,
+              height: 1.3,
             ),
           ),
         ],
@@ -2599,8 +2918,64 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
+  String _formatDateForDisplay(DateTime? date) {
+    if (date == null) return '';
+    return DateFormat('yyyy-MM-dd').format(date);
+  }
+
+  DateTime _getEndDate() {
+    if (_selectedPeriod == _customPeriod && _customToDate != null) {
+      return DateTime(
+        _customToDate!.year,
+        _customToDate!.month,
+        _customToDate!.day,
+        23,
+        59,
+        59,
+      );
+    }
+    return DateTime.now();
+  }
+
+  Future<void> _pickCustomDate({required bool isStart}) async {
+    final now = DateTime.now();
+    final selectedStart = _getStartDate() ?? now.subtract(const Duration(days: 30));
+    final selectedEnd = _getEndDate();
+
+    final initialDate = isStart ? selectedStart : selectedEnd;
+    final firstDate = isStart ? DateTime(2000) : selectedStart;
+    final lastDate = isStart ? selectedEnd : now;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isAfter(lastDate) ? lastDate : initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      _selectedPeriod = _customPeriod;
+      if (isStart) {
+        _customFromDate = picked;
+        if (_customToDate == null || _customToDate!.isBefore(picked)) {
+          _customToDate = picked;
+        }
+      } else {
+        _customToDate = picked;
+        if (_customFromDate == null || _customFromDate!.isAfter(picked)) {
+          _customFromDate = picked;
+        }
+      }
+    });
+  }
+
   DateTime? _getStartDate() {
     final now = DateTime.now();
+    if (_selectedPeriod == _customPeriod) {
+      return _customFromDate;
+    }
     switch (_selectedPeriod) {
       case 'Last 7 Days':
         return now.subtract(const Duration(days: 7));
@@ -2638,7 +3013,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ]);
 
       final startDate = _getStartDate();
-      final endDate = DateTime.now();
+      final endDate = _getEndDate();
 
       // Calibration/Compliance only support PDF
       final effectiveFormat = (_selectedReportType == ReportType.calibration ||

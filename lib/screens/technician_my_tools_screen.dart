@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'dart:io';
 
 import '../models/tool.dart';
 import '../providers/auth_provider.dart';
 import '../providers/supabase_tool_provider.dart';
+import '../providers/connectivity_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
-import '../widgets/common/loading_widget.dart';
-import '../widgets/common/offline_skeleton.dart';
-import '../providers/connectivity_provider.dart';
 import 'technician_add_tool_screen.dart';
 import 'add_tool_screen.dart';
 import 'tool_detail_screen.dart';
@@ -22,43 +21,88 @@ class TechnicianMyToolsScreen extends StatefulWidget {
 }
 
 class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
+  /// Must stay in sync with the status [DropdownMenuItem] values.
+  static const List<String> _statusFilterItems = [
+    'All',
+    'Available',
+    'Assigned',
+    'In Use',
+    'Maintenance',
+    'Retired',
+  ];
+
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = 'Category';
   String _selectedStatus = 'All';
   String _searchQuery = '';
+  final ScrollController _tableScrollController = ScrollController();
+  bool _requestedInitialScrollReset = false;
+  /// Web: false=grid, true=list (matches [ToolsScreen]).
+  bool _webViewList = false;
+  /// Mobile: true=list (default), false=grid (matches [ToolsScreen]).
+  bool _isListView = true;
+
+  void _normalizeStatusFilter() {
+    if (!_statusFilterItems.contains(_selectedStatus)) {
+      _selectedStatus = 'All';
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
+    _normalizeStatusFilter();
+    _searchController.addListener(() {
+      final v = _searchController.text;
+      if (v != _searchQuery) setState(() => _searchQuery = v);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
+    });
+    // Ensure the "NAME" column (with the thumbnail/icon) is visible.
+    // Only relevant in list/table mode.
+    if (_isListView) {
+      _requestScrollReset();
+    }
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // Hot reload can keep old state (e.g. 'All Status') that no longer matches [DropdownMenuItem]s.
+    _normalizeStatusFilter();
+  }
+
+  void _requestScrollReset([int attemptsLeft = 5]) {
+    if (_requestedInitialScrollReset) return;
+    _requestedInitialScrollReset = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_tableScrollController.hasClients) {
+        _tableScrollController.jumpTo(0);
+        return;
+      }
+
+      if (attemptsLeft > 0) {
+        _requestedInitialScrollReset = false; // allow retry
+        _requestScrollReset(attemptsLeft - 1);
+      }
     });
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _tableScrollController.dispose();
     super.dispose();
-  }
-
-  void _onSearchChanged() {
-    final value = _searchController.text;
-    if (value == _searchQuery) return;
-    setState(() {
-      _searchQuery = value;
-    });
   }
 
   Future<void> _openAddTool() async {
     final authProvider = context.read<AuthProvider>();
-    final isAdmin = authProvider.isAdmin;
-
     final added = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => isAdmin
+        builder: (context) => authProvider.isAdmin
             ? const AddToolScreen(isFromMyTools: true)
             : const TechnicianAddToolScreen(),
       ),
@@ -68,632 +112,558 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     }
   }
 
+  bool _matchesSearch(Tool tool) {
+    final q = _searchQuery.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return tool.name.toLowerCase().contains(q) ||
+        tool.category.toLowerCase().contains(q) ||
+        (tool.brand?.toLowerCase().contains(q) ?? false) ||
+        (tool.model?.toLowerCase().contains(q) ?? false) ||
+        (tool.serialNumber?.toLowerCase().contains(q) ?? false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
-        child: Container(
-          color: theme.scaffoldBackgroundColor,
-          child: Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
-            builder: (context, toolProvider, authProvider, connectivityProvider, child) {
-              final currentUserId = authProvider.userId;
-              final isOffline = !connectivityProvider.isOnline;
-              final allMyTools = currentUserId == null
-                  ? <Tool>[]
-                  : toolProvider.tools
-                      .where((tool) => tool.assignedTo == currentUserId)
-                      .toList();
+        child: Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
+          builder: (context, toolProvider, authProvider, connectivity, _) {
+            final currentUserId = authProvider.userId;
+            final allMyTools = currentUserId == null
+                ? <Tool>[]
+                : toolProvider.tools
+                    .where((t) => t.assignedTo == currentUserId)
+                    .toList();
 
-              final categories = ['Category', ...toolProvider.getCategories()];
+            final filtered = allMyTools.where((t) {
+              final matchesSearch = _matchesSearch(t);
+              final matchesStatus =
+                  _selectedStatus == 'All' || t.status == _selectedStatus;
+              return matchesSearch && matchesStatus;
+            }).toList();
 
-              // Filter tools based on search and filters
-              final filteredTools = allMyTools.where((tool) {
-                final matchesSearch = _matchesSmartSearch(tool);
-                final matchesCategory = _selectedCategory == 'Category' ||
-                    tool.category == _selectedCategory;
-                final matchesStatus =
-                    _selectedStatus == 'All' || tool.status == _selectedStatus;
+            final hasActiveFilter =
+                _searchQuery.isNotEmpty || _selectedStatus != 'All';
+            final showList = kIsWeb ? _webViewList : _isListView;
 
-                return matchesSearch && matchesCategory && matchesStatus;
-              }).toList();
-
-              return Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.chevron_left,
-                            size: 28,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(width: 4),
-                        Column(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'My Tools',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.onSurface,
-                              ),
+                            Row(
+                              children: [
+                                Text('My Tools',
+                                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.5, color: colorScheme.onSurface)),
+                              ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 1),
                             Text(
-                              'Tools currently assigned to you',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                              ),
+                              'Tools assigned to you · ${allMyTools.length} total',
+                              style: TextStyle(fontSize: 12,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.5)),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                  // Search and Filter Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0),
-                    child: Column(
-                      children: [
-                        // Compact Search Bar
-                        TextField(
-                          controller: _searchController,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          decoration: context.chatGPTInputDecoration.copyWith(
-                            hintText: 'Search tools...',
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              color: theme.colorScheme.onSurface.withOpacity(0.45),
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              size: 18,
-                              color: theme.colorScheme.onSurface.withOpacity(0.45),
-                            ),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.clear,
-                                      size: 18,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.45),
-                                    ),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      FocusScope.of(context).unfocus();
-                                    },
-                                  )
-                                : null,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Filter Row
-                        Row(
-                          children: [
-                            // Category Filter
-                            Expanded(
-                              child: Container(
-                                height: 40,
-                                decoration: context.cardDecoration.copyWith(
-                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                                  color: context.cardBackground,
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedCategory,
-                                    isExpanded: true,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    icon: Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: theme.colorScheme.onSurface,
-                                      size: 18,
-                                    ),
-                                    style: TextStyle(
-                                      color: theme.textTheme.bodyLarge?.color,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    selectedItemBuilder: (BuildContext context) {
-                                      return categories.map((category) {
-                                        return Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                _getCategoryIcon(category),
-                                                size: 16,
-                                                color: category == 'Category'
-                                                    ? theme.colorScheme.onSurface.withOpacity(0.35)
-                                                    : _getCategoryIconColor(category),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                category,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: theme.colorScheme.onSurface,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList();
-                                    },
-                                    dropdownColor: context.cardBackground,
-                                    menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
-                                    items: categories.map((category) {
-                                      return DropdownMenuItem<String>(
-                                        value: category,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                _getCategoryIcon(category),
-                                                size: 16,
-                                                color: category == 'Category'
-                                                    ? theme.colorScheme.onSurface.withOpacity(0.35)
-                                                    : _getCategoryIconColor(category),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Expanded(
-                                                child: Text(
-                                                  category,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: category == 'Category'
-                                                        ? FontWeight.normal
-                                                        : FontWeight.w500,
-                                                    color: category == 'Category'
-                                                        ? theme.colorScheme.onSurface.withOpacity(0.6)
-                                                        : theme.colorScheme.onSurface,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedCategory = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Status Filter
-                            Expanded(
-                              child: Container(
-                                height: 40,
-                                decoration: context.cardDecoration.copyWith(
-                                  borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                                  color: context.cardBackground,
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedStatus,
-                                    isExpanded: true,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    icon: Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: theme.colorScheme.onSurface,
-                                      size: 18,
-                                    ),
-                                    style: TextStyle(
-                                      color: theme.textTheme.bodyLarge?.color,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    dropdownColor: context.cardBackground,
-                                    menuMaxHeight: 300,
-                                    borderRadius: BorderRadius.circular(context.borderRadiusLarge),
-                                    items: [
-                                      DropdownMenuItem<String>(
-                                        value: 'All',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.filter_list_outlined,
-                                                size: 16,
-                                                color: theme.colorScheme.onSurface.withOpacity(0.35),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Status',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem<String>(
-                                        value: 'Available',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
-                                              const SizedBox(width: 8),
-                                              const Text('Available'),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem<String>(
-                                        value: 'Assigned',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.build_outlined, size: 16, color: Colors.blue),
-                                              const SizedBox(width: 8),
-                                              const Text('Assigned'),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem<String>(
-                                        value: 'In Use',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.build_outlined, size: 16, color: Colors.blue),
-                                              const SizedBox(width: 8),
-                                              const Text('In Use'),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DropdownMenuItem<String>(
-                                        value: 'Maintenance',
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.warning_amber_outlined, size: 16, color: Colors.orange),
-                                              const SizedBox(width: 8),
-                                              const Text('Maintenance'),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedStatus = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Offline banner
-                  if (isOffline)
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      FilledButton.icon(
+                        onPressed: _openAddTool,
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Add Tool', style: TextStyle(fontSize: 13)),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Filter bar (aligned with [ToolsScreen]) ─────────────
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    kIsWeb ? 24 : 16,
+                    12,
+                    kIsWeb ? 24 : 16,
+                    0,
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
-                          Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                          SizedBox(width: 8),
-                          Text(
-                            'Offline — showing cached data',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          Expanded(
+                            child: SizedBox(
+                              height: 38,
+                              child: TextField(
+                                controller: _searchController,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Search tools…',
+                                  hintStyle: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.search,
+                                    size: 17,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
+                                  ),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(
+                                            Icons.close,
+                                            size: 16,
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.4),
+                                          ),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            FocusScope.of(context).unfocus();
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  filled: true,
+                                  fillColor: theme.brightness == Brightness.dark
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: AppTheme.primaryColor
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 8),
+                          if (!kIsWeb)
+                            Container(
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _viewToggleBtn(
+                                    icon: Icons.view_list_rounded,
+                                    active: _isListView,
+                                    onTap: () {
+                                      setState(() => _isListView = true);
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (_tableScrollController.hasClients) {
+                                          _tableScrollController.jumpTo(0);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  _viewToggleBtn(
+                                    icon: Icons.grid_view_rounded,
+                                    active: !_isListView,
+                                    onTap: () => setState(() => _isListView = false),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (kIsWeb)
+                            Container(
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _viewToggleBtn(
+                                    icon: Icons.view_list_rounded,
+                                    active: _webViewList,
+                                    onTap: () {
+                                      setState(() => _webViewList = true);
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (_tableScrollController.hasClients) {
+                                          _tableScrollController.jumpTo(0);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  _viewToggleBtn(
+                                    icon: Icons.grid_view_rounded,
+                                    active: !_webViewList,
+                                    onTap: () => setState(() => _webViewList = false),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
-                    ),
-
-                  // Tools Grid
-                  Expanded(
-                    child: isOffline && !toolProvider.isLoading
-                        ? OfflineToolGridSkeleton(
-                            itemCount: 6,
-                            crossAxisCount: 2,
-                            message: 'You are offline. Showing cached data.',
-                          )
-                        : toolProvider.isLoading
-                            ? const ToolCardGridSkeleton(
-                                itemCount: 6,
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 10.0,
-                                mainAxisSpacing: 12.0,
-                                childAspectRatio: 0.75,
-                              )
-                            : filteredTools.isEmpty
-                                ? RefreshIndicator(
-                                    onRefresh: () async {
-                                      await toolProvider.loadTools();
-                                    },
-                                    child: SingleChildScrollView(
-                                      physics: const AlwaysScrollableScrollPhysics(),
-                                      child: Container(
-                                        height: MediaQuery.of(context).size.height * 0.6,
-                                        alignment: Alignment.center,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.build_rounded,
-                                              size: 64,
-                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'No tools found',
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              'Tools assigned to you will appear here',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : RefreshIndicator(
-                                    onRefresh: () async {
-                                      await toolProvider.loadTools();
-                                    },
-                                    child: GridView.builder(
-                                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing: 10.0,
-                                        mainAxisSpacing: 12.0,
-                                        childAspectRatio: 0.75,
-                                      ),
-                                      itemCount: filteredTools.length,
-                                      itemBuilder: (context, index) {
-                                        final tool = filteredTools[index];
-                                        return _buildToolCard(tool);
-                                      },
-                                    ),
-                                  ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _filterDropdown(
+                            value: _selectedStatus,
+                            resetLabel: 'All Status',
+                            items: _statusFilterItems,
+                            hint: 'Status',
+                            onChanged: (v) =>
+                                setState(() => _selectedStatus = v!),
+                          ),
+                          if (hasActiveFilter) ...[
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                setState(() => _selectedStatus = 'All');
+                              },
+                              child: Text(
+                                'Clear',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // ── Tools Grid (icon/tile mode) ───────────────────────────
+                Expanded(
+                  child: toolProvider.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : filtered.isEmpty
+                          ? _buildEmpty(colorScheme)
+                          : showList
+                              ? _buildTable(filtered, colorScheme, isDark)
+                              : _buildToolsGrid(context, filtered, colorScheme, isDark),
+                ),
+              ],
+            );
+          },
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddTool,
-        backgroundColor: AppTheme.secondaryColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Tool'),
       ),
     );
   }
 
-  Widget _buildToolCard(Tool tool) {
-    final cardRadius = context.borderRadiusLarge;
+  /// Filter dropdown pill — same as [ToolsScreen._filterDropdown].
+  Widget _filterDropdown({
+    required String value,
+    required List<String> items,
+    required String hint,
+    required String resetLabel,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isActive = value != hint && value != 'All' && value != 'Category';
 
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ToolDetailScreen(tool: tool)),
-        );
-      },
-      borderRadius: BorderRadius.circular(cardRadius),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Full Image Card - Square
-          Expanded(
-            flex: 1,
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: context.cardDecoration.copyWith(
-                  borderRadius: BorderRadius.circular(cardRadius),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    if (tool.imagePath != null && tool.imagePath!.isNotEmpty)
-                      tool.imagePath!.startsWith('http')
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(cardRadius),
-                              child: Image.network(
-                                tool.imagePath!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildPlaceholderImage(),
-                              ),
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(cardRadius),
-                              child: Image.file(
-                                File(tool.imagePath!),
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildPlaceholderImage(),
-                              ),
-                            )
-                    else
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(cardRadius),
-                        child: _buildPlaceholderImage(),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+    String displayText(String item) {
+      if (item == 'All' || item == 'Category') return resetLabel;
+      return item;
+    }
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.08)
+            : (isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white),
+        borderRadius: BorderRadius.circular(8),
+        border: isActive
+            ? Border.all(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                width: 1,
+              )
+            : null,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: hint == 'Category',
+          isDense: true,
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            size: 16,
+            color: isActive
+                ? AppTheme.primaryColor
+                : theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive
+                ? AppTheme.primaryColor
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          dropdownColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          menuMaxHeight: 300,
+          borderRadius: BorderRadius.circular(10),
+          selectedItemBuilder: (_) => items
+              .map(
+                (item) => Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    displayText(item),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: isActive
+                          ? AppTheme.primaryColor
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          items: items
+              .map(
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    displayText(item),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
 
-          // Details Below Card
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+  Widget _buildTable(List<Tool> tools, ColorScheme colorScheme, bool isDark) {
+    const colName    = 180.0;
+    const colCat     = 130.0;
+    const colStatus  = 100.0;
+    const colCond    = 100.0;
+    const colAction  = 48.0;
+    const horizontalPadding = 16.0; // matches Padding(horizontal: 16) below
+    const totalW = colName + colCat + colStatus + colCond + colAction + (horizontalPadding * 2);
+
+    final headerStyle = TextStyle(
+      fontSize: 11, fontWeight: FontWeight.w600,
+      color: colorScheme.onSurface.withValues(alpha: 0.5),
+      letterSpacing: 0.3,
+    );
+    final divColor = colorScheme.onSurface.withValues(alpha: 0.07);
+
+    return LayoutBuilder(
+      builder: (context, viewportConstraints) {
+        final tableHeight = viewportConstraints.maxHeight.isFinite
+            ? viewportConstraints.maxHeight
+            : (MediaQuery.of(context).size.height * 0.6);
+
+        return SingleChildScrollView(
+          controller: _tableScrollController,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: totalW,
+            height: tableHeight,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  tool.name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    height: 1.2,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                // Header row
+                Container(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.03)
+                      : Colors.black.withValues(alpha: 0.025),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(children: [
+                      SizedBox(width: colName, child: Text('NAME', style: headerStyle)),
+                      SizedBox(width: colCat, child: Text('CATEGORY', style: headerStyle)),
+                      SizedBox(width: colStatus, child: Text('STATUS', style: headerStyle)),
+                      SizedBox(width: colCond, child: Text('CONDITION', style: headerStyle)),
+                      SizedBox(width: colAction),
+                    ]),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  tool.category,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 10,
-                    height: 1.2,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
+                Divider(height: 1, thickness: 0.5, color: divColor),
+
+                // Rows
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => context.read<SupabaseToolProvider>().loadTools(),
+                    child: ListView.separated(
+                      itemCount: tools.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: divColor,
+                      ),
+                      itemBuilder: (context, i) => _buildRow(
+                        tools[i],
+                        colorScheme,
+                        isDark,
+                        colName,
+                        colCat,
+                        colStatus,
+                        colCond,
+                        colAction,
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                _buildStatusPill(tool.status),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatusPill(String status) {
-    final normalized = status.toLowerCase();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    Color textColor;
-    Color backgroundColor;
+  Widget _buildToolsGrid(
+    BuildContext context,
+    List<Tool> tools,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth < 380 ? 2 : 3;
 
-    switch (normalized) {
-      case 'available':
-        textColor = isDark ? const Color(0xFF34D399) : const Color(0xFF0FA958);
-        backgroundColor = isDark ? const Color(0xFF0FA958).withValues(alpha: 0.15) : const Color(0xFFE9F8F1);
-        break;
-      case 'in use':
-      case 'assigned':
-        textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF3B82F6);
-        backgroundColor = isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : const Color(0xFFEFF6FF);
-        break;
-      case 'maintenance':
-        textColor = isDark ? const Color(0xFFFCA5A5) : const Color(0xFFD9534F);
-        backgroundColor = isDark ? const Color(0xFFD9534F).withValues(alpha: 0.15) : const Color(0xFFFCEAEA);
-        break;
-      default:
-        textColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
-        backgroundColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(6),
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: tools.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.76,
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 8.5,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      itemBuilder: (context, i) =>
+          _buildToolGridCard(context, tools[i], colorScheme, isDark),
     );
   }
 
-  Widget _buildPlaceholderImage() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : const Color(0xFFF5F5F7),
+  Widget _buildToolGridCard(
+    BuildContext context,
+    Tool tool,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final imagePath = tool.imagePath;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool)),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.build_rounded,
-            size: 40,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  hasImage
+                      ? (imagePath!.startsWith('http') || kIsWeb)
+                          ? Image.network(
+                              imagePath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
+                                child: _thumbPlaceholder(colorScheme),
+                              ),
+                            )
+                          : Image.file(
+                              File(imagePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
+                                child: _thumbPlaceholder(colorScheme),
+                              ),
+                            )
+                      : Center(child: _thumbPlaceholder(colorScheme)),
+                  Positioned(
+                    left: 6,
+                    bottom: 6,
+                    child: _statusPill(tool.status, isDark),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            'No Image',
+            tool.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            tool.category,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withValues(alpha: 0.45),
             ),
           ),
         ],
@@ -701,108 +671,177 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     );
   }
 
-  bool _matchesSmartSearch(Tool tool) {
-    final query = _searchQuery.trim();
-    if (query.isEmpty) return true;
+  Widget _buildRow(Tool tool, ColorScheme colorScheme, bool isDark,
+      double colName, double colCat, double colStatus, double colCond, double colAction) {
+    final imagePath = tool.imagePath;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
 
-    final queryTokens =
-        _tokenize(query).where((token) => token.isNotEmpty).toList();
-    if (queryTokens.isEmpty) return true;
+    return InkWell(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            // Name + thumbnail
+            SizedBox(
+              width: colName,
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: hasImage && (imagePath!.startsWith('http') || kIsWeb)
+                          ? Image.network(
+                              imagePath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _thumbPlaceholder(colorScheme),
+                            )
+                          : _thumbPlaceholder(colorScheme),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(tool.name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface)),
+                        if (tool.model != null && tool.model!.isNotEmpty)
+                          Text(tool.model!, maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 11,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.45))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-    final fieldTokens = <String>{
-      ..._tokenize(tool.name),
-      ..._tokenize(tool.category),
-      ..._tokenize(tool.brand ?? ''),
-      ..._tokenize(tool.model ?? ''),
-      ..._tokenize(tool.serialNumber ?? ''),
-      ..._tokenize(tool.status),
-      ..._tokenize(tool.condition),
-      ..._tokenize(tool.location ?? ''),
-      ..._tokenize(tool.notes ?? ''),
-    }..removeWhere((token) => token.isEmpty);
+            // Category
+            SizedBox(
+              width: colCat,
+              child: Text(tool.category,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6))),
+            ),
 
-    if (fieldTokens.isEmpty) {
-      return false;
-    }
+            // Status
+            SizedBox(
+              width: colStatus,
+              child: _statusPill(tool.status, isDark),
+            ),
 
-    return queryTokens.every((token) {
-      return fieldTokens.any(
-        (fieldToken) => fieldToken.contains(token),
-      );
-    });
+            // Condition
+            SizedBox(
+              width: colCond,
+              child: Text(tool.condition,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6))),
+            ),
+
+            // Action
+            SizedBox(
+              width: colAction,
+              child: Icon(Icons.chevron_right_rounded, size: 18,
+                  color: colorScheme.onSurface.withValues(alpha: 0.3)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  List<String> _tokenize(String value) {
-    final normalized = _normalize(value);
-    if (normalized.isEmpty) return const [];
-    return normalized.split(' ');
+  Widget _thumbPlaceholder(ColorScheme colorScheme) {
+    return Icon(Icons.build_rounded, size: 18,
+        color: colorScheme.onSurface.withValues(alpha: 0.2));
   }
 
-  String _normalize(String input) {
-    return input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'category':
-        return Icons.category_outlined;
-      case 'carpentry tools':
-        return Icons.hardware_outlined;
-      case 'electrical tools':
-        return Icons.electrical_services_outlined;
-      case 'fastening tools':
-        return Icons.construction_outlined;
-      case 'safety equipment':
-        return Icons.shield_outlined;
-      case 'testing equipment':
-        return Icons.science_outlined;
-      case 'hand tools':
-        return Icons.build_outlined;
-      case 'power tools':
-        return Icons.power_outlined;
-      case 'measuring tools':
-        return Icons.straighten_outlined;
-      case 'cutting tools':
-        return Icons.content_cut_outlined;
-      case 'plumbing tools':
-        return Icons.plumbing_outlined;
-      case 'automotive tools':
-        return Icons.directions_car_outlined;
-      case 'garden tools':
-        return Icons.grass_outlined;
+  Widget _statusPill(String status, bool isDark) {
+    Color color;
+    switch (status.toLowerCase()) {
+      case 'available':
+        color = const Color(0xFF0FA958);
+        break;
+      case 'in use':
+      case 'assigned':
+        color = const Color(0xFF3B82F6);
+        break;
+      case 'maintenance':
+        color = Colors.orange;
+        break;
       default:
-        return Icons.category_outlined;
+        color = Colors.grey;
     }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.18 : 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(status,
+          maxLines: 1,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+    );
   }
 
-  Color _getCategoryIconColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'carpentry tools':
-        return Colors.brown;
-      case 'electrical tools':
-        return Colors.amber;
-      case 'fastening tools':
-        return Colors.blueGrey;
-      case 'safety equipment':
-        return Colors.red;
-      case 'testing equipment':
-        return Colors.purple;
-      case 'hand tools':
-        return Colors.blue;
-      case 'power tools':
-        return Colors.orange;
-      case 'measuring tools':
-        return Colors.teal;
-      case 'cutting tools':
-        return Colors.pink;
-      case 'plumbing tools':
-        return Colors.cyan;
-      case 'automotive tools':
-        return Colors.grey;
-      case 'garden tools':
-        return Colors.green;
-      default:
-        return AppTheme.primaryColor;
-    }
+  Widget _buildEmpty(ColorScheme colorScheme) {
+    final hasFilter = _searchQuery.isNotEmpty || _selectedStatus != 'All';
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            hasFilter ? 'No tools match your filters' : 'No tools assigned to you',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withValues(alpha: 0.45)),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            hasFilter ? 'Try adjusting your search or filters' : 'Tools assigned to you will appear here',
+            style: TextStyle(fontSize: 13,
+                color: colorScheme.onSurface.withValues(alpha: 0.35)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _viewToggleBtn({
+    required IconData icon,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: active
+              ? (theme.brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : const Color(0xFFF0F0F0))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          icon,
+          size: 17,
+          color: active
+              ? theme.colorScheme.onSurface
+              : theme.colorScheme.onSurface.withValues(alpha: 0.35),
+        ),
+      ),
+    );
   }
 }

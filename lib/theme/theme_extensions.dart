@@ -29,6 +29,11 @@ extension ThemeColorExtension on BuildContext {
   /// Get the card background color (f5f5f5 in light mode, dark gray in dark mode)
   Color get cardBackground => AppTheme.getCardBackground(this);
 
+  /// White card fill in light mode, dark card in dark mode
+  Color get cardFill => Theme.of(this).brightness == Brightness.dark
+      ? AppTheme.getCardBackground(this)
+      : Colors.white;
+
   /// Get the app bar background color (white in light mode, black in dark mode)
   Color get appBarBackground => AppTheme.getAppBarBackground(this);
 
@@ -91,55 +96,125 @@ extension ThemeColorExtension on BuildContext {
     );
   }
   
-  /// Get ChatGPT-style input decoration
-  /// OUTLINED, MODERN, INTERACTIVE - distinct from cards
-  /// Automatically adapts to light/dark theme
+  /// Clean filled input decoration — no outline, slight corner rounding.
+  /// Automatically adapts to light/dark theme.
   InputDecoration get chatGPTInputDecoration {
     final theme = Theme.of(this);
     final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(10);
+    final fill = isDark
+        ? Colors.white.withValues(alpha: 0.07)
+        : Colors.white;
+    final noBorder = OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide.none,
+    );
     return InputDecoration(
       filled: true,
-      fillColor: cardBackground, // Theme-aware background
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Premium padding
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16), // Modern rounded corners
-        borderSide: BorderSide(
-          color: cardBorder, // Theme-aware border
-          width: 1,
-        ),
-      ),
+      fillColor: fill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      enabledBorder: noBorder,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: AppTheme.secondaryColor, // Brand green - strong focus state
-          width: 1.4,
-        ),
+        borderRadius: radius,
+        borderSide: BorderSide(color: AppTheme.secondaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: radius,
         borderSide: const BorderSide(color: Colors.red, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.red, width: 1.4),
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: cardBorder, width: 1),
-      ),
+      border: noBorder,
       hintStyle: TextStyle(
-        color: isDark 
-            ? Colors.grey[400] 
-            : Colors.black54,
+        color: isDark ? Colors.grey[500] : Colors.black38,
+        fontSize: 14,
       ),
       labelStyle: TextStyle(
-        color: isDark 
-            ? theme.colorScheme.onSurface.withValues(alpha: 0.8)
+        color: isDark
+            ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
             : const Color(0xFF1A1A1A),
       ),
     );
   }
-  
+
+  /// Solid surface fill matching admin dashboard mobile cards (white / dark).
+  Color get dashboardSurfaceFill {
+    final isDark = Theme.of(this).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF141414) : Colors.white;
+  }
+
+  /// Soft shadow used on dashboard mobile cards (light mode only).
+  List<BoxShadow> get dashboardSurfaceShadows {
+    final isDark = Theme.of(this).brightness == Brightness.dark;
+    if (isDark) return [];
+    return [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.06),
+        blurRadius: 8,
+        offset: const Offset(0, 2),
+      ),
+    ];
+  }
+
+  /// Rounded card-style surface (filled inputs, tiles, secondary buttons).
+  BoxDecoration dashboardSurfaceCardDecoration({double radius = 12}) {
+    return BoxDecoration(
+      color: dashboardSurfaceFill,
+      borderRadius: BorderRadius.circular(radius),
+      boxShadow: dashboardSurfaceShadows,
+    );
+  }
+
+  /// Filled inputs: dashboard card surface, no outline (errors keep a red border).
+  InputDecoration dashboardSurfaceInputDecoration({
+    String? labelText,
+    String? hintText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    EdgeInsetsGeometry? contentPadding,
+    TextStyle? hintStyle,
+    TextStyle? labelStyle,
+    double borderRadius = 12,
+  }) {
+    final theme = Theme.of(this);
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(borderRadius);
+    return InputDecoration(
+      filled: true,
+      fillColor: dashboardSurfaceFill,
+      contentPadding:
+          contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+      disabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+      errorBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      hintStyle: hintStyle ??
+          TextStyle(
+            color: isDark ? Colors.grey[500] : Colors.black38,
+            fontSize: 14,
+          ),
+      labelStyle: labelStyle ??
+          TextStyle(
+            color: isDark
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
+                : const Color(0xFF1A1A1A),
+          ),
+    );
+  }
+
   /// Elevated card decoration — for primary/hero cards with more depth
   BoxDecoration get elevatedCardDecoration {
     final isDark = Theme.of(this).brightness == Brightness.dark;

@@ -5,21 +5,19 @@
 /// Centralized theme configuration for RGS TOOLS
 /// Follows user preferences for white background and black text
 class AppTheme {
-  // Color palette - Inspired by modern gradient design
-  static const Color primaryColor =
-      Color(0xFF2563EB); // Vibrant medium-dark blue
-  static const Color secondaryColor =
-      Color(0xFF047857); // Green accent for interactions
-  static const Color accentColor =
-      Color(0xFF34D399); // Lighter green for states
+  // Unified green token used across the app.
+  static const Color brandGreen = Color(0xFF047857);
+  static const Color primaryColor = brandGreen;
+  static const Color secondaryColor = brandGreen;
+  static const Color accentColor = brandGreen;
   static const Color errorColor = Colors.red;
   static const Color warningColor = Colors.amber;
-  static const Color successColor = Colors.green;
+  static const Color successColor = brandGreen;
 
   // Neutral surfaces - ChatGPT-style theme
   static const Color appBackground = Color(0xFFF5F5F5);
   static const Color cardBackground = Color(0xFFF5F5F5); // Card color for light theme
-  static const Color scaffoldBackground = Colors.white; // Pure white background
+  static const Color scaffoldBackground = Color(0xFFFAFAFA); // Off-white scaffold
   static const Color subtleSurface = Color(0xFFF9FAFB);
   static const Color subtleBorder = Color(0xFFE5E5E5); // Very subtle borders
   static const Color cardBorder = Color(0xFFE5E5E5); // Card border color (light mode)
@@ -89,7 +87,7 @@ class AppTheme {
   static Color statusBadgeBackground(String status) {
     switch (status.toLowerCase()) {
       case 'available':
-        return const Color(0xFF059669);
+        return brandGreen;
       case 'in use':
       case 'assigned':
       case 'pending acceptance':
@@ -321,6 +319,28 @@ class AppTheme {
             : Colors.black.withValues(alpha: 0.04));
   }
 
+  /// Settings / org config / admin sub-pages — matches mobile dashboard (`#141414`).
+  static BoxDecoration groupedCardDecoration(BuildContext context,
+      {double radius = 16}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: isDark ? const Color(0xFF141414) : Colors.white,
+      borderRadius: BorderRadius.circular(radius),
+      border: isDark
+          ? null
+          : Border.all(color: Colors.black.withValues(alpha: 0.05)),
+      boxShadow: isDark
+          ? const <BoxShadow>[]
+          : <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+    );
+  }
+
   // Text colors - ChatGPT-style light theme
   static const Color textPrimary = Color(0xFF1A1A1A); // Dark grey-black, not pure black
   static const Color textSecondary = Color.fromRGBO(0, 0, 0, 0.6); // rgba(0,0,0,0.6)
@@ -328,14 +348,14 @@ class AppTheme {
   static const Color dividerColor = Color(0xFFE0E0E0); // Divider color
 
   // Status colors
-  static const Color statusAvailable = Colors.green;
+  static const Color statusAvailable = brandGreen;
   static const Color statusInUse = Colors.blue;
   static const Color statusMaintenance = Colors.orange;
   static const Color statusRetired = Colors.grey;
 
   // Condition colors
-  static const Color conditionExcellent = Colors.green;
-  static const Color conditionGood = Colors.blue;
+  static const Color conditionExcellent = brandGreen;
+  static const Color conditionGood = brandGreen;
   static const Color conditionFair = Colors.orange;
   static const Color conditionPoor = Colors.red;
   static const Color conditionNeedsRepair = Colors.red;
@@ -359,10 +379,10 @@ class AppTheme {
       ),
       scaffoldBackgroundColor:
           kIsWeb ? webLightScaffoldBackground : scaffoldBackground,
-      hoverColor: secondaryColor.withValues(alpha: 0.08),
-      focusColor: secondaryColor.withValues(alpha: 0.12),
-      splashColor: secondaryColor.withValues(alpha: 0.12),
-      highlightColor: secondaryColor.withValues(alpha: 0.1),
+      hoverColor: primaryColor.withValues(alpha: 0.08),
+      focusColor: primaryColor.withValues(alpha: 0.12),
+      splashColor: primaryColor.withValues(alpha: 0.12),
+      highlightColor: primaryColor.withValues(alpha: 0.1),
 
       // AppBar theme - ChatGPT-style
       appBarTheme: AppBarTheme(
@@ -375,13 +395,13 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.white,
+          statusBarColor: Color(0xFFFAFAFA),
           statusBarIconBrightness: Brightness.dark,
           statusBarBrightness: Brightness.light,
         ),
         titleTextStyle: TextStyle(
           color: Color(0xFF1A1A1A),
-          fontSize: 18,
+          fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -401,35 +421,23 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
 
-      // Text theme - ChatGPT-style colors
+      // Text theme — Tang font, tighter sizes for SaaS density
       textTheme: const TextTheme(
-        displayLarge: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 32, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 28, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 24, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 22, fontWeight: FontWeight.w600),
-        headlineMedium: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
-        titleSmall: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 12, fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
-        bodyMedium: TextStyle(color: Color(0xFF1A1A1A), fontSize: 14),
-        bodySmall: TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 12),
-        labelLarge: TextStyle(
-            color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(
-            color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 12, fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(
-            color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 10, fontWeight: FontWeight.w500),
+        displayLarge:  TextStyle(color: Color(0xFF1A1A1A), fontSize: 28, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(color: Color(0xFF1A1A1A), fontSize: 24, fontWeight: FontWeight.bold),
+        displaySmall:  TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w600),
+        headlineMedium:TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(color: Color(0xFF1A1A1A), fontSize: 15, fontWeight: FontWeight.w600),
+        titleLarge:    TextStyle(color: Color(0xFF1A1A1A), fontSize: 14, fontWeight: FontWeight.w600),
+        titleMedium:   TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500),
+        titleSmall:    TextStyle(color: Color(0xFF1A1A1A), fontSize: 11, fontWeight: FontWeight.w500),
+        bodyLarge:     TextStyle(color: Color(0xFF1A1A1A), fontSize: 14),
+        bodyMedium:    TextStyle(color: Color(0xFF1A1A1A), fontSize: 13),
+        bodySmall:     TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 11),
+        labelLarge:    TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500),
+        labelMedium:   TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 11, fontWeight: FontWeight.w500),
+        labelSmall:    TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 10, fontWeight: FontWeight.w500),
       ),
 
       // Input decoration theme - ChatGPT style (OUTLINED, MODERN, INTERACTIVE)
@@ -447,7 +455,7 @@ class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: secondaryColor, // Brand green - strong focus state
+            color: primaryColor, // Brand green - strong focus state
             width: 1.4,
           ),
         ),
@@ -485,7 +493,7 @@ class AppTheme {
       // Button themes – Apple / Jobber style
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: secondaryColor,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -505,8 +513,8 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: secondaryColor,
-          side: const BorderSide(color: secondaryColor),
+          foregroundColor: primaryColor,
+          side: const BorderSide(color: primaryColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(kIsWeb ? 10 : 14),
           ),
@@ -519,7 +527,7 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: secondaryColor,
+          foregroundColor: primaryColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(kIsWeb ? 10 : 14),
           ),
@@ -540,7 +548,7 @@ class AppTheme {
       // Bottom navigation bar theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: secondaryColor, // Green for selected
+        selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey[500],
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -555,13 +563,13 @@ class AppTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        indicatorColor: secondaryColor,
+        indicatorColor: primaryColor,
         indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: secondaryColor,
+        labelColor: primaryColor,
         unselectedLabelColor: Colors.grey[600],
         labelStyle: const TextStyle(fontWeight: FontWeight.w600),
         overlayColor: MaterialStatePropertyAll(
-          secondaryColor.withValues(alpha: 0.12),
+          primaryColor.withValues(alpha: 0.12),
         ),
       ),
     );
@@ -571,6 +579,8 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
+      // surface is a cool gray (#0D1117); surfaceTint (M3) adds a seed-colored
+      // wash on modals/sheets and reads as blue-green — disable for neutral UI.
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
         brightness: Brightness.dark,
@@ -583,15 +593,25 @@ class AppTheme {
         onSurface:
             const Color(0xFFF0F6FC), // Slightly off-white for better contrast
         onError: Colors.white,
+      ).copyWith(
+        surfaceTint: Colors.transparent,
       ),
-      hoverColor: secondaryColor.withValues(alpha: 0.16),
-      focusColor: secondaryColor.withValues(alpha: 0.22),
-      splashColor: secondaryColor.withValues(alpha: 0.2),
-      highlightColor: secondaryColor.withValues(alpha: 0.18),
+      hoverColor: primaryColor.withValues(alpha: 0.16),
+      focusColor: primaryColor.withValues(alpha: 0.22),
+      splashColor: primaryColor.withValues(alpha: 0.2),
+      highlightColor: primaryColor.withValues(alpha: 0.18),
 
       // Scaffold background - Dark background for dark theme
       scaffoldBackgroundColor:
           kIsWeb ? webDarkScaffoldBackground : backgroundColor,
+
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor:
+            kIsWeb ? webDarkScaffoldBackground : backgroundColor,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor:
+            kIsWeb ? webDarkScaffoldBackground : backgroundColor,
+      ),
 
       // AppBar theme
       appBarTheme: AppBarTheme(
@@ -607,7 +627,7 @@ class AppTheme {
         ),
         titleTextStyle: TextStyle(
           color: Color(0xFFF0F6FC),
-          fontSize: 20,
+          fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -627,61 +647,24 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
 
-      // Text theme
+      // Text theme — Tang font, tighter sizes for SaaS density
+      fontFamily: 'Tang',
       textTheme: const TextTheme(
-        displayLarge: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 32,
-            fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 28,
-            fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 24,
-            fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 22,
-            fontWeight: FontWeight.w600),
-        headlineMedium: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 20,
-            fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 18,
-            fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 16,
-            fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 14,
-            fontWeight: FontWeight.w500),
-        titleSmall: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 12,
-            fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 16),
-        bodyMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 14),
-        bodySmall: TextStyle(
-            color: Color(0xFF8B949E),
-            fontSize: 12), // Subtle gray for secondary text
-        labelLarge: TextStyle(
-            color: Color(0xFFF0F6FC),
-            fontSize: 14,
-            fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(
-            color: Color(0xFF8B949E),
-            fontSize: 12,
-            fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(
-            color: Color(0xFF8B949E),
-            fontSize: 10,
-            fontWeight: FontWeight.w500),
+        displayLarge:  TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 28, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 24, fontWeight: FontWeight.bold),
+        displaySmall:  TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 20, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 18, fontWeight: FontWeight.w600),
+        headlineMedium:TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 16, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 15, fontWeight: FontWeight.w600),
+        titleLarge:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 14, fontWeight: FontWeight.w600),
+        titleMedium:   TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
+        titleSmall:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 11, fontWeight: FontWeight.w500),
+        bodyLarge:     TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 14),
+        bodyMedium:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13),
+        bodySmall:     TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 11),
+        labelLarge:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
+        labelMedium:   TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 11, fontWeight: FontWeight.w500),
+        labelSmall:    TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 10, fontWeight: FontWeight.w500),
       ),
 
       // Input decoration theme
@@ -697,7 +680,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: secondaryColor, width: 2),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -769,7 +752,7 @@ class AppTheme {
       // Bottom navigation bar theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: const Color(0xFF000000), // Pure black
-        selectedItemColor: secondaryColor,
+        selectedItemColor: primaryColor,
         unselectedItemColor:
             const Color(0xFF8B949E), // Subtle gray for unselected
         type: BottomNavigationBarType.fixed,
@@ -787,13 +770,13 @@ class AppTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        indicatorColor: secondaryColor,
+        indicatorColor: primaryColor,
         indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: secondaryColor,
+        labelColor: primaryColor,
         unselectedLabelColor: Colors.grey[400],
         labelStyle: const TextStyle(fontWeight: FontWeight.w600),
         overlayColor: MaterialStatePropertyAll(
-          secondaryColor.withValues(alpha: 0.2),
+          primaryColor.withValues(alpha: 0.2),
         ),
       ),
     );
@@ -828,6 +811,16 @@ class AppTheme {
         return conditionPoor;
       case 'needs repair':
         return conditionNeedsRepair;
+      case 'lost':
+        return const Color(0xFFE53935); // red
+      case 'damaged':
+        return const Color(0xFFE65100); // deep orange
+      case 'faulty':
+        return const Color(0xFFF57C00); // orange
+      case 'missing parts':
+        return const Color(0xFF6D4C41); // brown
+      case 'maintenance required':
+        return const Color(0xFF1565C0); // blue
       default:
         return textSecondary;
     }

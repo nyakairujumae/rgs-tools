@@ -16,7 +16,6 @@ import 'tool_detail_screen.dart';
 import '../models/tool.dart';
 import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
-import '../providers/organization_provider.dart';
 
 class TechnicianDetailScreen extends StatefulWidget {
   final Technician technician;
@@ -985,7 +984,7 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> with Si
                 try {
                   final technicianProvider = context.read<SupabaseTechnicianProvider>();
                   final technicianName = widget.technician.name;
-                  final workerLabel = context.read<OrganizationProvider>().workerLabel;
+                  final workerLabel = 'Technician';
 
                   // Delete from database
                   await technicianProvider.deleteTechnician(widget.technician.id!);

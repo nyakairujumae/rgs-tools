@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -147,61 +148,54 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              kIsWeb ? 24 : 16,
-              kIsWeb ? 24 : 20,
-              kIsWeb ? 24 : 16,
-              0,
+      extendBodyBehindAppBar: true,
+      appBar: kIsWeb
+        ? PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.chevron_left, size: 28, color: theme.colorScheme.onSurface),
+                      onPressed: () => NavigationHelper.safePop(context),
+                      splashRadius: 24,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        _currentTool.name,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: _handleMenuAction,
+                      icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface.withValues(alpha: 0.7), size: 24),
+                      padding: EdgeInsets.zero,
+                      color: context.cardBackground,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      itemBuilder: (context) => _buildAppBarMenuItems(theme),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                      Icons.chevron_left,
-                      size: 28,
-                    color: theme.colorScheme.onSurface,
-                    ),
-                  onPressed: () => NavigationHelper.safePop(context),
-                    splashRadius: 24,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    _currentTool.name,
-                    style: TextStyle(
-                      fontSize: kIsWeb ? 20 : 22,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: _handleMenuAction,
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    size: 24,
-                  ),
-                  padding: EdgeInsets.zero,
-                  color: context.cardBackground,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  itemBuilder: (context) => _buildAppBarMenuItems(theme),
-                ),
-              ],
+          )
+        : AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            toolbarHeight: 0,
+            systemOverlayStyle: const SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+              statusBarBrightness: Brightness.dark,
             ),
           ),
-        ),
-      ),
       body: _toolNotFound
           ? Center(
               child: Column(
@@ -243,17 +237,78 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                     ),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        kIsWeb ? 24 : 16,
-                        kIsWeb ? 16 : 16,
-                        kIsWeb ? 24 : 16,
+                        kIsWeb ? 24 : 0,
+                        kIsWeb ? 16 : 0,
+                        kIsWeb ? 24 : 0,
                         32,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!kIsWeb) ...[
+                            // Mobile: hero image
+                            _buildMobileHeroImage(colorScheme, isDarkMode, theme),
+                            const SizedBox(height: 16),
+                            // Title + chips
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _currentTool.name,
+                                    style: TextStyle(
+                                      fontSize: 22, fontWeight: FontWeight.w700,
+                                      color: colorScheme.onSurface, letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null),
+                                      _buildCompactConditionChip(_currentTool.condition),
+                                      if (_currentTool.toolType != null && _currentTool.toolType!.isNotEmpty)
+                                        _buildTypePill(_currentTool.toolType!),
+                                    ],
+                                  ),
+                                  if (_currentTool.notes != null && _currentTool.notes!.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _currentTool.notes!,
+                                      style: TextStyle(
+                                        fontSize: 13, height: 1.5,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.55),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Details card (web-portal style)
+                            _buildMobileDetailsCard(colorScheme, isDarkMode),
+                            const SizedBox(height: 12),
+                            // Condition & Status actions (admin only)
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) => auth.isAdmin
+                                  ? _buildConditionStatusCard(colorScheme, isDarkMode)
+                                  : const SizedBox.shrink(),
+                            ),
+                            const SizedBox(height: 12),
+                            // History card
+                            if (_currentTool.id != null)
+                              _buildMobileHistoryCard(colorScheme, isDarkMode),
+                            const SizedBox(height: 12),
+                            // Inline actions card
+                            _buildMobileActionsCard(colorScheme, isDarkMode),
+                            const SizedBox(height: 16),
+                          ] else ...[
                           const SizedBox(height: 8),
                           _buildImageSection(),
                           const SizedBox(height: 20),
+                          ],
                           if (kIsWeb) ...[
                             // Web: two-column layout like add tool screen – compact, not elongated
                             Row(
@@ -331,45 +386,12 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                                 return const SizedBox.shrink();
                               },
                             ),
-                          ] else ...[
-                            // Mobile: single column with cards
-                            _buildInfoSection('Basic Information', [
-                              _buildInfoRow('Name', _currentTool.name),
-                              _buildInfoRow('Category', _currentTool.category),
-                              if (_currentTool.brand != null) _buildInfoRow('Brand', _currentTool.brand!),
-                              if (_currentTool.model != null) _buildInfoRow('Model', _currentTool.model!),
-                              if (_currentTool.serialNumber != null) _buildInfoRow('Serial Number', _currentTool.serialNumber!),
-                              if (_currentTool.location != null) _buildInfoRow('Location', _currentTool.location!),
-                            ], isFirstSection: true),
-                            _buildInfoSection('Status & Assignment', [
-                              _buildInfoRow('Status', _currentTool.status, statusWidget: _buildCompactStatusChip(_currentTool.status, isAssigned: _currentTool.assignedTo != null)),
-                              _buildInfoRow('Condition', _currentTool.condition, statusWidget: _buildCompactConditionChip(_currentTool.condition)),
-                              if (_currentTool.assignedTo != null)
-                                FutureBuilder<String>(
-                                  future: UserNameService.getUserName(_currentTool.assignedTo!),
-                                  builder: (context, snapshot) {
-                                    final name = snapshot.hasData ? snapshot.data! : 'Unknown';
-                                    return _buildInfoRow('Assigned To', name);
-                                  },
-                                ),
-                              if (_currentTool.createdAt != null) _buildInfoRow('Added On', _formatDate(_currentTool.createdAt!)),
-                              if (_currentTool.updatedAt != null) _buildInfoRow('Last Updated', _formatDate(_currentTool.updatedAt!)),
-                            ]),
-                            if (_currentTool.purchasePrice != null || _currentTool.currentValue != null)
-                              _buildInfoSection('Financial Information', [
-                                if (_currentTool.purchasePrice != null) _buildInfoRow('Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)),
-                                if (_currentTool.currentValue != null) _buildInfoRow('Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)),
-                                if (_currentTool.purchaseDate != null) _buildInfoRow('Purchase Date', _formatDate(_currentTool.purchaseDate!)),
-                                if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
-                                  _buildInfoRow('Depreciation', _calculateDepreciation()),
-                              ]),
-                            if (_currentTool.notes != null && _currentTool.notes!.isNotEmpty)
-                              _buildInfoSection('Notes', [
-                                _buildInfoRow('', _currentTool.notes!),
-                              ]),
                           ],
-                          const SizedBox(height: 24),
-                          _buildActionButtons(),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: kIsWeb ? 0 : 16),
+                            child: _buildActionButtons(),
+                          ),
                         ],
                       ),
                     ),
@@ -394,6 +416,84 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     }
     
     return [imagePath];
+  }
+
+  /// Mobile: edge-to-edge hero image with overlaid back/menu buttons and page indicator
+  Widget _buildMobileHeroImage(ColorScheme colorScheme, bool isDarkMode, ThemeData theme) {
+    final imageUrls = _getToolImageUrls(_currentTool);
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return SizedBox(
+      height: 220,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Image carousel or placeholder
+          if (imageUrls.isNotEmpty)
+            PageView.builder(
+              controller: _imagePageController,
+              itemCount: imageUrls.length,
+              onPageChanged: (i) => setState(() => _currentImageIndex = i),
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ImageViewerScreen(
+                    imageUrls: imageUrls,
+                    initialIndex: index,
+                    toolName: _currentTool.name,
+                    status: _currentTool.status,
+                    condition: _currentTool.condition,
+                  ),
+                )),
+                child: _buildImageItem(imageUrls[index], colorScheme, isDarkMode),
+              ),
+            )
+          else
+            _buildImagePlaceholder(colorScheme),
+
+          // Top buttons: back + menu
+          Positioned(
+            top: topPadding + 8,
+            left: 12, right: 12,
+            child: Row(
+              children: [
+                _heroCircleButton(Icons.arrow_back, () => NavigationHelper.safePop(context)),
+              ],
+            ),
+          ),
+
+          // Page indicator bottom-right
+          if (imageUrls.length > 1)
+            Positioned(
+              bottom: 12, right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_currentImageIndex + 1} / ${imageUrls.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroCircleButton(IconData icon, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38, height: 38,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
   }
 
   Widget _buildImageItem(String imageUrl, ColorScheme colorScheme, bool isDarkMode) {
@@ -516,7 +616,10 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
                               MaterialPageRoute(
                                 builder: (context) => ImageViewerScreen(
                                   imageUrls: imageUrls,
-                                  initialIndex: _currentImageIndex,
+                                  initialIndex: index,
+                                  toolName: _currentTool.name,
+                                  status: _currentTool.status,
+                                  condition: _currentTool.condition,
                                 ),
                               ),
                             );
@@ -557,6 +660,543 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     );
   }
 
+
+  Widget _buildTypePill(String type) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        type,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  // Inline text label chip (e.g. "Condition: Good", "Type: inventory")
+  Widget _buildInlineLabel(String text) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12,
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  // Web-portal-style details card for mobile
+  Widget _buildMobileDetailsCard(ColorScheme colorScheme, bool isDarkMode) {
+    final theme = Theme.of(context);
+
+    // Build the rows list
+    final rows = <_DetailRow>[];
+    rows.add(_DetailRow(Icons.label_outline_rounded, 'Category', _currentTool.category));
+    if (_currentTool.brand != null && _currentTool.brand!.isNotEmpty)
+      rows.add(_DetailRow(Icons.handyman_outlined, 'Brand', _currentTool.brand!));
+    if (_currentTool.model != null && _currentTool.model!.isNotEmpty)
+      rows.add(_DetailRow(Icons.tag_rounded, 'Model', _currentTool.model!));
+    if (_currentTool.serialNumber != null && _currentTool.serialNumber!.isNotEmpty)
+      rows.add(_DetailRow(Icons.tag_rounded, 'Serial #', _currentTool.serialNumber!));
+    if (_currentTool.location != null && _currentTool.location!.isNotEmpty)
+      rows.add(_DetailRow(Icons.location_on_outlined, 'Location', _currentTool.location!));
+    rows.add(_DetailRow(
+      Icons.person_outline_rounded,
+      'Assigned To',
+      null,
+      assignedUserId: _currentTool.assignedTo,
+    ));
+    if (_currentTool.purchaseDate != null && _currentTool.purchaseDate!.isNotEmpty)
+      rows.add(_DetailRow(Icons.calendar_today_outlined, 'Purchase Date', _formatDate(_currentTool.purchaseDate!)));
+    if (_currentTool.purchasePrice != null)
+      rows.add(_DetailRow(Icons.attach_money_rounded, 'Purchase Price', CurrencyFormatter.formatCurrency(_currentTool.purchasePrice!)));
+    if (_currentTool.currentValue != null)
+      rows.add(_DetailRow(Icons.attach_money_rounded, 'Current Value', CurrencyFormatter.formatCurrency(_currentTool.currentValue!)));
+    if (_currentTool.purchasePrice != null && _currentTool.currentValue != null)
+      rows.add(_DetailRow(Icons.trending_down_rounded, 'Depreciation', _calculateDepreciation()));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // "Details" header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Text(
+                'Details',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Divider(height: 1, thickness: 0.5, color: colorScheme.onSurface.withValues(alpha: 0.08)),
+            // Rows
+            ...rows.asMap().entries.map((entry) {
+              final i = entry.key;
+              final row = entry.value;
+              return Column(
+                children: [
+                  _buildIconDetailRow(row, colorScheme, isDarkMode),
+                  if (i < rows.length - 1)
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      indent: 52,
+                      color: colorScheme.onSurface.withValues(alpha: 0.06),
+                    ),
+                ],
+              );
+            }),
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconDetailRow(_DetailRow row, ColorScheme colorScheme, bool isDarkMode) {
+    final iconBg = isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : colorScheme.onSurface.withValues(alpha: 0.06);
+
+    Widget valueWidget;
+    if (row.assignedUserId != null) {
+      valueWidget = FutureBuilder<String>(
+        future: UserNameService.getUserName(row.assignedUserId!),
+        builder: (context, snapshot) {
+          final name = snapshot.hasData ? snapshot.data! : '—';
+          return Text(name,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ));
+        },
+      );
+    } else {
+      final val = row.value ?? '—';
+      valueWidget = Text(
+        val.isNotEmpty ? val : '—',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(row.icon, size: 16, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(row.label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withValues(alpha: 0.45),
+                      letterSpacing: 0.2,
+                    )),
+                const SizedBox(height: 2),
+                valueWidget,
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileHistoryCard(ColorScheme colorScheme, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: FutureBuilder<List<ToolHistory>>(
+          future: ToolHistoryService.getHistoryForTool(_currentTool.id!),
+          builder: (context, snapshot) {
+            final entries = snapshot.data ?? [];
+            final preview = entries.take(5).toList();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 12, 10),
+                  child: Row(
+                    children: [
+                      Text(
+                        'History',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (entries.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ToolHistoryScreen(
+                                toolId: _currentTool.id!,
+                                toolName: _currentTool.name,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            'View all',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, thickness: 0.5, color: colorScheme.onSurface.withValues(alpha: 0.08)),
+
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                else if (entries.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'No history yet',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ...preview.asMap().entries.map((e) {
+                    final i = e.key;
+                    final item = e.value;
+                    return Column(
+                      children: [
+                        _buildHistoryRow(item, colorScheme, isDarkMode),
+                        if (i < preview.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            indent: 52,
+                            color: colorScheme.onSurface.withValues(alpha: 0.06),
+                          ),
+                      ],
+                    );
+                  }),
+                const SizedBox(height: 4),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryRow(ToolHistory item, ColorScheme colorScheme, bool isDarkMode) {
+    final actionColor = _historyActionColor(item.action);
+    final actionIcon = _historyActionIcon(item.action);
+    final iconBg = actionColor.withValues(alpha: isDarkMode ? 0.18 : 0.1);
+
+    String timeAgo = '';
+    if (item.timestamp != null) {
+      try {
+        final t = DateTime.parse(item.timestamp!).toLocal();
+        final diff = DateTime.now().difference(t);
+        if (diff.inMinutes < 60) {
+          timeAgo = '${diff.inMinutes}m ago';
+        } else if (diff.inHours < 24) {
+          timeAgo = '${diff.inHours}h ago';
+        } else if (diff.inDays < 30) {
+          timeAgo = '${diff.inDays}d ago';
+        } else {
+          timeAgo = '${t.day}/${t.month}/${t.year}';
+        }
+      } catch (_) {}
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(actionIcon, size: 16, color: actionColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.action,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      timeAgo,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withValues(alpha: 0.55),
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (item.performedBy != null && item.performedBy!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'by ${item.performedBy}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withValues(alpha: 0.38),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _historyActionColor(String action) {
+    switch (action.toLowerCase()) {
+      case 'assigned': return AppTheme.primaryColor;
+      case 'returned': return const Color(0xFF0FA958);
+      case 'created': return const Color(0xFF0FA958);
+      case 'maintenance': return Colors.orange;
+      case 'deleted': return Colors.red;
+      case 'transferred': return Colors.purple;
+      case 'condition changed': return Colors.orange;
+      case 'status changed': return Colors.blue;
+      case 'edited':
+      case 'updated': return Colors.blueGrey;
+      default: return Colors.grey;
+    }
+  }
+
+  IconData _historyActionIcon(String action) {
+    switch (action.toLowerCase()) {
+      case 'assigned': return Icons.person_add_rounded;
+      case 'returned': return Icons.assignment_return_rounded;
+      case 'created': return Icons.add_circle_outline_rounded;
+      case 'maintenance': return Icons.build_rounded;
+      case 'deleted': return Icons.delete_outline_rounded;
+      case 'transferred': return Icons.swap_horiz_rounded;
+      case 'condition changed': return Icons.health_and_safety_outlined;
+      case 'status changed': return Icons.swap_vert_rounded;
+      case 'edited':
+      case 'updated': return Icons.edit_outlined;
+      default: return Icons.history_rounded;
+    }
+  }
+
+  Widget _buildConditionStatusCard(ColorScheme colorScheme, bool isDarkMode) {
+    final conditions = [
+      ('Excellent',    Icons.star_outline_rounded,           const Color(0xFF0FA958)),
+      ('Good',         Icons.check_circle_outline_rounded,   const Color(0xFF0FA958)),
+      ('Fair',         Icons.thumbs_up_down_outlined,        Colors.orange),
+      ('Poor',         Icons.warning_amber_outlined,         Colors.deepOrange),
+      ('Needs Repair', Icons.build_circle_outlined,          Colors.red),
+    ];
+
+    final inMaintenance = _currentTool.status == 'Maintenance';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Condition ────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              child: Text('Condition',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colorScheme.onSurface)),
+            ),
+            Divider(height: 1, thickness: 0.5, color: colorScheme.onSurface.withValues(alpha: 0.08)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: conditions.map((c) {
+                  final label = c.$1;
+                  final icon  = c.$2;
+                  final color = c.$3;
+                  final isActive = _currentTool.condition == label;
+                  return GestureDetector(
+                    onTap: () {
+                      if (!isActive) {
+                        _markCondition(label);
+                      } else if (label != 'Excellent') {
+                        _markCondition('Good');
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? color.withValues(alpha: isDarkMode ? 0.22 : 0.12)
+                            : colorScheme.onSurface.withValues(alpha: isDarkMode ? 0.06 : 0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: isActive
+                            ? Border.all(color: color.withValues(alpha: 0.5), width: 1.2)
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(icon, size: 14,
+                              color: isActive ? color : colorScheme.onSurface.withValues(alpha: 0.45)),
+                          const SizedBox(width: 5),
+                          Text(label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                                color: isActive ? color : colorScheme.onSurface.withValues(alpha: 0.6),
+                              )),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            // ── Maintenance ──────────────────────────────────────────
+            Divider(height: 1, thickness: 0.5, color: colorScheme.onSurface.withValues(alpha: 0.08)),
+            InkWell(
+              onTap: () => _handleMenuAction('maintenance'),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34, height: 34,
+                      decoration: BoxDecoration(
+                        color: (inMaintenance ? const Color(0xFF0FA958) : Colors.orange)
+                            .withValues(alpha: isDarkMode ? 0.18 : 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        inMaintenance ? Icons.check_circle_outline_rounded : Icons.build_outlined,
+                        size: 16,
+                        color: inMaintenance ? const Color(0xFF0FA958) : Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        inMaintenance ? 'Complete Maintenance' : 'Mark for Maintenance',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: inMaintenance ? const Color(0xFF0FA958) : colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 18,
+                        color: colorScheme.onSurface.withValues(alpha: 0.3)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildInfoSection(String title, List<Widget> children, {bool isFirstSection = false}) {
     final theme = Theme.of(context);
@@ -732,6 +1372,156 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
           fontWeight: FontWeight.w600,
           fontSize: isWeb ? 12 : 10,
           letterSpacing: isWeb ? -0.1 : 0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileActionsCard(ColorScheme colorScheme, bool isDarkMode) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        final isAdmin = auth.isAdmin;
+        final isShared = _currentTool.toolType == 'shared';
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.07),
+                  blurRadius: 12, offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Text('Actions',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface)),
+                ),
+                Divider(height: 1, thickness: 0.5,
+                    color: colorScheme.onSurface.withValues(alpha: 0.08)),
+
+                // Edit Tool (admin only)
+                if (isAdmin)
+                  _buildActionRow(
+                    icon: Icons.edit_outlined,
+                    iconColor: AppTheme.secondaryColor,
+                    label: 'Edit Tool',
+                    onTap: () => _handleMenuAction('edit'),
+                    colorScheme: colorScheme,
+                    isDarkMode: isDarkMode,
+                  ),
+
+                // Add Photo
+                if (isAdmin)
+                  Divider(height: 1, thickness: 0.5,
+                      color: colorScheme.onSurface.withValues(alpha: 0.06),
+                      indent: 56),
+                _buildActionRow(
+                  icon: Icons.camera_alt_outlined,
+                  iconColor: AppTheme.secondaryColor,
+                  label: 'Add Photo (${_getToolImageUrls(_currentTool).length}/4)',
+                  onTap: () => _handleMenuAction('image'),
+                  colorScheme: colorScheme,
+                  isDarkMode: isDarkMode,
+                ),
+                if (_getToolImageUrls(_currentTool).isNotEmpty) ...[
+                  Divider(height: 1, thickness: 0.5,
+                      color: colorScheme.onSurface.withValues(alpha: 0.06),
+                      indent: 56),
+                  _buildActionRow(
+                    icon: Icons.hide_image_outlined,
+                    iconColor: Colors.red,
+                    label: 'Remove Current Photo',
+                    onTap: () => _handleMenuAction('remove_image'),
+                    colorScheme: colorScheme,
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+
+                // Share / Return to Inventory (admin only)
+                if (isAdmin) ...[
+                  Divider(height: 1, thickness: 0.5,
+                      color: colorScheme.onSurface.withValues(alpha: 0.06),
+                      indent: 56),
+                  _buildActionRow(
+                    icon: isShared ? Icons.share : Icons.share_outlined,
+                    iconColor: AppTheme.secondaryColor,
+                    label: isShared ? 'Return Tool to Inventory' : 'Make Tool Shared',
+                    onTap: () => _handleMenuAction('shared'),
+                    colorScheme: colorScheme,
+                    isDarkMode: isDarkMode,
+                  ),
+
+                  // Delete Tool
+                  Divider(height: 1, thickness: 0.5,
+                      color: colorScheme.onSurface.withValues(alpha: 0.08)),
+                  _buildActionRow(
+                    icon: Icons.delete_outline,
+                    iconColor: Colors.red,
+                    label: 'Delete Tool',
+                    labelColor: Colors.red,
+                    onTap: () => _handleMenuAction('delete'),
+                    colorScheme: colorScheme,
+                    isDarkMode: isDarkMode,
+                    isLast: true,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActionRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required bool isDarkMode,
+    Color? labelColor,
+    bool isLast = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: isLast
+          ? const BorderRadius.vertical(bottom: Radius.circular(16))
+          : BorderRadius.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 34, height: 34,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: isDarkMode ? 0.18 : 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 17, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: labelColor ?? colorScheme.onSurface,
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: colorScheme.onSurface.withValues(alpha: 0.3)),
+          ],
         ),
       ),
     );
@@ -996,26 +1786,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       case 'image':
         _addImage();
         break;
+      case 'remove_image':
+        _removeCurrentImage();
+        break;
       case 'shared':
         _toggleToolShared();
         break;
       case 'maintenance':
         _scheduleMaintenance();
-        break;
-      case 'condition_lost':
-        _markCondition(_currentTool.condition == 'Lost' ? 'Good' : 'Lost');
-        break;
-      case 'condition_damaged':
-        _markCondition(_currentTool.condition == 'Damaged' ? 'Good' : 'Damaged');
-        break;
-      case 'condition_faulty':
-        _markCondition(_currentTool.condition == 'Faulty' ? 'Good' : 'Faulty');
-        break;
-      case 'condition_missing_parts':
-        _markCondition(_currentTool.condition == 'Missing Parts' ? 'Good' : 'Missing Parts');
-        break;
-      case 'history':
-        _viewHistory();
         break;
       case 'delete':
         _deleteTool();
@@ -1070,34 +1848,87 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
 
   void _addImage() async {
     try {
+      // Check current image count
+      final currentImages = _getToolImageUrls(_currentTool);
+      if (currentImages.length >= 4) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Maximum 4 photos allowed. Remove a photo first.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Let user pick source
+      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Take Photo'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         imageQuality: 80,
         maxWidth: 1024,
         maxHeight: 1024,
       );
-      
+
       if (image != null) {
-        setState(() {
-          _isLoading = true;
-        });
-        
-        // Update tool with image path
-        final updatedTool = _currentTool.copyWith(imagePath: image.path);
+        setState(() => _isLoading = true);
+
+        // Append to existing images (comma-separated, max 4)
+        final existing = _currentTool.imagePath ?? '';
+        final newPath = existing.isEmpty ? image.path : '$existing,${image.path}';
+        final updatedTool = _currentTool.copyWith(imagePath: newPath);
         await context.read<SupabaseToolProvider>().updateTool(updatedTool);
-        
+
         setState(() {
           _currentTool = updatedTool;
           _isLoading = false;
+          // Jump to the newly added photo
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final newIndex = _getToolImageUrls(updatedTool).length - 1;
+            _imagePageController.jumpToPage(newIndex);
+            _currentImageIndex = newIndex;
+          });
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image added successfully!'),
+            SnackBar(
+              content: Text('Photo ${currentImages.length + 1} of 4 added.'),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -1105,11 +1936,58 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     } catch (e) {
       handleError(e);
     } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _removeCurrentImage() async {
+    final images = _getToolImageUrls(_currentTool);
+    if (images.isEmpty) return;
+
+    final indexToRemove = _currentImageIndex.clamp(0, images.length - 1);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Photo'),
+        content: Text(images.length == 1
+            ? 'Remove the only photo from this tool?'
+            : 'Remove photo ${indexToRemove + 1} of ${images.length}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final updated = List<String>.from(images)..removeAt(indexToRemove);
+      final newPath = updated.join(',');
+      final updatedTool = _currentTool.copyWith(imagePath: newPath);
+      await context.read<SupabaseToolProvider>().updateTool(updatedTool);
+
+      setState(() {
+        _currentTool = updatedTool;
+        _currentImageIndex = (indexToRemove - 1).clamp(0, (updated.length - 1).clamp(0, 3));
+        _isLoading = false;
+      });
+
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo removed.'), duration: Duration(seconds: 2)),
+        );
       }
+    } catch (e) {
+      handleError(e);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -1146,55 +2024,6 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
             : 'Make Tool Shared',
         textColor: textColor,
         iconColor: AppTheme.secondaryColor,
-      ),
-      _buildMenuItem(
-        value: 'maintenance',
-        icon: _currentTool.status == 'Maintenance'
-            ? Icons.check_circle_outline
-            : Icons.build_outlined,
-        label: _currentTool.status == 'Maintenance'
-            ? 'Complete Maintenance'
-            : 'Mark for Maintenance',
-        textColor: textColor,
-        iconColor: _currentTool.status == 'Maintenance'
-            ? Colors.green
-            : AppTheme.secondaryColor,
-      ),
-      _buildMenuDivider(),
-      _buildMenuItem(
-        value: 'condition_lost',
-        icon: Icons.search_off_outlined,
-        label: _currentTool.condition == 'Lost' ? 'Mark as Found' : 'Mark as Lost',
-        textColor: _currentTool.condition == 'Lost' ? Colors.green : Colors.red,
-        iconColor: _currentTool.condition == 'Lost' ? Colors.green : Colors.red,
-      ),
-      _buildMenuItem(
-        value: 'condition_damaged',
-        icon: Icons.broken_image_outlined,
-        label: _currentTool.condition == 'Damaged' ? 'Mark as Good Condition' : 'Mark as Damaged',
-        textColor: _currentTool.condition == 'Damaged' ? Colors.green : Colors.orange,
-        iconColor: _currentTool.condition == 'Damaged' ? Colors.green : Colors.orange,
-      ),
-      _buildMenuItem(
-        value: 'condition_faulty',
-        icon: Icons.warning_amber_outlined,
-        label: _currentTool.condition == 'Faulty' ? 'Mark as Good Condition' : 'Mark as Faulty',
-        textColor: _currentTool.condition == 'Faulty' ? Colors.green : Colors.orange,
-        iconColor: _currentTool.condition == 'Faulty' ? Colors.green : Colors.orange,
-      ),
-      _buildMenuItem(
-        value: 'condition_missing_parts',
-        icon: Icons.inventory_2_outlined,
-        label: _currentTool.condition == 'Missing Parts' ? 'Mark as Complete' : 'Mark as Missing Parts',
-        textColor: _currentTool.condition == 'Missing Parts' ? Colors.green : Colors.orange,
-        iconColor: _currentTool.condition == 'Missing Parts' ? Colors.green : Colors.orange,
-      ),
-      _buildMenuItem(
-        value: 'history',
-        icon: Icons.history_outlined,
-        label: 'View History',
-        textColor: textColor,
-        iconColor: AppTheme.secondaryColor, // Use app green
       ),
       // Hide Delete Tool for technicians - admins only
       if (!isTechnician) ...[
@@ -1509,18 +2338,8 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     try {
       setState(() => _isLoading = true);
 
-      // If marking as Lost, also set status to unavailable
-      String? newStatus;
-      if (newCondition == 'Lost') {
-        newStatus = 'Lost';
-      } else if (_currentTool.status == 'Lost') {
-        // Restoring from Lost — set back to Available
-        newStatus = 'Available';
-      }
-
       final updatedTool = _currentTool.copyWith(
         condition: newCondition,
-        status: newStatus ?? _currentTool.status,
         updatedAt: DateTime.now().toIso8601String(),
       );
 
@@ -1534,7 +2353,7 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
       final performerName = authProvider.userFullName ?? authProvider.user?.email ?? 'Unknown';
       final performerRole = authProvider.isAdmin ? 'Admin' : 'Technician';
       final performerId = authProvider.userId;
-      final isRestoring = newCondition == 'Good';
+      final isRestoring = newCondition == 'Good' || newCondition == 'Excellent';
 
       // Record history
       if (_currentTool.id != null) {
@@ -2057,4 +2876,14 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
     );
   }
 
+}
+
+/// Simple data holder for mobile detail rows
+class _DetailRow {
+  final IconData icon;
+  final String label;
+  final String? value;
+  final String? assignedUserId;
+
+  const _DetailRow(this.icon, this.label, this.value, {this.assignedUserId});
 }

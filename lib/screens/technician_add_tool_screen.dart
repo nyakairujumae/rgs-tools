@@ -96,13 +96,21 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, size: 28, color: onSurface),
+          onPressed: () => Navigator.of(context).maybePop(),
+          style: ButtonStyle(
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
+          ),
+        ),
+        titleSpacing: 4,
         title: Text(
           'Add New Tool',
           style: TextStyle(
             color: theme.textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w800,
-            fontSize: 30,
-            letterSpacing: -0.5,
+            fontSize: 24,
+            letterSpacing: -0.3,
           ),
         ),
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -110,31 +118,18 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: TextButton(
-              onPressed: _isSaving ? null : _saveTool,
-              child: _isSaving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text('Save',
-                      style: TextStyle(
-                        color: AppTheme.secondaryColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      )),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 // Image
                 _buildImageSelectionSection(),
                 const SizedBox(height: 24),
@@ -142,7 +137,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 // Tool Name
                 TextFormField(
                   controller: _nameController,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Tool Name *',
                     hintText: 'e.g., Digital Multimeter',
                     prefixIcon: const Icon(Icons.handyman_outlined, size: 20, color: Color(0xFF6366F1)),
@@ -155,7 +150,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 DropdownButtonFormField<String>(
                   value: _selectedCategory.isEmpty ? null : _selectedCategory,
                   isExpanded: true,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Category *',
                     hintText: 'Select a category',
                     prefixIcon: Icon(
@@ -194,7 +189,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _brandController,
-                        decoration: context.chatGPTInputDecoration.copyWith(
+                        decoration: context.dashboardSurfaceInputDecoration(
                           labelText: 'Brand',
                           hintText: 'e.g., Fluke',
                           prefixIcon: const Icon(Icons.label_outlined, size: 20, color: Color(0xFF8B5CF6)),
@@ -205,7 +200,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _modelController,
-                        decoration: context.chatGPTInputDecoration.copyWith(
+                        decoration: context.dashboardSurfaceInputDecoration(
                           labelText: 'Model',
                           hintText: 'e.g., 87V',
                           prefixIcon: const Icon(Icons.pin_outlined, size: 20, color: Color(0xFF0EA5E9)),
@@ -226,16 +221,17 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 // Generate button — subtle outlined
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: _generateBothIds,
                     icon: const Icon(Icons.auto_awesome, size: 18),
                     label: const Text('Generate Model & Serial Numbers'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.secondaryColor,
-                      side: const BorderSide(color: AppTheme.secondaryColor, width: 1.2),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -244,7 +240,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 // Serial Number
                 TextFormField(
                   controller: _serialNumberController,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Serial Number',
                     hintText: 'Scan or enter manually',
                     prefixIcon: const Icon(Icons.qr_code_2_rounded, size: 20, color: AppTheme.secondaryColor),
@@ -272,11 +268,10 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 TextFormField(
                   controller: _purchasePriceController,
                   keyboardType: TextInputType.number,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Purchase Price (optional)',
-                    hintText: '0.00',
+                    hintText: 'AED 0.00',
                     prefixIcon: const Icon(Icons.payments_outlined, size: 20, color: Color(0xFF10B981)),
-                    prefixText: 'AED  ',
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -292,7 +287,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                             ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
                             : '',
                       ),
-                      decoration: context.chatGPTInputDecoration.copyWith(
+                      decoration: context.dashboardSurfaceInputDecoration(
                         labelText: 'Purchase Date (optional)',
                         hintText: 'Select date',
                         prefixIcon: const Icon(Icons.event_outlined, size: 20, color: Color(0xFFF59E0B)),
@@ -310,7 +305,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 DropdownButtonFormField<String>(
                   key: ValueKey(_condition),
                   value: _condition,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Condition',
                     prefixIcon: const Icon(Icons.health_and_safety_outlined, size: 20, color: Color(0xFFEF4444)),
                   ),
@@ -328,7 +323,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
 
                 TextFormField(
                   controller: _locationController,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Location',
                     hintText: 'e.g., Van 2, Warehouse A',
                     prefixIcon: const Icon(Icons.place_outlined, size: 20, color: Color(0xFFEF4444)),
@@ -339,7 +334,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                 TextFormField(
                   controller: _notesController,
                   maxLines: 3,
-                  decoration: context.chatGPTInputDecoration.copyWith(
+                  decoration: context.dashboardSurfaceInputDecoration(
                     labelText: 'Notes',
                     hintText: 'Add extra information about this tool',
                     prefixIcon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF6B7280)),
@@ -352,9 +347,42 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
                   style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.45), height: 1.5),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: FilledButton(
+                  onPressed: _isSaving ? null : _saveTool,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save Tool',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -401,14 +429,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: AppTheme.secondaryColor.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppTheme.secondaryColor.withValues(alpha: 0.4),
-            width: 1.5,
-          ),
-        ),
+        decoration: context.dashboardSurfaceCardDecoration(radius: 14),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -451,29 +472,32 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardTheme.color,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
+              margin: const EdgeInsets.only(bottom: 16),
+              width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
             Text(
               'Select Image Source',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
@@ -509,19 +533,22 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   Widget _buildImageOption({required IconData icon, required String label, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
-        ),
+        decoration: context.dashboardSurfaceCardDecoration(radius: 18),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: Colors.blue),
+            Icon(icon, size: 32, color: AppTheme.secondaryColor),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.secondaryColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       ),

@@ -100,4 +100,50 @@ class ToolHistoryService {
       return [];
     }
   }
+
+  /// Fetch history visible to a technician.
+  ///
+  /// Includes:
+  /// - actions performed by this technician
+  /// - actions where this technician appears in old/new value transitions
+  /// - actions for tools currently assigned to this technician
+  static Future<List<ToolHistory>> getHistoryForTechnician(
+    String technicianUserId, {
+    int limit = 200,
+  }) async {
+    try {
+      final assignedToolsRes = await _client
+          .from('tools')
+          .select('id')
+          .eq('assigned_to', technicianUserId);
+
+      final assignedToolIds = (assignedToolsRes as List)
+          .map((e) => (e as Map)['id']?.toString())
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .toList();
+
+      var query = _client
+          .from('tool_history')
+          .select()
+          .or(
+            'performed_by_id.eq.$technicianUserId,old_value.eq.$technicianUserId,new_value.eq.$technicianUserId',
+          );
+
+      if (assignedToolIds.isNotEmpty) {
+        final escapedToolIds =
+            assignedToolIds.map((id) => '"$id"').join(',');
+        query = query.or('tool_id.in.($escapedToolIds)');
+      }
+
+      final res = await query.order('timestamp', ascending: false).limit(limit);
+
+      return (res as List)
+          .map((e) => ToolHistory.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching technician-scoped tool history: $e');
+      return [];
+    }
+  }
 }

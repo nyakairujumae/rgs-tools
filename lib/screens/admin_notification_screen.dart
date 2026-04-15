@@ -49,14 +49,15 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
         bottom: false,
         child: Column(
           children: [
-            // Header with back button
+            // Header
             Padding(
               padding: ResponsiveHelper.getResponsivePadding(
                 context,
                 horizontal: 16,
-                vertical: 20,
+                vertical: 16,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   IconButton(
                     icon: Icon(
@@ -66,38 +67,66 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                     ),
                     onPressed: () => NavigationHelper.safePop(context),
                   ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                   Expanded(
-                    child: Text(
-                      'Notifications',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Notifications',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 30),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
+                        Text(
+                          'Keep up with requests and updates',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Consumer<AdminNotificationProvider>(
                     builder: (context, provider, child) {
                       if (provider.unreadCount > 0) {
-                        return TextButton(
-                          onPressed: () async {
-                            await provider.markAllAsRead();
-                            // Sync badge after marking all as read
-                            await BadgeService.syncBadgeWithDatabase(context);
-                            AuthErrorHandler.showSuccessSnackBar(context, 'All notifications marked as read');
-                          },
-                          child: Text(
-                            'Mark All Read',
-                            style: TextStyle(
-                              color: AppTheme.secondaryColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: TextButton(
+                            onPressed: () async {
+                              await provider.markAllAsRead();
+                              // Sync badge after marking all as read
+                              await BadgeService.syncBadgeWithDatabase(context);
+                              AuthErrorHandler.showSuccessSnackBar(context, 'All notifications marked as read');
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.secondaryColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Mark All Read',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                              ),
                             ),
                           ),
                         );
                       }
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     },
                   ),
                 ],
@@ -117,7 +146,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                   children: [
                     _buildFilterChip('All', null),
                     SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                    ...NotificationType.values.map((type) => 
+                    ...NotificationType.values.map((type) =>
                       Padding(
                         padding: EdgeInsets.only(right: ResponsiveHelper.getResponsiveSpacing(context, 8)),
                         child: _buildFilterChip(type.displayName, type),
@@ -291,9 +320,23 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
   }
 
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
+    final notificationColor = _getNotificationColor(notification.type);
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: context.cardDecoration,
+      decoration: AppTheme.groupedCardDecoration(context, radius: 16).copyWith(
+        color: notification.isRead
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF141414)
+                : Colors.white)
+            : AppTheme.secondaryColor.withValues(alpha: 0.03),
+        border: notification.isRead
+            ? AppTheme.groupedCardDecoration(context, radius: 16).border
+            : Border.all(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -307,84 +350,145 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
               _showNotificationDetails(notification);
             }
           },
-          borderRadius: BorderRadius.circular(18), // Match card decoration borderRadius
-          child: Padding(
-            padding: ResponsiveHelper.getResponsivePadding(context, all: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon Container
-                Container(
-                  padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
-                  decoration: BoxDecoration(
-                    color: _getNotificationColor(notification.type).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.getResponsiveBorderRadius(context, 12)),
-                  ),
-                  child: Icon(
-                    _getNotificationIcon(notification.type),
-                    color: _getNotificationColor(notification.type),
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  ),
-                ),
-                SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                // Content
-                Expanded(
-                  child: Column(
+          borderRadius: BorderRadius.circular(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 4,
+                color: notificationColor.withValues(alpha: notification.isRead ? 0.5 : 1),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: ResponsiveHelper.getResponsivePadding(context, all: 14),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              notification.title,
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w600,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                          ),
-                          if (!notification.isRead)
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: AppTheme.secondaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        notification.message,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          height: 1.4,
+                      Container(
+                        padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 10)),
+                        decoration: BoxDecoration(
+                          color: notificationColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getNotificationIcon(notification.type),
+                          color: notificationColor,
+                          size: ResponsiveHelper.getResponsiveIconSize(context, 20),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Icon(Icons.person_outline, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          const SizedBox(width: 4),
-                          Text(
-                            notification.technicianName,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              fontWeight: FontWeight.w500,
+                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 14)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    notification.title,
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
+                                      fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    ),
+                                  ),
+                                ),
+                                if (!notification.isRead)
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: AppTheme.secondaryColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              notification.message,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 6,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person_outline, size: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      notification.technicianName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.access_time, size: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatTimestamp(notification.timestamp),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), size: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) async {
+                          switch (value) {
+                            case 'mark_read':
+                              await provider.markAsRead(notification.id);
+                              await BadgeService.syncBadgeWithDatabase(context);
+                              break;
+                            case 'delete':
+                              await provider.removeNotification(notification.id);
+                              await BadgeService.syncBadgeWithDatabase(context);
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'mark_read',
+                            child: Row(
+                              children: [
+                                Icon(Icons.mark_email_read, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                                const SizedBox(width: 8),
+                                Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Icon(Icons.access_time, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatTimestamp(notification.timestamp),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          const PopupMenuDivider(height: 1),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, color: Colors.red, size: 18),
+                                SizedBox(width: 8),
+                                Text('Delete', style: TextStyle(color: Colors.red)),
+                              ],
                             ),
                           ),
                         ],
@@ -392,51 +496,8 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                     ],
                   ),
                 ),
-                // Menu Button
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  onSelected: (value) async {
-                    switch (value) {
-                      case 'mark_read':
-                        await provider.markAsRead(notification.id);
-                        // Sync badge after marking as read
-                        await BadgeService.syncBadgeWithDatabase(context);
-                        break;
-                      case 'delete':
-                        await provider.removeNotification(notification.id);
-                        // Sync badge after deleting
-                        await BadgeService.syncBadgeWithDatabase(context);
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'mark_read',
-                      child: Row(
-                        children: [
-                          Icon(Icons.mark_email_read, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                          const SizedBox(width: 8),
-                          Text(notification.isRead ? 'Mark Unread' : 'Mark Read'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

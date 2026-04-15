@@ -92,6 +92,17 @@ class AdminPositionService {
     }
   }
 
+  static Future<bool> userCanManageAdmins(String userId) async {
+    try {
+      final position = await getUserPosition(userId);
+      if (position == null) return false;
+      return position.hasPermission('can_manage_admins');
+    } catch (e) {
+      Logger.debug('❌ Error checking can_manage_admins: $e');
+      return false;
+    }
+  }
+
   /// Update user's position
   static Future<void> updateUserPosition(String userId, String positionId) async {
     try {

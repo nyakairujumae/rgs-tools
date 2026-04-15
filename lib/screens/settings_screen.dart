@@ -5,8 +5,12 @@ import 'dart:io';
 import 'package:open_file/open_file.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../providers/auth_provider.dart';
+import '../config/app_config.dart';
+import 'org_departments_screen.dart';
+import 'org_tool_categories_screen.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/supabase_technician_provider.dart';
 import '../services/csv_export_service.dart';
@@ -35,21 +39,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         vertical: ResponsiveHelper.getResponsiveSpacing(context, 8),
       );
 
+  BoxDecoration _settingsCardDecoration(BuildContext context) {
+    final r = ResponsiveHelper.getResponsiveBorderRadius(context, 16);
+    return AppTheme.groupedCardDecoration(context, radius: r);
+  }
+
   Widget _buildCard(BuildContext context, Widget child) {
-    final theme = Theme.of(context);
     return Container(
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? theme.colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-        ),
-        border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-          width: 1.1,
-        ),
-      ),
+      decoration: _settingsCardDecoration(context),
       child: child,
     );
   }
@@ -76,19 +73,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Header with back button
+            // Header
             Padding(
               padding: ResponsiveHelper.getResponsivePadding(
                 context,
                 horizontal: 16,
-                vertical: 20,
+                vertical: 16,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   IconButton(
                     icon: Icon(
@@ -98,15 +96,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 6)),
                   Expanded(
-                    child: Text(
-                      AppLocalizations.of(context).settings_title,
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).settings_title,
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 30),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 2)),
+                        Text(
+                          'Manage your profile and app preferences',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -119,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: ResponsiveHelper.getResponsivePadding(
                       context,
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 8,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,8 +188,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.3,
-        color: theme.colorScheme.onSurface.withOpacity(0.6),
+        letterSpacing: 0.35,
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
       ),
     );
   }
@@ -182,80 +197,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAccountCard(BuildContext context, AuthProvider authProvider) {
     final theme = Theme.of(context);
     final isDesktop = ResponsiveHelper.isDesktop(context);
-    final fullName = authProvider.userFullName ?? 'Technician';
-    final roleLabel = authProvider.isAdmin ? 'Administrator' : 'Technician';
+    final l10n = AppLocalizations.of(context);
+    final fullName = authProvider.userFullName ?? 'Account';
+    final roleLabel = authProvider.isAdmin
+        ? l10n.technicianHome_administrator
+        : l10n.technicianHome_technician;
     final initials = _getInitials(fullName);
 
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 16 : 18),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? theme.colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 18 : 20),
-        border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(0.08),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: _settingsCardDecoration(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: isDesktop ? 30 : 32,
-                backgroundColor: AppTheme.secondaryColor.withOpacity(0.2),
-                child: Text(
-                  initials,
+          Container(
+            width: isDesktop ? 48 : 56,
+            height: isDesktop ? 48 : 56,
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: isDesktop ? 18 : 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.secondaryColor,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: isDesktop ? 16 : 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  fullName,
                   style: TextStyle(
-                    fontSize: isDesktop ? 18 : 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.secondaryColor,
+                    fontSize: isDesktop ? 17 : 19,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: isDesktop ? 6 : 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: TextStyle(
+                      fontSize: isDesktop ? 11 : 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.secondaryColor,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: isDesktop ? 18 : 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fullName,
-                      style: TextStyle(
-                        fontSize: isDesktop ? 16 : 18,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: isDesktop ? 8 : 10),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isDesktop ? 10 : 12,
-                        vertical: isDesktop ? 4 : 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        roleLabel,
-                        style: TextStyle(
-                          fontSize: isDesktop ? 11 : 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.secondaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          
         ],
       ),
     );
@@ -263,38 +273,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) return 'T';
+    if (parts.isEmpty) return 'A';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[parts.length - 1][0]}'.toUpperCase();
   }
 
   Widget _buildAccountDetails(BuildContext context, AuthProvider authProvider) {
     final isDesktop = ResponsiveHelper.isDesktop(context);
+    final l10n = AppLocalizations.of(context);
     final email = authProvider.user?.email ?? 'Not available';
     final createdAt = authProvider.user?.createdAt;
     final memberSince = _formatMemberSince(createdAt);
-    final roleLabel = authProvider.isAdmin ? 'Administrator' : 'Technician';
+    final roleLabel = authProvider.isAdmin
+        ? l10n.technicianHome_administrator
+        : l10n.technicianHome_technician;
 
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 12 : 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).colorScheme.surface
-            : Colors.white,
-        borderRadius: BorderRadius.circular(isDesktop ? 10 : 12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
-          width: 1,
-        ),
-      ),
+      padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 20)),
+      decoration: _settingsCardDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildAccountDetailRow(context, 'Email', email),
+          _buildAccountDetailRow(context, l10n.common_email, email),
           SizedBox(height: isDesktop ? 8 : 10),
-          _buildAccountDetailRow(context, 'Member Since', memberSince),
+          _buildAccountDetailRow(
+              context, l10n.adminHome_memberSince, memberSince),
           SizedBox(height: isDesktop ? 8 : 10),
-          _buildAccountDetailRow(context, 'Role', roleLabel),
+          _buildAccountDetailRow(context, l10n.adminHome_role, roleLabel),
         ],
       ),
     );
@@ -302,10 +307,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildAccountManagementCard(AuthProvider authProvider) {
     final isAdmin = authProvider.isAdmin;
-    final title = isAdmin ? 'Delete Account' : 'Request Account Deletion';
+    final l10n = AppLocalizations.of(context);
+    final title = isAdmin
+        ? l10n.settings_deleteAccount
+        : l10n.settings_requestAccountDeletion;
     final subtitle = isAdmin
-        ? 'Permanently delete your account and data'
-        : 'Ask your administrator to delete your account';
+        ? l10n.settings_deleteAccountSubtitle
+        : l10n.settings_requestAccountDeletionSubtitle;
 
     return _buildCard(
       context,
@@ -378,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label,
             style: TextStyle(
               fontSize: isDesktop ? 11 : 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -388,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value,
             style: TextStyle(
               fontSize: isDesktop ? 11 : 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.92),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -461,7 +469,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         title: Text(
-          'Currency',
+          AppLocalizations.of(context).settings_currencyLabel,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
             fontWeight: FontWeight.w600,
@@ -500,7 +508,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         title: Text(
-          'Push Notifications',
+          AppLocalizations.of(context).settings_pushNotifications,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
             fontWeight: FontWeight.w600,
@@ -508,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         subtitle: Text(
-          'Receive maintenance reminders and updates',
+          AppLocalizations.of(context).settings_pushNotificationsSubtitle,
           style: TextStyle(
             fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -541,7 +549,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             title: Text(
-              'Auto Backup',
+              AppLocalizations.of(context).settings_autoBackup,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -549,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Automatically backup data to cloud',
+              AppLocalizations.of(context).settings_autoBackupSubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -583,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             title: Text(
-              'Export Data',
+              AppLocalizations.of(context).settings_exportData,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -591,7 +599,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Download your data as CSV',
+              AppLocalizations.of(context).settings_exportDataSubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -628,7 +636,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             title: Text(
-              'Import Data',
+              AppLocalizations.of(context).settings_importData,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -636,7 +644,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Restore from backup file',
+              AppLocalizations.of(context).settings_importDataSubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -674,7 +682,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             title: Text(
-              'App Version',
+              AppLocalizations.of(context).settings_appVersion,
               style: TextStyle(
                 fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
                 fontWeight: FontWeight.w600,
@@ -712,7 +720,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Icon(Icons.help, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
-              'Help & Support',
+              AppLocalizations.of(context).settings_helpSupport,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -720,7 +728,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Get help and contact support',
+              AppLocalizations.of(context).settings_helpSupportSubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -750,7 +758,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Icon(Icons.privacy_tip, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
-              'Privacy Policy',
+              AppLocalizations.of(context).settings_privacyPolicy,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -758,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Read our privacy policy',
+              AppLocalizations.of(context).settings_privacyPolicySubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -788,7 +796,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Icon(Icons.description, color: AppTheme.secondaryColor, size: 20),
             ),
             title: Text(
-              'Terms of Service',
+              AppLocalizations.of(context).settings_termsOfService,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -796,7 +804,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             subtitle: Text(
-              'Read our terms of service',
+              AppLocalizations.of(context).settings_termsOfServiceSubtitle,
               style: TextStyle(
                 fontSize: 13,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
@@ -882,7 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         title: Text(
-          'Select Currency',
+          AppLocalizations.of(context).settings_selectCurrency,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -1043,7 +1051,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'RGS Tools Manager',
+              AppConfig.appName,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
@@ -1062,7 +1070,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              '© 2024 RGS Tools. All rights reserved.',
+              '© 2024 ${AppConfig.appName}. All rights reserved.',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),

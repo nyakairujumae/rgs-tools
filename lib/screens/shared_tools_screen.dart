@@ -34,6 +34,7 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   String _selectedCategory = 'Category';
   String _selectedStatus = 'All';
   String _searchQuery = '';
+  bool _isListView = true;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -62,9 +63,11 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final toolProviderWatch = context.watch<SupabaseToolProvider>();
-    final categories = ['Category', ...toolProviderWatch.getCategories()];
-    final authProvider = context.watch<AuthProvider>();
-    final isTechnician = authProvider.userRole == UserRole.technician;
+    final categories = [
+      'Category',
+      ...toolProviderWatch.getCategories(),
+    ];
+    context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
@@ -75,86 +78,73 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Header ────────────────────────────────────────────────
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                  kIsWeb ? 24 : 16,
-                  kIsWeb ? 28 : 20,
-                  kIsWeb ? 24 : 16,
-                  0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  kIsWeb ? 24 : 16, kIsWeb ? 28 : 20, kIsWeb ? 24 : 16, 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        if (isTechnician)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 12.0),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.chevron_left,
-                                size: 28,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              onPressed: () => NavigationHelper.safePop(context),
-                            ),
-                          ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
-                                'Shared Tools',
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 24 : 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: theme.colorScheme.onSurface,
-                                  letterSpacing: kIsWeb ? -0.3 : 0,
+                              Expanded(
+                                child: Text(
+                                  'Shared Tools',
+                                  style: TextStyle(
+                                    fontSize: kIsWeb ? 32 : 30,
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.colorScheme.onSurface,
+                                    letterSpacing: -0.5,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Access and monitor tools that are shared by teams',
-                                style: TextStyle(
-                                  fontSize: kIsWeb ? 14 : 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: kIsWeb ? 0.5 : 0.6),
+                              FilledButton.icon(
+                                onPressed: () async {
+                                  final updated = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ToolsScreen(
+                                        isSelectionMode: true,
+                                        selectionForShared: true,
+                                      ),
+                                    ),
+                                  );
+                                  if (updated == true && context.mounted) {
+                                    await context.read<SupabaseToolProvider>().loadTools();
+                                  }
+                                },
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('Add Tool', style: TextStyle(fontSize: 13)),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  foregroundColor: theme.colorScheme.onPrimary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                                  minimumSize: const Size(0, 36),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        if (!isTechnician)
-                          Material(
-                            color: Colors.transparent,
-                            child: IconButton(
-                              onPressed: () async {
-                                final updated = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ToolsScreen(
-                                      isSelectionMode: true,
-                                      selectionForShared: true,
-                                    ),
-                                  ),
-                                );
-                                if (updated == true && context.mounted) {
-                                  await context.read<SupabaseToolProvider>().loadTools();
-                                }
-                              },
-                              icon: const Icon(Icons.add, size: 26, color: Colors.white),
-                              tooltip: 'Add shared tool',
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppTheme.secondaryColor,
-                                foregroundColor: Colors.white,
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${toolProviderWatch.tools.where((t) => t.toolType == 'shared').length} shared tools',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                             ),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
+              // ── Filter bar ────────────────────────────────────────────
               _buildSearchAndFilters(categories),
               Expanded(
                 child: Consumer3<SupabaseToolProvider, SupabaseTechnicianProvider, ConnectivityProvider>(
@@ -168,24 +158,36 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
                     return Column(
                       children: [
                         if (isOffline)
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Offline — showing cached data',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          Builder(
+                            builder: (ctx) {
+                              final cs = Theme.of(ctx).colorScheme;
+                              return Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: cs.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ],
-                            ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.wifi_off,
+                                        color: cs.onTertiaryContainer, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Offline — showing cached data',
+                                        style: TextStyle(
+                                          color: cs.onTertiaryContainer,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         Expanded(child: RefreshIndicator(
                           onRefresh: _refresh,
@@ -212,12 +214,12 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     bool hasActiveFilters,
   ) {
     if (toolProvider.isLoading) {
-      return const ToolCardGridSkeleton(
-        itemCount: 6,
-        crossAxisCount: 2,
+      return ToolCardGridSkeleton(
+        itemCount: 9,
+        crossAxisCount: kIsWeb ? 2 : 3,
         crossAxisSpacing: 10.0,
-        mainAxisSpacing: 12.0,
-        childAspectRatio: 0.75,
+        mainAxisSpacing: 10.0,
+        childAspectRatio: kIsWeb ? 0.75 : 0.65,
       );
     }
 
@@ -260,10 +262,15 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         final isDesktop = ResponsiveHelper.isDesktop(context);
         final screenWidth = constraints.maxWidth;
 
-        int crossAxisCount = 2;
+        // Mobile list view — horizontal scrollable table
+        if (!isDesktop && _isListView) {
+          return _buildSharedToolsTable(context, tools, technicianProvider);
+        }
+
+        int crossAxisCount = 3;
         double crossAxisSpacing = 10.0;
-        double mainAxisSpacing = 12.0;
-        double childAspectRatio = 0.75;
+        double mainAxisSpacing = 10.0;
+        double childAspectRatio = 0.7;
         double padding = 16.0;
 
         if (isDesktop) {
@@ -300,336 +307,406 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     );
   }
 
-  Widget _buildSearchAndFilters(List<String> categories) {
+  Widget _buildSharedToolsTable(
+    BuildContext context,
+    List<Tool> tools,
+    SupabaseTechnicianProvider technicianProvider,
+  ) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: kIsWeb ? 24 : 16,
-        vertical: 12,
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
+
+    const double colName     = 160;
+    const double colCat      = 130;
+    const double colBrand    = 110;
+    const double colSerial   = 130;
+    const double colStatus   = 100;
+    const double colCond     = 110;
+    const double colValue    = 100;
+    const double colAssigned = 130;
+    const double colAction   =  44;
+    const double totalW = colName + colCat + colBrand + colSerial + colStatus + colCond + colValue + colAssigned + colAction;
+
+    final headerStyle = TextStyle(
+      fontSize: 11, fontWeight: FontWeight.w600,
+      color: onSurface.withValues(alpha: 0.45), letterSpacing: 0.3,
+    );
+    final cellStyle   = TextStyle(fontSize: 13, color: onSurface.withValues(alpha: 0.6));
+    final divColor    = isDark ? AppTheme.darkCardBorder : const Color(0xFFF0F0F0);
+    final headerBg    = isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFFAFAFA);
+
+    Widget cell(double w, Widget child, {EdgeInsets? padding}) => SizedBox(
+      width: w,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: child,
       ),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.textTheme.bodyLarge?.color,
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-            decoration: context.chatGPTInputDecoration.copyWith(
-              hintText: 'Search shared tools...',
-              prefixIcon: Icon(
-                Icons.search,
-                size: 18,
-                color:
-                    theme.colorScheme.onSurface.withValues(alpha: 0.45),
+    );
+
+    Widget header = Container(
+      color: headerBg,
+      child: Row(children: [
+        cell(colName,     Text('NAME',        style: headerStyle)),
+        cell(colCat,      Text('CATEGORY',    style: headerStyle)),
+        cell(colBrand,    Text('BRAND',       style: headerStyle)),
+        cell(colSerial,   Text('SERIAL #',    style: headerStyle)),
+        cell(colStatus,   Text('STATUS',      style: headerStyle)),
+        cell(colCond,     Text('CONDITION',   style: headerStyle)),
+        cell(colValue,    Text('VALUE',       style: headerStyle)),
+        cell(colAssigned, Text('ASSIGNED TO', style: headerStyle)),
+        SizedBox(width: colAction),
+      ]),
+    );
+
+    List<Widget> rows = [];
+    for (int i = 0; i < tools.length; i++) {
+      final tool    = tools[i];
+      final isLast  = i == tools.length - 1;
+      final imageUrls = _getToolImageUrls(tool);
+      final imageUrl  = imageUrls.isNotEmpty ? imageUrls.first : null;
+
+      rows.add(InkWell(
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool))),
+        onLongPress: () => _showToolActions(tool, technicianProvider),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Name + thumbnail
+            SizedBox(
+              width: colName,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 40, height: 40,
+                      child: imageUrl != null
+                          ? Image.network(imageUrl, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildPlaceholderImage())
+                          : _buildPlaceholderImage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(tool.name,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: onSurface),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ]),
               ),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.clear,
-                        size: 18,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.45),
-                      ),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                    )
-                  : null,
+            ),
+            cell(colCat,    Text(tool.category,          style: cellStyle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            cell(colBrand,  Text(tool.brand ?? '–',      style: cellStyle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            cell(colSerial, Text(tool.serialNumber ?? '–', style: cellStyle.copyWith(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
+            cell(colStatus, _buildStatusPill(tool.status),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+            cell(colCond,   Text(tool.condition,         style: cellStyle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            cell(colValue, Text(
+              () {
+                final v = tool.currentValue ?? tool.purchasePrice;
+                return v != null ? 'AED ${v.toStringAsFixed(0)}' : '–';
+              }(),
+              style: cellStyle, maxLines: 1, overflow: TextOverflow.ellipsis,
+            )),
+            cell(colAssigned, Text(
+              () {
+                final uid = tool.assignedTo;
+                if (uid == null || uid.isEmpty) return '–';
+                return technicianProvider.getTechnicianNameById(uid) ?? '–';
+              }(),
+              style: cellStyle, maxLines: 1, overflow: TextOverflow.ellipsis,
+            )),
+            // Action menu
+            SizedBox(
+              width: colAction,
+              child: PopupMenuButton<String>(
+                icon: Icon(Icons.more_horiz, size: 18, color: onSurface.withValues(alpha: 0.35)),
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                elevation: 4,
+                onSelected: (v) {
+                  if (v == 'view') {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool)));
+                  } else if (v == 'actions') {
+                    _showToolActions(tool, technicianProvider);
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'view', child: Row(children: [
+                    Icon(Icons.visibility_outlined, size: 16, color: onSurface),
+                    const SizedBox(width: 10),
+                    Text('View', style: TextStyle(fontSize: 13, color: onSurface)),
+                  ])),
+                  PopupMenuItem(value: 'actions', child: Row(children: [
+                    Icon(Icons.more_horiz, size: 16, color: onSurface),
+                    const SizedBox(width: 10),
+                    Text('More actions', style: TextStyle(fontSize: 13, color: onSurface)),
+                  ])),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ));
+      if (!isLast) rows.add(Divider(height: 1, thickness: 1, color: divColor));
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141414) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isDark ? [] : [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: totalW,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                header,
+                Divider(height: 1, thickness: 1, color: divColor),
+                ...rows,
+              ],
             ),
           ),
-          const SizedBox(height: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilters(List<String> categories) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final hasActiveFilter = _searchQuery.isNotEmpty ||
+        _selectedStatus != 'All' ||
+        _selectedCategory != 'Category';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(kIsWeb ? 24 : 16, 12, kIsWeb ? 24 : 16, 12),
+      child: Column(
+        children: [
+          // Row 1: search + view toggle
           Row(
             children: [
               Expanded(
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: kIsWeb ? AppTheme.secondaryColor : context.cardBackground,
-                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    border: kIsWeb ? null : (context.cardDecoration.border ?? Border.all(color: context.cardBorder)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedCategory,
-                      isExpanded: true,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
-                        size: 18,
-                      ),
-                      style: TextStyle(
-                        color: kIsWeb ? Colors.white : theme.textTheme.bodyLarge?.color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      selectedItemBuilder: (context) {
-                        return categories.map((category) {
-                          return Align(
-                            alignment: Alignment.centerLeft,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _getCategoryIcon(category),
-                                  size: 16,
-                                  color: kIsWeb
-                                      ? (category == 'Category' ? Colors.white70 : Colors.white)
-                                      : (category == 'Category'
-                                          ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
-                                          : _getCategoryIconColor(category)),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  category == 'Category' && kIsWeb ? 'All Categories' : category,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList();
-                      },
-                      dropdownColor: context.cardBackground,
-                      menuMaxHeight: 300,
-                      borderRadius: BorderRadius.circular(20),
-                      items: categories.map((category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _getCategoryIcon(category),
-                                  size: 16,
-                                  color: category == 'Category'
-                                      ? theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.35)
-                                      : _getCategoryIconColor(category),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    category,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: category == 'Category'
-                                          ? FontWeight.normal
-                                          : FontWeight.w500,
-                                      color: category == 'Category'
-                                          ? theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.6)
-                                          : theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCategory = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: kIsWeb ? AppTheme.secondaryColor : context.cardBackground,
-                    borderRadius: BorderRadius.circular(context.borderRadiusSmall),
-                    border: kIsWeb ? null : (context.cardDecoration.border ?? Border.all(color: context.cardBorder)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      isExpanded: true,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: kIsWeb ? Colors.white : theme.colorScheme.onSurface,
-                        size: 18,
-                      ),
-                      style: TextStyle(
-                        color: kIsWeb ? Colors.white : theme.textTheme.bodyLarge?.color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      selectedItemBuilder: kIsWeb
-                          ? (context) {
-                              const values = ['All', 'Available', 'In Use', 'Maintenance', 'Retired'];
-                              final icons = [
-                                Icons.filter_list_outlined,
-                                Icons.check_circle_outline,
-                                Icons.build_outlined,
-                                Icons.warning_amber_outlined,
-                                Icons.block_outlined,
-                              ];
-                              return List.generate(5, (i) {
-                                final value = values[i];
-                                final label = value == 'All' ? 'All Status' : value;
-                                return Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        icons[i],
-                                        size: 16,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        label,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              });
-                            }
+                child: SizedBox(
+                  height: 38,
+                  child: TextField(
+                    controller: _searchController,
+                    style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search shared tools…',
+                      hintStyle: TextStyle(fontSize: 13,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                      prefixIcon: Icon(Icons.search, size: 17,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.close, size: 16,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                                FocusScope.of(context).unfocus();
+                              },
+                            )
                           : null,
-                      dropdownColor: context.cardBackground,
-                      menuMaxHeight: 300,
-                      borderRadius: BorderRadius.circular(20),
-                      items: [
-                        DropdownMenuItem<String>(
-                          value: 'All',
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.filter_list_outlined,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.35),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Status',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'Available',
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: const [
-                                Icon(
-                                  Icons.check_circle_outline,
-                                  size: 16,
-                                  color: Colors.green,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Available'),
-                              ],
-                            ),
-                          ),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'In Use',
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: const [
-                                Icon(
-                                  Icons.build_outlined,
-                                  size: 16,
-                                  color: Colors.blue,
-                                ),
-                                SizedBox(width: 8),
-                                Text('In Use'),
-                              ],
-                            ),
-                          ),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'Maintenance',
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: const [
-                                Icon(
-                                  Icons.warning_amber_outlined,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Maintenance'),
-                              ],
-                            ),
-                          ),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'Retired',
-                          child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.block_outlined,
-                                  size: 16,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.45),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('Retired'),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedStatus = value!;
-                        });
-                      },
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.5))),
                     ),
                   ),
                 ),
               ),
+              if (!kIsWeb) ...[
+                const SizedBox(width: 8),
+                Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _viewToggleBtn(
+                          icon: Icons.view_list_rounded,
+                          active: _isListView,
+                          onTap: () => setState(() => _isListView = true)),
+                      _viewToggleBtn(
+                          icon: Icons.grid_view_rounded,
+                          active: !_isListView,
+                          onTap: () => setState(() => _isListView = false)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Row 2: status + category + clear
+          Row(
+            children: [
+              _filterDropdown(
+                value: _selectedStatus,
+                items: const ['All', 'Available', 'Assigned', 'In Use', 'Maintenance', 'Retired'],
+                hint: 'Status',
+                resetLabel: 'All Status',
+                onChanged: (v) => setState(() => _selectedStatus = v!),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _filterDropdown(
+                  value: _selectedCategory,
+                  items: categories,
+                  hint: 'Category',
+                  resetLabel: 'All Categories',
+                  onChanged: (v) => setState(() => _selectedCategory = v!),
+                ),
+              ),
+              if (hasActiveFilter) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                      _selectedStatus = 'All';
+                      _selectedCategory = 'Category';
+                    });
+                  },
+                  child: Text('Clear',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45))),
+                ),
+              ],
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _viewToggleBtn({
+    required IconData icon,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32, height: 32,
+        decoration: BoxDecoration(
+          color: active
+              ? (theme.brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : const Color(0xFFF0F0F0))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icon, size: 17,
+            color: active
+                ? theme.colorScheme.onSurface
+                : theme.colorScheme.onSurface.withValues(alpha: 0.35)),
+      ),
+    );
+  }
+
+  Widget _filterDropdown({
+    required String value,
+    required List<String> items,
+    required String hint,
+    required String resetLabel,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isActive = value != hint && value != 'All' && value != 'Category';
+
+    String displayText(String item) {
+      if (item == 'All' || item == 'Category') return resetLabel;
+      return item;
+    }
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.08)
+            : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white),
+        borderRadius: BorderRadius.circular(8),
+        border: isActive
+            ? Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3))
+            : null,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: hint == 'Category',
+          isDense: true,
+          icon: Icon(Icons.keyboard_arrow_down, size: 16,
+              color: isActive
+                  ? AppTheme.primaryColor
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive
+                ? AppTheme.primaryColor
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          dropdownColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          menuMaxHeight: 300,
+          borderRadius: BorderRadius.circular(10),
+          selectedItemBuilder: (_) => items
+              .map((item) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(displayText(item),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                          color: isActive
+                              ? AppTheme.primaryColor
+                              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        )),
+                  ))
+              .toList(),
+          items: items.map((item) => DropdownMenuItem(
+            value: item,
+            child: Text(displayText(item),
+                style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface)),
+          )).toList(),
+          onChanged: onChanged,
+        ),
       ),
     );
   }
@@ -650,87 +727,176 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
         );
       },
       onLongPress: () => _showToolActions(tool, technicianProvider),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Image Section
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: context.cardDecoration.copyWith(
-                  borderRadius: BorderRadius.circular(cardRadius),
+      borderRadius: BorderRadius.circular(cardRadius),
+      child: isDesktop
+        // Web: original layout
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Container(
+                    decoration: context.cardDecoration.copyWith(
+                      borderRadius: BorderRadius.circular(cardRadius),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _buildToolImage(tool, cardRadius),
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildToolImage(tool, cardRadius),
               ),
-            ),
-          ),
-          // Details Section - Clean and organized
-          Padding(
-            padding: EdgeInsets.only(top: isDesktop ? 4.0 : 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Tool Name
-                Text(
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tool.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 12, height: 1.2,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      tool.category,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 9, height: 1.2,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    _buildStatusPill(tool.status),
+                  ],
+                ),
+              ),
+            ],
+          )
+        // Mobile: image with status pill inside, text outside
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildToolImage(tool, cardRadius),
+                      Positioned(
+                        left: 6, bottom: 6,
+                        child: _buildStatusPill(tool.status),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(
                   tool.name,
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: isDesktop ? 12 : 13,
-                    height: 1.2,
+                    fontWeight: FontWeight.w600, fontSize: 11, height: 1.2,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: isDesktop ? 2 : 2),
-                // Category
-                Text(
-                  tool.category,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: isDesktop ? 9 : 10,
-                    height: 1.2,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                tool.category,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500, fontSize: 9, height: 1.2,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
-                const SizedBox(height: 4),
-                _buildStatusPill(tool.status),
-              ],
-            ),
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   Widget _buildStatusPill(String status) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final Color statusColor = _getStatusColor(status);
-    // Web: slightly larger pill for readability
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final normalized = status.toLowerCase();
+    Color textColor;
+    Color backgroundColor;
+
+    switch (normalized) {
+      case 'available':
+        textColor = isDark ? const Color(0xFF34D399) : const Color(0xFF0FA958);
+        backgroundColor = isDark
+            ? const Color(0xFF0FA958).withValues(alpha: 0.15)
+            : const Color(0xFFE9F8F1);
+        break;
+      case 'in use':
+      case 'assigned':
+        textColor = isDark ? const Color(0xFF93C5FD) : const Color(0xFF3B82F6);
+        backgroundColor = isDark
+            ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+            : const Color(0xFFEFF6FF);
+        break;
+      case 'maintenance':
+        textColor = isDark ? const Color(0xFFFCA5A5) : const Color(0xFFD9534F);
+        backgroundColor = isDark
+            ? const Color(0xFFD9534F).withValues(alpha: 0.15)
+            : const Color(0xFFFCEAEA);
+        break;
+      default:
+        textColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
+        backgroundColor =
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+    }
+
     final isWebLayout = ResponsiveHelper.isWeb;
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isWebLayout ? 10 : 8,
-        vertical: isWebLayout ? 4 : 3,
+        horizontal: isWebLayout ? 10 : 5,
+        vertical: isWebLayout ? 4 : 1.5,
       ),
       decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: isDark ? 0.15 : 0.12),
-        borderRadius: BorderRadius.circular(isWebLayout ? 8 : 10),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(isWebLayout ? 8 : 6),
+        border: isDark
+            ? Border.all(
+                color: Colors.white.withValues(alpha: 0.38),
+                width: 1,
+              )
+            : null,
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ]
+            : null,
       ),
       child: Text(
         status,
         style: TextStyle(
           fontSize: isWebLayout ? 12 : 10,
           fontWeight: FontWeight.w600,
-          color: statusColor,
+          color: textColor,
           letterSpacing: isWebLayout ? -0.1 : 0,
+          shadows: isDark
+              ? [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    blurRadius: 4,
+                    offset: const Offset(0, 0.5),
+                  ),
+                ]
+              : null,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -840,30 +1006,13 @@ class _SharedToolsScreenState extends State<SharedToolsScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : const Color(0xFFF5F5F7),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.build_rounded,
-            size: kIsWeb ? 28 : 40,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-          ),
-          if (!kIsWeb) ...[
-            const SizedBox(height: 4),
-            Text(
-              'No Image',
-              style: TextStyle(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-              ),
-            ),
-          ],
-        ],
+      color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF5F5F7),
+      child: Center(
+        child: Icon(
+          Icons.build_rounded,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+        ),
       ),
     );
   }

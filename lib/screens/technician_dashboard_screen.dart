@@ -207,6 +207,108 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     }
   }
 
+  Widget _buildStatCards(
+    BuildContext context, {
+    required int assignedCount,
+    required int sharedCount,
+    required int inUseCount,
+    required int availableCount,
+  }) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final cards = <Map<String, dynamic>>[
+      {
+        'label': 'Assigned',
+        'count': assignedCount,
+        'icon': Icons.assignment_turned_in_outlined,
+        'color': AppTheme.secondaryColor,
+      },
+      {
+        'label': 'Shared',
+        'count': sharedCount,
+        'icon': Icons.groups_2_outlined,
+        'color': const Color(0xFF2563EB),
+      },
+      {
+        'label': 'In use',
+        'count': inUseCount,
+        'icon': Icons.build_circle_outlined,
+        'color': const Color(0xFFF59E0B),
+      },
+      {
+        'label': 'Available',
+        'count': availableCount,
+        'icon': Icons.inventory_2_outlined,
+        'color': const Color(0xFF10B981),
+      },
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: cards.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.65,
+      ),
+      itemBuilder: (_, i) {
+        final card = cards[i];
+        final color = card['color'] as Color;
+        final icon = card['icon'] as IconData;
+        final label = card['label'] as String;
+        final count = card['count'] as int;
+        return Container(
+          decoration: context.cardDecoration.copyWith(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: onSurface,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer3<SupabaseToolProvider, AuthProvider,
@@ -270,6 +372,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                 .where((tool) => tool.assignedTo == currentUserId)
                 .toList();
         final latestTools = myTools;
+        final inUseCount =
+            myTools.where((tool) => tool.status == 'In Use').length;
+        final availableCount = toolProvider.tools
+            .where((tool) => tool.status == 'Available')
+            .length;
 
         if (toolProvider.isLoading) {
           return _buildSkeletonDashboard(context);
@@ -400,8 +507,23 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                   ],
                 ),
               ),
+              ),
 
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+              // Quick stats (admin-style cards)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildStatCards(
+                  context,
+                  assignedCount: myTools.length,
+                  sharedCount: featuredTools.length,
+                  inUseCount: inUseCount,
+                  availableCount: availableCount,
+                ),
+              ),
+
+              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
 
               // Shared Tools Section
               Padding(
@@ -566,11 +688,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
 
               SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                  ],
-                ),
-              ),
+            ],
+          ),
         ),
-        );
+      ),
+    );
       },
     );
   }
@@ -1278,10 +1400,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _buildSkeletonDashboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    final baseColor = isDarkMode 
+    final baseColor = isDarkMode
         ? Colors.grey[800]!.withValues(alpha: 0.3)
         : Colors.grey[300]!;
-    final highlightColor = isDarkMode 
+    final highlightColor = isDarkMode
         ? Colors.grey[700]!.withValues(alpha: 0.5)
         : Colors.grey[400]!;
 
@@ -1342,7 +1464,66 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+            // Quick stats skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 4,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.65,
+                ),
+                itemBuilder: (_, __) => Container(
+                  decoration: context.cardDecoration.copyWith(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      SkeletonLoader(
+                        width: 34,
+                        height: 34,
+                        borderRadius: BorderRadius.circular(10),
+                        baseColor: baseColor,
+                        highlightColor: highlightColor,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SkeletonLoader(
+                              width: 40,
+                              height: 18,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
+                            const SizedBox(height: 6),
+                            SkeletonLoader(
+                              width: 56,
+                              height: 10,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
 
             // Shared Tools Section skeleton
             Padding(
@@ -1368,11 +1549,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
 
             // Shared Tools Carousel skeleton
             SizedBox(
-              height: ResponsiveHelper.getResponsiveListItemHeight(context, 212),
+              height: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
               child: Padding(
                 padding: ResponsiveHelper.getResponsivePadding(
                   context,
@@ -1382,7 +1563,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
 
             // My Tools Section skeleton
             Padding(
@@ -1408,13 +1589,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
 
             // My Tools List skeleton
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: List.generate(2, (index) => Padding(
+                children: List.generate(3, (index) => Padding(
                   padding: EdgeInsets.only(
                     bottom: ResponsiveHelper.getResponsiveSpacing(context, 12),
                   ),
@@ -1432,106 +1613,63 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
   Widget _buildFeaturedCardSkeleton(BuildContext context, Color baseColor, Color highlightColor) {
     return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-        vertical: ResponsiveHelper.getResponsiveSpacing(context, 6),
-      ),
+      height: ResponsiveHelper.getResponsiveListItemHeight(context, 180),
       decoration: context.cardDecoration.copyWith(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Image skeleton
+          Container(width: 4, color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
           SkeletonLoader(
-            width: ResponsiveHelper.getResponsiveIconSize(context, 140),
+            width: 120,
             height: double.infinity,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-            ),
+            borderRadius: BorderRadius.zero,
             baseColor: baseColor,
             highlightColor: highlightColor,
           ),
-          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+          const SizedBox(width: 12),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Title skeleton
                   SkeletonLoader(
-                    width: double.infinity,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                    width: 140,
+                    height: 16,
                     borderRadius: BorderRadius.circular(4),
                     baseColor: baseColor,
                     highlightColor: highlightColor,
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Chips skeleton
-                  Row(
-                    children: [
-                      SkeletonLoader(
-                        width: 80,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                      SkeletonLoader(
-                        width: 70,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Serial number skeleton
-                  SkeletonLoader(
-                    width: 120,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Location skeleton
                   SkeletonLoader(
                     width: 100,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
+                    height: 12,
                     borderRadius: BorderRadius.circular(4),
                     baseColor: baseColor,
                     highlightColor: highlightColor,
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Category skeleton
                   SkeletonLoader(
-                    width: 90,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                    borderRadius: BorderRadius.circular(4),
+                    width: 86,
+                    height: 22,
+                    borderRadius: BorderRadius.circular(8),
                     baseColor: baseColor,
                     highlightColor: highlightColor,
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Brand/Model skeleton
                   SkeletonLoader(
-                    width: 150,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 12),
+                    width: 120,
+                    height: 12,
                     borderRadius: BorderRadius.circular(4),
                     baseColor: baseColor,
                     highlightColor: highlightColor,
-                  ),
+                  )
                 ],
               ),
             ),
           ),
+          const SizedBox(width: 12),
         ],
       ),
     );
@@ -1539,104 +1677,83 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
   Widget _buildLatestCardSkeleton(BuildContext context, Color baseColor, Color highlightColor) {
     return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 172),
-      padding: ResponsiveHelper.getResponsivePadding(
-        context,
-        horizontal: 12,
-        vertical: 6,
-      ),
+      height: ResponsiveHelper.getResponsiveListItemHeight(context, 100),
       decoration: context.cardDecoration.copyWith(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Image skeleton
           SkeletonLoader(
-            width: ResponsiveHelper.getResponsiveIconSize(context, 140),
+            width: 4,
             height: double.infinity,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-            ),
+            borderRadius: BorderRadius.zero,
             baseColor: baseColor,
             highlightColor: highlightColor,
           ),
-          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+          SkeletonLoader(
+            width: 90,
+            height: double.infinity,
+            borderRadius: BorderRadius.zero,
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Title skeleton
                   SkeletonLoader(
-                    width: double.infinity,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 16),
+                    width: 150,
+                    height: 14,
                     borderRadius: BorderRadius.circular(4),
                     baseColor: baseColor,
                     highlightColor: highlightColor,
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Chips skeleton
+                  SkeletonLoader(
+                    width: 120,
+                    height: 11,
+                    borderRadius: BorderRadius.circular(4),
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       SkeletonLoader(
-                        width: 80,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
+                        width: 70,
+                        height: 10,
+                        borderRadius: BorderRadius.circular(4),
                         baseColor: baseColor,
                         highlightColor: highlightColor,
                       ),
-                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+                      const SizedBox(width: 10),
                       SkeletonLoader(
-                        width: 70,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
+                        width: 60,
+                        height: 10,
+                        borderRadius: BorderRadius.circular(4),
                         baseColor: baseColor,
                         highlightColor: highlightColor,
                       ),
                     ],
                   ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Serial number skeleton
-                  SkeletonLoader(
-                    width: 120,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Location skeleton
-                  SkeletonLoader(
-                    width: 100,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Category skeleton
-                  SkeletonLoader(
-                    width: 90,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Brand/Model skeleton
-                  SkeletonLoader(
-                    width: 150,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
                 ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: SkeletonLoader(
+                width: 14,
+                height: 14,
+                borderRadius: BorderRadius.circular(7),
+                baseColor: baseColor,
+                highlightColor: highlightColor,
               ),
             ),
           ),

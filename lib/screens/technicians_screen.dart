@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-
 import '../providers/supabase_technician_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/auth_provider.dart';
@@ -12,12 +12,12 @@ import '../theme/theme_extensions.dart';
 import '../services/supabase_service.dart';
 import '../services/push_notification_service.dart';
 import '../widgets/common/offline_skeleton.dart';
+import '../widgets/common/offline_sync_banner.dart';
 import '../providers/connectivity_provider.dart';
 import 'add_technician_screen.dart';
 import 'technician_detail_screen.dart';
 import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
-import '../providers/organization_provider.dart';
 
 class TechniciansScreen extends StatefulWidget {
   const TechniciansScreen({super.key});
@@ -27,12 +27,27 @@ class TechniciansScreen extends StatefulWidget {
 }
 
 class _TechniciansScreenState extends State<TechniciansScreen> {
-  static const Color _skeletonBaseColor = Color(0xFFE6EAF1);
-  static const Color _skeletonHighlightColor = Color(0xFFD8DBE0);
+  static Color _skeletonBase(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF252525) : const Color(0xFFE6EAF1);
+  }
+
+  static Color _skeletonHighlight(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF323232) : const Color(0xFFD8DBE0);
+  }
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedFilter = 'All';
+  String _selectedDepartment = 'Department';
   Set<String> _selectedTechnicians = <String>{};
   List<String>? _selectedTools;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -61,8 +76,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
   Widget _buildTechnicianSkeletonList(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: _skeletonBaseColor,
-      highlightColor: _skeletonHighlightColor,
+      baseColor: _skeletonBase(context),
+      highlightColor: _skeletonHighlight(context),
       period: const Duration(milliseconds: 1400),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -89,8 +104,8 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(
-              color: _skeletonBaseColor,
+            decoration: BoxDecoration(
+              color: _skeletonBase(context),
               shape: BoxShape.circle,
             ),
           ),
@@ -114,7 +129,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       width: 18,
                       height: 18,
                       decoration: BoxDecoration(
-                        color: _skeletonBaseColor,
+                        color: _skeletonBase(context),
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
@@ -135,7 +150,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: _skeletonBaseColor,
+          color: _skeletonBase(context),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
@@ -149,10 +164,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         final technicians = technicianProvider.technicians;
         final isOffline = !connectivityProvider.isOnline;
 
-        // Get unique departments for filter
+        // Get departments from unique values across technicians
         final departments = technicians
-            .where((tech) =>
-                tech.department != null && tech.department!.isNotEmpty)
+            .where((tech) => tech.department != null && tech.department!.isNotEmpty)
             .map((tech) => tech.department!)
             .toSet()
             .toList()
@@ -166,7 +180,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
             return false;
           }
 
-          // Apply selected filter
+          // Apply status/special filter
           if (_selectedFilter != 'All') {
             if (_selectedFilter == 'Active' && tech.status != 'Active')
               return false;
@@ -184,11 +198,12 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   .length;
               if (toolCount > 0) return false;
             }
-            // Department filter
-            if (departments.contains(_selectedFilter) &&
-                tech.department != _selectedFilter) {
-              return false;
-            }
+          }
+
+          // Department filter
+          if (_selectedDepartment != 'Department' &&
+              tech.department != _selectedDepartment) {
+            return false;
           }
 
           // Filter by search query
@@ -205,17 +220,20 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
         }).toList();
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            bottom: false,
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: context.scaffoldBackground,
+          body: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: SafeArea(
+              bottom: false,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Header ───────────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (_selectedTools != null) ...[
                           IconButton(
@@ -235,63 +253,50 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Technicians',
+                                      style: const TextStyle(
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_selectedTools == null)
+                                    FilledButton.icon(
+                                      onPressed: _showAddTechnicianDialog,
+                                      icon: const Icon(Icons.person_add_rounded, size: 16),
+                                      label: Text('Add ${'Technician'}',
+                                          style: const TextStyle(fontSize: 13)),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        minimumSize: const Size(0, 36),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
                               Text(
-                                context.read<OrganizationProvider>().workerLabelPlural,
+                                '${filteredTechnicians.length} ${'Technicians'.toLowerCase()}',
                                 style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                                 ),
                               ),
-                              if (_selectedTools == null) const SizedBox(height: 4),
-                              if (_selectedTools == null)
-                                Text(
-                                  AppLocalizations.of(context).technicians_subtitle,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.55),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
-                        if (_selectedTools == null)
-                          Material(
-                            color: Colors.transparent,
-                            child: IconButton(
-                              onPressed: _showAddTechnicianDialog,
-                              icon: const Icon(
-                                Icons.add,
-                                size: 26,
-                                color: Colors.white,
-                              ),
-                              tooltip: 'Add ${context.read<OrganizationProvider>().workerLabel}',
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppTheme.secondaryColor,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                  if (_selectedTools != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                      child: Text(
-                        AppLocalizations.of(context).technicians_subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.55),
-                        ),
-                      ),
-                    ),
                   // Assignment Instructions (only show when assigning tools)
                   if (_selectedTools != null)
                     Container(
@@ -332,7 +337,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Select ${context.read<OrganizationProvider>().workerLabelPlural.toLowerCase()} to assign',
+                                  'Select ${'Technicians'.toLowerCase()} to assign',
                                   style: TextStyle(
                                     fontSize: 12,
                                 color: Theme.of(context)
@@ -349,88 +354,12 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                       ),
                     ),
 
-                  // Search Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: TextField(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                      decoration: context.chatGPTInputDecoration.copyWith(
-                        hintText: AppLocalizations.of(context).technicians_searchHint,
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.45),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          size: 18,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.45),
-                        ),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 18,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.45),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                            : null,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                  ),
+                  // ── Filter bar ───────────────────────────────────────
+                  _buildFilterBar(departments),
+                  const SizedBox(height: 8),
 
-                  // Filter Chips
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildFilterChips(),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Offline banner
-                  if (isOffline)
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.wifi_off, color: Colors.white, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            AppLocalizations.of(context).common_offlineBanner,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // Offline / sync banner
+                  OfflineSyncBanner(isOffline: isOffline),
 
                   // Technicians List
                   Expanded(
@@ -453,7 +382,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  AppLocalizations.of(context).technicians_emptyTitle,
+                                  _searchQuery.isNotEmpty || _selectedFilter != 'All' || _selectedDepartment != 'Department'
+                                      ? 'No ${'Technicians'.toLowerCase()} match your filters'
+                                      : 'No ${'Technicians'.toLowerCase()} yet',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -465,7 +396,9 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  AppLocalizations.of(context).technicians_emptySubtitle,
+                                  _searchQuery.isNotEmpty || _selectedFilter != 'All' || _selectedDepartment != 'Department'
+                                      ? 'Try adjusting your search or filters'
+                                      : 'Add your first ${'Technician'.toLowerCase()} to get started',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Theme.of(context)
@@ -474,6 +407,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                         ?.color
                                         ?.withValues(alpha: 0.6),
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
@@ -482,25 +416,26 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                                 builder: (context, constraints) {
                                   final screenWidth = constraints.maxWidth;
                                   final isDesktop = kIsWeb && screenWidth >= 900;
-                                  final padding = isDesktop ? 20.0 : 16.0;
-                                  final spacing = isDesktop ? 8.0 : 12.0;
-                                  
-                                  return ListView.builder(
-                                    padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
-                                    itemCount: filteredTechnicians.length,
-                                    itemBuilder: (context, index) {
-                                      final technician = filteredTechnicians[index];
-                                      final isLast = index == filteredTechnicians.length - 1;
-                                      return Column(
-                                        children: [
-                                          isDesktop 
-                                            ? _buildWebTechnicianRow(technician)
-                                            : _buildTechnicianCard(technician),
-                                          if (!isLast) SizedBox(height: spacing),
-                                        ],
-                                      );
-                                    },
-                                  );
+
+                                  if (isDesktop) {
+                                    return ListView.builder(
+                                      keyboardDismissBehavior:
+                                          ScrollViewKeyboardDismissBehavior.onDrag,
+                                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                                      itemCount: filteredTechnicians.length,
+                                      itemBuilder: (context, index) {
+                                        final technician = filteredTechnicians[index];
+                                        final isLast = index == filteredTechnicians.length - 1;
+                                        return Column(
+                                          children: [
+                                            _buildWebTechnicianRow(technician),
+                                            if (!isLast) const SizedBox(height: 8),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  }
+                                  return _buildMobileTable(context, filteredTechnicians);
                                 },
                               ),
                     ),
@@ -573,7 +508,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
           _showEditTechnicianDialog(technician);
         }
       },
-      borderRadius: BorderRadius.circular(18), // Match card decoration
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: context.cardDecoration.copyWith(
@@ -968,6 +903,491 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     );
   }
 
+  // ── Filter bar (new web-style) ─────────────────────────────────────────
+  Widget _buildFilterBar(List<String> departments) {
+    final theme = Theme.of(context);
+    final hasActiveFilter = _searchQuery.isNotEmpty ||
+        _selectedFilter != 'All' ||
+        _selectedDepartment != 'Department';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        children: [
+          // Row 1: search (matches Tools screen)
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: TextField(
+                    controller: _searchController,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search…',
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: 17,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                                FocusScope.of(context).unfocus();
+                              },
+                              padding: EdgeInsets.zero,
+                              splashRadius: 16,
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      filled: true,
+                      fillColor: theme.brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Row 2: status + department + clear
+          Row(
+            children: [
+              _filterDropdown(
+                value: _selectedFilter,
+                items: const ['All', 'Active', 'Inactive', 'With Tools', 'Without Tools'],
+                hint: 'Status',
+                resetLabel: 'All Status',
+                onChanged: (v) => setState(() => _selectedFilter = v!),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _filterDropdown(
+                  value: _selectedDepartment,
+                  items: ['Department', ...departments],
+                  hint: 'Department',
+                  resetLabel: 'All Departments',
+                  onChanged: (v) => setState(() => _selectedDepartment = v!),
+                ),
+              ),
+              if (hasActiveFilter) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                      _selectedFilter = 'All';
+                      _selectedDepartment = 'Department';
+                    });
+                  },
+                  child: Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Filter dropdown pill ──────────────────────────────────────────────
+  Widget _filterDropdown({
+    required String value,
+    required List<String> items,
+    required String hint,
+    required String resetLabel,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isActive = value != 'All' && value != 'Department' && value != hint;
+
+    String displayText(String item) {
+      if (item == 'All' || item == 'Department') return resetLabel;
+      return item;
+    }
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primaryColor.withValues(alpha: isDark ? 0.2 : 0.08)
+            : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white),
+        borderRadius: BorderRadius.circular(8),
+        border: isActive
+            ? Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3), width: 1)
+            : null,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: hint == 'Department',
+          isDense: true,
+          icon: Icon(Icons.keyboard_arrow_down, size: 16,
+              color: isActive
+                  ? AppTheme.primaryColor
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive
+                ? AppTheme.primaryColor
+                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          dropdownColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          menuMaxHeight: 300,
+          borderRadius: BorderRadius.circular(10),
+          selectedItemBuilder: (_) => items
+              .map((item) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(displayText(item),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                          color: isActive
+                              ? AppTheme.primaryColor
+                              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        )),
+                  ))
+              .toList(),
+          items: items.map((item) => DropdownMenuItem(
+            value: item,
+            child: Text(displayText(item),
+                style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
+          )).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  // ── Mobile table (horizontal + vertical scroll) ───────────────────────
+  Widget _buildMobileTable(BuildContext context, List<Technician> technicians) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
+    final toolProvider = context.read<SupabaseToolProvider>();
+
+    const double colName     = 160;
+    const double colDept     = 120;
+    const double colPhone    = 120;
+    const double colEmpId    = 100;
+    const double colStatus   =  90;
+    const double colTools    =  70;
+    const double colAction   =  44;
+    // Row/header containers add horizontal padding of 16 on each side,
+    // so include that in scroll width to avoid right-edge overflow.
+    const double totalW =
+        colName + colDept + colPhone + colEmpId + colStatus + colTools + colAction + 32;
+
+    TextStyle headerStyle() => TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      color: onSurface.withValues(alpha: 0.45),
+      letterSpacing: 0.3,
+    );
+    TextStyle cellStyle() => TextStyle(
+      fontSize: 12.5,
+      color: onSurface.withValues(alpha: 0.85),
+    );
+
+    Widget headerCell(String label, double w, {TextAlign align = TextAlign.left}) =>
+        SizedBox(
+          width: w,
+          child: Text(label.toUpperCase(), style: headerStyle(),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+        );
+
+    Widget cell(String text, double w, {FontWeight? weight, Color? color}) =>
+        SizedBox(
+          width: w,
+          child: Text(text,
+              style: cellStyle().copyWith(fontWeight: weight, color: color),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+        );
+
+    final headerRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.03)
+          : const Color(0xFFF5F5F5),
+      child: Row(
+        children: [
+          headerCell('Name', colName),
+          headerCell('Department', colDept),
+          headerCell('Phone', colPhone),
+          headerCell('Emp ID', colEmpId),
+          headerCell('Status', colStatus),
+          headerCell('Tools', colTools),
+          SizedBox(width: colAction),
+        ],
+      ),
+    );
+
+    Widget buildRow(Technician tech) {
+      final isSelected = tech.id != null && _selectedTechnicians.contains(tech.id!);
+      final toolCount = toolProvider.tools
+          .where((t) => t.assignedTo == tech.id)
+          .length;
+      final initials = tech.name.isNotEmpty ? tech.name.trim()[0].toUpperCase() : '?';
+      final hasImage = tech.profilePictureUrl != null && tech.profilePictureUrl!.isNotEmpty;
+
+      return InkWell(
+        onTap: () {
+          if (_selectedTools != null) {
+            setState(() {
+              if (tech.id != null) {
+                if (isSelected) {
+                  _selectedTechnicians.remove(tech.id!);
+                } else {
+                  _selectedTechnicians.add(tech.id!);
+                }
+              }
+            });
+          } else {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (_) => TechnicianDetailScreen(technician: tech),
+            ));
+          }
+        },
+        onLongPress: () {
+          if (_selectedTools == null) _showEditTechnicianDialog(tech);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primaryColor.withValues(alpha: 0.05)
+                : Colors.transparent,
+            border: Border(
+              bottom: BorderSide(
+                color: onSurface.withValues(alpha: isDark ? 0.06 : 0.04),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Avatar + name
+              SizedBox(
+                width: colName,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
+                      ),
+                      child: hasImage
+                          ? ClipOval(
+                              child: Image.network(
+                                tech.profilePictureUrl!,
+                                fit: BoxFit.cover,
+                                width: 32,
+                                height: 32,
+                                errorBuilder: (_, __, ___) => Center(
+                                  child: Text(initials,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.primaryColor,
+                                      )),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(initials,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primaryColor,
+                                  )),
+                            ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        tech.name,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              cell(tech.department?.isNotEmpty == true ? tech.department! : '—', colDept),
+              cell(tech.phone?.trim().isNotEmpty == true ? tech.phone! : '—', colPhone),
+              cell(tech.employeeId?.isNotEmpty == true ? tech.employeeId! : '—', colEmpId),
+              // Status pill
+              SizedBox(
+                width: colStatus,
+                child: _buildStatusChip(tech.status, compact: true),
+              ),
+              // Tools count
+              SizedBox(
+                width: colTools,
+                child: Row(
+                  children: [
+                    Icon(Icons.build_outlined, size: 12,
+                        color: onSurface.withValues(alpha: 0.45)),
+                    const SizedBox(width: 4),
+                    Text('$toolCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: onSurface.withValues(alpha: 0.7),
+                        )),
+                  ],
+                ),
+              ),
+              // Action
+              SizedBox(
+                width: colAction,
+                child: _selectedTools != null
+                    ? Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : onSurface.withValues(alpha: 0.35),
+                      )
+                    : PopupMenuButton<String>(
+                        onSelected: (v) {
+                          if (v == 'edit') _showEditTechnicianDialog(tech);
+                          if (v == 'delete' && tech.id != null) {
+                            _showDeleteConfirmation(tech);
+                          }
+                          if (v == 'send_invite' && tech.email != null) {
+                            _sendInvite(tech);
+                          }
+                        },
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        icon: Icon(Icons.more_vert, size: 18,
+                            color: onSurface.withValues(alpha: 0.4)),
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(children: [
+                              Icon(Icons.edit_outlined, size: 18),
+                              SizedBox(width: 10),
+                              Text('Edit'),
+                            ]),
+                          ),
+                          if (tech.email != null && tech.email!.isNotEmpty)
+                            const PopupMenuItem(
+                              value: 'send_invite',
+                              child: Row(children: [
+                                Icon(Icons.email_outlined, size: 18, color: Colors.blue),
+                                SizedBox(width: 10),
+                                Text('Send Invite', style: TextStyle(color: Colors.blue)),
+                              ]),
+                            ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(children: [
+                              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                              SizedBox(width: 10),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ]),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: totalW,
+            child: ListView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              shrinkWrap: false,
+              children: [
+                headerRow,
+                const Divider(height: 1, thickness: 0.5),
+                ...technicians.map(buildRow),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterChips() {
     const filters = [
       'All',
@@ -994,7 +1414,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                 filter,
                 style: TextStyle(
                   color: isSelected
-                      ? AppTheme.secondaryColor
+                      ? Colors.white
                       : Theme.of(context)
                           .colorScheme
                           .onSurface
@@ -1012,16 +1432,16 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
                   _selectedFilter = filter;
                 });
               },
-              backgroundColor: context.cardBackground,
-              selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+              backgroundColor: Colors.white,
+              selectedColor: AppTheme.secondaryColor,
               side: BorderSide(
                 color: isSelected
                     ? AppTheme.secondaryColor
                     : Colors.black.withOpacity(0.04),
-                width: isSelected ? 1.2 : 0.5,
+                width: isSelected ? 0 : 0.5,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18), // Match card borderRadius
+                borderRadius: BorderRadius.circular(6),
               ),
             ),
           );
@@ -1030,7 +1450,7 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(String status, {bool compact = false}) {
     Color textColor;
     Color backgroundColor;
 
@@ -1050,17 +1470,25 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 2 : 2.5,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: compact ? 72 : 120),
+        child: Text(
+          status,
+          style: TextStyle(
+            color: textColor,
+            fontSize: compact ? 10 : 10.5,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -1084,20 +1512,129 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
     );
   }
 
+  Future<void> _sendInvite(Technician technician) async {
+    if (technician.email == null || technician.email!.isEmpty) return;
+
+    final auth = context.read<AuthProvider>();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generating invite link...'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(16),
+      ),
+    );
+
+    try {
+      final newUserId = await auth.createTechnicianAuthAccount(
+        email: technician.email!,
+        name: technician.name,
+        department: technician.department,
+      );
+
+      // Link user_id to technician record if not already set
+      if (technician.id != null && technician.userId == null && newUserId != null) {
+        await SupabaseService.client
+            .from('technicians')
+            .update({'user_id': newUserId})
+            .eq('id', technician.id!);
+        await context.read<SupabaseTechnicianProvider>().loadTechnicians();
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invite sent to ${technician.email}'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      final msg = e.toString()
+          .replaceFirst('Exception: ', '')
+          .replaceFirst('FunctionException: ', '');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send invite: $msg'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showInviteLinkDialog(String name, String link) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Invite Link'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Open this link in the device browser to set $name\'s password:'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SelectableText(
+                link,
+                style: const TextStyle(fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: link));
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Link copied to clipboard'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Copy Link'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showDeleteConfirmation(Technician technician) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Text(
-          AppLocalizations.of(context).technicians_deleteTitle,
+          'Delete ${'Technician'}',
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
         ),
         content: Text(
-          AppLocalizations.of(context).technicians_deleteConfirm(technician.name),
+          'Are you sure you want to delete ${technician.name}?',
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [

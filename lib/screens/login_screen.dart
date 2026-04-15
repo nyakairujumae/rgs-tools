@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: PremiumFieldStyles.fieldTextStyle(context),
                           decoration: PremiumFieldStyles.inputDecoration(
                             context,
-                            hintText: 'e.g., user@royalgulf.ae',
+                            hintText: 'e.g., you@company.com',
                             prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
@@ -265,36 +265,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         
-                        const SizedBox(height: 24),
-                        
-                        // Register Links
-                        Column(
-                          children: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/role-selection',
-                                (route) => false,
-                              ),
-                              child: Text(
-                                'Don\'t have an account? Register Here',
-                                style: TextStyle(
-                                  color: colorScheme.primary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Choose Admin or Technician registration',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        
                         const SizedBox(height: 32),
                         
                         // Role Information
@@ -386,9 +356,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
-        Icon(Icons.login, size: 64, color: theme.primaryColor),
+        Image.asset(
+          isDark
+              ? 'assets/images/logo_dark.png'
+              : 'assets/images/logo_light.png',
+          height: 72,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(height: 16),
         Text(
           'Welcome Back',
@@ -396,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sign in to your RGS HVAC Services account',
+          'Sign in to your ${AppConfig.appName} account',
           style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),

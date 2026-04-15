@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show IconData, Icons;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../utils/logger.dart';
@@ -24,6 +25,26 @@ class OrganizationProvider extends ChangeNotifier {
   String get workerLabelPlural => _workerLabelPlural;
   String? get logoUrl => _logoUrl;
   bool get isLoaded => _isLoaded;
+
+  /// Dynamic icon based on the organisation's industry.
+  IconData get toolsIcon => _toolsIconForIndustry(_industry);
+
+  static IconData _toolsIconForIndustry(String industry) {
+    switch (industry) {
+      case 'hvac':
+        return Icons.ac_unit;
+      case 'electrical':
+        return Icons.bolt;
+      case 'plumbing':
+        return Icons.water_drop;
+      case 'construction':
+        return Icons.construction;
+      case 'medical':
+        return Icons.medical_services;
+      default:
+        return Icons.build;
+    }
+  }
 
   List<String> get departments => _departments.map((d) => d.name).toList();
   List<String> get toolCategories => _toolCategories.map((c) => c.name).toList();

@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/supabase_technician_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/organization_provider.dart';
 import '../models/technician.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
@@ -217,8 +216,7 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
 
                     // Department Field
                     Builder(builder: (context) {
-                      final orgDepts = context.watch<OrganizationProvider>().departments;
-                      final depts = orgDepts.isNotEmpty ? orgDepts : ['Other'];
+                      const depts = ['Other'];
                       // Reset selected value if it's no longer in the list
                       final currentVal = _departmentController.text.isEmpty
                           ? null

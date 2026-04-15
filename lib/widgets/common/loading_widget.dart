@@ -127,8 +127,9 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.baseColor ?? const Color(0xFFE6EAF1);
-    final highlightColor = widget.highlightColor ?? const Color(0xFFD8DBE0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = widget.baseColor ?? (isDark ? const Color(0xFF252525) : const Color(0xFFE6EAF1));
+    final highlightColor = widget.highlightColor ?? (isDark ? const Color(0xFF323232) : const Color(0xFFD8DBE0));
 
     return AnimatedBuilder(
       animation: _animation,
@@ -239,43 +240,35 @@ class ToolCardSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Image skeleton - square
-        Expanded(
-          flex: 1,
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: SkeletonLoader(
-              width: double.infinity,
-              height: double.infinity,
-              borderRadius: BorderRadius.circular(28),
-            ),
+        // Square image placeholder — matches AspectRatio(1.0) in real card
+        AspectRatio(
+          aspectRatio: 1.0,
+          child: SkeletonLoader(
+            width: double.infinity,
+            height: double.infinity,
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
-        const SizedBox(height: 12),
-        // Tool name skeleton
+        const SizedBox(height: 6),
+        // Tool name — 13px bold
         SkeletonLoader(
           width: double.infinity,
-          height: 16,
-          borderRadius: BorderRadius.circular(4),
+          height: 12,
+          borderRadius: BorderRadius.circular(6),
         ),
-        const SizedBox(height: 8),
-        // Category and status skeleton
-        Row(
-          children: [
-            Expanded(
-              child: SkeletonLoader(
-                width: double.infinity,
-                height: 12,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SkeletonLoader(
-              width: 60,
-              height: 12,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ],
+        const SizedBox(height: 4),
+        // Category — 10px
+        SkeletonLoader(
+          width: 80,
+          height: 9,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        const SizedBox(height: 5),
+        // Status pill
+        SkeletonLoader(
+          width: 56,
+          height: 18,
+          borderRadius: BorderRadius.circular(10),
         ),
       ],
     );
@@ -317,25 +310,122 @@ class ToolCardGridSkeleton extends StatelessWidget {
   }
 }
 
+/// Tool list (table) skeleton — mirrors _buildMobileList layout
+class ToolListSkeleton extends StatelessWidget {
+  final int itemCount;
+  const ToolListSkeleton({super.key, this.itemCount = 8});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF252525) : const Color(0xFFE6EAF1);
+    final headerBg = isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFFAFAFA);
+    final divColor = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0);
+    final cardBg   = isDark ? const Color(0xFF141414) : Colors.white;
+
+    // Same column widths as the real table
+    const double colName     = 160;
+    const double colCat      = 130;
+    const double colBrand    = 110;
+    const double colStatus   = 100;
+    const double colCond     = 110;
+    const double colAction   =  44;
+    const double totalW = colName + colCat + colBrand + colStatus + colCond + colAction;
+
+    Widget skel(double w, {double h = 11}) => SizedBox(
+      width: w,
+      child: SkeletonLoader(width: w, height: h, borderRadius: BorderRadius.circular(6)),
+    );
+
+    Widget cell(double w, Widget child) => SizedBox(
+      width: w,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: child,
+      ),
+    );
+
+    final header = Container(
+      color: headerBg,
+      child: Row(children: [
+        cell(colName,   skel(70, h: 9)),
+        cell(colCat,    skel(60, h: 9)),
+        cell(colBrand,  skel(45, h: 9)),
+        cell(colStatus, skel(45, h: 9)),
+        cell(colCond,   skel(55, h: 9)),
+        SizedBox(width: colAction),
+      ]),
+    );
+
+    final rows = <Widget>[header];
+    for (int i = 0; i < itemCount; i++) {
+      rows.add(Divider(height: 1, thickness: 1, color: divColor));
+      rows.add(Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Name col with thumbnail
+          SizedBox(
+            width: colName,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(children: [
+                SkeletonLoader(width: 40, height: 40, borderRadius: BorderRadius.circular(8)),
+                const SizedBox(width: 8),
+                Expanded(child: SkeletonLoader(width: double.infinity, height: 12, borderRadius: BorderRadius.circular(6))),
+              ]),
+            ),
+          ),
+          cell(colCat,    skel(80)),
+          cell(colBrand,  skel(55)),
+          cell(colStatus, skel(60, h: 20)),
+          cell(colCond,   skel(60)),
+          SizedBox(width: colAction),
+        ],
+      ));
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: totalW,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: rows,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Stat card skeleton loader
 class StatCardSkeleton extends StatelessWidget {
   const StatCardSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
-          ),
-        ],
+        color: isDark ? const Color(0xFF141414) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

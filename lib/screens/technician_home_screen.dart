@@ -488,7 +488,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: parentContext.cardDecoration,
+      decoration: AppTheme.groupedCardDecoration(parentContext, radius: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -669,7 +669,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           horizontal: isDesktop ? 10 : 12,
           vertical: isDesktop ? 10 : 12,
         ),
-        decoration: context.cardDecoration,
+        decoration: AppTheme.groupedCardDecoration(context, radius: isDesktop ? 10 : 12),
         child: Row(
           children: [
             Container(
@@ -719,7 +719,7 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
 
     return Container(
       padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 20)),
-      decoration: context.cardDecoration,
+      decoration: AppTheme.groupedCardDecoration(context, radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2623,7 +2623,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     required void Function(String label) onCardTap,
     required int totalTools,
     required int availableCount,
-    required int inUseCount,
+    required int sharedCount,
     required int complianceActionCount,
     required int calibrationDueCount,
     required int maintenanceCount,
@@ -2648,13 +2648,11 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
             : '0% of total',
       },
       {
-        'label': 'In Use',
-        'count': inUseCount,
-        'icon': Icons.assignment_rounded,
+        'label': 'Shared',
+        'count': sharedCount,
+        'icon': Icons.groups_2_rounded,
         'color': const Color(0xFF7C3AED),
-        'subtitle': totalTools > 0
-            ? '${((inUseCount / totalTools) * 100).round()}% of total'
-            : '0% of total',
+        'subtitle': sharedCount == 1 ? '1 shared tool' : '$sharedCount shared tools',
       },
       {
         'label': 'Compliance',
@@ -2852,8 +2850,9 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         final myCalibrationCerts = certProvider.calibrationCerts
             .where((c) => myToolIds.contains(c.toolId))
             .toList();
-        final inUseCount =
-            myTools.where((tool) => tool.status == 'In Use').length;
+        final sharedCount = toolProvider.tools
+            .where((tool) => tool.toolType == 'shared')
+            .length;
         final availableCount = toolProvider.tools
             .where((tool) => tool.status == 'Available')
             .length;
@@ -2955,8 +2954,10 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       switch (label) {
                         case 'Total Tools':
                         case 'Available':
-                        case 'In Use':
                           widget.onNavigateToTab(1);
+                          break;
+                        case 'Shared':
+                          widget.onNavigateToTab(2);
                           break;
                         case 'Compliance':
                           Navigator.push(context,
@@ -2974,7 +2975,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     },
                     totalTools: myTools.length,
                     availableCount: availableCount,
-                    inUseCount: inUseCount,
+                    sharedCount: sharedCount,
                     complianceActionCount: complianceActionCount,
                     calibrationDueCount: calibrationDueCount,
                     maintenanceCount: maintenanceCount,
@@ -4020,6 +4021,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
 
     if (allEmpty) {
       return Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 28),
         decoration: cardDeco,
         child: Column(
@@ -4081,6 +4083,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     }
 
     return Container(
+      width: double.infinity,
       decoration: cardDeco,
       child: Column(children: tiles),
     );
@@ -4158,10 +4161,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final actions = <({String title, IconData icon, Color color, VoidCallback onTap})>[
       (
-        title: 'My Tools',
-        icon: Icons.build_rounded,
+        title: 'Add Tool',
+        icon: Icons.add_circle_outline_rounded,
         color: Colors.indigo,
-        onTap: () => widget.onNavigateToTab(1),
+        onTap: () => _openAddTool(
+          context,
+          context.read<AuthProvider>(),
+          context.read<SupabaseToolProvider>(),
+        ),
       ),
       (
         title: 'Request Tool',
@@ -4260,12 +4267,13 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
   Widget _buildSkeletonDashboard(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    final baseColor = isDarkMode 
+    final baseColor = isDarkMode
         ? Colors.grey[800]!.withValues(alpha: 0.3)
         : Colors.grey[300]!;
-    final highlightColor = isDarkMode 
+    final highlightColor = isDarkMode
         ? Colors.grey[700]!.withValues(alpha: 0.5)
         : Colors.grey[400]!;
+    final onSurface = theme.colorScheme.onSurface;
 
     return Container(
       color: context.scaffoldBackground,
@@ -4273,356 +4281,336 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome banner skeleton
+            // Greeting skeleton
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: ResponsiveHelper.getResponsiveSpacing(context, 4),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLoader(
+                    width: 260,
+                    height: ResponsiveHelper.getResponsiveFontSize(context, 34),
+                    borderRadius: BorderRadius.circular(8),
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                  ),
+                  const SizedBox(height: 8),
+                  SkeletonLoader(
+                    width: double.infinity,
+                    height: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    borderRadius: BorderRadius.circular(6),
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                  ),
+                ],
               ),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(ResponsiveHelper.getResponsiveSpacing(context, 20)),
-                decoration: context.cardDecoration.copyWith(
-                  borderRadius: BorderRadius.circular(18),
+            ),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+
+            // Stat cards skeleton (6 cards)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 6,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.8,
                 ),
-                child: Row(
-                  children: [
-                    SkeletonLoader(
-                      width: ResponsiveHelper.getResponsiveIconSize(context, 72),
-                      height: ResponsiveHelper.getResponsiveIconSize(context, 72),
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 16),
+                itemBuilder: (_, __) => Container(
+                  decoration: _mobileCardDeco(isDarkMode).copyWith(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SkeletonLoader(
+                              width: 76,
+                              height: 9,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
+                            const SizedBox(height: 6),
+                            SkeletonLoader(
+                              width: 40,
+                              height: 20,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
+                            const SizedBox(height: 6),
+                            SkeletonLoader(
+                              width: 88,
+                              height: 10,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
+                          ],
+                        ),
                       ),
-                      baseColor: baseColor,
-                      highlightColor: highlightColor,
+                      SkeletonLoader(
+                        width: 32,
+                        height: 32,
+                        borderRadius: BorderRadius.circular(8),
+                        baseColor: baseColor,
+                        highlightColor: highlightColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
+
+            // Quick actions skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLoader(
+                    width: 110,
+                    height: 16,
+                    borderRadius: BorderRadius.circular(4),
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 4,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 3.2,
                     ),
-                    SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    itemBuilder: (_, __) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: _mobileCardDeco(isDarkMode),
+                      child: Row(
                         children: [
-                          SkeletonLoader(
-                            width: double.infinity,
-                            height: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                            borderRadius: BorderRadius.circular(4),
-                            baseColor: baseColor,
-                            highlightColor: highlightColor,
+                          Expanded(
+                            child: SkeletonLoader(
+                              width: 70,
+                              height: 12,
+                              borderRadius: BorderRadius.circular(4),
+                              baseColor: baseColor,
+                              highlightColor: highlightColor,
+                            ),
                           ),
-                          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 6)),
+                          const SizedBox(width: 8),
                           SkeletonLoader(
-                            width: double.infinity * 0.7,
-                            height: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                            borderRadius: BorderRadius.circular(4),
+                            width: 28,
+                            height: 28,
+                            borderRadius: BorderRadius.circular(8),
                             baseColor: baseColor,
                             highlightColor: highlightColor,
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-
-            // Shared Tools Section skeleton
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SkeletonLoader(
-                    width: 120,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SkeletonLoader(
-                    width: 80,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
                   ),
                 ],
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
 
-            // Shared Tools Carousel skeleton
-            SizedBox(
-              height: ResponsiveHelper.getResponsiveListItemHeight(context, 212),
-              child: Padding(
-                padding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 16,
-                ),
-                child: _buildFeaturedCardSkeleton(context, baseColor, highlightColor),
-              ),
-            ),
-
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-
-            // My Tools Section skeleton
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SkeletonLoader(
-                    width: 100,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SkeletonLoader(
-                    width: 80,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-
-            // My Tools List skeleton
+            // Needs attention skeleton
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: List.generate(2, (index) => Padding(
-                  padding: EdgeInsets.only(
-                    bottom: ResponsiveHelper.getResponsiveSpacing(context, 12),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLoader(
+                    width: 118,
+                    height: 16,
+                    borderRadius: BorderRadius.circular(4),
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
                   ),
-                  child: _buildLatestCardSkeleton(context, baseColor, highlightColor),
-                )),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    decoration: _mobileCardDeco(isDarkMode).copyWith(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < 2; i++) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                SkeletonLoader(
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: BorderRadius.circular(10),
+                                  baseColor: baseColor,
+                                  highlightColor: highlightColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      SkeletonLoader(
+                                        width: 130,
+                                        height: 12,
+                                        borderRadius: BorderRadius.circular(4),
+                                        baseColor: baseColor,
+                                        highlightColor: highlightColor,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      SkeletonLoader(
+                                        width: 160,
+                                        height: 10,
+                                        borderRadius: BorderRadius.circular(4),
+                                        baseColor: baseColor,
+                                        highlightColor: highlightColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SkeletonLoader(
+                                  width: 52,
+                                  height: 18,
+                                  borderRadius: BorderRadius.circular(6),
+                                  baseColor: baseColor,
+                                  highlightColor: highlightColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (i < 1)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 56,
+                              endIndent: 16,
+                              color: onSurface.withValues(alpha: 0.08),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
+
+            // Recent activity skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SkeletonLoader(
+                        width: 110,
+                        height: 16,
+                        borderRadius: BorderRadius.circular(4),
+                        baseColor: baseColor,
+                        highlightColor: highlightColor,
+                      ),
+                      const Spacer(),
+                      SkeletonLoader(
+                        width: 72,
+                        height: 14,
+                        borderRadius: BorderRadius.circular(4),
+                        baseColor: baseColor,
+                        highlightColor: highlightColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    decoration: _mobileCardDeco(isDarkMode).copyWith(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < 3; i++) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            child: Row(
+                              children: [
+                                SkeletonLoader(
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: BorderRadius.circular(10),
+                                  baseColor: baseColor,
+                                  highlightColor: highlightColor,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      SkeletonLoader(
+                                        width: 120,
+                                        height: 12,
+                                        borderRadius: BorderRadius.circular(4),
+                                        baseColor: baseColor,
+                                        highlightColor: highlightColor,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      SkeletonLoader(
+                                        width: 150,
+                                        height: 10,
+                                        borderRadius: BorderRadius.circular(4),
+                                        baseColor: baseColor,
+                                        highlightColor: highlightColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SkeletonLoader(
+                                  width: 42,
+                                  height: 10,
+                                  borderRadius: BorderRadius.circular(4),
+                                  baseColor: baseColor,
+                                  highlightColor: highlightColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (i < 2)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 62,
+                              endIndent: 16,
+                              color: onSurface.withValues(alpha: 0.08),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturedCardSkeleton(BuildContext context, Color baseColor, Color highlightColor) {
-    return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 200),
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsiveHelper.getResponsiveSpacing(context, 12),
-        vertical: ResponsiveHelper.getResponsiveSpacing(context, 6),
-      ),
-      decoration: context.cardDecoration.copyWith(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image skeleton
-          SkeletonLoader(
-            width: ResponsiveHelper.getResponsiveIconSize(context, 140),
-            height: double.infinity,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-            ),
-            baseColor: baseColor,
-            highlightColor: highlightColor,
-          ),
-          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title skeleton
-                  SkeletonLoader(
-                    width: double.infinity,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Chips skeleton
-                  Row(
-                    children: [
-                      SkeletonLoader(
-                        width: 80,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                      SkeletonLoader(
-                        width: 70,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Serial number skeleton
-                  SkeletonLoader(
-                    width: 120,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Location skeleton
-                  SkeletonLoader(
-                    width: 100,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Category skeleton
-                  SkeletonLoader(
-                    width: 90,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Brand/Model skeleton
-                  SkeletonLoader(
-                    width: 150,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLatestCardSkeleton(BuildContext context, Color baseColor, Color highlightColor) {
-    return Container(
-      height: ResponsiveHelper.getResponsiveListItemHeight(context, 172),
-      padding: ResponsiveHelper.getResponsivePadding(
-        context,
-        horizontal: 12,
-        vertical: 6,
-      ),
-      decoration: context.cardDecoration.copyWith(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image skeleton
-          SkeletonLoader(
-            width: ResponsiveHelper.getResponsiveIconSize(context, 140),
-            height: double.infinity,
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 12),
-            ),
-            baseColor: baseColor,
-            highlightColor: highlightColor,
-          ),
-          SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: ResponsiveHelper.getResponsiveSpacing(context, 4),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title skeleton
-                  SkeletonLoader(
-                    width: double.infinity,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Chips skeleton
-                  Row(
-                    children: [
-                      SkeletonLoader(
-                        width: 80,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                      SkeletonLoader(
-                        width: 70,
-                        height: 24,
-                        borderRadius: BorderRadius.circular(999),
-                        baseColor: baseColor,
-                        highlightColor: highlightColor,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Serial number skeleton
-                  SkeletonLoader(
-                    width: 120,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Location skeleton
-                  SkeletonLoader(
-                    width: 100,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 11),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                  // Category skeleton
-                  SkeletonLoader(
-                    width: 90,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 10),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 3)),
-                  // Brand/Model skeleton
-                  SkeletonLoader(
-                    width: 150,
-                    height: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                    borderRadius: BorderRadius.circular(4),
-                    baseColor: baseColor,
-                    highlightColor: highlightColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
