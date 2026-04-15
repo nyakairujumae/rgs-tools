@@ -19,7 +19,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'auth_error_screen.dart';
 import '../admin_home_screen.dart';
 import '../technician_home_screen.dart';
-import '../pending_approval_screen.dart';
 import '../../utils/logger.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -456,7 +455,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ThemedTextButton(
                             onPressed: () {
                               Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/role-selection',
+                                '/onboarding',
                                 (route) => false,
                               );
                             },
@@ -611,23 +610,10 @@ class _LoginScreenState extends State<LoginScreen> {
         // Wait a moment for role to be properly loaded
         await Future.delayed(Duration(milliseconds: 300));
         
-        // Check approval status for technicians
-        if (!authProvider.isAdmin) {
-          final isApproved = await authProvider.checkApprovalStatus();
-          if (isApproved == false) {
-            // User is pending approval or rejected
-            Navigator.pushReplacementNamed(context, '/pending-approval');
-            return;
-          }
-        }
-        
-        // Navigate based on role (automatically determined from database)
+        // Navigate based on role
         if (authProvider.isAdmin) {
           Navigator.pushReplacementNamed(context, '/admin');
-        } else if (authProvider.isPendingApproval) {
-          Navigator.pushReplacementNamed(context, '/pending-approval');
         } else {
-          // Technician is approved - will check for initial setup in InitialToolSetupScreen
           Navigator.pushReplacementNamed(context, '/technician');
         }
       }
@@ -707,7 +693,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           'Create your account below to continue with ${isAppleProvider ? "Apple" : "Google"}.',
         );
-        Navigator.pushReplacementNamed(context, '/role-selection');
+        Navigator.pushReplacementNamed(context, '/onboarding');
       }
       return;
     }
@@ -718,13 +704,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await Future.delayed(const Duration(milliseconds: 200));
-    if (!authProvider.isAdmin && !bypassApproval) {
-      final isApproved = await authProvider.checkApprovalStatus();
-      if (isApproved == false) {
-        Navigator.pushReplacementNamed(context, '/pending-approval');
-        return;
-      }
-    }
 
     // Clear loading only now so overlay stayed visible until this point (no flash).
     authProvider.resetLoadingState(reason: 'oauth-success');
@@ -737,8 +716,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: AdminHomeScreen(initialTab: 0),
         ),
       );
-    } else if (!bypassApproval && authProvider.isPendingApproval) {
-      _pushReplacementInstant(context, const PendingApprovalScreen());
     } else {
       _pushReplacementInstant(context, const TechnicianHomeScreen());
     }

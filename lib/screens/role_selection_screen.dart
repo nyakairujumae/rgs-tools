@@ -10,7 +10,6 @@ import '../models/user_role.dart';
 import '../utils/auth_error_handler.dart';
 import 'admin_registration_screen.dart';
 import 'auth/login_screen.dart';
-import 'technician_registration_screen.dart';
 import '../utils/logger.dart';
 import '../l10n/app_localizations.dart';
 
@@ -82,21 +81,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                                     ),
                               animationCurve:
                                   const Interval(0.0, 1.0, curve: Curves.easeOut),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildRoleButton(
-                              context: context,
-                              label: isOAuthUser ? AppLocalizations.of(context).roleSelection_continueTechnician : AppLocalizations.of(context).roleSelection_registerTechnician,
-                              color: theme.colorScheme.surface,
-                              onTap: _isProcessing 
-                                  ? () {} // Empty function when processing
-                                  : () => _handleRoleSelection(
-                                      context,
-                                      UserRole.technician,
-                                      isOAuthUser,
-                                    ),
-                              animationCurve:
-                                  const Interval(0.2, 1.0, curve: Curves.easeOut),
                             ),
                           ],
                         );
@@ -308,20 +292,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       if (isOAuthUser) {
         await authProvider.assignRoleToOAuthUser(role);
         if (!mounted) return;
-        if (role == UserRole.admin) {
-          Navigator.pushNamedAndRemoveUntil(context, '/admin', (_) => false);
-        } else {
-          Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (_) => false);
-        }
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (_) => false);
         return;
       }
 
-      // Regular user - navigate to registration screen
-      if (role == UserRole.admin) {
-        _navigate(context, const AdminRegistrationScreen());
-      } else {
-        _navigate(context, const TechnicianRegistrationScreen());
-      }
+      // Navigate to admin registration screen
+      _navigate(context, const AdminRegistrationScreen());
     } catch (e) {
       if (!mounted) return;
       final errorMessage = AuthErrorHandler.getErrorMessage(e);

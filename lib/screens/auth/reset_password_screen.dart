@@ -194,10 +194,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
         if (authProvider.isAdmin) {
           navigator.pushNamedAndRemoveUntil('/admin', (route) => false);
-        } else if (authProvider.isTechnician && isApproved == true) {
-          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
         } else {
-          navigator.pushNamedAndRemoveUntil('/pending-approval', (route) => false);
+          navigator.pushNamedAndRemoveUntil('/technician', (route) => false);
         }
       } else {
         // Fallback: Sign out and go to login (shouldn't happen normally)

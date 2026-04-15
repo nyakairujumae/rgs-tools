@@ -7,7 +7,6 @@ import '../theme/theme_extensions.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
-import 'admin_approval_screen.dart';
 import 'approval_workflows_screen.dart';
 import 'tool_issues_screen.dart';
 import 'maintenance_screen.dart';
@@ -636,9 +635,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
     final navigator = Navigator.of(context);
     Widget? targetScreen;
     switch (notification.type) {
-      case NotificationType.accessRequest:
-        targetScreen = const AdminApprovalScreen();
-        break;
       case NotificationType.toolRequest:
         targetScreen = const ApprovalWorkflowsScreen();
         break;
@@ -648,6 +644,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
       case NotificationType.issueReport:
         targetScreen = const ToolIssuesScreen();
         break;
+      case NotificationType.accessRequest:
       case NotificationType.toolAssignment:
       case NotificationType.toolReleased:
       case NotificationType.userApproved:

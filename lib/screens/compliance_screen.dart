@@ -8,7 +8,10 @@ import '../theme/theme_extensions.dart';
 import '../widgets/common/empty_state.dart';
 
 class ComplianceScreen extends StatefulWidget {
-  const ComplianceScreen({super.key});
+  /// When set, only shows certs for tools assigned to this user (technician view).
+  final String? filterUserId;
+
+  const ComplianceScreen({super.key, this.filterUserId});
 
   @override
   State<ComplianceScreen> createState() => _ComplianceScreenState();
@@ -37,16 +40,6 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.scaffoldBackground,
-      appBar: AppBar(
-        title: const Text('Compliance & Certifications'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: AppTheme.secondaryColor,
-            onPressed: () => _showAddDialog(context, context.read<SupabaseCertificationProvider>()),
-          ),
-        ],
-      ),
       body: Consumer<SupabaseCertificationProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
@@ -67,25 +60,32 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
             );
           }
 
-          final certs = provider.complianceCerts;
-
-          // Counts
-          final validCount = certs.where((c) => c.isValid && !c.isExpiringSoon).length;
+          final _myToolIds = widget.filterUserId != null
+              ? provider.tools
+                  .where((t) => t.assignedTo == widget.filterUserId)
+                  .map((t) => t.id)
+                  .whereType<String>()
+                  .toSet()
+              : null;
+          final certs = _myToolIds != null
+              ? provider.complianceCerts
+                  .where((c) => _myToolIds.contains(c.toolId))
+                  .toList()
+              : provider.complianceCerts;
+          final validCount    = certs.where((c) => c.isValid && !c.isExpiringSoon).length;
           final expiringCount = certs.where((c) => c.isExpiringSoon).length;
-          final expiredCount = certs.where((c) => c.isExpired).length;
-          final revokedCount = certs.where((c) => c.status == 'Revoked').length;
+          final expiredCount  = certs.where((c) => c.isExpired).length;
+          final revokedCount  = certs.where((c) => c.status == 'Revoked').length;
 
-          // Filter
           List<Certification> filtered;
           switch (_filter) {
-            case 'Valid':       filtered = certs.where((c) => c.isValid && !c.isExpiringSoon).toList(); break;
-            case 'Expiring':    filtered = certs.where((c) => c.isExpiringSoon).toList(); break;
-            case 'Expired':     filtered = certs.where((c) => c.isExpired).toList(); break;
-            case 'Revoked':     filtered = certs.where((c) => c.status == 'Revoked').toList(); break;
-            default:            filtered = certs;
+            case 'Valid':    filtered = certs.where((c) => c.isValid && !c.isExpiringSoon).toList(); break;
+            case 'Expiring': filtered = certs.where((c) => c.isExpiringSoon).toList(); break;
+            case 'Expired':  filtered = certs.where((c) => c.isExpired).toList(); break;
+            case 'Revoked':  filtered = certs.where((c) => c.status == 'Revoked').toList(); break;
+            default:         filtered = certs;
           }
 
-          // Search
           if (_search.isNotEmpty) {
             final q = _search.toLowerCase();
             filtered = filtered.where((c) =>
@@ -96,31 +96,82 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
             ).toList();
           }
 
-          return RefreshIndicator(
+          return SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
             onRefresh: () => provider.loadAll(),
+            color: AppTheme.secondaryColor,
             child: CustomScrollView(
               slivers: [
-                // Overview cards
+                // ── Inline header ──────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).maybePop(),
+                              child: const Icon(Icons.chevron_left, size: 28),
+                            ),
+                            const SizedBox(width: 4),
+                            const Expanded(
+                              child: Text(
+                                'Compliance',
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            FilledButton.icon(
+                              onPressed: () => _showAddDialog(context, provider),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add', style: TextStyle(fontSize: 13)),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                                minimumSize: const Size(0, 36),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${certs.length} certifications',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Stat cards
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            _StatCard(label: 'Valid', count: validCount, color: const Color(0xFF10B981), icon: Icons.check_circle),
-                            const SizedBox(width: 12),
-                            _StatCard(label: 'Expiring Soon', count: expiringCount, color: const Color(0xFFF59E0B), icon: Icons.warning_amber),
-                          ],
-                        ),
+                        Row(children: [
+                          _StatCard(label: 'Valid',         count: validCount,    color: const Color(0xFF10B981), icon: Icons.check_circle_outline),
+                          const SizedBox(width: 12),
+                          _StatCard(label: 'Expiring Soon', count: expiringCount, color: const Color(0xFFF59E0B), icon: Icons.warning_amber_outlined),
+                        ]),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _StatCard(label: 'Expired', count: expiredCount, color: const Color(0xFFEF4444), icon: Icons.cancel),
-                            const SizedBox(width: 12),
-                            _StatCard(label: 'Total', count: certs.length, color: AppTheme.secondaryColor, icon: Icons.assignment),
-                          ],
-                        ),
+                        Row(children: [
+                          _StatCard(label: 'Expired', count: expiredCount,  color: const Color(0xFFEF4444), icon: Icons.cancel_outlined),
+                          const SizedBox(width: 12),
+                          _StatCard(label: 'Total',   count: certs.length,  color: AppTheme.secondaryColor, icon: Icons.assignment_outlined),
+                        ]),
                       ],
                     ),
                   ),
@@ -133,52 +184,45 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: (v) => setState(() => _search = v),
-                      decoration: InputDecoration(
+                      decoration: context.chatGPTInputDecoration.copyWith(
                         hintText: 'Search certifications...',
-                        prefixIcon: const Icon(Icons.search, size: 20),
+                        prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF6B7280)),
                         suffixIcon: _search.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 18),
                                 onPressed: () { _searchController.clear(); setState(() => _search = ''); },
                               )
                             : null,
-                        filled: true,
-                        fillColor: context.cardBackground,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withOpacity(0.08))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.black.withOpacity(0.08))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppTheme.secondaryColor)),
                       ),
                     ),
                   ),
                 ),
 
-                // Filter tabs
+                // Filter chips
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: SingleChildScrollView(
+                  child: SizedBox(
+                    height: 52,
+                    child: ListView(
                       scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final entry in {
-                            'All': certs.length,
-                            'Valid': validCount,
-                            'Expiring': expiringCount,
-                            'Expired': expiredCount,
-                            'Revoked': revokedCount,
-                          }.entries)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _FilterChip(
-                                label: entry.key == 'Expiring' ? 'Expiring Soon' : entry.key,
-                                badge: entry.value,
-                                selected: _filter == entry.key,
-                                onTap: () => setState(() => _filter = entry.key),
-                              ),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      children: [
+                        for (final entry in {
+                          'All': certs.length,
+                          'Valid': validCount,
+                          'Expiring': expiringCount,
+                          'Expired': expiredCount,
+                          'Revoked': revokedCount,
+                        }.entries)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _FilterChip(
+                              label: entry.key == 'Expiring' ? 'Expiring Soon' : entry.key,
+                              badge: entry.value,
+                              selected: _filter == entry.key,
+                              onTap: () => setState(() => _filter = entry.key),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -196,7 +240,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, i) => _CertCard(
@@ -210,6 +254,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
                   ),
               ],
             ),
+          ),
           );
         },
       ),
@@ -217,12 +262,15 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
   }
 
   void _showAddDialog(BuildContext context, SupabaseCertificationProvider provider) {
+    final myTools = widget.filterUserId != null
+        ? provider.tools.where((t) => t.assignedTo == widget.filterUserId).toList()
+        : provider.tools;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CertFormSheet(
-        tools: provider.tools,
+        tools: myTools,
         onSubmit: (cert) async {
           final created = await provider.addCertification(cert);
           if (context.mounted) {
@@ -239,13 +287,16 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
   }
 
   void _showEditDialog(BuildContext context, Certification cert, SupabaseCertificationProvider provider) {
+    final myTools = widget.filterUserId != null
+        ? provider.tools.where((t) => t.assignedTo == widget.filterUserId).toList()
+        : provider.tools;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CertEditSheet(
         cert: cert,
-        tools: provider.tools,
+        tools: myTools,
         onSubmit: (updates) async {
           final updated = await provider.updateCertification(cert.id!, updates);
           if (context.mounted) {
@@ -265,6 +316,7 @@ class _ComplianceScreenState extends State<ComplianceScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text('Delete Certification'),
         content: Text('Delete ${cert.certificationNumber} for ${cert.toolName}? This cannot be undone.'),
         actions: [
@@ -311,13 +363,12 @@ class _CertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2128) : Colors.white,
+        color: context.cardFill,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -327,9 +378,8 @@ class _CertCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: _color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(color: _color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
                   child: Icon(Icons.verified_outlined, color: _color, size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -337,42 +387,48 @@ class _CertCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(cert.toolName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                      Text(cert.certificationType, style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      Text(cert.toolName,
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: theme.colorScheme.onSurface)),
+                      Text(cert.certificationType,
+                          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: _color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: _color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
                   child: Text(_statusLabel, style: TextStyle(color: _color, fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            const Divider(height: 1),
+            Divider(height: 1, color: context.cardBorder),
             const SizedBox(height: 10),
-            _Row('Certificate #', cert.certificationNumber),
-            _Row('Issued by', cert.issuingAuthority),
-            _Row('Issue date', _fmt(cert.issueDate)),
-            _Row('Expiry', '${_fmt(cert.expiryDate)}  •  ${cert.expiryStatus}'),
-            if (cert.inspectorName != null) _Row('Inspector', cert.inspectorName!),
-            if (cert.location != null) _Row('Location', cert.location!),
+            _InfoRow('Certificate #', cert.certificationNumber),
+            _InfoRow('Issued by', cert.issuingAuthority),
+            _InfoRow('Issue date', _fmt(cert.issueDate)),
+            _InfoRow('Expiry', '${_fmt(cert.expiryDate)}  •  ${cert.expiryStatus}'),
+            if (cert.inspectorName != null) _InfoRow('Inspector', cert.inspectorName!),
+            if (cert.location != null) _InfoRow('Location', cert.location!),
             if (cert.notes != null) ...[
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.grey.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(6),
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.notes, size: 14, color: AppTheme.textSecondary),
+                    Icon(Icons.notes, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(cert.notes!, style: TextStyle(fontSize: 12, color: AppTheme.textSecondary))),
+                    Expanded(child: Text(cert.notes!,
+                        style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)))),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -380,14 +436,20 @@ class _CertCard extends StatelessWidget {
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined, size: 15),
                   label: const Text('Edit'),
-                  style: TextButton.styleFrom(foregroundColor: AppTheme.textSecondary, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
                 ),
                 const SizedBox(width: 4),
                 TextButton.icon(
                   onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline, size: 15),
                   label: const Text('Delete'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
                 ),
               ],
             ),
@@ -397,23 +459,27 @@ class _CertCard extends StatelessWidget {
     );
   }
 
-  String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+  String _fmt(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
 
-class _Row extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  const _Row(this.label, this.value);
+  const _InfoRow(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 100, child: Text(label, style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
+          SizedBox(
+            width: 100,
+            child: Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontWeight: FontWeight.w500)),
+          ),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface))),
         ],
       ),
     );
@@ -431,20 +497,18 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2128) : Colors.white,
+          color: context.cardFill,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED)),
         ),
         child: Row(
           children: [
             Container(
               width: 36, height: 36,
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(9)),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
               child: Icon(icon, color: color, size: 18),
             ),
             const SizedBox(width: 10),
@@ -452,7 +516,7 @@ class _StatCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('$count', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-                Text(label, style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
               ],
             ),
           ],
@@ -473,24 +537,36 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.secondaryColor.withOpacity(0.1) : context.cardBackground,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? AppTheme.secondaryColor : Colors.black.withOpacity(0.08), width: selected ? 1.2 : 0.5),
+          color: selected
+              ? AppTheme.secondaryColor
+              : (Theme.of(context).brightness == Brightness.dark ? theme.colorScheme.onSurface.withValues(alpha: 0.06) : Colors.white),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: selected ? AppTheme.secondaryColor : AppTheme.textSecondary)),
+            Text(label, style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w500,
+              color: selected ? Colors.white : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            )),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(color: selected ? AppTheme.secondaryColor : Colors.grey.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-              child: Text('$badge', style: TextStyle(fontSize: 10, color: selected ? Colors.white : AppTheme.textSecondary, fontWeight: FontWeight.w600)),
+              decoration: BoxDecoration(
+                color: selected ? Colors.white.withOpacity(0.25) : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text('$badge', style: TextStyle(
+                fontSize: 10,
+                color: selected ? Colors.white : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w600,
+              )),
             ),
           ],
         ),
@@ -513,12 +589,12 @@ class _CertFormSheet extends StatefulWidget {
 class _CertFormSheetState extends State<_CertFormSheet> {
   Tool? _tool;
   String _type = 'Safety Inspection';
-  final _certNumCtrl = TextEditingController();
+  final _certNumCtrl   = TextEditingController();
   final _authorityCtrl = TextEditingController();
   final _inspectorCtrl = TextEditingController();
-  final _locationCtrl = TextEditingController();
-  final _notesCtrl = TextEditingController();
-  DateTime _issueDate = DateTime.now();
+  final _locationCtrl  = TextEditingController();
+  final _notesCtrl     = TextEditingController();
+  DateTime _issueDate  = DateTime.now();
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 365));
   bool _saving = false;
 
@@ -537,8 +613,13 @@ class _CertFormSheetState extends State<_CertFormSheet> {
     super.dispose();
   }
 
+  String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       maxChildSize: 0.95,
@@ -546,42 +627,69 @@ class _CertFormSheetState extends State<_CertFormSheet> {
       expand: false,
       builder: (_, scroll) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
             const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: onSurface.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2))),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  const Text('Add Certification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  Text('Add Certification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: onSurface)),
                   const Spacer(),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
               ),
             ),
-            const Divider(),
+            Divider(color: onSurface.withValues(alpha: 0.08)),
             Expanded(
               child: ListView(
                 controller: scroll,
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 children: [
-                  _Lbl('Tool *'),
-                  DropdownButtonFormField<Tool>(
-                    value: _tool,
-                    decoration: _dec(),
-                    items: widget.tools.map((t) => DropdownMenuItem(value: t, child: Text(t.name, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (t) => setState(() => _tool = t),
+                  // Tool search
+                  Autocomplete<Tool>(
+                    initialValue: TextEditingValue(text: _tool?.name ?? ''),
+                    displayStringForOption: (t) => t.name,
+                    optionsBuilder: (v) {
+                      if (v.text.isEmpty) return widget.tools;
+                      final q = v.text.toLowerCase();
+                      return widget.tools.where((t) =>
+                        t.name.toLowerCase().contains(q) ||
+                        (t.category?.toLowerCase().contains(q) ?? false));
+                    },
+                    onSelected: (t) => setState(() => _tool = t),
+                    fieldViewBuilder: (_, ctrl, fn, onSubmit) => TextFormField(
+                      controller: ctrl,
+                      focusNode: fn,
+                      onFieldSubmitted: (_) => onSubmit(),
+                      decoration: context.chatGPTInputDecoration.copyWith(
+                        labelText: 'Tool *',
+                        hintText: 'Search by name or category...',
+                        prefixIcon: const Icon(Icons.handyman_outlined, size: 20, color: Color(0xFF6366F1)),
+                        suffixIcon: const Icon(Icons.search, size: 20),
+                      ),
+                      style: TextStyle(color: onSurface),
+                    ),
+                    optionsViewBuilder: (_, onSelected, options) => _ToolSuggestionsList(
+                      options: options, onSelected: onSelected,
+                    ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Certification Type *'),
+                  // Certification Type
                   DropdownButtonFormField<String>(
                     value: _type,
-                    decoration: _dec(),
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Certification Type *',
+                      prefixIcon: const Icon(Icons.verified_outlined, size: 20, color: Color(0xFF8B5CF6)),
+                    ),
+                    dropdownColor: theme.colorScheme.surface,
+                    style: TextStyle(color: onSurface, fontSize: 14),
+                    borderRadius: BorderRadius.circular(16),
                     items: CertificationTypes.types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                     onChanged: (t) {
                       setState(() {
@@ -592,68 +700,125 @@ class _CertFormSheetState extends State<_CertFormSheet> {
                       });
                     },
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Certificate Number *'),
-                  TextField(controller: _certNumCtrl, decoration: _dec()),
-                  const SizedBox(height: 14),
+                  // Certificate Number
+                  TextField(
+                    controller: _certNumCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Certificate Number *',
+                      prefixIcon: const Icon(Icons.tag_outlined, size: 20, color: Color(0xFF0EA5E9)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Issuing Authority *'),
-                  TextField(controller: _authorityCtrl, decoration: _dec()),
-                  const SizedBox(height: 14),
+                  // Issuing Authority
+                  TextField(
+                    controller: _authorityCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Issuing Authority *',
+                      prefixIcon: const Icon(Icons.business_outlined, size: 20, color: Color(0xFF10B981)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Inspector Name'),
-                  TextField(controller: _inspectorCtrl, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 14),
+                  // Inspector Name
+                  TextField(
+                    controller: _inspectorCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Inspector Name',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.person_outline, size: 20, color: Color(0xFFF59E0B)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Location'),
-                  TextField(controller: _locationCtrl, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 14),
+                  // Location
+                  TextField(
+                    controller: _locationCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Location',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.place_outlined, size: 20, color: Color(0xFFEF4444)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
+                  // Dates row
                   Row(
                     children: [
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _Lbl('Issue Date *'),
-                          _DatePicker(date: _issueDate, onPick: () async {
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
                             final p = await showDatePicker(context: context, initialDate: _issueDate, firstDate: DateTime(2020), lastDate: DateTime(2030));
                             if (p != null) setState(() => _issueDate = p);
-                          }),
-                        ],
-                      )),
+                          },
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(text: _fmtDate(_issueDate)),
+                              decoration: context.chatGPTInputDecoration.copyWith(
+                                labelText: 'Issue Date *',
+                                prefixIcon: const Icon(Icons.event_outlined, size: 20, color: Color(0xFFF59E0B)),
+                              ),
+                              style: TextStyle(color: onSurface),
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _Lbl('Expiry Date *'),
-                          _DatePicker(date: _expiryDate, onPick: () async {
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
                             final p = await showDatePicker(context: context, initialDate: _expiryDate, firstDate: DateTime(2020), lastDate: DateTime(2035));
                             if (p != null) setState(() => _expiryDate = p);
-                          }),
-                        ],
-                      )),
+                          },
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(text: _fmtDate(_expiryDate)),
+                              decoration: context.chatGPTInputDecoration.copyWith(
+                                labelText: 'Expiry Date *',
+                                prefixIcon: const Icon(Icons.event_busy_outlined, size: 20, color: Color(0xFFEF4444)),
+                              ),
+                              style: TextStyle(color: onSurface),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Notes'),
-                  TextField(controller: _notesCtrl, maxLines: 2, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 24),
+                  // Notes
+                  TextField(
+                    controller: _notesCtrl,
+                    maxLines: 2,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Notes',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF6B7280)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 28),
 
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: _saving || _tool == null || _certNumCtrl.text.isEmpty ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: _saving
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Add Certification', style: TextStyle(fontWeight: FontWeight.w600)),
+                          : const Text('Add Certification', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -683,14 +848,6 @@ class _CertFormSheetState extends State<_CertFormSheet> {
     );
     await widget.onSubmit(cert);
   }
-
-  InputDecoration _dec({String? hint}) => InputDecoration(
-        hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.primaryColor)),
-      );
 }
 
 // ─── Edit Certification Form ──────────────────────────────────────────────────
@@ -719,14 +876,14 @@ class _CertEditSheetState extends State<_CertEditSheet> {
   @override
   void initState() {
     super.initState();
-    _certNumCtrl = TextEditingController(text: widget.cert.certificationNumber);
+    _certNumCtrl   = TextEditingController(text: widget.cert.certificationNumber);
     _authorityCtrl = TextEditingController(text: widget.cert.issuingAuthority);
     _inspectorCtrl = TextEditingController(text: widget.cert.inspectorName ?? '');
-    _locationCtrl = TextEditingController(text: widget.cert.location ?? '');
-    _notesCtrl = TextEditingController(text: widget.cert.notes ?? '');
-    _issueDate = widget.cert.issueDate;
-    _expiryDate = widget.cert.expiryDate;
-    _status = widget.cert.status;
+    _locationCtrl  = TextEditingController(text: widget.cert.location ?? '');
+    _notesCtrl     = TextEditingController(text: widget.cert.notes ?? '');
+    _issueDate     = widget.cert.issueDate;
+    _expiryDate    = widget.cert.expiryDate;
+    _status        = widget.cert.status;
   }
 
   @override
@@ -736,8 +893,13 @@ class _CertEditSheetState extends State<_CertEditSheet> {
     super.dispose();
   }
 
+  String _fmtDate(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       maxChildSize: 0.95,
@@ -745,13 +907,13 @@ class _CertEditSheetState extends State<_CertEditSheet> {
       expand: false,
       builder: (_, scroll) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
             const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: onSurface.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(2))),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
@@ -759,8 +921,8 @@ class _CertEditSheetState extends State<_CertEditSheet> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Edit Certification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                      Text(widget.cert.toolName, style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                      Text('Edit Certification', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: onSurface)),
+                      Text(widget.cert.toolName, style: TextStyle(fontSize: 13, color: onSurface.withValues(alpha: 0.5))),
                     ],
                   ),
                   const Spacer(),
@@ -768,81 +930,137 @@ class _CertEditSheetState extends State<_CertEditSheet> {
                 ],
               ),
             ),
-            const Divider(),
+            Divider(color: onSurface.withValues(alpha: 0.08)),
             Expanded(
               child: ListView(
                 controller: scroll,
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 children: [
-                  _Lbl('Certificate Number *'),
-                  TextField(controller: _certNumCtrl, decoration: _dec()),
-                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _certNumCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Certificate Number *',
+                      prefixIcon: const Icon(Icons.tag_outlined, size: 20, color: Color(0xFF0EA5E9)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Issuing Authority *'),
-                  TextField(controller: _authorityCtrl, decoration: _dec()),
-                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _authorityCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Issuing Authority *',
+                      prefixIcon: const Icon(Icons.business_outlined, size: 20, color: Color(0xFF10B981)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Status'),
                   DropdownButtonFormField<String>(
                     value: _status,
-                    decoration: _dec(),
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Status',
+                      prefixIcon: const Icon(Icons.toggle_on_outlined, size: 20, color: Color(0xFF3B82F6)),
+                    ),
+                    dropdownColor: theme.colorScheme.surface,
+                    style: TextStyle(color: onSurface, fontSize: 14),
+                    borderRadius: BorderRadius.circular(16),
                     items: ['Valid', 'Revoked'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                     onChanged: (v) => setState(() => _status = v!),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Inspector Name'),
-                  TextField(controller: _inspectorCtrl, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _inspectorCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Inspector Name',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.person_outline, size: 20, color: Color(0xFFF59E0B)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Location'),
-                  TextField(controller: _locationCtrl, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _locationCtrl,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Location',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.place_outlined, size: 20, color: Color(0xFFEF4444)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 16),
 
                   Row(
                     children: [
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _Lbl('Issue Date'),
-                          _DatePicker(date: _issueDate, onPick: () async {
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
                             final p = await showDatePicker(context: context, initialDate: _issueDate, firstDate: DateTime(2020), lastDate: DateTime(2030));
                             if (p != null) setState(() => _issueDate = p);
-                          }),
-                        ],
-                      )),
+                          },
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(text: _fmtDate(_issueDate)),
+                              decoration: context.chatGPTInputDecoration.copyWith(
+                                labelText: 'Issue Date',
+                                prefixIcon: const Icon(Icons.event_outlined, size: 20, color: Color(0xFFF59E0B)),
+                              ),
+                              style: TextStyle(color: onSurface),
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _Lbl('Expiry Date'),
-                          _DatePicker(date: _expiryDate, onPick: () async {
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
                             final p = await showDatePicker(context: context, initialDate: _expiryDate, firstDate: DateTime(2020), lastDate: DateTime(2035));
                             if (p != null) setState(() => _expiryDate = p);
-                          }),
-                        ],
-                      )),
+                          },
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(text: _fmtDate(_expiryDate)),
+                              decoration: context.chatGPTInputDecoration.copyWith(
+                                labelText: 'Expiry Date',
+                                prefixIcon: const Icon(Icons.event_busy_outlined, size: 20, color: Color(0xFFEF4444)),
+                              ),
+                              style: TextStyle(color: onSurface),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
-                  _Lbl('Notes'),
-                  TextField(controller: _notesCtrl, maxLines: 2, decoration: _dec(hint: 'Optional')),
-                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _notesCtrl,
+                    maxLines: 2,
+                    decoration: context.chatGPTInputDecoration.copyWith(
+                      labelText: 'Notes',
+                      hintText: 'Optional',
+                      prefixIcon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF6B7280)),
+                    ),
+                    style: TextStyle(color: onSurface),
+                  ),
+                  const SizedBox(height: 28),
 
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: _saving || _certNumCtrl.text.isEmpty ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: _saving
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                          : const Text('Save Changes', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -867,44 +1085,67 @@ class _CertEditSheetState extends State<_CertEditSheet> {
       'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     });
   }
-
-  InputDecoration _dec({String? hint}) => InputDecoration(
-        hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppTheme.primaryColor)),
-      );
 }
 
-// ─── Shared helpers ───────────────────────────────────────────────────────────
 
-Widget _Lbl(String text) => Padding(
-  padding: const EdgeInsets.only(bottom: 6),
-  child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondary)),
-);
+// ─── Shared: Tool suggestions overlay ────────────────────────────────────────
 
-class _DatePicker extends StatelessWidget {
-  final DateTime date;
-  final VoidCallback onPick;
-  const _DatePicker({required this.date, required this.onPick});
+class _ToolSuggestionsList extends StatelessWidget {
+  final Iterable<Tool> options;
+  final void Function(Tool) onSelected;
+  const _ToolSuggestionsList({required this.options, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPick,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.calendar_today, size: 14),
-            const SizedBox(width: 8),
-            Text('${date.day}/${date.month}/${date.year}', style: const TextStyle(fontSize: 14)),
-          ],
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(14),
+        color: theme.colorScheme.surface,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 220),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (_, i) {
+              final tool = options.elementAt(i);
+              return InkWell(
+                onTap: () => onSelected(tool),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.handyman_outlined, size: 16, color: Color(0xFF6366F1)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(tool.name,
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface)),
+                            if (tool.category != null)
+                              Text(tool.category!,
+                                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

@@ -11,7 +11,6 @@ import '../providers/supabase_tool_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../widgets/common/status_chip.dart';
-import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import '../utils/error_handler.dart';
 import '../utils/navigation_helper.dart';
@@ -68,103 +67,66 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
         foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
         surfaceTintColor: Colors.transparent,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(
-              Icons.chevron_left,
-              size: 28,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: () => NavigationHelper.safePop(context),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, size: 26),
+          onPressed: () => NavigationHelper.safePop(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Return Tool',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                fontWeight: FontWeight.w600,
-                color: theme.textTheme.bodyLarge?.color,
-              ),
-            ),
-            Text(
-              'Scan or search for tools you currently hold, review their condition, and return them to the inventory.',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
+        title: Text(
+          'Return Tool',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: theme.textTheme.bodyLarge?.color,
+          ),
         ),
         centerTitle: false,
       ),
-      body: Container(
-        color: context.scaffoldBackground,
-        child: SafeArea(
-          child: Consumer3<SupabaseToolProvider, AuthProvider, SupabaseTechnicianProvider>(
-            builder: (context, toolProvider, authProvider, technicianProvider, child) {
-              final currentUserId = authProvider.userId;
-              final filteredTools = toolProvider.tools.where((tool) {
-                final belongsToTechnician = currentUserId != null && tool.assignedTo == currentUserId;
-                final statusEligible = tool.status == 'Assigned' || tool.status == 'In Use';
-                final matchesQuery = _searchQuery.isEmpty ||
-                    tool.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                    (tool.brand?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-                    (tool.serialNumber?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-                return belongsToTechnician && statusEligible && matchesQuery;
-              }).toList();
+      body: SafeArea(
+        child: Consumer3<SupabaseToolProvider, AuthProvider, SupabaseTechnicianProvider>(
+          builder: (context, toolProvider, authProvider, technicianProvider, child) {
+            final currentUserId = authProvider.userId;
+            final filteredTools = toolProvider.tools.where((tool) {
+              final belongsToTechnician = currentUserId != null && tool.assignedTo == currentUserId;
+              final statusEligible = tool.status == 'Assigned' || tool.status == 'In Use';
+              final matchesQuery = _searchQuery.isEmpty ||
+                  tool.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                  (tool.brand?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+                  (tool.serialNumber?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+              return belongsToTechnician && statusEligible && matchesQuery;
+            }).toList();
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () async {
-                        await toolProvider.loadTools();
-                      },
-                      backgroundColor: context.scaffoldBackground,
-                      color: AppTheme.secondaryColor,
-                      child: SingleChildScrollView(
-                        padding: ResponsiveHelper.getResponsivePadding(
-                          context,
-                          horizontal: 16,
-                          vertical: 24,
-                        ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: ResponsiveHelper.getMaxWidth(context),
-                            ),
-                            child: Column(
-                              children: [
-                                _buildSearchCard(context),
-                                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                                _buildToolList(context, filteredTools, technicianProvider),
-                                if (_selectedTool != null) ...[
-                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                                  _buildSelectedToolCard(context, technicianProvider),
-                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                                  _buildCheckinForm(context),
-                                ],
-                                SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 100)),
-                              ],
-                            ),
-                          ),
-                        ),
+            return Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async => toolProvider.loadTools(),
+                    color: AppTheme.secondaryColor,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSearchCard(context),
+                          const SizedBox(height: 24),
+                          _buildToolList(context, filteredTools, technicianProvider),
+                          if (_selectedTool != null) ...[
+                            const SizedBox(height: 24),
+                            _buildSelectedToolCard(context, technicianProvider),
+                            const SizedBox(height: 24),
+                            _buildCheckinForm(context),
+                          ],
+                          const SizedBox(height: 100),
+                        ],
                       ),
                     ),
                   ),
-                  _buildBottomActions(context),
-                ],
-              );
-            },
-          ),
+                ),
+                _buildBottomActions(context),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -173,60 +135,40 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   Widget _buildSearchCard(BuildContext context) {
     final theme = Theme.of(context);
-    
-    return Container(
-      decoration: context.cardDecoration,
-      padding: ResponsiveHelper.getResponsivePadding(
-        context,
-        all: 16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                  ),
-                  decoration: context.chatGPTInputDecoration.copyWith(
-                    hintText: 'Search by tool name, brand, or...',
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.trim();
-                    });
-                  },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
+                decoration: context.chatGPTInputDecoration.copyWith(
+                  hintText: 'Search by tool name, brand...',
+                  prefixIcon: const Icon(Icons.search),
                 ),
+                onChanged: (v) => setState(() => _searchQuery = v.trim()),
               ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              Container(
-                decoration: context.cardDecoration,
-                child: IconButton(
-                  onPressed: _openScanner,
-                  icon: Icon(
-                    Icons.qr_code_scanner,
-                    color: AppTheme.primaryColor,
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 24),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          Text(
-            'Only tools currently assigned to you are listed below. Use the scanner to speed up the search.',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 10),
+            IconButton.filled(
+              onPressed: _openScanner,
+              icon: const Icon(Icons.qr_code_scanner, size: 22),
+              style: IconButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                foregroundColor: AppTheme.secondaryColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Only tools assigned to you are shown. Use the scanner to find one quickly.',
+          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.45)),
+        ),
+      ],
     );
   }
 
@@ -278,12 +220,12 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
         Text(
           'Tools Assigned to You',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
             color: theme.colorScheme.onSurface,
           ),
         ),
-        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+        const SizedBox(height: 12),
         ...tools.map((tool) {
           final bool isSelected = _selectedTool?.id == tool.id;
           final technicianName = technicianProvider.getTechnicianNameById(tool.assignedTo) ?? 'You';
@@ -526,86 +468,46 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   Widget _buildSelectedToolCard(BuildContext context, SupabaseTechnicianProvider technicianProvider) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final tool = _selectedTool!;
     final technicianName = technicianProvider.getTechnicianNameById(tool.assignedTo) ?? 'You';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 20),
-        ),
-        border: Border.all(
-          color: AppTheme.getCardBorderSubtle(context),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: ResponsiveHelper.getResponsivePadding(
-        context,
-        all: 20,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.assignment_turned_in_outlined,
-                color: Colors.green.shade600,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-              ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-              Text(
-                'Selected Tool',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Selected Tool',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: theme.colorScheme.onSurface)),
+        const SizedBox(height: 12),
+        _buildDetailRow(context, 'Name', tool.name),
+        _buildDetailRow(context, 'Category', tool.category),
+        if (tool.brand != null && tool.brand!.isNotEmpty)
+          _buildDetailRow(context, 'Brand', tool.brand!),
+        if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
+          _buildDetailRow(context, 'Serial Number', tool.serialNumber!),
+        _buildDetailRow(context, 'Currently Assigned', technicianName),
+        Row(
+          children: [
+            SizedBox(
+              width: 110,
+              child: Text(
+                'Status',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                  color: theme.colorScheme.onSurface,
+                  color: context.secondaryTextColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-          _buildDetailRow(context, 'Name', tool.name),
-          _buildDetailRow(context, 'Category', tool.category),
-          if (tool.brand != null && tool.brand!.isNotEmpty)
-            _buildDetailRow(context, 'Brand', tool.brand!),
-          if (tool.serialNumber != null && tool.serialNumber!.isNotEmpty)
-            _buildDetailRow(context, 'Serial Number', tool.serialNumber!),
-          _buildDetailRow(context, 'Currently Assigned', technicianName),
-          Row(
-            children: [
-              SizedBox(
-                width: 110,
-                child: Text(
-                  'Status',
-                  style: TextStyle(
-                    color: context.secondaryTextColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  ),
-                ),
-              ),
-              StatusChip(status: tool.status),
-            ],
-          ),
-        ],
-      ),
+            ),
+            StatusChip(status: tool.status),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildDetailRow(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 10)),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -614,9 +516,9 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w500,
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                fontSize: 14,
               ),
             ),
           ),
@@ -625,7 +527,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
               value,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                fontSize: 14,
                 color: theme.colorScheme.onSurface,
               ),
             ),
@@ -637,127 +539,74 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
   Widget _buildCheckinForm(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      decoration: context.cardDecoration,
-      padding: ResponsiveHelper.getResponsivePadding(
-        context,
-        all: 20,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.assignment,
-                color: AppTheme.primaryColor,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+    final onSurface = theme.colorScheme.onSurface;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Return Details',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: onSurface)),
+        const SizedBox(height: 12),
+
+        // Return date
+        GestureDetector(
+          onTap: _selectCheckinDate,
+          child: AbsorbPointer(
+            child: TextFormField(
+              readOnly: true,
+              controller: TextEditingController(
+                text: _checkinDate != null
+                    ? '${_checkinDate!.day}/${_checkinDate!.month}/${_checkinDate!.year}'
+                    : '',
               ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-              Text(
-                'Return Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-          GestureDetector(
-            onTap: _selectCheckinDate,
-            child: Container(
-              decoration: context.cardDecoration,
-              padding: ResponsiveHelper.getResponsivePadding(
-                context,
-                horizontal: 16,
-                vertical: 14,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    color: _checkinDate != null
-                        ? AppTheme.primaryColor
-                        : theme.colorScheme.onSurface.withOpacity(0.55),
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                  Expanded(
-                    child: Text(
-                      _checkinDate != null
-                          ? '${_checkinDate!.day}/${_checkinDate!.month}/${_checkinDate!.year}'
-                          : 'Select return date',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: _checkinDate != null
-                            ? theme.colorScheme.onSurface
-                            : theme.colorScheme.onSurface.withOpacity(0.55),
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                  ),
-                ],
+              decoration: context.chatGPTInputDecoration.copyWith(
+                labelText: 'Return Date *',
+                hintText: 'Select date',
+                prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
               ),
             ),
           ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
-          Text(
-            'Returned Condition',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-              color: theme.colorScheme.onSurface,
-            ),
+        ),
+        const SizedBox(height: 16),
+
+        // Returned condition
+        Text('Returned Condition',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: onSurface)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _conditions.map((condition) {
+            final bool isSelected = _returnCondition == condition;
+            return ChoiceChip(
+              label: Text(condition, style: const TextStyle(fontSize: 13)),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _returnCondition = condition),
+              backgroundColor: context.cardBackground,
+              selectedColor: AppTheme.secondaryColor,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              side: BorderSide(
+                color: isSelected ? AppTheme.secondaryColor : AppTheme.getCardBorderSubtle(context),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+
+        // Notes
+        TextFormField(
+          controller: _notesController,
+          maxLines: 3,
+          decoration: context.chatGPTInputDecoration.copyWith(
+            labelText: 'Notes (optional)',
+            hintText: 'Add any issues, damage, or additional information...',
+            prefixIcon: const Icon(Icons.notes_rounded, size: 20),
           ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-          Wrap(
-            spacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-            runSpacing: ResponsiveHelper.getResponsiveSpacing(context, 10),
-            children: _conditions.map((condition) {
-              final bool isSelected = _returnCondition == condition;
-              return ChoiceChip(
-                label: Text(
-                  condition,
-                  style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                  ),
-                ),
-                selected: isSelected,
-                onSelected: (_) => setState(() => _returnCondition = condition),
-                backgroundColor: isSelected
-                    ? Colors.green.shade600
-                    : context.cardBackground,
-                selectedColor: Colors.green.shade600,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-                side: BorderSide(
-                  color: isSelected
-                      ? Colors.green.shade600
-                      : AppTheme.getCardBorderSubtle(context),
-                ),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 18)),
-          ThemedTextField(
-            controller: _notesController,
-            label: 'Notes (optional)',
-            hint: 'Add any issues, damage, or additional information...',
-            maxLines: 3,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -766,11 +615,7 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
 
     return SafeArea(
       child: Padding(
-        padding: ResponsiveHelper.getResponsivePadding(
-          context,
-          horizontal: 16,
-          vertical: 20,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -778,35 +623,21 @@ class _CheckinScreenState extends State<CheckinScreen> with ErrorHandlingMixin {
             ThemedButton(
               onPressed: canSubmit ? _performCheckin : null,
               isLoading: _isSaving,
-              backgroundColor: canSubmit ? Colors.green.shade600 : Colors.grey.shade400,
-              child: Row(
+              backgroundColor: canSubmit ? AppTheme.secondaryColor : Colors.grey.shade400,
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.assignment_turned_in,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 10)),
-                  const Text(
-                    'Return Tool',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text('Return Tool',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
+            const SizedBox(height: 12),
             TextButton(
               onPressed: () => NavigationHelper.safePop(context),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                ),
-              ),
+              child: const Text('Cancel', style: TextStyle(fontSize: 15)),
             ),
           ],
         ),

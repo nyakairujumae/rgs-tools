@@ -13,7 +13,10 @@ import '../utils/navigation_helper.dart';
 import '../utils/logger.dart';
 
 class MaintenanceScreen extends StatefulWidget {
-  const MaintenanceScreen({super.key});
+  /// When set, only shows tools assigned to this user (technician view).
+  final String? filterUserId;
+
+  const MaintenanceScreen({super.key, this.filterUserId});
 
   @override
   State<MaintenanceScreen> createState() => _MaintenanceScreenState();
@@ -62,30 +65,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     return allTools.where((tool) => tool.status == 'Maintenance').toList();
   }
 
-  PreferredSizeWidget _buildPremiumAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppBar(
-      backgroundColor: context.appBarBackground,
-      elevation: 0,
-      centerTitle: true,
-      titleSpacing: 0,
-      foregroundColor: theme.colorScheme.onSurface,
-      title: Text(
-        'Tools Under Maintenance',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-      actions: [],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildPremiumAppBar(context),
       backgroundColor: context.scaffoldBackground,
       body: SafeArea(
         bottom: false,
@@ -95,15 +77,45 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               maxWidth: kIsWeb ? 900 : double.infinity,
             ),
             child: Column(
-          children: [
-            const SizedBox(height: 12),
-            _buildSearchBar(),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _buildMaintenanceList(),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Inline header ──────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).maybePop(),
+                            child: const Icon(Icons.chevron_left, size: 28),
+                          ),
+                          const SizedBox(width: 4),
+                          const Expanded(
+                            child: Text(
+                              'Maintenance',
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildSearchBar(),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildMaintenanceList(),
+                ),
+              ],
             ),
-          ],
-        ),
           ),
         ),
       ),
@@ -120,7 +132,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     return Consumer<SupabaseToolProvider>(
       builder: (context, toolProvider, child) {
         final query = _searchQuery.trim().toLowerCase();
-        var toolsUnderMaintenance = _getToolsUnderMaintenance(toolProvider.tools);
+        final _sourceTools = widget.filterUserId != null
+            ? toolProvider.tools
+                .where((t) => t.assignedTo == widget.filterUserId)
+                .toList()
+            : toolProvider.tools;
+        var toolsUnderMaintenance = _getToolsUnderMaintenance(_sourceTools);
         if (query.isNotEmpty) {
           toolsUnderMaintenance = toolsUnderMaintenance.where((tool) {
             final haystack = [
@@ -168,7 +185,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
     ].join(' • ');
 
     return Container(
-      decoration: context.cardDecoration,
+      decoration: BoxDecoration(
+        color: context.cardFill,
+        borderRadius: BorderRadius.circular(14),
+      ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +275,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
                 backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 elevation: 0,
               ),
@@ -306,13 +326,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(
-          ResponsiveHelper.getResponsiveBorderRadius(context, 8),
-        ),
-        border: Border.all(
-          color: color.withValues(alpha: 0.55),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -341,64 +355,38 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
   }
 
   Widget _buildConditionPill(String condition) {
-    return FilterChip(
-      label: Text(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
         condition,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+        style: TextStyle(
+          color: AppTheme.primaryColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
         ),
       ),
-      selected: false,
-      onSelected: (_) {},
-      showCheckmark: false,
-      backgroundColor: context.cardBackground,
-      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.08),
-      side: BorderSide(
-        color: AppTheme.primaryColor.withValues(alpha: 0.2),
-        width: 1.2,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      labelStyle: TextStyle(
-        color: AppTheme.primaryColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
   Widget _buildStatusOutlineChip(String status) {
-    return FilterChip(
-      label: Text(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
         status,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+        style: TextStyle(
+          color: AppTheme.secondaryColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
         ),
       ),
-      selected: false,
-      onSelected: (_) {},
-      showCheckmark: false,
-      backgroundColor: Colors.transparent,
-      selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
-      side: BorderSide(
-        color: AppTheme.secondaryColor,
-        width: 1.2,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      labelStyle: TextStyle(
-        color: AppTheme.secondaryColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
@@ -409,7 +397,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
       builder: (context) => AlertDialog(
         backgroundColor: context.scaffoldBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Row(
           children: [
@@ -450,7 +438,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('Cancel'),
@@ -461,7 +449,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> with ErrorHandlin
               backgroundColor: AppTheme.secondaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
               ),
               elevation: 0,
             ),

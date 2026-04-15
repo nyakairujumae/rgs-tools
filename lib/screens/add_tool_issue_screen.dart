@@ -106,8 +106,9 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
             Text(
               'Report Tool Issue',
               style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-                fontWeight: FontWeight.w600,
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
                 color: theme.textTheme.bodyLarge?.color,
               ),
             ),

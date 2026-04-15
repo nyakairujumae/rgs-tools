@@ -20,12 +20,12 @@ import 'package:gotrue/gotrue.dart';
 import 'screens/admin_home_screen.dart';
 import 'screens/technician_home_screen.dart';
 import 'screens/role_selection_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/auth/auth_error_screen.dart';
-import 'screens/pending_approval_screen.dart';
 import 'screens/tool_detail_screen.dart';
 import 'services/first_launch_service.dart';
 import 'models/tool.dart';
@@ -36,11 +36,11 @@ import 'providers/supabase_certification_provider.dart';
 import 'providers/supabase_technician_provider.dart';
 import 'providers/tool_issue_provider.dart';
 import 'providers/request_thread_provider.dart';
-import 'providers/pending_approvals_provider.dart';
 import 'providers/admin_notification_provider.dart';
 import 'providers/technician_notification_provider.dart';
 import 'providers/approval_workflows_provider.dart';
 import 'providers/connectivity_provider.dart';
+import 'providers/organization_provider.dart';
 import 'database/database_helper.dart';
 import 'services/local_cache_service.dart';
 import 'services/sync_service.dart';
@@ -1082,12 +1082,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => ToolIssueProvider()),
-        ChangeNotifierProvider(create: (_) => PendingApprovalsProvider()),
         ChangeNotifierProvider(create: (_) => RequestThreadProvider()),
         ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
         ChangeNotifierProvider(create: (_) => TechnicianNotificationProvider()),
         ChangeNotifierProvider(create: (_) => ApprovalWorkflowsProvider()),
         ChangeNotifierProvider(create: (_) => SupabaseCertificationProvider()),
+        ChangeNotifierProvider(create: (_) => OrganizationProvider()),
       ],
       child: Consumer3<AuthProvider, ThemeProvider, LocaleProvider>(
         builder: (context, authProvider, themeProvider, localeProvider, child) {
@@ -1150,30 +1150,19 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
           } else if (_sessionEstablished || (hasSession && currentUser != null && currentUser.emailConfirmedAt != null)) {
             // Determine role from provider (if initialized) or metadata (if not)
             bool isAdmin = false;
-            bool isPending = false;
-            
             if (authProvider.isInitialized) {
               // Provider initialized - use its role (most reliable)
               isAdmin = authProvider.isAdmin;
-              isPending = authProvider.isPendingApproval || authProvider.userRole == UserRole.pending;
             } else if (currentUser != null) {
-              // Provider not initialized - check metadata and pending approval table
+              // Provider not initialized - check metadata
               final roleFromMetadata = currentUser?.userMetadata?['role'] as String?;
               final email = currentUser?.email ?? '';
               isAdmin = roleFromMetadata == 'admin' ||
                   AppConfig.isAdminEmailDomain(email);
-              
-              // Check pending approval synchronously if possible
-              if (!isAdmin) {
-                // Assume pending for technicians until provider confirms
-                isPending = true;
-              }
             }
-            
-            // Route directly to appropriate screen - NO intermediate screens
-            if (isPending) {
-              initialRoute = const PendingApprovalScreen();
-            } else if (isAdmin) {
+
+            // Route directly to appropriate screen
+            if (isAdmin) {
               initialRoute = AdminHomeScreenErrorBoundary(
                 child: AdminHomeScreen(
                   key: ValueKey('admin_home'),
@@ -1192,14 +1181,12 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               );
             } else if (widget.cachedLastRoute == '/technician') {
               initialRoute = const TechnicianHomeScreen();
-            } else if (widget.cachedLastRoute == '/pending-approval') {
-              initialRoute = const PendingApprovalScreen();
             } else {
-              initialRoute = const RoleSelectionScreen();
+              initialRoute = const OnboardingScreen();
             }
           } else {
-            // No session - show role selection (only for logged out users)
-            initialRoute = const RoleSelectionScreen();
+            // No session - show onboarding
+            initialRoute = const OnboardingScreen();
           }
           
           // Always render MaterialApp immediately
@@ -1273,6 +1260,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
               return result;
             },
             routes: {
+              '/onboarding': (context) => const OnboardingScreen(),
               '/role-selection': (context) => const RoleSelectionScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
@@ -1286,7 +1274,6 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                   deepLink: routeName,
                 );
               },
-              '/pending-approval': (context) => const PendingApprovalScreen(),
               '/admin': (context) {
                 final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                 final initialTab = args?['initialTab'] as int? ?? 0;
@@ -1392,7 +1379,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                     .pushNamedAndRemoveUntil('/admin', (route) => false);
                               } else if (context.mounted) {
                                 Navigator.of(context, rootNavigator: true)
-                                    .pushNamedAndRemoveUntil('/pending-approval', (route) => false);
+                                    .pushNamedAndRemoveUntil('/technician', (route) => false);
                               }
                               return;
                             }
@@ -1647,7 +1634,7 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 
                                 // Route to pending approval for technicians
                                 if (context.mounted) {
-                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/pending-approval', (route) => false);
+                                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/technician', (route) => false);
                                 }
                               }
                             }
@@ -1739,12 +1726,10 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                 final isOAuthUser = authProvider.user?.appMetadata?['provider'] != null &&
                                     authProvider.user?.appMetadata?['provider'] != 'email';
                                 
-                                // If not approved (pending/rejected), route to pending approval screen
-                                // This "traps" the user at pending approval until admin approves
                                 if (isApproved == false) {
-                                  Logger.debug('✅ User is NOT approved - routing to pending approval screen');
+                                  // Not approved — route to role selection
                                   navigator.pushNamedAndRemoveUntil(
-                                    '/pending-approval',
+                                    '/role-selection',
                                     (route) => false,
                                   );
                                   return;
@@ -1789,9 +1774,8 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
                                       (route) => false,
                                     );
                                   } else if (roleFromMetadata == 'technician') {
-                                    // If metadata says technician but no approval status, assume pending
                                   navigator.pushNamedAndRemoveUntil(
-                                    '/pending-approval',
+                                    '/technician',
                                     (route) => false,
                                   );
                                 } else {

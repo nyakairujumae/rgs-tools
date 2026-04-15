@@ -13,7 +13,6 @@ import 'supabase_service.dart';
 import 'badge_service.dart';
 import '../main.dart' show globalNavigatorKey;
 import '../screens/admin_notification_screen.dart';
-import '../screens/admin_approval_screen.dart';
 import '../screens/approval_workflows_screen.dart';
 import '../screens/tool_issues_screen.dart';
 import '../screens/maintenance_screen.dart';
@@ -799,9 +798,6 @@ class FirebaseMessagingService {
       if (userRole == 'admin') {
         Widget? targetScreen;
         switch (type) {
-          case 'access_request':
-            targetScreen = const AdminApprovalScreen();
-            break;
           case 'tool_request':
             targetScreen = const ApprovalWorkflowsScreen();
             break;

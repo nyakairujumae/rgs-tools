@@ -256,11 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _showPendingApprovalMessage() {
     if (!mounted) return;
-    AuthErrorHandler.showInfoSnackBar(
-      context,
-      '📋 Your account is pending admin approval. You will be notified once approved.',
-    );
-    Navigator.pushNamedAndRemoveUntil(context, '/pending-approval', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/technician', (route) => false);
   }
 
   @override

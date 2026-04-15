@@ -6,14 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../models/tool.dart';
 import '../providers/auth_provider.dart';
-import '../providers/organization_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
-import '../utils/responsive_helper.dart';
-import '../widgets/premium_field_styles.dart';
 import 'barcode_scanner_screen.dart';
 
 class TechnicianAddToolScreen extends StatefulWidget {
@@ -78,25 +75,6 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
 
   final List<String> _conditions = const ['Excellent', 'Good', 'Fair', 'Poor', 'Needs Repair'];
 
-  BoxDecoration _outlineDecoration(
-    BuildContext context, {
-    double radius = 24,
-    bool showBorder = false,
-    bool subtleFill = false,
-  }) {
-    final theme = Theme.of(context);
-    final borderColor = context.cardBorder; // ChatGPT-style: #E5E5E5
-    final backgroundColor =
-        subtleFill ? context.cardBackground : theme.scaffoldBackgroundColor; // ChatGPT-style: #F5F5F5 or white
-
-    return BoxDecoration(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(radius),
-      border: showBorder ? Border.all(color: borderColor, width: 1) : null, // ChatGPT-style: 1px border
-      boxShadow: showBorder ? context.cardShadows : null, // ChatGPT-style: ultra-soft shadow when bordered
-    );
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -114,575 +92,268 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Add My Tool',
+          'Add New Tool',
           style: TextStyle(
             color: theme.textTheme.bodyLarge?.color,
-            fontWeight: FontWeight.w600,
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
+            fontWeight: FontWeight.w800,
+            fontSize: 30,
+            letterSpacing: -0.5,
           ),
         ),
         backgroundColor: theme.scaffoldBackgroundColor,
-        foregroundColor: theme.colorScheme.onSurface,
-        elevation: 0, // ChatGPT-style: no elevation
+        foregroundColor: onSurface,
+        elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: TextButton(
               onPressed: _isSaving ? null : _saveTool,
               child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      'Save',
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text('Save',
                       style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                      ),
-                    ),
+                        color: AppTheme.secondaryColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      )),
             ),
           ),
         ],
       ),
       body: SafeArea(
-        child: Container(
-          color: theme.scaffoldBackgroundColor,
-          child: Theme(
-            data: theme.copyWith(
-              inputDecorationTheme: theme.inputDecorationTheme.copyWith(
-                filled: false,
-                labelStyle: TextStyle(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w400,
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
-                ),
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                hintStyle: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image
+                _buildImageSelectionSection(),
+                const SizedBox(height: 24),
+
+                // Tool Name
+                TextFormField(
+                  controller: _nameController,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Tool Name *',
+                    hintText: 'e.g., Digital Multimeter',
+                    prefixIcon: const Icon(Icons.handyman_outlined, size: 20, color: Color(0xFF6366F1)),
                   ),
-                  borderSide: const BorderSide(
-                    color: AppTheme.subtleBorder,
-                    width: 1.1,
-                  ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Please enter tool name' : null,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
+                const SizedBox(height: 16),
+
+                // Category
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory.isEmpty ? null : _selectedCategory,
+                  isExpanded: true,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Category *',
+                    hintText: 'Select a category',
+                    prefixIcon: Icon(
+                      _categoryIcons[_selectedCategory.isEmpty ? 'Other' : _selectedCategory] ?? Icons.category_outlined,
+                      size: 20,
+                    ),
                   ),
-                  borderSide: const BorderSide(
-                    color: AppTheme.subtleBorder,
-                    width: 1.1,
-                  ),
+                  style: TextStyle(color: onSurface, fontSize: 15, fontWeight: FontWeight.w500),
+                  dropdownColor: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: _categories.map((c) {
+                    final icon = _categoryIcons[c] ?? Icons.category_outlined;
+                    return DropdownMenuItem(
+                      value: c,
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 18, color: onSurface.withValues(alpha: 0.7)),
+                          const SizedBox(width: 10),
+                          Text(c, style: TextStyle(color: onSurface, fontSize: 14)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) => setState(() {
+                    _selectedCategory = v ?? '';
+                    _categoryController.text = v ?? '';
+                  }),
+                  validator: (_) => _selectedCategory.isEmpty ? 'Please select a category' : null,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                  ),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.primary.withOpacity(0.7),
-                    width: 2,
-                  ),
-                ),
-                contentPadding: ResponsiveHelper.getResponsivePadding(
-                  context,
-                  horizontal: 20,
-                  vertical: 18,
-                ),
-              ),
-              textTheme: theme.textTheme.apply(
-                bodyColor: theme.textTheme.bodyLarge?.color,
-                displayColor: theme.textTheme.bodyLarge?.color,
-              ),
-            ),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 16),
+
+                // Brand + Model
+                Row(
                   children: [
-                    // Basic Information
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Text(
-                        'Basic Information',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                    // Image Selection Section
-                    _buildImageSelectionSection(),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
+                    Expanded(
                       child: TextFormField(
-                        controller: _nameController,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Tool Name *',
-                          hintText: 'e.g., Digital Multimeter',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter tool name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedCategory.isEmpty ? null : _selectedCategory,
-                        isExpanded: true,
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Category *',
-                          hintText: 'Select a category',
-                          hintStyle: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          ),
-                          prefixIcon: Icon(
-                            _categoryIcons[_selectedCategory.isEmpty ? 'Other' : _selectedCategory] ?? Icons.category_outlined,
-                            size: 22,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                        ),
-                        items: _categories.map((category) {
-                          final icon = _categoryIcons[category] ?? Icons.category_outlined;
-                          return DropdownMenuItem(
-                            value: category,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 18, color: theme.colorScheme.onSurface.withOpacity(0.8)),
-                                const SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    category,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        selectedItemBuilder: (context) {
-                          return _categories.map((category) => Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              category,
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )).toList();
-                        },
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCategory = value ?? '';
-                            _categoryController.text = value ?? '';
-                          });
-                        },
-                        validator: (value) {
-                          if (_selectedCategory.isEmpty) {
-                            return 'Please select a category';
-                          }
-                          return null;
-                        },
-                        dropdownColor: AppTheme.cardSurfaceColor(context),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 24),
-                            child: TextFormField(
-                              controller: _brandController,
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'Brand',
-                                hintText: 'e.g., Fluke',
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-                        Expanded(
-                          child: Container(
-                            decoration: _outlineDecoration(context, radius: 24),
-                            child: TextFormField(
-                              controller: _modelController,
-                              style: TextStyle(
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: 'Model Number',
-                                hintText: 'e.g., 87V',
-                                suffixIcon: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.auto_awesome, color: Colors.blue),
-                                      tooltip: 'Generate Model Number',
-                                      onPressed: _generateModelNumber,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                                      tooltip: 'Scan Model Number',
-                                      onPressed: () => _scanBarcode(_modelController, 'Model number'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    // Generate Both Button
-                    Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.orange.shade400,
-                              Colors.orange.shade600
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.orange.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _generateBothIds,
-                            borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                            ),
-                            child: Padding(
-                              padding: ResponsiveHelper.getResponsivePadding(
-                                context,
-                                horizontal: 24,
-                                vertical: 14,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.auto_awesome,
-                                    color: Colors.white,
-                                    size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                  ),
-                                  SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                                  Text(
-                                    'Generate Both Model & Serial Numbers',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        controller: _brandController,
+                        decoration: context.chatGPTInputDecoration.copyWith(
+                          labelText: 'Brand',
+                          hintText: 'e.g., Fluke',
+                          prefixIcon: const Icon(Icons.label_outlined, size: 20, color: Color(0xFF8B5CF6)),
                         ),
                       ),
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: TextFormField(
-                        controller: _serialNumberController,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Serial Number',
-                          hintText: 'Scan or enter manually',
+                        controller: _modelController,
+                        decoration: context.chatGPTInputDecoration.copyWith(
+                          labelText: 'Model',
+                          hintText: 'e.g., 87V',
+                          prefixIcon: const Icon(Icons.pin_outlined, size: 20, color: Color(0xFF0EA5E9)),
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.auto_awesome, color: Colors.blue),
-                                tooltip: 'Generate Unique ID',
-                                onPressed: _generateSerialNumber,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.qr_code_scanner, color: Colors.green),
-                                tooltip: 'Scan Serial Number',
-                                onPressed: () => _scanBarcode(_serialNumberController, 'Serial number'),
-                              ),
+                              IconButton(icon: const Icon(Icons.auto_awesome, size: 18, color: AppTheme.secondaryColor), onPressed: _generateModelNumber),
+                              IconButton(icon: const Icon(Icons.qr_code_scanner, size: 18, color: AppTheme.secondaryColor), onPressed: () => _scanBarcode(_modelController, 'Model number')),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        'Scan barcode/QR code or generate ID for tools without serial numbers',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                    Divider(
-                      height: 32,
-                      thickness: 0.8,
-                      color: AppTheme.subtleBorder.withOpacity(0.7),
-                      indent: 4,
-                      endIndent: 4,
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                    // Purchase Information
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        'Purchase Information',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: TextFormField(
-                        controller: _purchasePriceController,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Purchase Price (optional)',
-                          hintText: '0.00',
-                          prefixText: 'AED ',
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: InkWell(
-                        onTap: _selectPurchaseDate,
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.getResponsiveBorderRadius(context, 24),
-                        ),
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Purchase Date (optional)',
-                            contentPadding: ResponsiveHelper.getResponsivePadding(
-                              context,
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                          ),
-                          child: Text(
-                            _purchaseDate != null
-                                ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
-                                : 'Select date',
-                            style: TextStyle(
-                              color: _purchaseDate != null
-                                  ? theme.colorScheme.onSurface
-                                  : Colors.grey[500],
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                    // Condition (status is always Assigned - new tools appear in My Tools)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Condition',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 22),
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 20)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey(_condition),
-                        value: _condition,
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Condition',
-                          contentPadding: ResponsiveHelper.getResponsivePadding(
-                            context,
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                        ),
-                        items: _conditions.map((condition) {
-                          return DropdownMenuItem(
-                            value: condition,
-                            child: Text(
-                              condition,
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface,
-                                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _condition = value ?? _condition;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        dropdownColor: AppTheme.cardSurfaceColor(context),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: TextFormField(
-                        controller: _locationController,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Location',
-                          hintText: 'e.g., Van 2, Warehouse A',
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
-
-                    Container(
-                      decoration: _outlineDecoration(context, radius: 24),
-                      child: TextFormField(
-                        controller: _notesController,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Notes',
-                          hintText: 'Add extra information about this tool',
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Text(
-                        'Tools you add here are also available to admins. Assign "Available" if the tool is ready for sharing, or keep "Assigned" if it is yours exclusively.',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          height: 1.4,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 13),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+
+                // Generate button — subtle outlined
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _generateBothIds,
+                    icon: const Icon(Icons.auto_awesome, size: 18),
+                    label: const Text('Generate Model & Serial Numbers'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.secondaryColor,
+                      side: const BorderSide(color: AppTheme.secondaryColor, width: 1.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Serial Number
+                TextFormField(
+                  controller: _serialNumberController,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Serial Number',
+                    hintText: 'Scan or enter manually',
+                    prefixIcon: const Icon(Icons.qr_code_2_rounded, size: 20, color: AppTheme.secondaryColor),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(icon: const Icon(Icons.auto_awesome, size: 18, color: AppTheme.secondaryColor), onPressed: _generateSerialNumber),
+                        IconButton(icon: const Icon(Icons.qr_code_scanner, size: 18, color: AppTheme.secondaryColor), onPressed: () => _scanBarcode(_serialNumberController, 'Serial number')),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Scan barcode/QR code or generate ID for tools without serial numbers',
+                  style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.45)),
+                ),
+                const SizedBox(height: 28),
+
+                // Purchase Information
+                Text('Purchase Information',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: onSurface)),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _purchasePriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Purchase Price (optional)',
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined, size: 20, color: Color(0xFF10B981)),
+                    prefixText: 'AED  ',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Purchase Date
+                GestureDetector(
+                  onTap: _selectPurchaseDate,
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      readOnly: true,
+                      controller: TextEditingController(
+                        text: _purchaseDate != null
+                            ? '${_purchaseDate!.day}/${_purchaseDate!.month}/${_purchaseDate!.year}'
+                            : '',
+                      ),
+                      decoration: context.chatGPTInputDecoration.copyWith(
+                        labelText: 'Purchase Date (optional)',
+                        hintText: 'Select date',
+                        prefixIcon: const Icon(Icons.event_outlined, size: 20, color: Color(0xFFF59E0B)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // Status & Condition
+                Text('Status & Condition',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: onSurface)),
+                const SizedBox(height: 12),
+
+                DropdownButtonFormField<String>(
+                  key: ValueKey(_condition),
+                  value: _condition,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Condition',
+                    prefixIcon: const Icon(Icons.health_and_safety_outlined, size: 20, color: Color(0xFFEF4444)),
+                  ),
+                  style: TextStyle(color: onSurface, fontSize: 15),
+                  dropdownColor: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: _conditions.map((c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(c, style: TextStyle(color: onSurface, fontSize: 14)),
+                  )).toList(),
+                  onChanged: (v) => setState(() => _condition = v ?? _condition),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _locationController,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Location',
+                    hintText: 'e.g., Van 2, Warehouse A',
+                    prefixIcon: const Icon(Icons.place_outlined, size: 20, color: Color(0xFFEF4444)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _notesController,
+                  maxLines: 3,
+                  decoration: context.chatGPTInputDecoration.copyWith(
+                    labelText: 'Notes',
+                    hintText: 'Add extra information about this tool',
+                    prefixIcon: const Icon(Icons.edit_note_rounded, size: 20, color: Color(0xFF6B7280)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Tools you add are visible to admins. Keep "Assigned" if it\'s yours exclusively, or set "Available" to share.',
+                  style: TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.45), height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
         ),
@@ -692,120 +363,87 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
 
   Widget _buildImageSelectionSection() {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0),
-          child: Text(
-            'Tool Image',
-            style: TextStyle(
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+    final onSurface = theme.colorScheme.onSurface;
+
+    if (_selectedImage != null) {
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.file(
+              _selectedImage!,
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
             ),
           ),
-        ),
-        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-        Container(
-          height: 200,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppTheme.cardSurfaceColor(context),
-            borderRadius: BorderRadius.circular(
-              ResponsiveHelper.getResponsiveBorderRadius(context, 28),
-            ),
-            border: Border.all(
-              color: AppTheme.subtleBorder,
-              width: 1.2,
-            ),
-            boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
-          ),
-          child: _selectedImage != null
-              ? Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveHelper.getResponsiveBorderRadius(context, 28),
-                      ),
-                      child: Image.file(
-                        _selectedImage!,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: context.cardBackground, // ChatGPT-style: #F5F5F5
-                          shape: BoxShape.circle,
-                          boxShadow: context.cardShadows, // ChatGPT-style: ultra-soft shadow
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: theme.colorScheme.onSurface.withOpacity(0.75),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _selectedImage = null;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _showImagePickerOptions,
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveHelper.getResponsiveBorderRadius(context, 28),
-                    ),
-                    splashColor: theme.colorScheme.primary.withValues(alpha: 0.06),
-                    highlightColor: Colors.transparent,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.add_a_photo,
-                            size: ResponsiveHelper.getResponsiveIconSize(context, 36),
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-                        Text(
-                          'Add Tool Image',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 15),
-                            fontWeight: FontWeight.w500,
-                            color: theme.textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 4)),
-                        Text(
-                          'Tap to select from gallery or camera',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedImage = null),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.close, size: 16, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return GestureDetector(
+      onTap: _showImagePickerOptions,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 28,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Tap to attach a photo',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional — camera or gallery',
+              style: TextStyle(
+                fontSize: 12,
+                color: onSurface.withValues(alpha: 0.45),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -936,8 +574,7 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
   }
 
   String _orgPrefix() {
-    final orgName = context.read<OrganizationProvider>().orgName;
-    return orgName.isNotEmpty ? ToolIdGenerator.derivePrefix(orgName) : 'TOOL';
+    return 'TOOL';
   }
 
   void _generateModelNumber() {

@@ -170,12 +170,13 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
         title: Text(
           _getScreenTitle(),
           style: TextStyle(
-            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20),
-            fontWeight: FontWeight.w600,
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: Container(
         color: theme.scaffoldBackgroundColor,

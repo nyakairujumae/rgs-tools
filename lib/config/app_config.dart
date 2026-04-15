@@ -12,7 +12,7 @@ class AppConfig {
       final name = dotenv.env['APP_NAME'];
       if (name != null && name.isNotEmpty) return name;
     } catch (_) {}
-    return 'Tools';
+    return 'RGS Tools';
   }
 
   /// Short app name for compact UI (e.g. app bar)
