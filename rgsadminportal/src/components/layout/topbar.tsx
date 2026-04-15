@@ -16,7 +16,6 @@ const routeLabels: Record<string, string> = {
   '/dashboard/technicians': 'Technicians',
   '/dashboard/issues': 'Issues',
   '/dashboard/approvals': 'Approvals',
-  '/dashboard/approvals/users': 'User Approvals',
   '/dashboard/maintenance': 'Maintenance',
   '/dashboard/compliance': 'Compliance',
   '/dashboard/reports': 'Reports',
@@ -31,7 +30,7 @@ interface TopbarProps {
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const NOTIFICATION_ROUTES: Record<string, string> = {
-  access_request: '/dashboard/approvals/users',
+  access_request: '/dashboard/approvals',
   tool_request: '/dashboard/approvals',
   tool_added: '/dashboard/tools',
   maintenance_request: '/dashboard/maintenance',

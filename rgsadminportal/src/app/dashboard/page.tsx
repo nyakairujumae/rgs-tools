@@ -11,7 +11,6 @@ import {
   CheckCircle,
   AlertTriangle,
   Clock,
-  Users,
   Shield,
   ClipboardList,
   TrendingUp,
@@ -22,7 +21,7 @@ import {
   Loader2,
   Package,
 } from 'lucide-react'
-import type { Tool, ToolIssue, ApprovalWorkflow, MaintenanceSchedule, Certification, ToolHistory, PendingUserApproval } from '@/lib/types/database'
+import type { Tool, ToolIssue, ApprovalWorkflow, MaintenanceSchedule, Certification, ToolHistory } from '@/lib/types/database'
 
 interface DashboardData {
   tools: Tool[]
@@ -31,7 +30,6 @@ interface DashboardData {
   maintenance: MaintenanceSchedule[]
   certifications: Certification[]
   recentHistory: ToolHistory[]
-  pendingUsers: PendingUserApproval[]
 }
 
 export default function DashboardPage() {
@@ -61,14 +59,13 @@ export default function DashboardPage() {
           }
         }
 
-        const [tools, issues, approvals, maintenance, certifications, recentHistory, pendingUsers] = await Promise.all([
+        const [tools, issues, approvals, maintenance, certifications, recentHistory] = await Promise.all([
           safeQuery(supabase.from('tools').select('id, name, status, current_value, purchase_price')),
           safeQuery(supabase.from('tool_issues').select('id, status, priority, tool_name, issue_type, description')),
           safeQuery(supabase.from('approval_workflows').select('id, status')),
           safeQuery(supabase.from('maintenance_schedules').select('id, status, tool_name, maintenance_type')),
           safeQuery(supabase.from('certifications').select('id, status')),
           safeQuery(supabase.from('tool_history').select('id, action, tool_name, description, timestamp').order('timestamp', { ascending: false }).limit(10)),
-          safeQuery(supabase.from('pending_user_approvals').select('id, full_name, status').eq('status', 'pending')),
         ])
 
         setData({
@@ -78,7 +75,6 @@ export default function DashboardPage() {
           maintenance: (maintenance as any) || [],
           certifications: (certifications as any) || [],
           recentHistory: (recentHistory as any) || [],
-          pendingUsers: (pendingUsers as any) || [],
         })
       } catch (e) {
         console.error('Dashboard fetch error:', e)
@@ -89,7 +85,6 @@ export default function DashboardPage() {
           maintenance: [],
           certifications: [],
           recentHistory: [],
-          pendingUsers: [],
         })
       }
       setLoading(false)
@@ -103,7 +98,6 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_history' }, debouncedFetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tool_issues' }, debouncedFetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'approval_workflows' }, debouncedFetch)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_user_approvals' }, debouncedFetch)
       .subscribe()
 
     return () => {
@@ -247,7 +241,7 @@ export default function DashboardPage() {
         <KPICard
           label="Pending Approvals"
           value={pendingApprovals}
-          subtitle={`${data.pendingUsers.length} user registrations`}
+          subtitle={`${data.approvals.filter((a) => a.status === 'Approved').length} approved requests`}
           icon={<Clock className="w-5 h-5" />}
           iconColor="text-amber-500 bg-amber-500/10"
           href="/dashboard/approvals"
@@ -351,17 +345,6 @@ export default function DashboardPage() {
                 </div>
               ))}
 
-            {data.pendingUsers.slice(0, 2).map((user) => (
-              <div key={user.id} className="px-4 md:px-5 py-3 flex items-center gap-3">
-                <Users className="w-4 h-4 text-amber-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user.full_name}</p>
-                  <p className="text-xs text-muted-foreground">Pending registration approval</p>
-                </div>
-                <StatusBadge status="Pending" />
-              </div>
-            ))}
-
             {data.maintenance
               .filter((m) => m.status === 'Overdue')
               .slice(0, 2)
@@ -376,7 +359,7 @@ export default function DashboardPage() {
                 </div>
               ))}
 
-            {criticalIssues === 0 && overdueMaintenances === 0 && data.pendingUsers.length === 0 && (
+            {criticalIssues === 0 && overdueMaintenances === 0 && (
               <div className="py-8 text-center">
                 <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                 <p className="text-sm font-medium">All good!</p>

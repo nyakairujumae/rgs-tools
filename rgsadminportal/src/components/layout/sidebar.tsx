@@ -25,7 +25,6 @@ import {
   LogOut,
   X,
   Share2,
-  UserCheck,
   ArrowLeftRight,
   Package,
 } from 'lucide-react'
@@ -47,7 +46,6 @@ const navItems: NavItem[] = [
   { label: 'Technicians', href: '/dashboard/technicians', icon: <Users className="w-5 h-5" /> },
   { label: 'Issues', href: '/dashboard/issues', icon: <AlertTriangle className="w-5 h-5" /> },
   { label: 'Requests', href: '/dashboard/approvals', icon: <CheckSquare className="w-5 h-5" /> },
-  { label: 'Authorize Users', href: '/dashboard/approvals/users', icon: <UserCheck className="w-5 h-5" /> },
   { label: 'Maintenance', href: '/dashboard/maintenance', icon: <ClipboardList className="w-5 h-5" /> },
   { label: 'Compliance', href: '/dashboard/compliance', icon: <Shield className="w-5 h-5" /> },
   { label: 'Calibration', href: '/dashboard/calibration', icon: <Gauge className="w-5 h-5" /> },
