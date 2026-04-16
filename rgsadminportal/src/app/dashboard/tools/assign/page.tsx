@@ -7,11 +7,22 @@ import { AssignToolDialog } from '@/components/tools/assign-tool-dialog'
 import { Search, ArrowLeftRight, Loader2 } from 'lucide-react'
 import type { Tool } from '@/lib/types/database'
 
+const STATUS_FILTERS = [
+  'all',
+  'Available',
+  'In Use',
+  'Assigned',
+  'Maintenance',
+  'Retired',
+] as const
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]
+
 export default function AssignToolPage() {
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'Available' | 'In Use'>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [assignTarget, setAssignTarget] = useState<Tool | null>(null)
 
   useEffect(() => {
@@ -20,7 +31,6 @@ export default function AssignToolPage() {
       const { data } = await supabase
         .from('tools')
         .select('*')
-        .in('status', ['Available', 'In Use'])
         .order('name')
       setTools(data || [])
       setLoading(false)
@@ -49,7 +59,9 @@ export default function AssignToolPage() {
     <div className="p-6 max-w-[1200px] mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Assign Tool</h1>
-        <p className="text-sm text-muted-foreground">Assign available tools to technicians or return in-use tools to inventory</p>
+        <p className="text-sm text-muted-foreground">
+          Browse all tools, then assign available ones or reassign tools that are already in use.
+        </p>
       </div>
 
       {/* Filters */}
@@ -65,7 +77,7 @@ export default function AssignToolPage() {
           />
         </div>
         <div className="flex items-center rounded-lg border border-input overflow-hidden text-sm">
-          {(['all', 'Available', 'In Use'] as const).map((s) => (
+          {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
@@ -115,7 +127,7 @@ export default function AssignToolPage() {
                       className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
                     >
                       <ArrowLeftRight className="w-3.5 h-3.5" />
-                      {tool.status === 'In Use' ? 'Reassign' : 'Assign'}
+                      {tool.assigned_to ? 'Reassign' : 'Assign'}
                     </button>
                   </td>
                 </tr>
