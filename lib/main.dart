@@ -153,21 +153,10 @@ void main() async {
     Logger.debug('Stack trace: ${details.stack}');
   };
 
-  // CRITICAL: Register background message handler BEFORE runApp()
-  // Must be top-level function with @pragma('vm:entry-point')
-  // Note: This can only be called once, subsequent calls are ignored
-  // Note: On web, FirebaseMessaging uses stub and this is a no-op
-  if (!kIsWeb) {
-    try {
-      // Use dynamic cast to avoid type mismatch between real and stub RemoteMessage
-      FirebaseMessaging.onBackgroundMessage(
-        (message) => firebaseMessagingBackgroundHandler(message as dynamic),
-      );
-      Logger.debug('✅ Background message handler registered');
-    } catch (e) {
-      Logger.debug('⚠️ Could not register background handler: $e');
-    }
-  }
+  // NOTE: FirebaseMessaging.onBackgroundMessage registration is deferred until
+  // AFTER Firebase.initializeApp() runs (in _initializeServicesInBackground).
+  // Calling it here threw "Null check operator used on a null value" because
+  // the platform plugin's internal app reference wasn't ready yet.
 
   // CRITICAL: Capture initial deep link BEFORE running the app
   // This is essential for email confirmation flow
@@ -215,11 +204,25 @@ Future<void> _initializeServicesInBackground() async {
         Logger.debug('⚠️ Skipping duplicate initialization to prevent duplicate notifications');
       } else {
         // Initialize Firebase in background
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
         Logger.debug('✅ Firebase initialized successfully (background)');
         Logger.debug('✅ Firebase project: ${Firebase.app().options.projectId}');
+      }
+
+      // Register background message handler now that Firebase is ready.
+      //
+      // IMPORTANT: pass the top-level function directly. Wrapping it in a
+      // closure (`(m) => firebaseMessagingBackgroundHandler(m)`) makes
+      // PluginUtilities.getCallbackHandle return null, which then crashes
+      // with "Null check operator used on a null value" inside
+      // MethodChannelFirebaseMessaging.registerBackgroundMessageHandler.
+      try {
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        Logger.debug('✅ Background message handler registered');
+      } catch (e) {
+        Logger.debug('⚠️ Could not register background handler: $e');
       }
     } catch (e, stackTrace) {
       Logger.debug('❌ Firebase initialization failed: $e');
@@ -1207,7 +1210,17 @@ class _HvacToolsManagerAppState extends State<HvacToolsManagerApp> {
             // Don't use home - let onGenerateRoute handle everything including deep links
             initialRoute: defaultRoute,
             builder: (context, child) {
-              final content = ErrorBoundary(child: child!);
+              // Cap text scaling to 1.0 — prevents large system font settings
+              // from breaking card/layout sizing on mobile
+              final content = MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: MediaQuery.of(context).textScaler.clamp(
+                    minScaleFactor: 0.8,
+                    maxScaleFactor: 1.0,
+                  ),
+                ),
+                child: ErrorBoundary(child: child!),
+              );
               // Android: match iOS - use SystemChrome (global, persistent) so system bars
               // follow app theme on all screens including those without AppBar
               final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;

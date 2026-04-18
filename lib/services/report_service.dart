@@ -38,6 +38,28 @@ class ReportService {
   static final DateFormat _fileNameFormat = DateFormat('yyyyMMdd_HHmmss');
   static final NumberFormat _currencyFormat = NumberFormat.currency(symbol: 'AED ', decimalDigits: 2);
 
+  /// When true, skip querying `public.assignments` (schema often has no such table).
+  static bool _assignmentsTableKnownAbsent = false;
+
+  static bool _isAssignmentsTableMissing(Object e) {
+    final s = e.toString();
+    if (s.contains('PGRST205')) return true;
+    if (s.contains('assignments') &&
+        (s.contains('schema cache') || s.contains('Not Found'))) {
+      return true;
+    }
+    return false;
+  }
+
+  static void _noteAssignmentsTableAbsent() {
+    _assignmentsTableKnownAbsent = true;
+    if (kDebugMode) {
+      debugPrint(
+        'ReportService: assignments table not in schema; using tools.* for assignment fields.',
+      );
+    }
+  }
+
   /// Generate and save a report in the desired format
   static Future<File> generateReport({
     required ReportType reportType,
@@ -52,7 +74,27 @@ class ReportService {
     ReportFormat format = ReportFormat.pdf, // Default to PDF for all reports
   }) async {
     try {
-      // All reports now use PDF format with table-based sheets
+      // Calibration & compliance reports are PDF-only.
+      final isPdfOnlyReport = reportType == ReportType.calibration ||
+          reportType == ReportType.compliance;
+
+      debugPrint(
+        '📊 generateReport called → type=$reportType format=$format '
+        '(pdfOnly=$isPdfOnlyReport)',
+      );
+
+      if (format == ReportFormat.excel && !isPdfOnlyReport) {
+        debugPrint('📊 → routing to _generateExcelReport');
+        return await _generateExcelReport(
+          reportType: reportType,
+          tools: tools,
+          technicians: technicians,
+          startDate: startDate,
+          endDate: endDate,
+        );
+      }
+
+      debugPrint('📊 → routing to _generatePdfReport');
       return await _generatePdfReport(
         reportType: reportType,
         tools: tools,
@@ -79,112 +121,123 @@ class ReportService {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
+    final overallStopwatch = Stopwatch()..start();
+    debugPrint('📗 Excel: starting build for $reportType '
+        '(${tools.length} tools, ${technicians.length} technicians)');
+
     final excel = Excel.createExcel();
     final targetSheetName = _getSheetName(reportType);
 
-    // Rename the default Sheet1 to the target name
-    // Avoid using delete() as it may cause unmodifiable list errors
-    if (excel.sheets.containsKey('Sheet1')) {
+    // Do not call excel.rename/delete on Sheet1 — excel 3.x can throw
+    // "Cannot remove from an unmodifiable list" while mutating workbook XML.
+    // Report builders create [targetSheetName]; set it as the opening tab instead.
+    try {
+      switch (reportType) {
+        case ReportType.comprehensive:
+          await _generateComprehensiveReport(
+              excel, tools, technicians, startDate, endDate);
+          break;
+        case ReportType.toolsInventory:
+          await _generateToolsInventoryReport(excel, tools, technicians);
+          break;
+        case ReportType.toolAssignments:
+          await _generateToolAssignmentsReport(
+              excel, tools, technicians, startDate, endDate);
+          break;
+        case ReportType.technicianSummary:
+          _generateTechnicianSummaryReport(excel, tools, technicians);
+          break;
+        case ReportType.toolIssues:
+          await _generateToolIssuesReport(excel, startDate, endDate);
+          break;
+        case ReportType.toolIssuesSummary:
+          await _generateToolIssuesSummaryReport(excel, startDate, endDate);
+          break;
+        case ReportType.approvalWorkflowsSummary:
+          await _generateApprovalWorkflowsSummaryReport(
+              excel, startDate, endDate);
+          break;
+        case ReportType.financialSummary:
+          _generateFinancialSummaryReport(excel, tools);
+          break;
+        case ReportType.toolHistory:
+          await _generateToolHistoryReport(excel, tools, startDate, endDate);
+          break;
+        case ReportType.calibration:
+        case ReportType.compliance:
+          // PDF-only; no Excel sheet for these
+          break;
+      }
+    } catch (e, st) {
+      debugPrint('❌ Excel: section build failed for $reportType: $e');
+      debugPrint('❌ Stack:\n$st');
+      rethrow;
+    }
+
+    debugPrint('📗 Excel: section build done in '
+        '${overallStopwatch.elapsedMilliseconds} ms');
+
+    if (excel.sheets.containsKey(targetSheetName)) {
       try {
-        excel.rename('Sheet1', targetSheetName);
+        excel.setDefaultSheet(targetSheetName);
       } catch (e) {
-        debugPrint('Could not rename Sheet1: $e');
-        // If rename fails, we'll just use Sheet1
+        debugPrint('⚠️ Excel: could not set default sheet "$targetSheetName": $e');
       }
     }
 
-    switch (reportType) {
-      case ReportType.comprehensive:
-        await _generateComprehensiveReport(excel, tools, technicians, startDate, endDate);
-        break;
-      case ReportType.toolsInventory:
-        await _generateToolsInventoryReport(excel, tools, technicians);
-        break;
-      case ReportType.toolAssignments:
-        await _generateToolAssignmentsReport(excel, tools, technicians, startDate, endDate);
-        break;
-      case ReportType.technicianSummary:
-        _generateTechnicianSummaryReport(excel, tools, technicians);
-        break;
-      case ReportType.toolIssues:
-        await _generateToolIssuesReport(excel, startDate, endDate);
-        break;
-      case ReportType.toolIssuesSummary:
-        await _generateToolIssuesSummaryReport(excel, startDate, endDate);
-        break;
-      case ReportType.approvalWorkflowsSummary:
-        await _generateApprovalWorkflowsSummaryReport(excel, startDate, endDate);
-        break;
-      case ReportType.financialSummary:
-        _generateFinancialSummaryReport(excel, tools);
-        break;
-      case ReportType.toolHistory:
-        await _generateToolHistoryReport(excel, tools, startDate, endDate);
-        break;
-      case ReportType.calibration:
-      case ReportType.compliance:
-        // PDF-only; no Excel sheet for these
-        break;
-    }
-
-    // Set all sheets to landscape orientation (optional - wrapped in try-catch)
+    // Optional column sizing pass — wrapped because some excel package builds
+    // throw "unmodifiable list" errors while mutating workbook XML.
     try {
       _setSheetsToLandscape(excel);
     } catch (e) {
-      debugPrint('Warning: Could not set sheet landscape settings: $e');
-      // Continue anyway - Excel file will still be generated
+      debugPrint('⚠️ Excel: could not set landscape/widths: $e');
     }
 
-    // Get directory and create file
     final directory = await _getDownloadsDirectory();
-    final fileName = 'Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.xlsx';
+    final fileName =
+        'Tools_${_getReportTypeName(reportType)}_${_fileNameFormat.format(DateTime.now())}.xlsx';
     final filePath = '${directory.path}/$fileName';
-    
     final file = File(filePath);
-    
-    // Save Excel file - wrap in try-catch to handle any unmodifiable list errors
+
+    // Yield once before the heavy synchronous save() so the UI can paint.
+    await Future<void>.delayed(Duration.zero);
+
+    debugPrint('📗 Excel: encoding workbook to bytes...');
+    final encodeStopwatch = Stopwatch()..start();
     List<int>? bytesList;
     try {
       bytesList = excel.save();
     } catch (e, stackTrace) {
-      debugPrint('❌ Error saving Excel file: $e');
-      debugPrint('❌ Error type: ${e.runtimeType}');
-      debugPrint('❌ Stack trace: $stackTrace');
-      
-      // Check if it's the unmodifiable list error
+      debugPrint('❌ Excel: save() threw ${e.runtimeType}: $e');
+      debugPrint('❌ Stack trace:\n$stackTrace');
+
       final errorString = e.toString().toLowerCase();
-      if (errorString.contains('unmodifiable') || errorString.contains('cannot remove')) {
-        // This is a known issue with the Excel library
-        // Try to work around it by creating a fresh Excel object
-        debugPrint('⚠️ Unmodifiable list error detected - this is a known Excel library issue');
-        debugPrint('⚠️ Attempting workaround...');
-        
-        // Re-throw with a more helpful error message
+      if (errorString.contains('unmodifiable') ||
+          errorString.contains('cannot remove')) {
         throw Exception(
           'Excel export failed due to a library limitation. '
-          'Please try exporting again, or contact support if the issue persists.'
+          'Please try exporting again, or use the PDF export.',
         );
       }
-      
-      // For other errors, rethrow
       rethrow;
     }
-    
-    if (bytesList != null) {
-      try {
-        // Convert List<int> to Uint8List for file writing
-        final bytes = Uint8List.fromList(bytesList);
-        await file.writeAsBytes(bytes);
-      } catch (e) {
-        debugPrint('Error writing Excel file to disk: $e');
-        rethrow;
-      }
-      // Landscape orientation modification is disabled - was causing errors
-      // Users can set landscape orientation manually in Excel
-    } else {
+    debugPrint('📗 Excel: save() finished in '
+        '${encodeStopwatch.elapsedMilliseconds} ms '
+        '(${bytesList?.length ?? 0} bytes)');
+
+    if (bytesList == null) {
       throw Exception('Failed to generate Excel file - save returned null');
     }
-    
+
+    try {
+      await file.writeAsBytes(Uint8List.fromList(bytesList));
+    } catch (e) {
+      debugPrint('❌ Excel: error writing file to disk: $e');
+      rethrow;
+    }
+
+    debugPrint('✅ Excel report saved: $filePath '
+        '(total ${overallStopwatch.elapsedMilliseconds} ms)');
     return file;
   }
 
@@ -363,137 +416,144 @@ class ReportService {
       }
     }
 
-    try {
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4.landscape, // Use landscape for wider columns
-          margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          build: (context) {
-            try {
-              final widgets = <pw.Widget>[
-                _buildPdfHeader(reportTitle, dateRangeText),
-                pw.SizedBox(height: 8), // Reduced gap after header
-              ];
-
-              switch (reportType) {
-            case ReportType.toolIssues:
-              widgets.add(_buildToolIssuesPdfSection(toolIssues, showTitle: false));
-              break;
-            case ReportType.toolIssuesSummary:
-              widgets.add(_buildToolIssuesSummaryPdfSection(toolIssues, showTitle: false));
-              break;
-            case ReportType.approvalWorkflowsSummary:
-              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows, showTitle: false));
-              break;
-            case ReportType.toolsInventory:
-              widgets.add(_buildToolsInventoryPdfSection(tools, technicians, showTitle: false));
-              break;
-            case ReportType.toolAssignments:
-              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate, showTitle: false));
-              break;
-            case ReportType.technicianSummary:
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians, showTitle: false));
-              break;
-            case ReportType.financialSummary:
-              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues, showTitle: false));
-              break;
-            case ReportType.toolHistory:
-              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate, showTitle: false));
-              break;
-            case ReportType.calibration:
-            case ReportType.compliance:
-              widgets.add(pw.Center(
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.all(24),
-                  child: pw.Column(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      pw.Text(
-                        reportType == ReportType.calibration ? 'Calibration Report' : 'Compliance Report',
-                        style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-                      ),
-                      pw.SizedBox(height: 8),
-                      pw.Text(
-                        'Generated: ${_dateFormat.format(DateTime.now())}',
-                        style: const pw.TextStyle(fontSize: 12),
-                      ),
-                    ],
+    // Helper to add a MultiPage section safely.
+    void addSection(List<pw.Widget> Function() buildFn) {
+      try {
+        pdf.addPage(
+          pw.MultiPage(
+            pageFormat: PdfPageFormat.a4.landscape,
+            margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            maxPages: 2000,
+            build: (_) {
+              try {
+                return buildFn();
+              } catch (e) {
+                debugPrint('❌ Error building PDF section: $e');
+                return [
+                  pw.Text(
+                    'Error generating section. Please try again.',
+                    style: pw.TextStyle(color: PdfColors.red, fontSize: 12),
                   ),
-                ),
-              ));
-              break;
-            case ReportType.comprehensive:
-              // Add comprehensive report sections - break down Columns to allow natural page breaks
-              widgets.add(pw.Text(
-                'Tools Inventory',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-              ));
-              widgets.add(pw.SizedBox(height: 8));
-              if (tools.isNotEmpty) {
-                widgets.add(pw.Text(
-                  'Total Tools: ${tools.length}',
-                  style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
-                ));
-                widgets.add(pw.SizedBox(height: 8));
+                ];
               }
-              widgets.addAll(_buildToolsInventoryTableWidgets(tools, technicians));
-              widgets.add(pw.SizedBox(height: 16));
-              
-              // Tool Assignments Section
-              widgets.add(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate));
-              widgets.add(pw.SizedBox(height: 16));
-              
-              // Technician Summary Section
-              widgets.add(_buildTechnicianSummaryPdfSection(tools, technicians));
-              widgets.add(pw.SizedBox(height: 16));
-              
-              // Financial Summary Section
-              widgets.add(_buildFinancialSummaryPdfSection(tools, toolIssues));
-              widgets.add(pw.SizedBox(height: 12));
-              
-              // Tool Issues Section (if any) - break down Column to allow page breaks
-              if (toolIssues.isNotEmpty) {
-                widgets.add(pw.SizedBox(height: 16));
-                widgets.add(_buildToolIssuesPdfSection(toolIssues));
-              }
-              
-              // Approval Workflows Section
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows));
-              
-              // Tool History Section
-              widgets.add(pw.SizedBox(height: 16));
-              widgets.add(_buildToolHistoryPdfSection(tools, startDate, endDate));
-              break;
-            }
-
-              return widgets;
-            } catch (e) {
-              debugPrint('❌ Error building PDF widgets: $e');
-              // Return a minimal error widget
-              return [
-                pw.Text(
-                  'Error generating report content. Please try again.',
-                  style: pw.TextStyle(color: PdfColors.red, fontSize: 12),
-                ),
-              ];
-            }
-          },
-        ),
-      );
-    } catch (e) {
-      debugPrint('❌ Error adding PDF page: $e');
-      // Add a simple error page
-      pdf.addPage(
-        pw.Page(
-          build: (context) => pw.Center(
-            child: pw.Text(
-              'Error generating report. Please try again.',
-              style: pw.TextStyle(color: PdfColors.red, fontSize: 14),
+            },
+          ),
+        );
+      } catch (e) {
+        debugPrint('❌ Error adding PDF page: $e');
+        pdf.addPage(
+          pw.Page(
+            build: (_) => pw.Center(
+              child: pw.Text(
+                'Error generating section. Please try again.',
+                style: pw.TextStyle(color: PdfColors.red, fontSize: 14),
+              ),
             ),
           ),
-        ),
-      );
+        );
+      }
+    }
+
+    if (reportType == ReportType.comprehensive) {
+      // Split comprehensive into separate MultiPage sections so each section
+      // gets its own page budget and memory is released between sections.
+      final header = _buildPdfHeader(reportTitle, dateRangeText);
+
+      // Section 1: Tools Inventory
+      addSection(() => [
+        header,
+        pw.SizedBox(height: 8),
+        pw.Text('Tools Inventory',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
+        pw.SizedBox(height: 8),
+        if (tools.isNotEmpty)
+          pw.Text('Total Tools: ${tools.length}',
+              style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700)),
+        pw.SizedBox(height: 8),
+        ..._buildToolsInventoryTableWidgets(tools, technicians),
+      ]);
+
+      // Section 2: Tool Assignments + Technician Summary
+      addSection(() => [
+        ..._flattenSection(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate)),
+        pw.SizedBox(height: 16),
+        ..._flattenSection(_buildTechnicianSummaryPdfSection(tools, technicians)),
+      ]);
+
+      // Section 3: Financial Summary + Tool Issues
+      addSection(() => [
+        ..._flattenSection(_buildFinancialSummaryPdfSection(tools, toolIssues)),
+        if (toolIssues.isNotEmpty) ...[
+          pw.SizedBox(height: 16),
+          ..._flattenSection(_buildToolIssuesPdfSection(toolIssues)),
+        ],
+      ]);
+
+      // Section 4: Approval Workflows + Tool History
+      addSection(() => [
+        ..._flattenSection(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows)),
+        pw.SizedBox(height: 16),
+        ..._flattenSection(_buildToolHistoryPdfSection(tools, startDate, endDate)),
+      ]);
+    } else {
+      // All other report types: single MultiPage with high maxPages limit.
+      addSection(() {
+        final widgets = <pw.Widget>[
+          _buildPdfHeader(reportTitle, dateRangeText),
+          pw.SizedBox(height: 8),
+        ];
+        switch (reportType) {
+          case ReportType.toolIssues:
+            widgets.addAll(_flattenSection(_buildToolIssuesPdfSection(toolIssues, showTitle: false)));
+            break;
+          case ReportType.toolIssuesSummary:
+            widgets.addAll(_flattenSection(_buildToolIssuesSummaryPdfSection(toolIssues, showTitle: false)));
+            break;
+          case ReportType.approvalWorkflowsSummary:
+            widgets.addAll(_flattenSection(_buildApprovalWorkflowsSummaryPdfSection(approvalWorkflows, showTitle: false)));
+            break;
+          case ReportType.toolsInventory:
+            widgets.addAll(_buildToolsInventoryWidgets(tools, technicians, showTitle: false));
+            break;
+          case ReportType.toolAssignments:
+            widgets.addAll(_flattenSection(_buildToolAssignmentsPdfSection(tools, technicians, startDate, endDate, showTitle: false)));
+            break;
+          case ReportType.technicianSummary:
+            widgets.addAll(_flattenSection(_buildTechnicianSummaryPdfSection(tools, technicians, showTitle: false)));
+            break;
+          case ReportType.financialSummary:
+            widgets.addAll(_flattenSection(_buildFinancialSummaryPdfSection(tools, toolIssues, showTitle: false)));
+            break;
+          case ReportType.toolHistory:
+            widgets.addAll(_flattenSection(_buildToolHistoryPdfSection(tools, startDate, endDate, showTitle: false)));
+            break;
+          case ReportType.calibration:
+          case ReportType.compliance:
+            widgets.add(pw.Center(
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.all(24),
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(
+                      reportType == ReportType.calibration ? 'Calibration Report' : 'Compliance Report',
+                      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'Generated: ${_dateFormat.format(DateTime.now())}',
+                      style: const pw.TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ));
+            break;
+          case ReportType.comprehensive:
+            break; // handled above
+        }
+        return widgets;
+      });
     }
 
     try {
@@ -581,41 +641,68 @@ class ReportService {
   ) async {
     final sheet = excel['Comprehensive Report'];
 
+    Future<void> runSection(String name, Future<void> Function() body) async {
+      final sw = Stopwatch()..start();
+      try {
+        await body();
+        debugPrint(
+            '📗 Excel section "$name" done in ${sw.elapsedMilliseconds} ms');
+      } catch (e, st) {
+        debugPrint('⚠️ Excel section "$name" FAILED: $e');
+        debugPrint(st.toString());
+        // Continue to remaining sections so the report still produces output.
+        sheet.appendRow(<dynamic>['(section "$name" failed: $e)']);
+      }
+      // Yield to the event loop between sections so the UI thread can paint
+      // the loading indicator / process input.
+      await Future<void>.delayed(Duration.zero);
+    }
+
     // Header
     _addHeader(sheet, 'Comprehensive Tool Tracking Report', 20);
     _addInfoRow(sheet, 'Generated', _dateFormat.format(DateTime.now()));
-    if (startDate != null) _addInfoRow(sheet, 'Start Date', _dateFormat.format(startDate));
-    if (endDate != null) _addInfoRow(sheet, 'End Date', _dateFormat.format(endDate));
+    if (startDate != null) {
+      _addInfoRow(sheet, 'Start Date', _dateFormat.format(startDate));
+    }
+    if (endDate != null) {
+      _addInfoRow(sheet, 'End Date', _dateFormat.format(endDate));
+    }
     _addInfoRow(sheet, 'Total Tools', tools.length.toString());
     sheet.appendRow([]);
 
-    // Tools Inventory Sheet
-    _addSectionHeader(sheet, 'Tools Inventory', 16);
-    await _addToolsTable(sheet, tools, technicians, includeAssignedTo: true, includeAssignmentDetails: true);
-    sheet.appendRow([]);
-    sheet.appendRow([]);
+    await runSection('Tools Inventory', () async {
+      _addSectionHeader(sheet, 'Tools Inventory', 16);
+      await _addToolsTable(sheet, tools, technicians,
+          includeAssignedTo: true, includeAssignmentDetails: true);
+      sheet.appendRow([]);
+      sheet.appendRow([]);
+    });
 
-    // Assignments Summary
-    _addSectionHeader(sheet, 'Current Tool Assignments', 16);
-    await _addAssignmentsTable(sheet, tools, technicians, startDate, endDate);
-    sheet.appendRow([]);
-    sheet.appendRow([]);
+    await runSection('Current Tool Assignments', () async {
+      _addSectionHeader(sheet, 'Current Tool Assignments', 16);
+      await _addAssignmentsTable(sheet, tools, technicians, startDate, endDate);
+      sheet.appendRow([]);
+      sheet.appendRow([]);
+    });
 
-    // Financial Summary
-    _addSectionHeader(sheet, 'Financial Summary', 16);
-    _addFinancialData(sheet, tools);
-    sheet.appendRow([]);
-    sheet.appendRow([]);
+    await runSection('Financial Summary', () async {
+      _addSectionHeader(sheet, 'Financial Summary', 16);
+      _addFinancialData(sheet, tools);
+      sheet.appendRow([]);
+      sheet.appendRow([]);
+    });
 
-    // Tool Status Summary
-    _addSectionHeader(sheet, 'Tool Status Summary', 16);
-    _addStatusSummary(sheet, tools);
-    sheet.appendRow([]);
-    sheet.appendRow([]);
+    await runSection('Tool Status Summary', () async {
+      _addSectionHeader(sheet, 'Tool Status Summary', 16);
+      _addStatusSummary(sheet, tools);
+      sheet.appendRow([]);
+      sheet.appendRow([]);
+    });
 
-    // Tool Condition Summary
-    _addSectionHeader(sheet, 'Tool Condition Summary', 16);
-    _addConditionSummary(sheet, tools);
+    await runSection('Tool Condition Summary', () async {
+      _addSectionHeader(sheet, 'Tool Condition Summary', 16);
+      _addConditionSummary(sheet, tools);
+    });
   }
 
   /// Tools Inventory Report
@@ -978,46 +1065,110 @@ class ReportService {
 
   // Helper Methods
 
+  // ---------------------------------------------------------------------------
+  // Cached cell styles
+  //
+  // The `excel: ^3.0.0` package serialises each unique CellStyle into the
+  // workbook's shared style table. Allocating a fresh CellStyle per cell makes
+  // `excel.save()` extremely slow (and on large reports it appears to hang
+  // forever on the main isolate). We share a small set of reusable styles for
+  // every row instead.
+  // ---------------------------------------------------------------------------
+
+  static final CellStyle _styleTitle = CellStyle(bold: true, fontSize: 20);
+  static final CellStyle _styleSection = CellStyle(
+    bold: true,
+    fontSize: 16,
+    backgroundColorHex: '#E0E0E0',
+  );
+  static final CellStyle _styleSubSection = CellStyle(
+    bold: true,
+    fontSize: 14,
+    backgroundColorHex: '#EFEFEF',
+  );
+  static final CellStyle _styleInfoValue = CellStyle(bold: true);
+  static final CellStyle _styleTableHeader = CellStyle(
+    bold: true,
+    backgroundColorHex: '#4472C4',
+    fontColorHex: '#FFFFFF',
+    horizontalAlign: HorizontalAlign.Center,
+    verticalAlign: VerticalAlign.Center,
+  );
+
+  static final CellStyle _styleRowEvenLeft = CellStyle(
+    backgroundColorHex: '#F7FAFF',
+    horizontalAlign: HorizontalAlign.Left,
+    verticalAlign: VerticalAlign.Center,
+  );
+  static final CellStyle _styleRowOddLeft = CellStyle(
+    backgroundColorHex: '#FFFFFF',
+    horizontalAlign: HorizontalAlign.Left,
+    verticalAlign: VerticalAlign.Center,
+  );
+  static final CellStyle _styleRowEvenRight = CellStyle(
+    backgroundColorHex: '#F7FAFF',
+    horizontalAlign: HorizontalAlign.Right,
+    verticalAlign: VerticalAlign.Center,
+  );
+  static final CellStyle _styleRowOddRight = CellStyle(
+    backgroundColorHex: '#FFFFFF',
+    horizontalAlign: HorizontalAlign.Right,
+    verticalAlign: VerticalAlign.Center,
+  );
+
+  static final CellStyle _styleStatusMaintenance = CellStyle(
+    backgroundColorHex: '#FFF2CC',
+    horizontalAlign: HorizontalAlign.Left,
+    verticalAlign: VerticalAlign.Center,
+    bold: true,
+  );
+  static final CellStyle _styleReturnedYes = CellStyle(
+    backgroundColorHex: '#E6F4EA',
+    fontColorHex: '#2F855A',
+    bold: true,
+    horizontalAlign: HorizontalAlign.Center,
+    verticalAlign: VerticalAlign.Center,
+  );
+  static final CellStyle _styleReturnedNo = CellStyle(
+    backgroundColorHex: '#FCE4E4',
+    fontColorHex: '#C53030',
+    bold: true,
+    horizontalAlign: HorizontalAlign.Center,
+    verticalAlign: VerticalAlign.Center,
+  );
+
   static void _addHeader(Sheet sheet, String title, int fontSize) {
     final headerCell = sheet.cell(CellIndex.indexByString('A1'));
     headerCell.value = title;
-    headerCell.cellStyle = CellStyle(
-      bold: true,
-      fontSize: fontSize,
-    );
+    headerCell.cellStyle = _styleTitle;
   }
 
   static void _addInfoRow(Sheet sheet, String label, String value) {
     final rowIndex = sheet.maxRows;
-    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = label;
-    final valueCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex));
+    sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+        .value = label;
+    final valueCell = sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex));
     valueCell.value = value;
-    valueCell.cellStyle = CellStyle(bold: true);
+    valueCell.cellStyle = _styleInfoValue;
   }
 
   static void _addSectionHeader(Sheet sheet, String title, int fontSize) {
     final rowIndex = sheet.maxRows;
-    final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+    final cell = sheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
     cell.value = title;
-    cell.cellStyle = CellStyle(
-      bold: true,
-      fontSize: fontSize,
-      backgroundColorHex: '#E0E0E0',
-    );
+    cell.cellStyle = fontSize >= 16 ? _styleSection : _styleSubSection;
   }
 
   static void _addTableHeader(Sheet sheet, List<String> headers) {
     final rowIndex = sheet.maxRows;
     for (int i = 0; i < headers.length; i++) {
-      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex));
+      final cell = sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex));
       cell.value = headers[i];
-      cell.cellStyle = CellStyle(
-        bold: true,
-        backgroundColorHex: '#4472C4',
-        fontColorHex: '#FFFFFF',
-        horizontalAlign: HorizontalAlign.Center,
-        verticalAlign: VerticalAlign.Center,
-      );
+      cell.cellStyle = _styleTableHeader;
     }
   }
 
@@ -1026,19 +1177,16 @@ class ReportService {
     int rowIndex,
     int columnCount, {
     Set<int> numericColumns = const {},
-    Set<int> wrapColumns = const {},
+    Set<int> wrapColumns = const {}, // kept for API compatibility; ignored
   }) {
     final isEven = rowIndex % 2 == 0;
-    final backgroundColor = isEven ? '#F7FAFF' : '#FFFFFF';
+    final leftStyle = isEven ? _styleRowEvenLeft : _styleRowOddLeft;
+    final rightStyle = isEven ? _styleRowEvenRight : _styleRowOddRight;
 
     for (int i = 0; i < columnCount; i++) {
-      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex));
-      cell.cellStyle = CellStyle(
-        backgroundColorHex: backgroundColor,
-        horizontalAlign: numericColumns.contains(i) ? HorizontalAlign.Right : HorizontalAlign.Left,
-        verticalAlign: VerticalAlign.Center,
-        textWrapping: wrapColumns.contains(i) ? TextWrapping.WrapText : TextWrapping.Clip,
-      );
+      final cell = sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex));
+      cell.cellStyle = numericColumns.contains(i) ? rightStyle : leftStyle;
     }
   }
 
@@ -1073,27 +1221,36 @@ class ReportService {
     Map<String, Map<String, dynamic>> assignmentData = {};
     if (includeAssignmentDetails) {
       try {
-        // Try to fetch from assignments table if it exists
-        try {
-          final assignments = await _client
-              .from('assignments')
-              .select()
-              .order('assigned_date', ascending: false);
-          
-          // Get the most recent active assignment for each tool, or most recent overall if no active
-          for (final assignment in assignments) {
-            final toolId = assignment['tool_id']?.toString() ?? '';
-            if (!assignmentData.containsKey(toolId) || assignment['status'] == 'Active') {
-              assignmentData[toolId] = {
-                'assigned_date': assignment['assigned_date'],
-                'status': assignment['status'],
-                'actual_return_date': assignment['actual_return_date'],
-              };
+        var deriveFromTools = _assignmentsTableKnownAbsent;
+        if (!deriveFromTools) {
+          try {
+            final assignments = await _client
+                .from('assignments')
+                .select()
+                .order('assigned_date', ascending: false);
+
+            _assignmentsTableKnownAbsent = false;
+
+            for (final assignment in assignments) {
+              final toolId = assignment['tool_id']?.toString() ?? '';
+              if (!assignmentData.containsKey(toolId) || assignment['status'] == 'Active') {
+                assignmentData[toolId] = {
+                  'assigned_date': assignment['assigned_date'],
+                  'status': assignment['status'],
+                  'actual_return_date': assignment['actual_return_date'],
+                };
+              }
             }
+          } catch (e) {
+            if (_isAssignmentsTableMissing(e)) {
+              _noteAssignmentsTableAbsent();
+            } else {
+              debugPrint('Error fetching assignments: $e');
+            }
+            deriveFromTools = true;
           }
-        } catch (e) {
-          // Assignments table doesn't exist, derive from tools table
-          debugPrint('Assignments table not found, deriving from tools: $e');
+        }
+        if (deriveFromTools) {
           for (final tool in tools) {
             if (tool.assignedTo != null && tool.assignedTo!.isNotEmpty) {
               assignmentData[tool.id ?? ''] = {
@@ -1171,40 +1328,23 @@ class ReportService {
         wrapColumns: wrapColumns,
       );
 
-      // Emphasize high priority conditions by color coding status cell
       final statusColumnIndex = headers.indexOf('Status');
-      if (statusColumnIndex >= 0) {
-        final statusCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: statusColumnIndex, rowIndex: rowIndex));
-        if (tool.status.toLowerCase() == 'maintenance') {
-          statusCell.cellStyle = CellStyle(
-            backgroundColorHex: '#FFF2CC',
-            horizontalAlign: HorizontalAlign.Left,
-            verticalAlign: VerticalAlign.Center,
-            textWrapping: TextWrapping.WrapText,
-            bold: true,
-          );
-        }
+      if (statusColumnIndex >= 0 &&
+          tool.status.toLowerCase() == 'maintenance') {
+        sheet
+            .cell(CellIndex.indexByColumnRow(
+                columnIndex: statusColumnIndex, rowIndex: rowIndex))
+            .cellStyle = _styleStatusMaintenance;
       }
 
       if (returnedStatusIndex >= 0) {
-        final returnCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: returnedStatusIndex, rowIndex: rowIndex));
+        final returnCell = sheet.cell(CellIndex.indexByColumnRow(
+            columnIndex: returnedStatusIndex, rowIndex: rowIndex));
         final value = returnCell.value.toString();
         if (value == 'No') {
-          returnCell.cellStyle = CellStyle(
-            backgroundColorHex: '#FCE4E4',
-            fontColorHex: '#C53030',
-            bold: true,
-            horizontalAlign: HorizontalAlign.Center,
-            verticalAlign: VerticalAlign.Center,
-          );
+          returnCell.cellStyle = _styleReturnedNo;
         } else if (value == 'Yes') {
-          returnCell.cellStyle = CellStyle(
-            backgroundColorHex: '#E6F4EA',
-            fontColorHex: '#2F855A',
-            bold: true,
-            horizontalAlign: HorizontalAlign.Center,
-            verticalAlign: VerticalAlign.Center,
-          );
+          returnCell.cellStyle = _styleReturnedYes;
         }
       }
     }
@@ -1223,22 +1363,30 @@ class ReportService {
       // Try to fetch from assignments table if it exists
       List<dynamic> assignments = [];
       bool assignmentsTableExists = true;
-      
-      try {
-        var query = _client.from('assignments').select();
-        
-        if (startDate != null) {
-          query = query.gte('assigned_date', startDate.toIso8601String());
-        }
-        if (endDate != null) {
-          query = query.lte('assigned_date', endDate.toIso8601String());
-        }
 
-        assignments = await query.order('assigned_date', ascending: false);
-      } catch (e) {
-        // Assignments table doesn't exist, use tools table instead
+      if (_assignmentsTableKnownAbsent) {
         assignmentsTableExists = false;
-        debugPrint('Assignments table not found, using tools table: $e');
+      } else {
+        try {
+          var query = _client.from('assignments').select();
+
+          if (startDate != null) {
+            query = query.gte('assigned_date', startDate.toIso8601String());
+          }
+          if (endDate != null) {
+            query = query.lte('assigned_date', endDate.toIso8601String());
+          }
+
+          assignments = await query.order('assigned_date', ascending: false);
+          _assignmentsTableKnownAbsent = false;
+        } catch (e) {
+          assignmentsTableExists = false;
+          if (_isAssignmentsTableMissing(e)) {
+            _noteAssignmentsTableAbsent();
+          } else {
+            debugPrint('Error fetching assignments: $e');
+          }
+        }
       }
 
       final headers = [
@@ -1397,6 +1545,13 @@ class ReportService {
     }
   }
 
+  /// Fast column-sizing replacement for the previous per-cell auto-fit.
+  ///
+  /// The original implementation walked every cell of every row and ran a
+  /// per-rune width estimator, which on a comprehensive report (hundreds of
+  /// rows × ~14 columns × multiple sections in one sheet) effectively froze
+  /// the UI isolate inside `excel.save()`. We use a sensible fixed default
+  /// width instead — Excel users can still resize columns manually.
   static void _autoFitColumns(
     Sheet sheet, {
     required int columnCount,
@@ -1404,26 +1559,14 @@ class ReportService {
     double minWidth = 12,
     double maxWidth = 55,
   }) {
-    final rows = sheet.rows;
+    final defaultWidth = math.max(minWidth, math.min(maxWidth, 22.0));
     for (int col = 0; col < columnCount; col++) {
       if (skipColumns.contains(col)) continue;
-
-      double maxLength = 0;
-      for (final row in rows) {
-        if (col >= row.length) continue;
-        final cell = row[col];
-        final value = cell?.value;
-        if (value == null) continue;
-        final text = value.toString();
-        if (text.isEmpty) continue;
-        final length = _estimateTextWidth(text);
-        if (length > maxLength) {
-          maxLength = length;
-        }
+      try {
+        sheet.setColumnWidth(col, defaultWidth);
+      } catch (_) {
+        // ignore – column may not exist yet in some excel package builds
       }
-
-      final width = math.max(minWidth, math.min(maxWidth, maxLength + 2));
-      sheet.setColumnWidth(col, width);
     }
   }
 
@@ -1718,40 +1861,38 @@ class ReportService {
       ];
     }).toList();
 
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        if (showTitle) ...[
-          pw.Text(
-            'Tool Issues Overview',
-            style: pw.TextStyle(
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blueGrey900,
-            ),
+    final widgets = <pw.Widget>[
+      if (showTitle) ...[
+        pw.Text(
+          'Tool Issues Overview',
+          style: pw.TextStyle(
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.blueGrey900,
           ),
-          pw.SizedBox(height: 12),
+        ),
+        pw.SizedBox(height: 12),
+      ],
+      pw.Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          _buildMetricCard('Total Issues', issues.length.toString(), PdfColors.indigo),
+          _buildMetricCard('Open Issues', openIssues.toString(), PdfColors.deepOrange),
+          _buildMetricCard('Estimated Cost', _currencyFormat.format(totalCost), PdfColors.teal),
         ],
-        pw.Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _buildMetricCard('Total Issues', issues.length.toString(), PdfColors.indigo),
-            _buildMetricCard('Open Issues', openIssues.toString(), PdfColors.deepOrange),
-            _buildMetricCard('Estimated Cost', _currencyFormat.format(totalCost), PdfColors.teal),
-          ],
-        ),
-        pw.SizedBox(height: 18),
-        pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Expanded(child: _buildSummaryTable('By Status', statusCounts)),
-            pw.SizedBox(width: 12),
-            pw.Expanded(child: _buildSummaryTable('By Priority', priorityCounts)),
-          ],
-        ),
-        pw.SizedBox(height: 18),
-        pw.Table.fromTextArray(
+      ),
+      pw.SizedBox(height: 18),
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(child: _buildSummaryTable('By Status', statusCounts)),
+          pw.SizedBox(width: 12),
+          pw.Expanded(child: _buildSummaryTable('By Priority', priorityCounts)),
+        ],
+      ),
+      pw.SizedBox(height: 18),
+      pw.Table.fromTextArray(
           headers: tableHeaders,
           data: tableData,
           headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 11),
@@ -1779,8 +1920,24 @@ class ReportService {
             7: pw.Alignment.centerLeft,
           },
         ),
-      ],
+    ];
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      mainAxisSize: pw.MainAxisSize.min,
+      children: widgets,
     );
+  }
+
+  /// Flattens a section widget into its constituent children so that
+  /// `pw.MultiPage` can paginate between rows instead of treating the entire
+  /// section as a single non-breakable Column. If the widget is not a Column
+  /// (e.g. a placeholder), it is returned as a single-element list.
+  static List<pw.Widget> _flattenSection(pw.Widget section) {
+    if (section is pw.Column) {
+      return List<pw.Widget>.from(section.children);
+    }
+    return [section];
   }
 
   static pw.Widget _buildMetricCard(String label, String value, PdfColor color) {
@@ -1954,108 +2111,70 @@ class ReportService {
       'Purchase Price',
     ];
 
-    // Split tools into smaller batches to avoid TooManyPagesException
-    // Process in smaller chunks to allow proper pagination
-    const int batchSize = 10; // Process 10 tools at a time to ensure proper pagination
-    final batches = <List<Tool>>[];
-    for (int i = 0; i < tools.length; i += batchSize) {
-      batches.add(tools.sublist(i, i + batchSize > tools.length ? tools.length : i + batchSize));
-    }
-
-    // Build table widgets for each batch
-    final tableWidgets = <pw.Widget>[];
-    for (int i = 0; i < batches.length; i++) {
-      final batch = batches[i];
-      final tableData = batch.map<List<String>>((tool) {
-        try {
-          // Ensure purchasePrice is a valid number (not infinity or NaN)
-          String priceStr = '';
-          if (tool.purchasePrice != null) {
-            final price = tool.purchasePrice!;
-            if (price.isFinite && !price.isNaN) {
-              try {
-                priceStr = _currencyFormat.format(price);
-              } catch (e) {
-                priceStr = price.toString();
-              }
+    // Build a single table with all rows. MultiPage paginates row-by-row
+    // when a Table.fromTextArray is a direct child, so this is the most
+    // memory- and page-efficient layout. Multiple sub-tables would each be
+    // treated as one widget and quickly hit TooManyPagesException.
+    final tableData = tools.map<List<String>>((tool) {
+      try {
+        String priceStr = '';
+        if (tool.purchasePrice != null) {
+          final price = tool.purchasePrice!;
+          if (price.isFinite && !price.isNaN) {
+            try {
+              priceStr = _currencyFormat.format(price);
+            } catch (_) {
+              priceStr = price.toString();
             }
           }
-          
-          return [
-            _sanitizePdfText(tool.name),
-            _sanitizePdfText(tool.category),
-            _sanitizePdfText(tool.brand),
-            _sanitizePdfText(tool.model),
-            _sanitizePdfText(tool.serialNumber),
-            _sanitizePdfText(tool.status),
-            _sanitizePdfText(tool.condition),
-            _sanitizePdfText(tool.location),
-            _sanitizePdfText(_getTechnicianName(tool.assignedTo, technicians)),
-            _sanitizePdfText(_formatDate(tool.purchaseDate)),
-            _sanitizePdfText(priceStr),
-          ];
-        } catch (e) {
-          debugPrint('Error processing tool in export: $e');
-          // Return a safe default row if tool processing fails
-          return [
-            _sanitizePdfText(tool.name ?? 'Unknown'),
-            _sanitizePdfText(tool.category),
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            'Unknown',
-            '',
-            '',
-          ];
         }
-      }).toList();
 
-      // Add batch header if multiple batches
-      if (batches.length > 1) {
-        tableWidgets.add(
-          pw.Text(
-            'Tools ${i * batchSize + 1} - ${i * batchSize + batch.length} of ${tools.length}',
-            style: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey700, fontStyle: pw.FontStyle.italic),
-          ),
-        );
-        tableWidgets.add(pw.SizedBox(height: 4));
+        return [
+          _sanitizePdfText(tool.name),
+          _sanitizePdfText(tool.category),
+          _sanitizePdfText(tool.brand),
+          _sanitizePdfText(tool.model),
+          _sanitizePdfText(tool.serialNumber),
+          _sanitizePdfText(tool.status),
+          _sanitizePdfText(tool.condition),
+          _sanitizePdfText(tool.location),
+          _sanitizePdfText(_getTechnicianName(tool.assignedTo, technicians)),
+          _sanitizePdfText(_formatDate(tool.purchaseDate)),
+          _sanitizePdfText(priceStr),
+        ];
+      } catch (e) {
+        debugPrint('Error processing tool in export: $e');
+        return [
+          _sanitizePdfText(tool.name ?? 'Unknown'),
+          _sanitizePdfText(tool.category),
+          '', '', '', '', '', '', 'Unknown', '', '',
+        ];
       }
+    }).toList();
 
-      // Always include headers to ensure proper column width calculation
-      tableWidgets.add(
-        pw.Table.fromTextArray(
-          headers: headers, // Always show headers for proper column width calculation
-          data: tableData,
-          headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
-          border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
-          cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(3.0),
-            1: const pw.FlexColumnWidth(2.0),
-            2: const pw.FlexColumnWidth(2.0),
-            3: const pw.FlexColumnWidth(2.0),
-            4: const pw.FlexColumnWidth(2.5),
-            5: const pw.FlexColumnWidth(1.5),
-            6: const pw.FlexColumnWidth(1.5),
-            7: const pw.FlexColumnWidth(2.5),
-            8: const pw.FlexColumnWidth(2.5),
-            9: const pw.FlexColumnWidth(2.0),
-            10: const pw.FlexColumnWidth(2.0),
-          },
-        ),
-      );
-
-      // Add spacing between batches (except after last batch)
-      if (i < batches.length - 1) {
-        tableWidgets.add(pw.SizedBox(height: 12));
-      }
-    }
-
-    return tableWidgets;
+    return [
+      pw.Table.fromTextArray(
+        headers: headers,
+        data: tableData,
+        headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 9),
+        headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey900),
+        border: pw.TableBorder.all(color: PdfColors.blueGrey200, width: 0.4),
+        cellStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800),
+        columnWidths: {
+          0: const pw.FlexColumnWidth(3.0),
+          1: const pw.FlexColumnWidth(2.0),
+          2: const pw.FlexColumnWidth(2.0),
+          3: const pw.FlexColumnWidth(2.0),
+          4: const pw.FlexColumnWidth(2.5),
+          5: const pw.FlexColumnWidth(1.5),
+          6: const pw.FlexColumnWidth(1.5),
+          7: const pw.FlexColumnWidth(2.5),
+          8: const pw.FlexColumnWidth(2.5),
+          9: const pw.FlexColumnWidth(2.0),
+          10: const pw.FlexColumnWidth(2.0),
+        },
+      ),
+    ];
   }
 
   static pw.Widget _buildToolsInventoryPdfSection(
@@ -2067,25 +2186,33 @@ class ReportService {
       return _buildPdfPlaceholder('No tools found in inventory.');
     }
 
-    final tableWidgets = _buildToolsInventoryTableWidgets(tools, technicians);
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      mainAxisSize: pw.MainAxisSize.min,
+      children: _buildToolsInventoryWidgets(tools, technicians, showTitle: showTitle),
+    );
+  }
 
-    return pw.ListView(
-      children: [
-        if (showTitle) ...[
-          pw.Text(
-            'Tools Inventory',
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
-          ),
-          pw.SizedBox(height: 12),
-        ],
+  static List<pw.Widget> _buildToolsInventoryWidgets(
+    List<Tool> tools,
+    List<dynamic> technicians, {
+    bool showTitle = true,
+  }) {
+    return [
+      if (showTitle) ...[
         pw.Text(
-          'Total Tools: ${tools.length}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
+          'Tools Inventory',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900),
         ),
         pw.SizedBox(height: 12),
-        ...tableWidgets,
       ],
-    );
+      pw.Text(
+        'Total Tools: ${tools.length}',
+        style: pw.TextStyle(fontSize: 12, color: PdfColors.blueGrey700),
+      ),
+      pw.SizedBox(height: 12),
+      ..._buildToolsInventoryTableWidgets(tools, technicians),
+    ];
   }
 
   static pw.Widget _buildToolAssignmentsTable(List<Tool> tools, List<dynamic> technicians, DateTime? startDate, DateTime? endDate) {
