@@ -1890,7 +1890,7 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final actions = <_MobileAction>[
       _MobileAction('My Tools', Icons.build, Colors.indigo, () {
-        onNavigateToTab(4);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen()));
       }),
       _MobileAction('Manage Admins', Icons.admin_panel_settings_rounded, AppTheme.secondaryColor, () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminManagementScreen()));
