@@ -28,6 +28,7 @@ class ToolHistoryService {
         performedBy = await UserNameService.getUserName(performedById);
       }
 
+      debugPrint('📝 Inserting tool history: action=$action tool=$toolName toolId=$toolId performedById=$performedById');
       await _client.from('tool_history').insert({
         'tool_id': toolId,
         'tool_name': toolName,
