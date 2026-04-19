@@ -7,6 +7,25 @@ import 'user_name_service.dart';
 class ToolHistoryService {
   static final _client = SupabaseService.client;
 
+  /// Wait briefly for Supabase to finish restoring the persisted session.
+  /// On iOS the keychain read can land slightly after the dashboard mounts,
+  /// so a single immediate `currentUser` check often returns null even
+  /// though the user is logged in. We poll for up to ~3s.
+  static Future<dynamic> _waitForSession({
+    Duration timeout = const Duration(seconds: 3),
+    Duration interval = const Duration(milliseconds: 150),
+  }) async {
+    var user = _client.auth.currentUser;
+    if (user != null) return user;
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(interval);
+      user = _client.auth.currentUser;
+      if (user != null) return user;
+    }
+    return null;
+  }
+
   /// Record a history entry. Call after tool updates (badge, release, assign, etc.).
   static Future<void> record({
     required String toolId,
@@ -76,9 +95,9 @@ class ToolHistoryService {
     DateTime? endDate,
     int limit = 100,
   }) async {
-    final user = _client.auth.currentUser;
+    final user = await _waitForSession();
     if (user == null) {
-      debugPrint('⚠️ getAllHistory: no session yet — skipping query');
+      debugPrint('⚠️ getAllHistory: no session after waiting — skipping query');
       return [];
     }
 
@@ -131,6 +150,8 @@ class ToolHistoryService {
     int limit = 200,
   }) async {
     try {
+      // Same iOS-session race fix as getAllHistory.
+      await _waitForSession();
       final assignedToolsRes = await _client
           .from('tools')
           .select('id')

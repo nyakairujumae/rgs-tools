@@ -58,6 +58,8 @@ import '../providers/supabase_certification_provider.dart';
 import '../models/tool.dart';
 import '../models/tool_history.dart';
 import '../services/tool_history_service.dart';
+import '../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   final int initialTab;
@@ -3961,6 +3963,31 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
 
   Future<List<ToolHistory>>? _historyFuture;
   String? _lastUserId;
+  StreamSubscription<AuthState>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // On iOS the keychain-restored session can land slightly after the
+    // dashboard mounts. Listen to Supabase's auth stream so we re-fetch as
+    // soon as the session is actually available, regardless of AuthProvider.
+    _authSub = SupabaseService.client.auth.onAuthStateChange.listen((event) {
+      if (!mounted) return;
+      final newUid = event.session?.user.id;
+      if (newUid != null && newUid != _lastUserId) {
+        setState(() {
+          _lastUserId = newUid;
+          _loadHistory();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
   void _loadHistory() {
     _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
