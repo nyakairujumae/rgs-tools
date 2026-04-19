@@ -7,12 +7,21 @@
 -- the global allow flag is true).
 --
 -- Safe to run any time, even if OPEN was never run.
+--
+-- IMPORTANT: paste this whole file into the Supabase SQL editor in one
+-- go and click Run.
 
 SET search_path = public;
 
 -- ---------------------------------------------------------------------------
 -- 1. Force quota to 0 (so even if the trigger is somehow gone, the door is shut)
 -- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 INSERT INTO app_settings (key, value, updated_at)
 VALUES ('admin_bootstrap_quota', '0', NOW())
 ON CONFLICT (key) DO UPDATE SET value = '0', updated_at = NOW();
@@ -32,28 +41,28 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $func$
 DECLARE
-  allow_flag  BOOLEAN;
-  admin_count INTEGER;
+  v_allow_flag  BOOLEAN;
+  v_admin_count INTEGER;
 BEGIN
   SELECT value::BOOLEAN
-    INTO allow_flag
-    FROM app_settings
+    INTO v_allow_flag
+    FROM public.app_settings
    WHERE key = 'allow_admin_bootstrap';
 
-  IF allow_flag IS NULL THEN
-    allow_flag := TRUE;
+  IF v_allow_flag IS NULL THEN
+    v_allow_flag := TRUE;
   END IF;
 
   SELECT COUNT(*)
-    INTO admin_count
+    INTO v_admin_count
     FROM public.users
    WHERE role = 'admin';
 
-  RETURN allow_flag AND admin_count = 0;
+  RETURN v_allow_flag AND v_admin_count = 0;
 END;
-$$;
+$func$;
 
 GRANT EXECUTE ON FUNCTION public.can_bootstrap_admin() TO anon, authenticated;
 

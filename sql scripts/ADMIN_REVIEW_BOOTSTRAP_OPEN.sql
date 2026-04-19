@@ -7,10 +7,14 @@
 -- again automatically. No app update required.
 --
 -- Re-running this script resets the quota back to 1.
--- To bump it (e.g. allow 2 reviewers), edit `bootstrap_quota` value below
--- before running, or run the script multiple times — it sets, not adds.
+-- To bump it (e.g. allow 2 reviewers), edit `'1'` in the INSERT below
+-- before running, or just run the script multiple times — it sets, not adds.
 --
 -- To force-close at any time, run ADMIN_REVIEW_BOOTSTRAP_CLOSE.sql.
+--
+-- IMPORTANT: paste this whole file into the Supabase SQL editor in one
+-- go and click Run. Uses uniquely-tagged dollar quotes ($func$) so the
+-- editor doesn't accidentally split function bodies on semicolons.
 
 SET search_path = public;
 
@@ -40,41 +44,41 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $func$
 DECLARE
-  allow_flag    BOOLEAN;
-  admin_count   INTEGER;
-  quota_value   INTEGER;
+  v_allow_flag  BOOLEAN;
+  v_admin_count INTEGER;
+  v_quota       INTEGER;
 BEGIN
   -- Original guard flag (defaults to true for backward compatibility)
   SELECT value::BOOLEAN
-    INTO allow_flag
-    FROM app_settings
+    INTO v_allow_flag
+    FROM public.app_settings
    WHERE key = 'allow_admin_bootstrap';
-  IF allow_flag IS NULL THEN
-    allow_flag := TRUE;
+  IF v_allow_flag IS NULL THEN
+    v_allow_flag := TRUE;
   END IF;
 
   -- Review-mode quota (defaults to 0 when missing)
   SELECT COALESCE(NULLIF(value, '')::INTEGER, 0)
-    INTO quota_value
-    FROM app_settings
+    INTO v_quota
+    FROM public.app_settings
    WHERE key = 'admin_bootstrap_quota';
-  IF quota_value IS NULL THEN
-    quota_value := 0;
+  IF v_quota IS NULL THEN
+    v_quota := 0;
   END IF;
 
   SELECT COUNT(*)
-    INTO admin_count
+    INTO v_admin_count
     FROM public.users
    WHERE role = 'admin';
 
   -- Allow when:
   --   a) original bootstrap path: no admins yet AND flag enabled, OR
   --   b) review path:            quota > 0 (independent of admin count).
-  RETURN (allow_flag AND admin_count = 0) OR (quota_value > 0);
+  RETURN (v_allow_flag AND v_admin_count = 0) OR (v_quota > 0);
 END;
-$$;
+$func$;
 
 GRANT EXECUTE ON FUNCTION public.can_bootstrap_admin() TO anon, authenticated;
 
@@ -88,34 +92,34 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $func$
 DECLARE
-  current_quota INTEGER;
+  v_quota INTEGER;
 BEGIN
   IF NEW.role <> 'admin' THEN
     RETURN NEW;
   END IF;
 
   SELECT COALESCE(NULLIF(value, '')::INTEGER, 0)
-    INTO current_quota
-    FROM app_settings
+    INTO v_quota
+    FROM public.app_settings
    WHERE key = 'admin_bootstrap_quota';
 
-  IF current_quota IS NULL OR current_quota <= 0 THEN
+  IF v_quota IS NULL OR v_quota <= 0 THEN
     RETURN NEW;
   END IF;
 
-  UPDATE app_settings
-     SET value = (current_quota - 1)::TEXT,
+  UPDATE public.app_settings
+     SET value = (v_quota - 1)::TEXT,
          updated_at = NOW()
    WHERE key = 'admin_bootstrap_quota';
 
   RAISE NOTICE 'admin_bootstrap_quota decremented from % to %',
-    current_quota, current_quota - 1;
+    v_quota, v_quota - 1;
 
   RETURN NEW;
 END;
-$$;
+$func$;
 
 DROP TRIGGER IF EXISTS trg_consume_admin_bootstrap_quota ON public.users;
 CREATE TRIGGER trg_consume_admin_bootstrap_quota
