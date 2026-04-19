@@ -92,11 +92,12 @@ class ToolHistoryService {
       }
 
       final res = await query.order('timestamp', ascending: false).limit(limit);
+      debugPrint('📋 tool_history rows returned: ${(res as List).length}');
       return (res as List)
           .map((e) => ToolHistory.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList();
-    } catch (e) {
-      debugPrint('❌ Error fetching all tool history: $e');
+    } catch (e, st) {
+      debugPrint('❌ Error fetching all tool history: $e\n$st');
       return [];
     }
   }
