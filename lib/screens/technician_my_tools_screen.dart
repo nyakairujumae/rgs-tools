@@ -160,6 +160,17 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Row(
                     children: [
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          icon: Icon(Icons.chevron_left,
+                              size: 24,
+                              color: theme.colorScheme.onSurface),
+                          onPressed: () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
