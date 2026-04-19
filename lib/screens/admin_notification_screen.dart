@@ -351,13 +351,14 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             }
           },
           borderRadius: BorderRadius.circular(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 4,
-                color: notificationColor.withValues(alpha: notification.isRead ? 0.5 : 1),
-              ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  color: notificationColor.withValues(alpha: notification.isRead ? 0.5 : 1),
+                ),
               Expanded(
                 child: Padding(
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 14),
@@ -498,6 +499,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

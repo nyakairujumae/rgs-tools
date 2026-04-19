@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import "../providers/supabase_tool_provider.dart";
 import '../config/app_config.dart';
 import '../providers/supabase_technician_provider.dart';
@@ -438,40 +438,83 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
           const SizedBox(height: 14),
 
-          // Export buttons
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: FilledButton.icon(
-              onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.pdf),
-              icon: _isExporting
-                  ? const SizedBox(width: 16, height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.download_rounded, size: 16),
-              label: const Text('Generate PDF', style: TextStyle(fontSize: 13)),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ),
-
-          if (!isPdfOnly) ...[
-            const SizedBox(height: 8),
+          // Export buttons — side by side so taps cannot bleed between stacked targets
+          if (isPdfOnly)
             SizedBox(
               width: double.infinity,
-              height: 40,
+              height: 44,
               child: FilledButton.icon(
-                onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.excel),
-                icon: const Icon(Icons.table_chart_outlined, size: 15),
-                label: const Text('Export Excel', style: TextStyle(fontSize: 13)),
+                onPressed: _isExporting ? null : () => _exportReport(ReportFormat.pdf),
+                icon: _isExporting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.download_rounded, size: 16),
+                label: const Text('Generate PDF', style: TextStyle(fontSize: 13)),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D6F42),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: AppTheme.secondaryColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
+            )
+          else
+            SizedBox(
+              height: 44,
+              // Lock LTR so PDF stays visually left and Excel right under RTL locales
+              // (otherwise Row mirrors and taps on the "right" hit PDF).
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        button: true,
+                        label: 'Export as PDF',
+                        child: FilledButton.icon(
+                          key: const ValueKey('export_pdf'),
+                          onPressed: _isExporting ? null : () => _exportReport(ReportFormat.pdf),
+                          icon: _isExporting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                          label: const Text('PDF', style: TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor: AppTheme.secondaryColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Semantics(
+                        button: true,
+                        label: 'Export as Excel spreadsheet',
+                        child: FilledButton.icon(
+                          key: const ValueKey('export_excel'),
+                          onPressed: _isExporting ? null : () => _exportReport(ReportFormat.excel),
+                          icon: const Icon(Icons.table_chart_outlined, size: 16),
+                          label: const Text('Excel', style: TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor: const Color(0xFF1D6F42),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -614,7 +657,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 offset: const Offset(0, 8),
                 onSelected: (format) {
                   setState(() => _selectedFormat = format);
-                  _exportReport(format: format);
+                  _exportReport(format);
                 },
                 itemBuilder: (context) {
                   final showExcel = _selectedReportType != ReportType.calibration &&
@@ -2991,7 +3034,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  Future<void> _exportReport({ReportFormat format = ReportFormat.pdf}) async {
+  Future<void> _exportReport(ReportFormat format) async {
     setState(() {
       _isExporting = true;
     });

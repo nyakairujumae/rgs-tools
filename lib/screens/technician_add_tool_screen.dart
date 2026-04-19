@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../models/tool.dart';
 import '../providers/auth_provider.dart';
 import '../providers/supabase_tool_provider.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
 import '../services/image_upload_service.dart';
 import '../services/tool_id_generator.dart';
 import '../theme/app_theme.dart';
@@ -706,8 +708,27 @@ class _TechnicianAddToolScreenState extends State<TechnicianAddToolScreen> {
         imagePath: imageUrl,
       );
 
-      await context.read<SupabaseToolProvider>().addTool(tool);
+      final createdTool = await context.read<SupabaseToolProvider>().addTool(tool);
       await context.read<SupabaseToolProvider>().loadTools();
+
+      // Notify admin so it appears in the notification center
+      try {
+        final technicianName = authProvider.userFullName ?? authProvider.user?.email ?? 'A technician';
+        await context.read<AdminNotificationProvider>().createNotification(
+          technicianName: technicianName,
+          technicianEmail: authProvider.user?.email ?? 'unknown@technician',
+          type: NotificationType.general,
+          title: 'New Tool Added: ${createdTool.name}',
+          message: '$technicianName added a new tool to inventory: ${createdTool.name}',
+          data: {
+            'tool_id': createdTool.id ?? '',
+            'tool_name': createdTool.name,
+            'category': createdTool.category,
+          },
+        );
+      } catch (e) {
+        // Push notification already sent by addTool — silent failure here is fine
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

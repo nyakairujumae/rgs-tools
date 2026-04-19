@@ -1832,7 +1832,7 @@ class DashboardScreen extends StatelessWidget {
                     _buildMobileQuickActionsGroup(context),
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 28)),
                   const SizedBox(height: 4),
-                  const _RecentActivityFeed(),
+                  _RecentActivityFeed(),
                   SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 28)),
                   Text(
                     'Needs Attention',
@@ -3959,6 +3959,20 @@ class _RecentActivityFeed extends StatefulWidget {
 
 class _RecentActivityFeedState extends State<_RecentActivityFeed> {
   static const int _activityFetchLimit = 5;
+  late Future<List<ToolHistory>> _historyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+  }
+
+  @override
+  void didUpdateWidget(_RecentActivityFeed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Parent rebuilt (e.g., after a new issue/request was submitted) — fetch fresh data.
+    _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+  }
 
   static Color _skeletonBase(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -3980,6 +3994,8 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
       'Status Changed' => (Colors.purple, Icons.swap_horiz_rounded),
       'Deleted' => (Colors.red, Icons.delete_rounded),
       'Transferred' => (Colors.teal, Icons.swap_horizontal_circle_rounded),
+      'Issue Reported' => (Colors.orange, Icons.report_problem_rounded),
+      'Requested' => (Colors.purple, Icons.request_page_rounded),
       _ => (Colors.blueGrey, Icons.history_rounded),
     };
   }
@@ -4008,9 +4024,7 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
     final dividerColor = isDark ? AppTheme.darkCardBorder : AppTheme.cardBorder;
 
     return FutureBuilder<List<ToolHistory>>(
-      // Fetch fresh data on every dashboard rebuild so new activities
-      // (e.g., added tools) are visible immediately after returning.
-      future: ToolHistoryService.getAllHistory(limit: _activityFetchLimit),
+      future: _historyFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildSkeleton(context, cardDeco);

@@ -40,6 +40,9 @@ class ReportDetailScreen extends StatefulWidget {
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   bool _isExporting = false;
 
+  bool get _isPdfOnlyReport =>
+      widget.reportType == ReportType.calibration || widget.reportType == ReportType.compliance;
+
   @override
   void initState() {
     super.initState();
@@ -138,7 +141,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
   }
 
-  Future<void> _exportReport() async {
+  Future<void> _exportReport({ReportFormat format = ReportFormat.pdf}) async {
     setState(() {
       _isExporting = true;
     });
@@ -181,6 +184,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       final startDate = _getStartDate();
       final endDate = DateTime.now();
 
+      final effectiveFormat = _isPdfOnlyReport ? ReportFormat.pdf : format;
+
       final file = await ReportService.generateReport(
         reportType: widget.reportType,
         tools: tools,
@@ -191,6 +196,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         workflows: workflows,
         certifications: certificationProvider.certifications,
         maintenanceSchedules: certificationProvider.calibrationSchedules,
+        format: effectiveFormat,
       );
 
       if (mounted) {
@@ -253,10 +259,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          if (!_isPdfOnlyReport)
+            IconButton(
+              tooltip: 'Export Excel',
+              onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.excel),
+              icon: const Icon(Icons.table_chart_outlined),
+              color: const Color(0xFF1D6F42),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: FilledButton(
-              onPressed: _isExporting ? null : _exportReport,
+              onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.pdf),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -275,9 +288,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
-                      'Generate report',
-                      style: TextStyle(
+                  : Text(
+                      _isPdfOnlyReport ? 'Generate report' : 'Generate PDF',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),

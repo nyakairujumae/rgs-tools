@@ -199,4 +199,6 @@ class ToolHistoryActions {
   static const String edited = 'Edited';
   static const String movedToShared = 'Moved to Shared';
   static const String movedToInventory = 'Moved to Inventory';
+  static const String issueReported = 'Issue Reported';
+  static const String requested = 'Requested';
 }

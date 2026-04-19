@@ -2773,7 +2773,14 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
     );
   }
 
-  Future<List<ToolHistory>> _loadRecentActivityForTools(Set<String> toolIds) async {
+  Future<List<ToolHistory>> _loadRecentActivityForTools(Set<String> toolIds, String? currentUserId) async {
+    // Prefer a technician-scoped query so actions the technician performed
+    // (issue reports, tool requests, acceptances) all show up, not just
+    // events tied to currently-assigned tools.
+    if (currentUserId != null) {
+      final history = await ToolHistoryService.getHistoryForTechnician(currentUserId, limit: 10);
+      return history.take(5).toList();
+    }
     if (toolIds.isEmpty) return <ToolHistory>[];
     final all = await ToolHistoryService.getAllHistory(limit: 80);
     return all.where((h) => toolIds.contains(h.toolId)).take(5).toList();
@@ -3071,7 +3078,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       FutureBuilder<List<ToolHistory>>(
-                        future: _loadRecentActivityForTools(myToolIds),
+                        future: _loadRecentActivityForTools(myToolIds, currentUserId),
                         builder: (context, snapshot) {
                           final recent = snapshot.data ?? const <ToolHistory>[];
                           final isDark = theme.brightness == Brightness.dark;
@@ -3986,6 +3993,8 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
       'Status Changed' => (Colors.purple, Icons.swap_horiz_rounded),
       'Deleted' => (Colors.red, Icons.delete_rounded),
       'Transferred' => (Colors.teal, Icons.swap_horizontal_circle_rounded),
+      'Issue Reported' => (Colors.orange, Icons.report_problem_rounded),
+      'Requested' => (Colors.purple, Icons.request_page_rounded),
       _ => (Colors.blueGrey, Icons.history_rounded),
     };
   }

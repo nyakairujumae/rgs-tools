@@ -5,6 +5,10 @@ import 'package:provider/provider.dart';
 import '../providers/tool_issue_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/admin_notification_provider.dart';
+import '../models/admin_notification.dart';
+import '../services/tool_history_service.dart';
+import '../models/tool_history.dart';
 import '../models/tool_issue.dart';
 import '../models/tool.dart';
 import '../theme/app_theme.dart';
@@ -567,6 +571,41 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
       Logger.debug('📤 Submitting issue to Supabase...');
       await context.read<ToolIssueProvider>().addIssue(issue);
       Logger.debug('✅ Issue submitted successfully!');
+
+      // Record in tool history so it appears in recent activity
+      try {
+        await ToolHistoryService.record(
+          toolId: _selectedToolId,
+          toolName: selectedTool.name,
+          action: ToolHistoryActions.issueReported,
+          description: '$technicianName reported a ${_selectedPriority.toLowerCase()} priority ${_selectedIssueType.toLowerCase()} issue: ${_descriptionController.text.trim()}',
+          performedById: technicianId,
+          performedByName: technicianName,
+          performedByRole: 'technician',
+          metadata: {'issue_type': _selectedIssueType, 'priority': _selectedPriority},
+        );
+      } catch (e) {
+        Logger.debug('⚠️ Failed to record issue history: $e');
+      }
+
+      // Notify admin
+      try {
+        await context.read<AdminNotificationProvider>().createNotification(
+          technicianName: technicianName,
+          technicianEmail: authProvider.user?.email ?? 'unknown@technician',
+          type: NotificationType.issueReport,
+          title: 'Issue Reported: ${selectedTool.name}',
+          message: '$technicianName reported a ${_selectedPriority.toLowerCase()} priority ${_selectedIssueType.toLowerCase()} issue with ${selectedTool.name}',
+          data: {
+            'tool_id': _selectedToolId,
+            'tool_name': selectedTool.name,
+            'issue_type': _selectedIssueType,
+            'priority': _selectedPriority,
+          },
+        );
+      } catch (e) {
+        Logger.debug('⚠️ Failed to create admin notification for issue: $e');
+      }
 
       if (mounted) {
         // Clear the form
