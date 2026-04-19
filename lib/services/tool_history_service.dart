@@ -44,8 +44,8 @@ class ToolHistoryService {
         'metadata': metadata,
       });
       debugPrint('✅ Tool history recorded: $action for $toolName');
-    } catch (e) {
-      debugPrint('⚠️ Failed to record tool history: $e');
+    } catch (e, st) {
+      debugPrint('⚠️ Failed to record tool history: $e\n$st');
       // Don't rethrow - history is non-critical; tool update already succeeded
     }
   }
