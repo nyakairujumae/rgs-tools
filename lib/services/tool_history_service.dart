@@ -1,11 +1,25 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/tool_history.dart';
 import 'supabase_service.dart';
 import 'user_name_service.dart';
 
 /// Service for recording and fetching tool movement history.
 class ToolHistoryService {
-  static final _client = SupabaseService.client;
+  // IMPORTANT: do NOT cache `SupabaseService.client` in a `static final`.
+  //
+  // `SupabaseService.client` has a fallback path that constructs a brand-new
+  // `SupabaseClient` if `Supabase.instance` isn't ready yet (the common case
+  // during a cold start, where `Supabase.initialize()` runs in the
+  // background after `runApp`). A cached `static final` would lock this
+  // service to that fallback client for the lifetime of the isolate — its
+  // auth state never sees the restored session, so `currentUser` would
+  // stay null forever and every history fetch would short-circuit with
+  // "no session after waiting".
+  //
+  // Always go through the getter so we pick up the promoted
+  // `Supabase.instance.client` once it's ready.
+  static SupabaseClient get _client => SupabaseService.client;
 
   /// Wait briefly for Supabase to finish restoring the persisted session.
   /// On iOS the keychain read — and on Android a hot-restart cold start —
