@@ -146,17 +146,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (Navigator.canPop(context)) ...[
-                            IconButton(
-                              icon: Icon(Icons.chevron_left,
-                                  size: 24,
-                                  color: theme.colorScheme.onSurface),
-                              onPressed: () => NavigationHelper.safePop(context),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                            const SizedBox(width: 4),
-                          ],
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

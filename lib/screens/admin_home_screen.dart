@@ -155,7 +155,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedIndex =
-        widget.initialTab.clamp(0, 3); // Ensure index is within bounds
+        widget.initialTab.clamp(0, 4); // Ensure index is within bounds
     _screens = [
       DashboardScreen(
         key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
@@ -169,6 +169,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
       const ToolsScreen(),
       const SharedToolsScreen(),
       const TechniciansScreen(),
+      const TechnicianMyToolsScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LastRouteService.saveLastRoute('/admin');
@@ -485,6 +486,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 l.adminHome_sharedTools, activeColor, inactiveColor),
             _adminNavItem(context, 3, Icons.people, Icons.people_outline,
                 l.adminHome_technicians, activeColor, inactiveColor),
+            _adminNavItem(context, 4, Icons.handyman, Icons.handyman_outlined,
+                'My Tools', activeColor, inactiveColor),
           ],
         ),
       ),
@@ -503,7 +506,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final isSelected = _selectedIndex == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
         behavior: HitTestBehavior.opaque,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
@@ -712,8 +715,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     final isDark = theme.brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF2D3139) : const Color(0xFFE8EAED);
     final l10n = AppLocalizations.of(context);
-    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, l10n.adminHome_technicians];
-    final title = titles[_selectedIndex.clamp(0, 3)];
+    final titles = [l10n.adminHome_dashboard, l10n.adminHome_tools, l10n.adminHome_sharedTools, l10n.adminHome_technicians, 'My Tools'];
+    final title = titles[_selectedIndex.clamp(0, 4)];
     final today = DateFormat('MMM d, yyyy').format(DateTime.now());
 
     return Container(
@@ -761,7 +764,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selectedIndex = index.clamp(0, 3)),
+        onTap: () => setState(() => _selectedIndex = index.clamp(0, 4)),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
@@ -963,12 +966,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                               backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
                               onTap: () {
                                 Navigator.of(sheetContext).pop();
-                                Navigator.push(
-                                  parentContext,
-                                  MaterialPageRoute(
-                                    builder: (_) => const TechnicianMyToolsScreen(),
-                                  ),
-                                );
+                                setState(() => _selectedIndex = 4);
                               },
                             ),
                             if (authProvider.isAdmin && _canManageAdmins) ...[
@@ -3323,7 +3321,7 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final actions = <_MobileAction>[
       _MobileAction('My Tools', Icons.build, Colors.indigo, () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen()));
+        onNavigateToTab(4);
       }),
       _MobileAction('Manage Admins', Icons.admin_panel_settings_rounded, AppTheme.secondaryColor, () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminManagementScreen()));
