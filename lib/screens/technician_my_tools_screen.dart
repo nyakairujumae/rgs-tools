@@ -128,86 +128,86 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: context.scaffoldBackground,
-      body: SafeArea(
-        bottom: false,
-        child: Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
-          builder: (context, toolProvider, authProvider, connectivity, _) {
-            final currentUserId = authProvider.userId;
-            final allMyTools = currentUserId == null
-                ? <Tool>[]
-                : toolProvider.tools
-                    .where((t) => t.assignedTo == currentUserId)
-                    .toList();
+    final canPop = Navigator.canPop(context);
 
-            final filtered = allMyTools.where((t) {
-              final matchesSearch = _matchesSearch(t);
-              final matchesStatus =
-                  _selectedStatus == 'All' || t.status == _selectedStatus;
-              return matchesSearch && matchesStatus;
-            }).toList();
+    return Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
+      builder: (context, toolProvider, authProvider, connectivity, _) {
+        final currentUserId = authProvider.userId;
+        final allMyTools = currentUserId == null
+            ? <Tool>[]
+            : toolProvider.tools
+                .where((t) => t.assignedTo == currentUserId)
+                .toList();
 
-            final hasActiveFilter =
-                _searchQuery.isNotEmpty || _selectedStatus != 'All';
-            final showList = kIsWeb ? _webViewList : _isListView;
+        final filtered = allMyTools.where((t) {
+          final matchesSearch = _matchesSearch(t);
+          final matchesStatus =
+              _selectedStatus == 'All' || t.status == _selectedStatus;
+          return matchesSearch && matchesStatus;
+        }).toList();
 
-            return Column(
+        final hasActiveFilter =
+            _searchQuery.isNotEmpty || _selectedStatus != 'All';
+        final showList = kIsWeb ? _webViewList : _isListView;
+
+        return Scaffold(
+          backgroundColor: context.scaffoldBackground,
+          appBar: AppBar(
+            backgroundColor: context.scaffoldBackground,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
+            automaticallyImplyLeading: false,
+            leading: canPop
+                ? IconButton(
+                    icon: Icon(Icons.chevron_left, size: 28, color: colorScheme.onSurface),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  )
+                : null,
+            titleSpacing: canPop ? 4 : 16,
+            toolbarHeight: 72,
+            title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Header ──────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    children: [
-                      if (Navigator.canPop(context)) ...[
-                        IconButton(
-                          icon: Icon(Icons.chevron_left,
-                              size: 24,
-                              color: theme.colorScheme.onSurface),
-                          onPressed: () => Navigator.pop(context),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text('My Tools',
-                                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.5, color: colorScheme.onSurface)),
-                              ],
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              'Tools assigned to you · ${allMyTools.length} total',
-                              style: TextStyle(fontSize: 12,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.5)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _openAddTool,
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Add Tool', style: TextStyle(fontSize: 13)),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      ),
-                    ],
+                Text('My Tools',
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: colorScheme.onSurface)),
+                Text(
+                  'Tools assigned to you · ${allMyTools.length} total',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5)),
+                ),
+              ],
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: FilledButton.icon(
+                  onPressed: _openAddTool,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Tool', style: TextStyle(fontSize: 13)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-
+              ),
+            ],
+          ),
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 // ── Filter bar (aligned with [ToolsScreen]) ─────────────
                 Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -402,10 +402,10 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                               : _buildToolsGrid(context, filtered, colorScheme, isDark),
                 ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
