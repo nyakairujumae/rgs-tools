@@ -977,10 +977,12 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
           ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4),
-        child: Row(
-          children: items.map((item) {
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 4),
+          child: Row(
+            children: items.map((item) {
             final (idx, activeIcon, inactiveIcon, label) = item;
             final isSelected = _selectedIndex == idx;
 
@@ -1037,7 +1039,8 @@ class _TechnicianHomeScreenState extends State<TechnicianHomeScreen> with Widget
                 ),
               ),
             );
-          }).toList(),
+            }).toList(),
+          ),
         ),
       ),
     );

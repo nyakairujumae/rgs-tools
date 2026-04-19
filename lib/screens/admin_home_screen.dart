@@ -473,19 +473,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                 ),
               ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 6, right: 6, top: 6, bottom: 6),
-        child: Row(
-          children: [
-            _adminNavItem(context, 0, Icons.grid_view_rounded, Icons.grid_view_outlined,
-                l.adminHome_dashboard, activeColor, inactiveColor),
-            _adminNavItem(context, 1, Icons.build, Icons.build_outlined,
-                l.adminHome_tools, activeColor, inactiveColor),
-            _adminNavItem(context, 2, Icons.hub_rounded, Icons.hub_outlined,
-                l.adminHome_sharedTools, activeColor, inactiveColor),
-            _adminNavItem(context, 3, Icons.people, Icons.people_outline,
-                l.adminHome_technicians, activeColor, inactiveColor),
-          ],
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 6, right: 6, top: 6, bottom: 6),
+          child: Row(
+            children: [
+              _adminNavItem(context, 0, Icons.grid_view_rounded, Icons.grid_view_outlined,
+                  l.adminHome_dashboard, activeColor, inactiveColor),
+              _adminNavItem(context, 1, Icons.build, Icons.build_outlined,
+                  l.adminHome_tools, activeColor, inactiveColor),
+              _adminNavItem(context, 2, Icons.hub_rounded, Icons.hub_outlined,
+                  l.adminHome_sharedTools, activeColor, inactiveColor),
+              _adminNavItem(context, 3, Icons.people, Icons.people_outline,
+                  l.adminHome_technicians, activeColor, inactiveColor),
+            ],
+          ),
         ),
       ),
     );
