@@ -51,9 +51,9 @@ class ToolHistory {
     return ToolHistory(
       id: map['id']?.toString(),
       toolId: map['tool_id']?.toString() ?? '',
-      toolName: map['tool_name'],
-      action: map['action'],
-      description: map['description'],
+      toolName: map['tool_name']?.toString() ?? '',
+      action: map['action']?.toString() ?? '',
+      description: map['description']?.toString() ?? '',
       oldValue: map['old_value'],
       newValue: map['new_value'],
       performedBy: map['performed_by']?.toString(),

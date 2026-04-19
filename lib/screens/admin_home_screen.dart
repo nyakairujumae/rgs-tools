@@ -4029,6 +4029,9 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildSkeleton(context, cardDeco);
         }
+        if (snapshot.hasError) {
+          debugPrint('❌ RecentActivityFeed error: ${snapshot.error}');
+        }
 
         final items = snapshot.data ?? [];
         return Container(
