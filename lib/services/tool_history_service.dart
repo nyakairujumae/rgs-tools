@@ -8,11 +8,13 @@ class ToolHistoryService {
   static final _client = SupabaseService.client;
 
   /// Wait briefly for Supabase to finish restoring the persisted session.
-  /// On iOS the keychain read can land slightly after the dashboard mounts,
-  /// so a single immediate `currentUser` check often returns null even
-  /// though the user is logged in. We poll for up to ~3s.
+  /// On iOS the keychain read — and on Android a hot-restart cold start —
+  /// can land seconds after the dashboard first builds, so a single
+  /// `currentUser` check often returns null even though the user is logged
+  /// in. We poll for up to ~10s, which comfortably covers Supabase
+  /// background init even on slower devices.
   static Future<dynamic> _waitForSession({
-    Duration timeout = const Duration(seconds: 3),
+    Duration timeout = const Duration(seconds: 10),
     Duration interval = const Duration(milliseconds: 150),
   }) async {
     var user = _client.auth.currentUser;

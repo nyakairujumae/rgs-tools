@@ -3963,6 +3963,12 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
 
   Future<List<ToolHistory>>? _historyFuture;
   String? _lastUserId;
+  // True only when the most recent fetch was kicked off while a Supabase
+  // session was actually present. On hot restart / cold start the
+  // dashboard often builds before Supabase finishes restoring the session,
+  // in which case the future resolves to an empty list and we MUST refetch
+  // once the session arrives — even if the uid hasn't changed.
+  bool _lastFetchHadSession = false;
   StreamSubscription<AuthState>? _authSub;
 
   @override
@@ -3974,7 +3980,11 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
     _authSub = SupabaseService.client.auth.onAuthStateChange.listen((event) {
       if (!mounted) return;
       final newUid = event.session?.user.id;
-      if (newUid != null && newUid != _lastUserId) {
+      if (newUid == null) return;
+
+      final uidChanged = newUid != _lastUserId;
+      final firstSessionAfterEmptyFetch = !_lastFetchHadSession;
+      if (uidChanged || firstSessionAfterEmptyFetch) {
         setState(() {
           _lastUserId = newUid;
           _loadHistory();
@@ -3990,7 +4000,10 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
   }
 
   void _loadHistory() {
-    _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+    _lastFetchHadSession =
+        SupabaseService.client.auth.currentSession != null;
+    _historyFuture =
+        ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
   }
 
   static Color _skeletonBase(BuildContext context) {
