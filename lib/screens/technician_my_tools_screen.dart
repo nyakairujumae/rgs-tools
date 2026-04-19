@@ -152,65 +152,68 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
 
         return Scaffold(
           backgroundColor: context.scaffoldBackground,
-          appBar: AppBar(
-            backgroundColor: context.scaffoldBackground,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            surfaceTintColor: Colors.transparent,
-            automaticallyImplyLeading: false,
-            leading: canPop
-                ? IconButton(
-                    icon: Icon(Icons.chevron_left, size: 28,
-                        color: colorScheme.onSurface),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  )
-                : null,
-            titleSpacing: canPop ? 4 : 16,
-            toolbarHeight: 72,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('My Tools',
-                    style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        color: colorScheme.onSurface)),
-                Text(
-                  'Tools assigned to you · ${allMyTools.length} total',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.5)),
-                ),
-              ],
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: FilledButton.icon(
-                  onPressed: _openAddTool,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Add Tool', style: TextStyle(fontSize: 13)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
-                    foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-            ],
-          ),
           body: SafeArea(
             bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Header ──────────────────────────────────────────────
+                Padding(
+                  padding: EdgeInsets.fromLTRB(canPop ? 4 : 16, 16, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (canPop) ...[
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).maybePop(),
+                              child: Icon(Icons.chevron_left, size: 28,
+                                  color: colorScheme.onSurface),
+                            ),
+                            const SizedBox(width: 2),
+                          ],
+                          Expanded(
+                            child: Text('My Tools',
+                                style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                    color: colorScheme.onSurface)),
+                          ),
+                          FilledButton.icon(
+                            onPressed: _openAddTool,
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Add Tool',
+                                style: TextStyle(fontSize: 13)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 1),
+                      Padding(
+                        padding: EdgeInsets.only(left: canPop ? 30.0 : 0),
+                        child: Text(
+                          'Tools assigned to you · ${allMyTools.length} total',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurface.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 // ── Filter bar (aligned with [ToolsScreen]) ─────────────
                 Padding(
                   padding: EdgeInsets.fromLTRB(
