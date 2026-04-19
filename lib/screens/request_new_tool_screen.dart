@@ -12,6 +12,7 @@ import '../models/admin_notification.dart';
 import '../models/approval_workflow.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/auth_error_handler.dart';
+import '../utils/navigation_helper.dart';
 import '../widgets/common/themed_text_field.dart';
 import '../widgets/common/themed_button.dart';
 import '../utils/logger.dart';
@@ -133,96 +134,83 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(18),
-            bottomRight: Radius.circular(18),
-          ),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: IconButton(
-            icon: const Icon(
-              Icons.chevron_left,
-              size: 24,
-            ),
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/technician',
-                (route) => false,
-              );
-            },
-          ),
-        ),
-        title: Text(
-          _getScreenTitle(),
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: ResponsiveHelper.getResponsivePadding(
-              context,
-              horizontal: 16,
-              vertical: 24,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: ResponsiveHelper.getMaxWidth(context),
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.chevron_left, size: 28, color: onSurface),
+                            onPressed: () => NavigationHelper.safePop(context),
+                            style: IconButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(36, 36),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              _getScreenTitle(),
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                                color: onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         _getScreenDescription(),
                         style: TextStyle(
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 13,
+                          color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                      const SizedBox(height: 24),
                       
                       // Request Type Selection
-                      _SectionCard(
-                        title: 'Request Type',
-                        child: _buildRequestTypeDropdown(),
+                      Text(
+                        'Request Type',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      _buildRequestTypeDropdown(),
                       
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                      const SizedBox(height: 24),
                       
                       // Dynamic Fields Based on Request Type
                       _buildDynamicFieldsSection(),
                       
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                      const SizedBox(height: 24),
 
                       // Timing & Location
-                      _SectionCard(
-                        title: 'Timing & Location',
-                        child: Column(
+                      Text(
+                        'Timing & Location',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
                           children: [
                             _dateField(
                               label: 'Needed by',
@@ -239,31 +227,36 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                                   setState(() => _neededBy = picked);
                               },
                             ),
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            const SizedBox(height: 24),
                             _textField(_siteCtrl,
                                 label: 'Site / Location',
                                 hint: 'Job site or office pickup'),
                           ],
-                        ),
                       ),
 
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                      const SizedBox(height: 24),
 
-                      _SectionCard(
-                        title: _getJustificationTitle(),
-                        child: Column(
+                      Text(
+                        _getJustificationTitle(),
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
                           children: [
                             _multiline(_reasonCtrl,
                                 label: _getJustificationLabel(),
                                 hint: _getJustificationHint(),
                                 validator: _req),
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            const SizedBox(height: 24),
                             _buildImageAttachmentSection(),
                           ],
-                        ),
                       ),
 
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                      const SizedBox(height: 24),
 
                       // Submit Button
                       SizedBox(
@@ -280,15 +273,12 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -773,9 +763,19 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
   }
 
   Widget _buildToolPurchaseFields() {
-    return _SectionCard(
-      title: 'Tool Details',
-      child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tool Details',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
         children: [
           _textField(_nameCtrl, label: 'Tool name', hint: 'e.g., Cordless Drill', validator: _req),
           const SizedBox(height: 16),
@@ -838,13 +838,24 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           _textField(_supplierCtrl, label: 'Supplier (Optional)', hint: 'Preferred supplier name'),
         ],
       ),
+      ],
     );
   }
 
   Widget _buildToolAssignmentFields() {
-    return _SectionCard(
-      title: 'Assignment Details',
-      child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Assignment Details',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
         children: [
           _textField(_toolNameCtrl, label: 'Tool Name', hint: 'e.g., Digital Multimeter', validator: _req),
           const SizedBox(height: 16),
@@ -862,13 +873,24 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           ),
         ],
       ),
+      ],
     );
   }
 
   Widget _buildToolTransferFields() {
-    return _SectionCard(
-      title: 'Transfer Details',
-      child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Transfer Details',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
         children: [
           _textField(_toolNameCtrl, label: 'Tool Name', hint: 'e.g., Cordless Drill', validator: _req),
           const SizedBox(height: 16),
@@ -888,13 +910,24 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           ),
         ],
       ),
+      ],
     );
   }
 
   Widget _buildToolMaintenanceFields() {
-    return _SectionCard(
-      title: 'Maintenance Details',
-      child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Maintenance Details',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
         children: [
           _textField(_toolNameCtrl, label: 'Tool Name', hint: 'e.g., Vacuum Pump', validator: _req),
           const SizedBox(height: 16),
@@ -917,13 +950,24 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           ),
         ],
       ),
+      ],
     );
   }
 
   Widget _buildToolDisposalFields() {
-    return _SectionCard(
-      title: 'Disposal Details',
-      child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Disposal Details',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
         children: [
           _textField(_toolNameCtrl, label: 'Tool Name', hint: 'e.g., Safety Harness', validator: _req),
           const SizedBox(height: 16),
@@ -939,6 +983,7 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
           ),
         ],
       ),
+      ],
     );
   }
 
@@ -1140,52 +1185,57 @@ class _RequestNewToolScreenState extends State<RequestNewToolScreen> {
 
   Widget _buildImageAttachmentSection() {
     final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            all: 16,
-          ),
-          decoration: context.cardDecoration.copyWith(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.attachment,
-                color: AppTheme.secondaryColor,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+        GestureDetector(
+          onTap: _showImagePickerOptions,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+                width: 1.5,
               ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              Expanded(
-                child: Text(
-                  'Attach photo or spec (optional)',
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 28,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Tap to attach photos',
                   style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.secondaryColor,
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: _showImagePickerOptions,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryColor,
-                  padding: ResponsiveHelper.getResponsivePadding(
-                    context,
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                ),
-                child: Text(
-                  'Add Image',
+                const SizedBox(height: 4),
+                Text(
+                  'Optional — add photos or specifications',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: 12,
+                    color: onSurface.withValues(alpha: 0.45),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_selectedImages.isNotEmpty) ...[

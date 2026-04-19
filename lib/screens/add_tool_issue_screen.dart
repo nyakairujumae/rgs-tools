@@ -72,93 +72,82 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: context.appBarBackground,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        foregroundColor: colorScheme.onSurface,
-        toolbarHeight: 80,
-        surfaceTintColor: Colors.transparent,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: IconButton(
-            icon: Icon(
-              Icons.chevron_left,
-              size: 28,
-              color: colorScheme.onSurface,
-            ),
-            onPressed: () {
-              // If embedded as tab, navigate to dashboard instead of popping
-              if (widget.onNavigateToDashboard != null) {
-                widget.onNavigateToDashboard!();
-              } else {
-                NavigationHelper.safePop(context);
-              }
-            },
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Report Tool Issue',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-                color: theme.textTheme.bodyLarge?.color,
-              ),
-            ),
-            Text(
-              'Help us track and resolve tool problems quickly',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 12),
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: false,
-      ),
-      body: Container(
-        color: theme.scaffoldBackgroundColor,
-        child: SafeArea(
-          child: _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: ResponsiveHelper.getResponsivePadding(
-                    context,
-                    horizontal: 16,
-                    vertical: 24,
-                  ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: ResponsiveHelper.getMaxWidth(context),
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.chevron_left,
+                              size: 28,
+                              color: onSurface,
+                            ),
+                            onPressed: () {
+                              if (widget.onNavigateToDashboard != null) {
+                                widget.onNavigateToDashboard!();
+                              } else {
+                                NavigationHelper.safePop(context);
+                              }
+                            },
+                            style: IconButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(36, 36),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Report issue',
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                                color: onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                      const SizedBox(height: 8),
+                      Text(
+                        'Help us track and resolve tool problems quickly',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
                         // Tool Information Section
-                        _SectionCard(
-                          title: 'Tool Information',
-                          child: Consumer2<SupabaseToolProvider, AuthProvider>(
-                            builder: (context, toolProvider, authProvider, child) {
+                        Text(
+                          'Tool Information',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Consumer2<SupabaseToolProvider, AuthProvider>(
+                          builder: (context, toolProvider, authProvider, child) {
                               final userId = authProvider.userId;
                               // Filter to tools assigned to this technician
                               final myTools = userId != null
@@ -235,17 +224,23 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                     ),
                                 ],
                               );
-                            },
-                          ),
+                          },
                         ),
 
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            const SizedBox(height: 24),
 
                             // Issue Details Section
-                        _SectionCard(
-                          title: 'Issue Details',
-                          child: Column(
-                            children: [
+                        Text(
+                          'Issue Details',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Column(
+                          children: [
                               _dropdown(
                                 label: 'Issue Type',
                                 value: _selectedIssueType,
@@ -267,7 +262,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 },
                                 icon: Icons.category,
                               ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                              const SizedBox(height: 24),
                               _dropdown(
                                 label: 'Priority',
                                 value: _selectedPriority,
@@ -289,7 +284,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 },
                                 icon: Icons.priority_high,
                               ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                              const SizedBox(height: 24),
                               ThemedTextField(
                                 controller: _descriptionController,
                                 label: 'Description *',
@@ -302,24 +297,30 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                   return null;
                                 },
                               ),
-                            ],
-                          ),
+                          ],
                         ),
 
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            const SizedBox(height: 24),
 
                             // Additional Information Section
-                        _SectionCard(
-                          title: 'Additional Information',
-                          child: Column(
-                            children: [
+                        Text(
+                          'Additional Information',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 18),
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Column(
+                          children: [
                               ThemedTextField(
                                 controller: _locationController,
                                 label: 'Location',
                                 hint: 'Where did this occur? (optional)',
                                 prefixIcon: Icons.location_on,
                               ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                              const SizedBox(height: 24),
                               ThemedTextField(
                                 controller: _estimatedCostController,
                                 label: 'Estimated Cost',
@@ -327,46 +328,18 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                                 keyboardType: TextInputType.number,
                                 prefixIcon: Icons.attach_money,
                               ),
-                              SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                              const SizedBox(height: 24),
                               _buildImageAttachmentSection(),
-                            ],
-                          ),
+                          ],
                         ),
 
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 16)),
+                            const SizedBox(height: 24),
 
                             // Priority Guidelines
-                            Container(
-                              width: double.infinity,
-                              padding: ResponsiveHelper.getResponsivePadding(
-                                context,
-                                all: 20,
-                              ),
-                              decoration: context.cardDecoration,
+                            _SectionCard(
+                              title: 'Priority Guidelines',
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        color: AppTheme.primaryColor,
-                                        size: ResponsiveHelper.getResponsiveIconSize(context, 20),
-                                      ),
-                                      SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 8)),
-                                      Expanded(
-                                        child: Text(
-                                          'Priority Guidelines',
-                                          style: TextStyle(
-                                            fontSize: ResponsiveHelper.getResponsiveFontSize(context, 16),
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 12)),
                                   _buildPriorityGuideline(context, 'Critical', 'Safety hazard or complete tool failure'),
                                   _buildPriorityGuideline(context, 'High', 'Tool unusable but no safety risk'),
                                   _buildPriorityGuideline(context, 'Medium', 'Tool partially functional'),
@@ -375,7 +348,7 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                               ),
                             ),
 
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                            const SizedBox(height: 24),
 
                             // Submit Button
                             SizedBox(
@@ -387,14 +360,11 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
                               child: const Text('Submit Report'),
                               ),
                             ),
-                            SizedBox(height: ResponsiveHelper.getResponsiveSpacing(context, 24)),
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
-                    ),
-                  ),
                 ),
-        ),
       ),
     );
   }
@@ -661,52 +631,57 @@ class _AddToolIssueScreenState extends State<AddToolIssueScreen> {
 
   Widget _buildImageAttachmentSection() {
     final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: ResponsiveHelper.getResponsivePadding(
-            context,
-            all: 16,
-          ),
-          decoration: context.cardDecoration.copyWith(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.attachment,
-                color: AppTheme.secondaryColor,
-                size: ResponsiveHelper.getResponsiveIconSize(context, 20),
+        GestureDetector(
+          onTap: _showImagePickerOptions,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+                width: 1.5,
               ),
-              SizedBox(width: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-              Expanded(
-                child: Text(
-                  'Attach photo (optional)',
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 28,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Tap to attach photos',
                   style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.secondaryColor,
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: _showImagePickerOptions,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryColor,
-                  padding: ResponsiveHelper.getResponsivePadding(
-                    context,
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                ),
-                child: Text(
-                  'Add Image',
+                const SizedBox(height: 4),
+                Text(
+                  'Optional — add images of the issue',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+                    fontSize: 12,
+                    color: onSurface.withValues(alpha: 0.45),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_selectedImages.isNotEmpty) ...[

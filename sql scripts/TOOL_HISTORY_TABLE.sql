@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS tool_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tool_id UUID NOT NULL REFERENCES tools(id) ON DELETE CASCADE,
+  tool_id UUID REFERENCES tools(id) ON DELETE SET NULL,
   tool_name TEXT NOT NULL,
   action TEXT NOT NULL,
   description TEXT NOT NULL,

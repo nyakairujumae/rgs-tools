@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/supabase_tool_provider.dart';
@@ -2528,35 +2526,6 @@ class _RecentActivityFeed extends StatefulWidget {
 
 class _RecentActivityFeedState extends State<_RecentActivityFeed> {
   static const int _activityFetchLimit = 1000;
-  late Future<List<ToolHistory>> _historyFuture;
-  StreamSubscription<AuthState>? _authSub;
-
-  void _refresh() {
-    if (mounted) {
-      setState(() {
-        _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
-    _authSub = SupabaseService.client.auth.onAuthStateChange.listen((data) {
-      if (data.event == AuthChangeEvent.signedIn ||
-          data.event == AuthChangeEvent.initialSession ||
-          data.event == AuthChangeEvent.tokenRefreshed) {
-        _refresh();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
 
   static Color _skeletonBase(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -2584,6 +2553,7 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<AuthProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final onSurface = theme.colorScheme.onSurface;
@@ -2606,7 +2576,7 @@ class _RecentActivityFeedState extends State<_RecentActivityFeed> {
     final dividerColor = isDark ? AppTheme.darkCardBorder : AppTheme.cardBorder;
 
     return FutureBuilder<List<ToolHistory>>(
-      future: _historyFuture,
+      future: ToolHistoryService.getAllHistory(limit: _activityFetchLimit),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildSkeleton(context, cardDeco);

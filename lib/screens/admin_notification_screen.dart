@@ -273,6 +273,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
   Widget _buildFilterChip(String label, NotificationType? type) {
     final isSelected = _selectedFilter == type;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -285,7 +286,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             fontWeight: FontWeight.w500,
             color: isSelected
                 ? AppTheme.secondaryColor
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
           ),
         ),
         selected: isSelected,
@@ -294,18 +295,15 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             _selectedFilter = selected ? type : null;
           });
         },
-        backgroundColor: context.cardBackground,
-        selectedColor: AppTheme.secondaryColor.withOpacity(0.08),
+        backgroundColor: isDark ? context.cardBackground : Colors.white,
+        selectedColor: isDark
+            ? AppTheme.secondaryColor.withValues(alpha: 0.14)
+            : Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-        side: BorderSide(
-          color: isSelected
-              ? AppTheme.secondaryColor
-              : Colors.black.withOpacity(0.04),
-          width: isSelected ? 1.2 : 0.5,
-        ),
+        side: BorderSide.none,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
         ),
         elevation: 0,
       ),
@@ -321,20 +319,25 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
   Widget _buildNotificationCard(AdminNotification notification, AdminNotificationProvider provider) {
     final notificationColor = _getNotificationColor(notification.type);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: EdgeInsets.only(bottom: ResponsiveHelper.getResponsiveSpacing(context, 12)),
-      decoration: AppTheme.groupedCardDecoration(context, radius: 16).copyWith(
-        color: notification.isRead
-            ? (Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF141414)
-                : Colors.white)
-            : AppTheme.secondaryColor.withValues(alpha: 0.03),
-        border: notification.isRead
-            ? AppTheme.groupedCardDecoration(context, radius: 16).border
-            : Border.all(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                width: 1,
-              ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141414) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.transparent,
+          width: 0,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -355,10 +358,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 4,
-                  color: notificationColor.withValues(alpha: notification.isRead ? 0.5 : 1),
-                ),
               Expanded(
                 child: Padding(
                   padding: ResponsiveHelper.getResponsivePadding(context, all: 14),

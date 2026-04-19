@@ -76,6 +76,12 @@ class ToolHistoryService {
     DateTime? endDate,
     int limit = 100,
   }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      debugPrint('⚠️ getAllHistory: no session yet — skipping query');
+      return [];
+    }
+
     try {
       var query = _client.from('tool_history').select();
 
@@ -92,11 +98,20 @@ class ToolHistoryService {
         query = query.lte('timestamp', endDate.toIso8601String());
       }
 
-      final user = _client.auth.currentUser;
-      debugPrint('🔑 tool_history query — user: ${user?.id ?? "NULL (unauthenticated)"}');
       final res = await query.order('timestamp', ascending: false).limit(limit);
-      debugPrint('📋 tool_history rows returned: ${(res as List).length}');
-      return (res as List)
+      final list = res as List;
+      debugPrint(
+        '📜 getAllHistory: uid=${user.id} returned ${list.length} rows '
+        '(toolIdFilter=$toolIdFilter, actionFilter=$actionFilter, limit=$limit)',
+      );
+      if (list.isEmpty) {
+        debugPrint(
+          '   ↳ Empty result. If rows exist in DB, this is almost always '
+          'an RLS issue. Check that public.users has a row where '
+          'id=${user.id} AND role IN (\'admin\',\'technician\').',
+        );
+      }
+      return list
           .map((e) => ToolHistory.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList();
     } catch (e, st) {

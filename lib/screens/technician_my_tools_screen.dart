@@ -128,8 +128,6 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final canPop = Navigator.canPop(context);
-
     return Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
       builder: (context, toolProvider, authProvider, connectivity, _) {
         final currentUserId = authProvider.userId;
@@ -159,21 +157,13 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
               children: [
                 // ── Header ──────────────────────────────────────────────
                 Padding(
-                  padding: EdgeInsets.fromLTRB(canPop ? 4 : 16, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (canPop) ...[
-                            GestureDetector(
-                              onTap: () => Navigator.of(context).maybePop(),
-                              child: Icon(Icons.chevron_left, size: 28,
-                                  color: colorScheme.onSurface),
-                            ),
-                            const SizedBox(width: 2),
-                          ],
                           Expanded(
                             child: Text('My Tools',
                                 style: TextStyle(
@@ -201,14 +191,11 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                         ],
                       ),
                       const SizedBox(height: 1),
-                      Padding(
-                        padding: EdgeInsets.only(left: canPop ? 30.0 : 0),
-                        child: Text(
-                          'Tools assigned to you · ${allMyTools.length} total',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha: 0.5)),
-                        ),
+                      Text(
+                        'Tools assigned to you · ${allMyTools.length} total',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withValues(alpha: 0.5)),
                       ),
                     ],
                   ),
