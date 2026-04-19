@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import "../providers/supabase_tool_provider.dart";
@@ -3960,18 +3961,40 @@ class _RecentActivityFeed extends StatefulWidget {
 class _RecentActivityFeedState extends State<_RecentActivityFeed> {
   static const int _activityFetchLimit = 5;
   late Future<List<ToolHistory>> _historyFuture;
+  StreamSubscription<AuthState>? _authSub;
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {
+        _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+    // Session may not be restored yet on mobile — refresh once auth is ready.
+    _authSub = SupabaseService.client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.signedIn ||
+          data.event == AuthChangeEvent.initialSession ||
+          data.event == AuthChangeEvent.tokenRefreshed) {
+        _refresh();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(_RecentActivityFeed oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Parent rebuilt (e.g., after a new issue/request was submitted) — fetch fresh data.
     _historyFuture = ToolHistoryService.getAllHistory(limit: _activityFetchLimit);
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   static Color _skeletonBase(BuildContext context) {
