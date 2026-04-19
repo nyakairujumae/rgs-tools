@@ -87,8 +87,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
           final matchesSearch = _matchesSmartSearch(tool);
           final matchesCategory =
               _selectedCategory == 'Category' || tool.category == _selectedCategory;
-          final matchesStatus =
-              _selectedStatus == 'All' || tool.status == _selectedStatus;
+          final matchesStatus = _toolMatchesStatusFilter(tool, _selectedStatus);
           return matchesSearch && matchesCategory && matchesStatus;
         }).toList();
 
@@ -1962,6 +1961,27 @@ class _ToolsScreenState extends State<ToolsScreen> {
         ),
       ),
     );
+  }
+
+  // ── Status filter ──────────────────────────────────────────────────────
+  // The dropdown exposes both "Assigned" and "In Use" but the underlying
+  // `tool.status` only ever takes values like Available / In Use /
+  // Maintenance / Retired — assignment lives in `tool.assignedTo`. Treat
+  // an assigned tool as "In Use" (and vice versa) so the counts match
+  // what users actually expect on the dashboard.
+  bool _toolMatchesStatusFilter(Tool tool, String filter) {
+    if (filter == 'All') return true;
+    final isAssigned =
+        tool.assignedTo != null && tool.assignedTo!.trim().isNotEmpty;
+    switch (filter) {
+      case 'Available':
+        return tool.status == 'Available' && !isAssigned;
+      case 'In Use':
+      case 'Assigned':
+        return isAssigned || tool.status == 'In Use';
+      default:
+        return tool.status == filter;
+    }
   }
 
   // ── Smart search ───────────────────────────────────────────────────────
