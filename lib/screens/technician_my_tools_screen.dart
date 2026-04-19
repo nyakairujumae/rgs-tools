@@ -9,6 +9,7 @@ import '../providers/supabase_tool_provider.dart';
 import '../providers/connectivity_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
+import '../utils/navigation_helper.dart';
 import 'technician_add_tool_screen.dart';
 import 'add_tool_screen.dart';
 import 'tool_detail_screen.dart';
@@ -157,13 +158,27 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
               children: [
                 // ── Header ──────────────────────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    Navigator.canPop(context) ? 4 : 16,
+                    16,
+                    16,
+                    0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          if (Navigator.canPop(context))
+                            IconButton(
+                              icon: Icon(
+                                Icons.chevron_left,
+                                size: 28,
+                                color: colorScheme.onSurface,
+                              ),
+                              onPressed: () => NavigationHelper.safePop(context),
+                            ),
                           Expanded(
                             child: Text('My Tools',
                                 style: TextStyle(

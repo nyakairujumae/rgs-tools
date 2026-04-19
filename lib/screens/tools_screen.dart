@@ -138,7 +138,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   if (!widget.isSelectionMode)
                     Padding(
                       padding: EdgeInsets.fromLTRB(
-                        kIsWeb ? 24 : (Navigator.canPop(context) ? 4 : 16),
+                        kIsWeb ? 24 : 16,
                         kIsWeb ? 28 : 20,
                         kIsWeb ? 24 : 16,
                         0,
@@ -146,15 +146,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (!kIsWeb && Navigator.canPop(context))
-                            IconButton(
-                              icon: Icon(
-                                Icons.chevron_left,
-                                size: 28,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              onPressed: () => NavigationHelper.safePop(context),
-                            ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
