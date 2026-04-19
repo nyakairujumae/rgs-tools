@@ -92,6 +92,8 @@ class ToolHistoryService {
         query = query.lte('timestamp', endDate.toIso8601String());
       }
 
+      final user = _client.auth.currentUser;
+      debugPrint('🔑 tool_history query — user: ${user?.id ?? "NULL (unauthenticated)"}');
       final res = await query.order('timestamp', ascending: false).limit(limit);
       debugPrint('📋 tool_history rows returned: ${(res as List).length}');
       return (res as List)
