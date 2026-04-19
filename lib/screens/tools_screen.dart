@@ -101,102 +101,123 @@ class _ToolsScreenState extends State<ToolsScreen> {
             _selectedStatus != 'All' ||
             _selectedCategory != 'Category';
 
-        final canPop = Navigator.canPop(context);
-
         return Scaffold(
           backgroundColor: context.scaffoldBackground,
-          appBar: widget.isSelectionMode
-              ? AppBar(
-                  backgroundColor: context.scaffoldBackground,
-                  elevation: 0,
-                  scrolledUnderElevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  leading: IconButton(
-                    icon: Icon(Icons.chevron_left,
-                        size: 28, color: theme.colorScheme.onSurface),
-                    onPressed: () => NavigationHelper.safePop(context),
-                  ),
-                  titleSpacing: 4,
-                  title: Text('Select Tools',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                      )),
-                )
-              : AppBar(
-                  backgroundColor: context.scaffoldBackground,
-                  elevation: 0,
-                  scrolledUnderElevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  automaticallyImplyLeading: false,
-                  leading: canPop
-                      ? IconButton(
-                          icon: Icon(Icons.chevron_left,
-                              size: 28, color: theme.colorScheme.onSurface),
-                          onPressed: () => NavigationHelper.safePop(context),
-                        )
-                      : null,
-                  titleSpacing: canPop ? 4 : 16,
-                  toolbarHeight: 72,
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Tools',
-                        style: TextStyle(
-                          fontSize: kIsWeb ? 32 : 30,
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Text(
-                        '${tools.length} tools in inventory',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                        ),
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          final added = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const AddToolScreen()),
-                          );
-                          if (added == true && context.mounted) {
-                            await toolProvider.loadTools();
-                          }
-                        },
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Add Tool',
-                            style: TextStyle(fontSize: 13)),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 0),
-                          minimumSize: const Size(0, 36),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
           body: SafeArea(
             bottom: false,
             child: Container(
               color: context.scaffoldBackground,
               child: Column(
                 children: [
+                  // ── Selection mode header ──────────────────────────────
+                  if (widget.isSelectionMode)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.chevron_left,
+                                size: 24,
+                                color: theme.colorScheme.onSurface),
+                            onPressed: () => NavigationHelper.safePop(context),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('Select Tools',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
+                                )),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // ── Normal header ──────────────────────────────────────
+                  if (!widget.isSelectionMode)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        kIsWeb ? 24 : 16,
+                        kIsWeb ? 28 : 20,
+                        kIsWeb ? 24 : 16,
+                        0,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (Navigator.canPop(context)) ...[
+                            IconButton(
+                              icon: Icon(Icons.chevron_left,
+                                  size: 24,
+                                  color: theme.colorScheme.onSurface),
+                              onPressed: () => NavigationHelper.safePop(context),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Tools',
+                                        style: TextStyle(
+                                          fontSize: kIsWeb ? 32 : 30,
+                                          fontWeight: FontWeight.w800,
+                                          color: theme.colorScheme.onSurface,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    // Add Tool button
+                                    FilledButton.icon(
+                                      onPressed: () async {
+                                        final added = await Navigator.push<bool>(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) => const AddToolScreen()),
+                                        );
+                                        if (added == true && context.mounted) {
+                                          await toolProvider.loadTools();
+                                        }
+                                      },
+                                      icon: const Icon(Icons.add, size: 16),
+                                      label: const Text('Add Tool',
+                                          style: TextStyle(fontSize: 13)),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 0),
+                                        minimumSize: const Size(0, 36),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${tools.length} tools in inventory',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.45),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // ── Filter bar ─────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.fromLTRB(
