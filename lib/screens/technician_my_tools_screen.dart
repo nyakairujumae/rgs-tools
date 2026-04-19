@@ -15,7 +15,12 @@ import 'add_tool_screen.dart';
 import 'tool_detail_screen.dart';
 
 class TechnicianMyToolsScreen extends StatefulWidget {
-  const TechnicianMyToolsScreen({super.key});
+  /// When true, render a back chevron in the header. Used by admin (and any
+  /// other caller) that pushes this screen onto the stack. The technician's
+  /// bottom-nav tab leaves this false so no back button is shown.
+  final bool showBackButton;
+
+  const TechnicianMyToolsScreen({super.key, this.showBackButton = false});
 
   @override
   State<TechnicianMyToolsScreen> createState() => _TechnicianMyToolsScreenState();
@@ -159,7 +164,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                 // ── Header ──────────────────────────────────────────────
                 Padding(
                   padding: EdgeInsets.fromLTRB(
-                    Navigator.canPop(context) ? 4 : 16,
+                    widget.showBackButton ? 4 : 16,
                     16,
                     16,
                     0,
@@ -170,7 +175,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (Navigator.canPop(context))
+                          if (widget.showBackButton)
                             IconButton(
                               icon: Icon(
                                 Icons.chevron_left,

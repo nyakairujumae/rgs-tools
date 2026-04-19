@@ -618,7 +618,7 @@ class _TechnicianDashboardScreenState extends State<TechnicianDashboardScreen> {
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen())),
+                          MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen(showBackButton: true))),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

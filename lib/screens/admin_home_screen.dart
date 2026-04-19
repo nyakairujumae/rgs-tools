@@ -967,7 +967,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                                 Navigator.push(
                                   parentContext,
                                   MaterialPageRoute(
-                                    builder: (_) => const TechnicianMyToolsScreen(),
+                                    builder: (_) => const TechnicianMyToolsScreen(showBackButton: true),
                                   ),
                                 );
                               },
@@ -3324,7 +3324,7 @@ class DashboardScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final actions = <_MobileAction>[
       _MobileAction('My Tools', Icons.build, Colors.indigo, () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen()));
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const TechnicianMyToolsScreen(showBackButton: true)));
       }),
       _MobileAction('Manage Admins', Icons.admin_panel_settings_rounded, AppTheme.secondaryColor, () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminManagementScreen()));
