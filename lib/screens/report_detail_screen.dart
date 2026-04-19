@@ -259,13 +259,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          if (!_isPdfOnlyReport)
-            IconButton(
-              tooltip: 'Export Excel',
-              onPressed: _isExporting ? null : () => _exportReport(format: ReportFormat.excel),
-              icon: const Icon(Icons.table_chart_outlined),
-              color: const Color(0xFF1D6F42),
-            ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: FilledButton(
@@ -288,9 +281,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text(
-                      _isPdfOnlyReport ? 'Generate report' : 'Generate PDF',
-                      style: const TextStyle(
+                  : const Text(
+                      'Generate report',
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
