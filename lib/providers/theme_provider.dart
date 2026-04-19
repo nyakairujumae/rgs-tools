@@ -2,19 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
-class ThemeProvider with ChangeNotifier {
+/// Reactive theme controller.
+///
+/// IMPORTANT: This class is itself a [WidgetsBindingObserver]. We do NOT
+/// assign `WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged`
+/// directly — doing so silently replaces Flutter's internal handler, which
+/// breaks `MediaQuery.platformBrightnessOf(context)` and stops `MaterialApp`
+/// from reacting to system dark/light toggles until the app is restarted.
+class ThemeProvider with ChangeNotifier, WidgetsBindingObserver {
   static const String _themeModeKey = 'theme_mode';
 
   ThemeMode _themeMode = ThemeMode.system;
   bool _isDarkMode = false;
+  bool _observerRegistered = false;
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _isDarkMode;
 
-  // Get the current theme data
-  ThemeData get currentTheme => _isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+  ThemeData get currentTheme =>
+      _isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
 
-  // Get theme mode display name
   String get themeModeDisplayName {
     switch (_themeMode) {
       case ThemeMode.light:
@@ -26,7 +33,6 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
-  // Get theme mode description
   String get themeModeDescription {
     switch (_themeMode) {
       case ThemeMode.light:
@@ -39,11 +45,16 @@ class ThemeProvider with ChangeNotifier {
   }
 
   ThemeProvider() {
+    _registerObserver();
     _initializeTheme();
-    _listenToSystemBrightness();
   }
 
-  // Initialize theme from persisted preference or default to system
+  void _registerObserver() {
+    if (_observerRegistered) return;
+    WidgetsBinding.instance.addObserver(this);
+    _observerRegistered = true;
+  }
+
   Future<void> _initializeTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -61,7 +72,6 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Update dark mode based on current theme mode
   void _updateDarkMode() {
     switch (_themeMode) {
       case ThemeMode.light:
@@ -72,7 +82,8 @@ class ThemeProvider with ChangeNotifier {
         break;
       case ThemeMode.system:
         try {
-          final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+          final brightness =
+              WidgetsBinding.instance.platformDispatcher.platformBrightness;
           _isDarkMode = brightness == Brightness.dark;
         } catch (_) {
           _isDarkMode = false;
@@ -81,19 +92,8 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
-  // Listen to system brightness changes
-  void _listenToSystemBrightness() {
-    WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = () {
-      if (_themeMode == ThemeMode.system) {
-        _updateDarkMode();
-        notifyListeners();
-      }
-    };
-    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(this));
-  }
-
-  // Set and persist theme mode
   Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
     _themeMode = mode;
     _updateDarkMode();
     notifyListeners();
@@ -103,41 +103,51 @@ class ThemeProvider with ChangeNotifier {
     } catch (_) {}
   }
 
-  // Force refresh theme (useful for debugging or manual refresh)
+  /// Cycle Light → Dark → System for a quick toggle UI.
+  Future<void> cycleThemeMode() async {
+    switch (_themeMode) {
+      case ThemeMode.light:
+        await setThemeMode(ThemeMode.dark);
+        break;
+      case ThemeMode.dark:
+        await setThemeMode(ThemeMode.system);
+        break;
+      case ThemeMode.system:
+        await setThemeMode(ThemeMode.light);
+        break;
+    }
+  }
+
   void refreshTheme() {
     _updateDarkMode();
     notifyListeners();
   }
 
-  Future<void> forceLightTheme() async {
-    await setThemeMode(ThemeMode.light);
-  }
+  Future<void> forceLightTheme() => setThemeMode(ThemeMode.light);
+  Future<void> forceSystemTheme() => setThemeMode(ThemeMode.system);
 
-  Future<void> forceSystemTheme() async {
-    await setThemeMode(ThemeMode.system);
-  }
-
-  // Check if theme is properly initialized
   bool get isInitialized => true;
+
+  // ── WidgetsBindingObserver ─────────────────────────────────────────────
+  @override
+  void didChangePlatformBrightness() {
+    // Only react when following system; otherwise the user picked a fixed
+    // theme and we leave it alone.
+    if (_themeMode == ThemeMode.system) {
+      final previous = _isDarkMode;
+      _updateDarkMode();
+      if (_isDarkMode != previous) {
+        notifyListeners();
+      }
+    }
+  }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(this));
-    super.dispose();
-  }
-}
-
-// App lifecycle observer to catch system theme changes
-class _AppLifecycleObserver extends WidgetsBindingObserver {
-  final ThemeProvider _themeProvider;
-
-  _AppLifecycleObserver(this._themeProvider);
-
-  @override
-  void didChangePlatformBrightness() {
-    if (_themeProvider._themeMode == ThemeMode.system) {
-      _themeProvider._updateDarkMode();
-      _themeProvider.notifyListeners();
+    if (_observerRegistered) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerRegistered = false;
     }
+    super.dispose();
   }
 }
