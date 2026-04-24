@@ -22,6 +22,48 @@ import {
 } from 'lucide-react'
 import type { Tool, ToolHistory } from '@/lib/types/database'
 
+const HISTORY_PREVIEW = 4
+
+function HistoryCard({ history }: { history: ToolHistory[] }) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? history : history.slice(0, HISTORY_PREVIEW)
+
+  return (
+    <div className="bg-card border border-border rounded-xl">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="text-sm font-semibold">History</h2>
+      </div>
+      <div className="divide-y divide-border">
+        {history.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">No history recorded</div>
+        ) : (
+          visible.map((h) => (
+            <div key={h.id} className="px-5 py-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium">{h.action}</span>
+                <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">{timeAgo(h.timestamp)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
+              {h.performed_by && (
+                <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+      {history.length > HISTORY_PREVIEW && (
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="w-full px-5 py-3 text-xs text-muted-foreground hover:text-foreground border-t border-border transition-colors text-center"
+        >
+          {expanded ? 'Show less' : `Show ${history.length - HISTORY_PREVIEW} more`}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function ToolDetailPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -113,13 +155,13 @@ export default function ToolDetailPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 lg:items-stretch">
+      <div className="grid lg:grid-cols-3 gap-6 lg:items-start">
         {/* Left column: image + details */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Image */}
+          {/* Image — same width as details, tall enough to feel intentional */}
           {tool.image_path && (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="relative w-full h-56">
+              <div className="relative w-full h-72">
                 <Image
                   src={tool.image_path}
                   alt={tool.name}
@@ -132,7 +174,7 @@ export default function ToolDetailPage() {
           )}
 
           {/* Details */}
-          <div className="bg-card border border-border rounded-xl flex-1">
+          <div className="bg-card border border-border rounded-xl">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold">Details</h2>
             </div>
@@ -158,33 +200,8 @@ export default function ToolDetailPage() {
           </div>
         </div>
 
-        {/* History — stretches to match full left column height */}
-        <div className="bg-card border border-border rounded-xl flex flex-col">
-          <div className="px-5 py-4 border-b border-border shrink-0">
-            <h2 className="text-sm font-semibold">History</h2>
-          </div>
-          <div className="divide-y divide-border overflow-y-auto flex-1">
-            {history.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                No history recorded
-              </div>
-            ) : (
-              history.map((h) => (
-                <div key={h.id} className="px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{h.action}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{timeAgo(h.timestamp)}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
-                  {h.performed_by && (
-                    <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        {/* History — natural height, scrollable when content grows */}
+        <HistoryCard history={history} />
       </div>
     </div>
   )
