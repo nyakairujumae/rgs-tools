@@ -97,6 +97,18 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Keep native select dropdown menus readable in dark mode */
+select,
+select option,
+select optgroup {
+  color: var(--color-foreground);
+}
+
+select option,
+select optgroup {
+  background-color: var(--color-popover);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

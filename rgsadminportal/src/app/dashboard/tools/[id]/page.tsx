@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { formatAED, formatDate, timeAgo } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -110,6 +111,25 @@ export default function ToolDetailPage() {
             <span className="text-sm text-muted-foreground">Type: {tool.tool_type}</span>
           </div>
         </div>
+      </div>
+
+      {/* Tool image */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {tool.image_path ? (
+          <div className="relative w-full h-[220px] sm:h-[320px]">
+            <Image
+              src={tool.image_path}
+              alt={tool.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 1200px"
+            />
+          </div>
+        ) : (
+          <div className="h-[160px] sm:h-[220px] flex items-center justify-center text-sm text-muted-foreground bg-muted/20">
+            No image available for this tool
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
