@@ -971,6 +971,23 @@ class AuthProvider with ChangeNotifier {
       // This should happen regardless of session status since technicians are auto-confirmed
       if (_user != null) {
         try {
+          // Persist to admin notification center first so bell list and push stay in sync
+          await SupabaseService.client.rpc(
+            'create_admin_notification',
+            params: {
+              'p_title': 'New User Registration',
+              'p_message': '$formattedName has registered and is waiting for approval',
+              'p_technician_name': formattedName,
+              'p_technician_email': email,
+              'p_type': 'access_request',
+              'p_data': {
+                'user_id': _user!.id,
+                'email': email,
+              },
+            },
+          );
+          Logger.debug('✅ Admin notification created in notification center for technician registration');
+
           Logger.debug('📧 Sending push notification for new technician registration...');
           await PushNotificationService.sendToAdmins(
             title: 'New User Registration',

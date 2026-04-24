@@ -56,7 +56,7 @@ export default function AssignToolPage() {
   }
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-[1200px] mx-auto space-y-5">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Assign Tool</h1>
         <p className="text-sm text-muted-foreground">
@@ -65,8 +65,8 @@ export default function AssignToolPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
@@ -76,7 +76,8 @@ export default function AssignToolPage() {
             className="w-full h-9 pl-9 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <div className="flex items-center rounded-lg border border-input overflow-hidden text-sm">
+        <div className="overflow-x-auto">
+        <div className="flex items-center rounded-lg border border-input overflow-hidden text-sm min-w-max">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s}
@@ -91,6 +92,7 @@ export default function AssignToolPage() {
             </button>
           ))}
         </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -101,7 +103,29 @@ export default function AssignToolPage() {
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center text-sm text-muted-foreground">No tools found</div>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
+        <>
+          <div className="sm:hidden space-y-2">
+            {filtered.map((tool) => (
+              <div key={tool.id} className="rounded-xl border border-border p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{tool.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{tool.category || '—'}</p>
+                  </div>
+                  <StatusBadge status={tool.status} />
+                </div>
+                <p className="text-xs text-muted-foreground font-mono truncate">{tool.serial_number || '—'}</p>
+                <button
+                  onClick={() => setAssignTarget(tool)}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  {tool.assigned_to ? 'Reassign' : 'Assign'}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
@@ -135,6 +159,7 @@ export default function AssignToolPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {assignTarget && (

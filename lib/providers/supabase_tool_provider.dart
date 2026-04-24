@@ -122,6 +122,30 @@ class SupabaseToolProvider with ChangeNotifier {
 
       // Send push notification to admins about new tool (non-blocking)
       try {
+        final currentUser = SupabaseService.client.auth.currentUser;
+        final currentUserName = currentUser?.userMetadata?['full_name']?.toString() ??
+            currentUser?.email?.toString() ??
+            'System';
+        final currentUserEmail = currentUser?.email?.toString() ?? 'system@rgs.local';
+
+        // Persist notification so it appears in admin notification center
+        await SupabaseService.client.rpc(
+          'create_admin_notification',
+          params: {
+            'p_title': 'New Tool Added',
+            'p_message': '${tool.name} has been added to the inventory',
+            'p_technician_name': currentUserName,
+            'p_technician_email': currentUserEmail,
+            'p_type': 'tool_added',
+            'p_data': {
+              'tool_id': createdTool.id,
+              'tool_name': tool.name,
+              'created_by': currentUserName,
+            },
+          },
+        );
+        debugPrint('✅ Admin notification saved for new tool');
+
         await PushNotificationService.sendToAdmins(
           fromUserId: null, // System notification
           title: 'New Tool Added',

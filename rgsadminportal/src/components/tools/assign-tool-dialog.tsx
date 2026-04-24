@@ -110,9 +110,9 @@ export function AssignToolDialog({ tool, open, onClose, onSuccess }: AssignToolD
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] bg-black/50">
-      <div className="bg-card border border-border rounded-xl w-full max-w-[480px] max-h-[70vh] overflow-hidden shadow-xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-[10vh] bg-black/50 p-2 sm:p-0">
+      <div className="bg-card border border-border rounded-xl w-full max-w-[480px] max-h-[92vh] sm:max-h-[70vh] overflow-hidden shadow-xl">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border">
           <h2 className="text-lg font-semibold">
             {tool.assigned_to ? 'Reassign' : 'Assign'} Tool
           </h2>
@@ -121,7 +121,7 @@ export function AssignToolDialog({ tool, open, onClose, onSuccess }: AssignToolD
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Current assignment */}
           <div className="bg-muted/50 rounded-lg p-3 mb-4">
             <p className="text-sm font-medium">{tool.name}</p>
@@ -155,7 +155,7 @@ export function AssignToolDialog({ tool, open, onClose, onSuccess }: AssignToolD
           </div>
 
           {/* Technician list */}
-          <div className="max-h-[300px] overflow-y-auto space-y-1">
+          <div className="max-h-[42vh] sm:max-h-[300px] overflow-y-auto space-y-1">
             {loading ? (
               <div className="py-8 flex justify-center">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -188,14 +188,14 @@ export function AssignToolDialog({ tool, open, onClose, onSuccess }: AssignToolD
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
-          <button type="button" onClick={onClose} className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-border">
+          <button type="button" onClick={onClose} className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors w-full sm:w-auto">
             Cancel
           </button>
           <button
             onClick={handleAssign}
             disabled={saving || !selectedTechId}
-            className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Assign
