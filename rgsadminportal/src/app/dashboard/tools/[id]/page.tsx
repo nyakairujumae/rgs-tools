@@ -113,21 +113,6 @@ export default function ToolDetailPage() {
         </div>
       </div>
 
-      {/* Tool image */}
-      {tool.image_path && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="relative w-full h-56">
-            <Image
-              src={tool.image_path}
-              alt={tool.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, 1200px"
-            />
-          </div>
-        </div>
-      )}
-
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Details */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl">
@@ -155,31 +140,48 @@ export default function ToolDetailPage() {
           )}
         </div>
 
-        {/* History */}
-        <div className="bg-card border border-border rounded-xl">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold">History</h2>
-          </div>
-          <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-            {history.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                No history recorded
+        {/* Right column: image + history */}
+        <div className="flex flex-col gap-6">
+          {tool.image_path && (
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="relative w-full h-48">
+                <Image
+                  src={tool.image_path}
+                  alt={tool.name}
+                  fill
+                  className="object-cover"
+                  sizes="400px"
+                />
               </div>
-            ) : (
-              history.map((h) => (
-                <div key={h.id} className="px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{h.action}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{timeAgo(h.timestamp)}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
-                  {h.performed_by && (
-                    <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
-                  )}
+            </div>
+          )}
+
+          {/* History */}
+          <div className="bg-card border border-border rounded-xl flex-1">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold">History</h2>
+            </div>
+            <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
+              {history.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No history recorded
                 </div>
-              ))
-            )}
+              ) : (
+                history.map((h) => (
+                  <div key={h.id} className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-sm font-medium">{h.action}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{timeAgo(h.timestamp)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
+                    {h.performed_by && (
+                      <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
