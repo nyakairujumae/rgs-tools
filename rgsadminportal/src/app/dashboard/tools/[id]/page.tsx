@@ -113,75 +113,76 @@ export default function ToolDetailPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Details */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-xl">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold">Details</h2>
-          </div>
-          <div className="p-5 grid sm:grid-cols-2 gap-4">
-            {details.map((d) => (
-              <div key={d.label} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                  {d.icon}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{d.label}</p>
-                  <p className="text-sm font-medium mt-0.5">{d.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          {tool.notes && (
-            <div className="px-5 pb-5">
-              <p className="text-xs text-muted-foreground mb-1">Notes</p>
-              <p className="text-sm bg-muted/50 rounded-lg p-3">{tool.notes}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right column: image + history */}
-        <div className="flex flex-col gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 lg:items-stretch">
+        {/* Left column: image + details */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Image */}
           {tool.image_path && (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="relative w-full h-48">
+              <div className="relative w-full h-56">
                 <Image
                   src={tool.image_path}
                   alt={tool.name}
                   fill
                   className="object-cover"
-                  sizes="400px"
+                  sizes="800px"
                 />
               </div>
             </div>
           )}
 
-          {/* History */}
+          {/* Details */}
           <div className="bg-card border border-border rounded-xl flex-1">
             <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-sm font-semibold">History</h2>
+              <h2 className="text-sm font-semibold">Details</h2>
             </div>
-            <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-              {history.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  No history recorded
-                </div>
-              ) : (
-                history.map((h) => (
-                  <div key={h.id} className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-sm font-medium">{h.action}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">{timeAgo(h.timestamp)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
-                    {h.performed_by && (
-                      <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
-                    )}
+            <div className="p-5 grid sm:grid-cols-2 gap-4">
+              {details.map((d) => (
+                <div key={d.label} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                    {d.icon}
                   </div>
-                ))
-              )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">{d.label}</p>
+                    <p className="text-sm font-medium mt-0.5">{d.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+            {tool.notes && (
+              <div className="px-5 pb-5">
+                <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                <p className="text-sm bg-muted/50 rounded-lg p-3">{tool.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* History — stretches to match full left column height */}
+        <div className="bg-card border border-border rounded-xl flex flex-col">
+          <div className="px-5 py-4 border-b border-border shrink-0">
+            <h2 className="text-sm font-semibold">History</h2>
+          </div>
+          <div className="divide-y divide-border overflow-y-auto flex-1">
+            {history.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No history recorded
+              </div>
+            ) : (
+              history.map((h) => (
+                <div key={h.id} className="px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{h.action}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{timeAgo(h.timestamp)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 pl-5">{h.description}</p>
+                  {h.performed_by && (
+                    <p className="text-xs text-muted-foreground pl-5">by {h.performed_by}</p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
