@@ -114,21 +114,19 @@ export default function ToolDetailPage() {
       </div>
 
       {/* Tool image */}
-      {tool.image_path ? (
-        <div className="flex justify-center">
-          <div className="bg-card border border-border rounded-xl overflow-hidden w-full max-w-sm">
-            <div className="relative w-full h-64 bg-muted/20">
-              <Image
-                src={tool.image_path}
-                alt={tool.name}
-                fill
-                className="object-contain p-3"
-                sizes="384px"
-              />
-            </div>
+      {tool.image_path && (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="relative w-full h-56">
+            <Image
+              src={tool.image_path}
+              alt={tool.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 1200px"
+            />
           </div>
         </div>
-      ) : null}
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Details */}
