@@ -23,10 +23,15 @@ import {
   ChevronsUpDown,
   List,
   LayoutGrid,
+  Pencil,
+  Trash2,
+  Package,
 } from 'lucide-react'
+import { deleteTool as deleteToolAction } from '@/lib/supabase/actions'
 import { AssignToolDialog } from '@/components/tools/assign-tool-dialog'
 import { ReassignToolDialog } from '@/components/tools/reassign-tool-dialog'
 import { ReturnToolDialog } from '@/components/tools/return-tool-dialog'
+import { EditToolDialog } from '@/components/tools/edit-tool-dialog'
 import type { Tool, Technician } from '@/lib/types/database'
 
 type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'condition' | 'current_value'
@@ -46,6 +51,9 @@ export default function SharedToolsPage() {
   const [assignTool, setAssignTool] = useState<Tool | null>(null)
   const [reassignTool, setReassignTool] = useState<Tool | null>(null)
   const [returnTool, setReturnTool] = useState<Tool | null>(null)
+  const [editTool, setEditTool] = useState<Tool | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<Tool | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -131,6 +139,39 @@ export default function SharedToolsPage() {
     } else {
       setTools((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
     }
+  }
+
+  const toggleToolType = async (tool: Tool) => {
+    const supabase = createClient()
+    const newType = tool.tool_type === 'shared' ? 'inventory' : 'shared'
+    const { error } = await supabase
+      .from('tools')
+      .update({ tool_type: newType, updated_at: new Date().toISOString() })
+      .eq('id', tool.id)
+    if (!error) {
+      await supabase.from('tool_history').insert({
+        tool_id: tool.id,
+        tool_name: tool.name,
+        action: newType === 'shared' ? 'Marked as Shared' : 'Marked as Inventory',
+        description: `${tool.name} converted to ${newType} tool`,
+        old_value: tool.tool_type,
+        new_value: newType,
+        performed_by: 'Admin',
+        performed_by_role: 'admin',
+        timestamp: new Date().toISOString(),
+      })
+      setTools((prev) => prev.filter((t) => t.id !== tool.id))
+    }
+    setActionMenuId(null)
+  }
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return
+    setDeleting(true)
+    const ok = await deleteToolAction(deleteConfirm.id)
+    if (ok) setTools((prev) => prev.filter((t) => t.id !== deleteConfirm.id))
+    setDeleting(false)
+    setDeleteConfirm(null)
   }
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -357,21 +398,31 @@ export default function SharedToolsPage() {
                           <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                         </button>
                         {actionMenuId === tool.id && (
-                          <div className="absolute right-4 top-full z-50 w-40 bg-popover border border-border rounded-lg shadow-lg py-1">
+                          <div className="absolute right-4 top-full z-50 w-44 bg-popover border border-border rounded-lg shadow-lg py-1">
                             <Link
                               href={`/dashboard/tools/${tool.id}`}
                               className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full"
                             >
                               <Eye className="w-3.5 h-3.5" /> View
                             </Link>
-                            {!tool.assigned_to && (
-                              <button
-                                onClick={() => { setAssignTool(tool); setActionMenuId(null) }}
-                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
-                              >
-                                <UserPlus className="w-3.5 h-3.5" /> Assign
-                              </button>
-                            )}
+                            <button
+                              onClick={() => { setEditTool(tool); setActionMenuId(null) }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                            >
+                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            </button>
+                            <button
+                              onClick={() => { setAssignTool(tool); setActionMenuId(null) }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" /> Assign
+                            </button>
+                            <button
+                              onClick={() => toggleToolType(tool)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                            >
+                              <Package className="w-3.5 h-3.5" /> Make Inventory
+                            </button>
                             {tool.assigned_to && (
                               <>
                                 <button
@@ -388,6 +439,13 @@ export default function SharedToolsPage() {
                                 </button>
                               </>
                             )}
+                            <div className="border-t border-border my-1" />
+                            <button
+                              onClick={() => { setDeleteConfirm(tool); setActionMenuId(null) }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
                           </div>
                         )}
                       </td>
@@ -403,6 +461,47 @@ export default function SharedToolsPage() {
       {/* Close action menus when clicking outside */}
       {actionMenuId && (
         <div className="fixed inset-0 z-40" onClick={() => setActionMenuId(null)} />
+      )}
+
+      {/* Edit dialog */}
+      {editTool && (
+        <EditToolDialog
+          tool={editTool}
+          open={!!editTool}
+          onClose={() => setEditTool(null)}
+          onSuccess={(updated) => {
+            handleToolUpdated(updated)
+            setEditTool(null)
+          }}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-[400px] w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold">Delete Tool</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="h-9 px-4 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Dialogs */}
