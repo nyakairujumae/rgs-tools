@@ -161,12 +161,12 @@ export default function ToolDetailPage() {
           {/* Image — same width as details, tall enough to feel intentional */}
           {tool.image_path && (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="relative w-full h-72">
+              <div className="relative w-full h-72 bg-muted/30">
                 <Image
                   src={tool.image_path}
                   alt={tool.name}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                   sizes="800px"
                 />
               </div>
