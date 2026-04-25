@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { formatAED, formatDate, timeAgo } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -71,6 +72,7 @@ export default function ToolDetailPage() {
   const [history, setHistory] = useState<ToolHistory[]>([])
   const [assignedToName, setAssignedToName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
     const fetch = async () => {
@@ -159,8 +161,22 @@ export default function ToolDetailPage() {
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Details */}
           <div className="bg-card border border-border rounded-xl">
-            <div className="px-5 py-4 border-b border-border">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-4">
               <h2 className="text-sm font-semibold">Details</h2>
+              {tool.image_path && (
+                <button
+                  onClick={() => setLightbox(true)}
+                  className="w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 hover:opacity-80 transition-opacity"
+                >
+                  <Image
+                    src={tool.image_path}
+                    alt={tool.name}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              )}
             </div>
             <div className="p-5 grid sm:grid-cols-2 gap-4">
               {details.map((d) => (
@@ -187,6 +203,30 @@ export default function ToolDetailPage() {
         {/* History — natural height, scrollable when content grows */}
         <HistoryCard history={history} />
       </div>
+
+      {/* Image lightbox */}
+      {lightbox && tool.image_path && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightbox(false)}
+        >
+          <div className="relative max-w-3xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={tool.image_path}
+              alt={tool.name}
+              width={1200}
+              height={900}
+              className="w-full h-auto max-h-[90vh] object-contain rounded-xl"
+            />
+            <button
+              onClick={() => setLightbox(false)}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors text-lg leading-none"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
