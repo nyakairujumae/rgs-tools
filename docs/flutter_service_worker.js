@@ -1,31 +1,36 @@
 'use strict';
 
-self.addEventListener('install', () => {
+const CACHE_NAME = 'rgs-tools-v1';
+
+self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll([
+        '/',
+        '/index.html',
+        '/manifest.json',
+        '/favicon.png',
+        '/icons/Icon-192.png',
+        '/icons/Icon-512.png',
+        '/icons/Icon-maskable-192.png',
+        '/icons/Icon-maskable-512.png',
+      ]).catch(() => {})
+    )
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    (async () => {
-      try {
-        await self.registration.unregister();
-      } catch (e) {
-        console.warn('Failed to unregister the service worker:', e);
-      }
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
 
-      try {
-        const clients = await self.clients.matchAll({
-          type: 'window',
-        });
-        // Reload clients to ensure they are not using the old service worker.
-        clients.forEach((client) => {
-          if (client.url && 'navigate' in client) {
-            client.navigate(client.url);
-          }
-        });
-      } catch (e) {
-        console.warn('Failed to navigate some service worker clients:', e);
-      }
-    })()
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
