@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { formatAED, formatDate, timeAgo } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -158,21 +157,6 @@ export default function ToolDetailPage() {
       <div className="grid lg:grid-cols-3 gap-6 lg:items-start">
         {/* Left column: image + details */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Image — same width as details, tall enough to feel intentional */}
-          {tool.image_path && (
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="relative w-full h-72 bg-muted/30">
-                <Image
-                  src={tool.image_path}
-                  alt={tool.name}
-                  fill
-                  className="object-contain"
-                  sizes="800px"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Details */}
           <div className="bg-card border border-border rounded-xl">
             <div className="px-5 py-4 border-b border-border">
