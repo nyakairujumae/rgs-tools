@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'RGS Tools - Tools Management Software',
   description: 'Tools Management Software.',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'RGS Tools',
+    title: 'RGS Admin',
   },
   icons: {
     icon: [
@@ -36,6 +36,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="antialiased">
         {children}
+        <Script
+          id="sw-register"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}`,
+          }}
+        />
       </body>
     </html>
   )
