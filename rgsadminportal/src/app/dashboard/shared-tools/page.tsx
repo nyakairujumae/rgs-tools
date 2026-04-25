@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatAED } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { FilterSelect } from '@/components/shared/filter-select'
 import Image from 'next/image'
 import {
   Search,
@@ -16,11 +18,19 @@ import {
   MoreHorizontal,
   Eye,
   Share2,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  List,
+  LayoutGrid,
 } from 'lucide-react'
 import { AssignToolDialog } from '@/components/tools/assign-tool-dialog'
 import { ReassignToolDialog } from '@/components/tools/reassign-tool-dialog'
 import { ReturnToolDialog } from '@/components/tools/return-tool-dialog'
 import type { Tool, Technician } from '@/lib/types/database'
+
+type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'condition' | 'current_value'
+type SortDir = 'asc' | 'desc'
 
 export default function SharedToolsPage() {
   const [tools, setTools] = useState<Tool[]>([])
@@ -29,19 +39,16 @@ export default function SharedToolsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [actionMenuId, setActionMenuId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [assignTool, setAssignTool] = useState<Tool | null>(null)
   const [reassignTool, setReassignTool] = useState<Tool | null>(null)
   const [returnTool, setReturnTool] = useState<Tool | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
-    let debounceTimer: NodeJS.Timeout | null = null
-
-    const debouncedFetch = () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(() => fetchData(), 1000)
-    }
 
     const fetchData = async () => {
       const [toolsRes, techRes] = await Promise.all([
@@ -56,19 +63,16 @@ export default function SharedToolsPage() {
 
     const channel = supabase
       .channel('shared-tools-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, () => fetchData())
       .subscribe()
 
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const getTechName = (userId?: string) => {
-    if (!userId) return null
+    if (!userId) return '-'
     const tech = technicians.find((t) => t.user_id === userId || t.id === userId)
-    return tech?.name || null
+    return tech?.name || '-'
   }
 
   const categories = useMemo(() => {
@@ -85,27 +89,41 @@ export default function SharedToolsPage() {
         (t) =>
           t.name.toLowerCase().includes(q) ||
           t.category?.toLowerCase().includes(q) ||
-          t.brand?.toLowerCase().includes(q)
+          t.brand?.toLowerCase().includes(q) ||
+          t.serial_number?.toLowerCase().includes(q) ||
+          t.model?.toLowerCase().includes(q)
       )
     }
 
-    if (statusFilter !== 'all') {
-      result = result.filter((t) => t.status === statusFilter)
-    }
+    if (statusFilter !== 'all') result = result.filter((t) => t.status === statusFilter)
+    if (categoryFilter !== 'all') result = result.filter((t) => t.category === categoryFilter)
 
-    if (categoryFilter !== 'all') {
-      result = result.filter((t) => t.category === categoryFilter)
-    }
+    result = [...result].sort((a, b) => {
+      let aVal = a[sortField] ?? ''
+      let bVal = b[sortField] ?? ''
+
+      if (sortField === 'current_value') {
+        aVal = a.current_value ?? a.purchase_price ?? 0
+        bVal = b.current_value ?? b.purchase_price ?? 0
+        return sortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number)
+      }
+
+      const strA = String(aVal).toLowerCase()
+      const strB = String(bVal).toLowerCase()
+      return sortDir === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA)
+    })
 
     return result
-  }, [tools, search, statusFilter, categoryFilter])
+  }, [tools, search, statusFilter, categoryFilter, sortField, sortDir])
 
-  const counts = useMemo(() => ({
-    total: tools.length,
-    available: tools.filter((t) => t.status === 'Available').length,
-    inUse: tools.filter((t) => t.status === 'In Use').length,
-    maintenance: tools.filter((t) => t.status === 'Maintenance').length,
-  }), [tools])
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
 
   const handleToolUpdated = (updated: Tool) => {
     if (updated.tool_type !== 'shared') {
@@ -115,61 +133,26 @@ export default function SharedToolsPage() {
     }
   }
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+    return sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />
+  }
+
   if (loading) {
     return (
-      <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-4 animate-pulse">
-        <div className="h-7 w-48 bg-muted rounded" />
-        <div className="h-4 w-64 bg-muted rounded" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 bg-card border border-border rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-card border border-border rounded-xl">
-              <div className="aspect-square bg-muted rounded-t-xl" />
-              <div className="p-3 space-y-2">
-                <div className="h-4 w-24 bg-muted rounded" />
-                <div className="h-3 w-16 bg-muted rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-4">
+    <div className="p-6 max-w-[1600px] mx-auto space-y-4">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <Share2 className="w-5 h-5 text-primary" />
+      <div className="flex items-center justify-between">
+        <div>
           <h1 className="text-xl font-semibold tracking-tight">Shared Tools</h1>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          Access and monitor tools that are shared across teams
-        </p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Shared</p>
-          <p className="text-2xl font-semibold mt-1">{counts.total}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Available</p>
-          <p className="text-2xl font-semibold mt-1 text-emerald-600">{counts.available}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">In Use</p>
-          <p className="text-2xl font-semibold mt-1 text-blue-600">{counts.inUse}</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Maintenance</p>
-          <p className="text-2xl font-semibold mt-1 text-amber-600">{counts.maintenance}</p>
+          <p className="text-sm text-muted-foreground">{tools.length} shared tools</p>
         </div>
       </div>
 
@@ -180,7 +163,7 @@ export default function SharedToolsPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value) }}
             placeholder="Search shared tools..."
             className="w-full h-9 pl-9 pr-8 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -191,29 +174,27 @@ export default function SharedToolsPage() {
           )}
         </div>
 
-        <select
+        <FilterSelect
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-9 px-3 rounded-lg bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23737373%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
-        >
-          <option value="all">All Status</option>
-          <option value="Available">Available</option>
-          <option value="In Use">In Use</option>
-          <option value="Assigned">Assigned</option>
-          <option value="Maintenance">Maintenance</option>
-          <option value="Retired">Retired</option>
-        </select>
+          onChange={setStatusFilter}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'Available', label: 'Available' },
+            { value: 'In Use', label: 'In Use' },
+            { value: 'Assigned', label: 'Assigned' },
+            { value: 'Maintenance', label: 'Maintenance' },
+            { value: 'Retired', label: 'Retired' },
+          ]}
+        />
 
-        <select
+        <FilterSelect
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-9 px-3 rounded-lg bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer appearance-none pr-7 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23737373%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
-        >
-          <option value="all">All Categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          onChange={setCategoryFilter}
+          options={[
+            { value: 'all', label: 'All Categories' },
+            ...categories.map((c) => ({ value: c, label: c })),
+          ]}
+        />
 
         {(search || statusFilter !== 'all' || categoryFilter !== 'all') && (
           <button
@@ -223,34 +204,48 @@ export default function SharedToolsPage() {
             Clear
           </button>
         )}
+
+        <div className="ml-auto flex items-center gap-1 bg-muted rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode('table')}
+            className={cn(
+              'flex items-center justify-center w-8 h-8 rounded-md transition-colors',
+              viewMode === 'table' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Table view"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              'flex items-center justify-center w-8 h-8 rounded-md transition-colors',
+              viewMode === 'grid' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Grid view"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Share2 className="w-12 h-12 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-medium">
-            {search || statusFilter !== 'all' || categoryFilter !== 'all'
-              ? 'No Tools Found'
-              : 'No Shared Tools'}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {search || statusFilter !== 'all' || categoryFilter !== 'all'
-              ? 'Try adjusting your filters or search terms'
-              : 'Go to Tools and mark tools as "Shared" so they appear here'}
-          </p>
-        </div>
-      ) : (
+      {/* Grid View */}
+      {viewMode === 'grid' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {filtered.map((tool) => {
-            const holder = getTechName(tool.assigned_to)
-            return (
-              <div
+          {filtered.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-muted-foreground">
+              {search || statusFilter !== 'all' || categoryFilter !== 'all'
+                ? 'No tools match your filters'
+                : 'No shared tools'}
+            </div>
+          ) : (
+            filtered.map((tool) => (
+              <Link
                 key={tool.id}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md transition-all group relative"
+                href={`/dashboard/tools/${tool.id}`}
+                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md transition-all group"
               >
-                {/* Image */}
-                <div className="aspect-square bg-muted/30 flex items-center justify-center overflow-hidden relative">
+                <div className="aspect-square bg-muted/30 flex items-center justify-center overflow-hidden">
                   {tool.image_path ? (
                     <Image
                       src={tool.image_path}
@@ -262,72 +257,146 @@ export default function SharedToolsPage() {
                   ) : (
                     <Camera className="w-8 h-8 text-muted-foreground/20" />
                   )}
-                  {/* Action menu button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setActionMenuId(actionMenuId === tool.id ? null : tool.id)
-                    }}
-                    className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                  {/* Action menu dropdown */}
-                  {actionMenuId === tool.id && (
-                    <div
-                      className="absolute top-10 right-2 z-50 w-44 bg-popover border border-border rounded-lg shadow-lg py-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {tool.status === 'Available' && (
-                        <button
-                          onClick={() => { setAssignTool(tool); setActionMenuId(null) }}
-                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
-                        >
-                          <UserPlus className="w-3.5 h-3.5" /> Assign
-                        </button>
-                      )}
-                      {tool.status === 'In Use' && (
-                        <>
-                          <button
-                            onClick={() => { setReassignTool(tool); setActionMenuId(null) }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
-                          >
-                            <ArrowLeftRight className="w-3.5 h-3.5" /> Reassign
-                          </button>
-                          <button
-                            onClick={() => { setReturnTool(tool); setActionMenuId(null) }}
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" /> Return
-                          </button>
-                        </>
-                      )}
-                      <a
-                        href={`/dashboard/tools/${tool.id}`}
-                        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> View Details
-                      </a>
-                    </div>
-                  )}
                 </div>
-
-                {/* Info */}
                 <div className="p-3 space-y-1.5">
                   <h3 className="font-medium text-sm truncate">{tool.name}</h3>
                   <p className="text-xs text-muted-foreground truncate">{tool.category}</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge status={tool.status} />
-                    {holder && (
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[80px]" title={holder}>
-                        {holder}
-                      </span>
-                    )}
-                  </div>
+                  <StatusBadge status={tool.status} />
                 </div>
-              </div>
-            )
-          })}
+              </Link>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  {[
+                    { field: 'name' as SortField, label: 'Name' },
+                    { field: 'category' as SortField, label: 'Category' },
+                    { field: 'brand' as SortField, label: 'Brand' },
+                    { field: 'serial_number' as SortField, label: 'Serial #' },
+                    { field: 'status' as SortField, label: 'Status' },
+                    { field: 'condition' as SortField, label: 'Condition' },
+                    { field: 'current_value' as SortField, label: 'Value' },
+                  ].map(({ field, label }) => (
+                    <th key={field} className="px-4 py-3 text-left">
+                      <button
+                        onClick={() => toggleSort(field)}
+                        className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        {label}
+                        <SortIcon field={field} />
+                      </button>
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Assigned To</th>
+                  <th className="w-10 px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                      {search || statusFilter !== 'all' || categoryFilter !== 'all'
+                        ? 'No tools match your filters'
+                        : 'No shared tools'}
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((tool) => (
+                    <tr key={tool.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
+                            {tool.image_path ? (
+                              <Image
+                                src={tool.image_path}
+                                alt={tool.name}
+                                width={36}
+                                height={36}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+                                <Camera className="w-4 h-4 text-muted-foreground/30" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <Link href={`/dashboard/tools/${tool.id}`} className="font-medium hover:text-primary transition-colors">
+                              {tool.name}
+                            </Link>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Share2 className="w-2.5 h-2.5 text-violet-500" />
+                              <span className="text-[10px] text-violet-600 font-medium">Shared</span>
+                            </div>
+                            {tool.model && (
+                              <p className="text-xs text-muted-foreground">{tool.model}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{tool.category}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{tool.brand || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{tool.serial_number || '-'}</td>
+                      <td className="px-4 py-3"><StatusBadge status={tool.status} /></td>
+                      <td className="px-4 py-3 text-muted-foreground">{tool.condition}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatAED(tool.current_value || tool.purchase_price)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{getTechName(tool.assigned_to)}</td>
+                      <td className="px-4 py-3 relative">
+                        <button
+                          onClick={() => setActionMenuId(actionMenuId === tool.id ? null : tool.id)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
+                        >
+                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        {actionMenuId === tool.id && (
+                          <div className="absolute right-4 top-full z-50 w-40 bg-popover border border-border rounded-lg shadow-lg py-1">
+                            <Link
+                              href={`/dashboard/tools/${tool.id}`}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View
+                            </Link>
+                            {!tool.assigned_to && (
+                              <button
+                                onClick={() => { setAssignTool(tool); setActionMenuId(null) }}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" /> Assign
+                              </button>
+                            )}
+                            {tool.assigned_to && (
+                              <>
+                                <button
+                                  onClick={() => { setReassignTool(tool); setActionMenuId(null) }}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                                >
+                                  <ArrowLeftRight className="w-3.5 h-3.5" /> Reassign
+                                </button>
+                                <button
+                                  onClick={() => { setReturnTool(tool); setActionMenuId(null) }}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors w-full text-left"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" /> Return
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -345,7 +414,6 @@ export default function SharedToolsPage() {
           onSuccess={(updated) => { handleToolUpdated(updated); setAssignTool(null) }}
         />
       )}
-
       {reassignTool && (
         <ReassignToolDialog
           tool={reassignTool}
@@ -354,7 +422,6 @@ export default function SharedToolsPage() {
           onSuccess={(updated) => { handleToolUpdated(updated); setReassignTool(null) }}
         />
       )}
-
       {returnTool && (
         <ReturnToolDialog
           tool={returnTool}
