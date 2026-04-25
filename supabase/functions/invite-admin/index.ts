@@ -95,16 +95,28 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Not authorized to invite admins" }, 403);
   }
 
-  const { data: permission } = await supabase
-    .from("position_permissions")
-    .select("is_granted")
-    .eq("position_id", requesterProfile.position_id)
-    .eq("permission_name", "can_manage_admins")
-    .eq("is_granted", true)
+  // Fetch position name to apply the same super admin bypass used in the frontend
+  const { data: positionData } = await supabase
+    .from("admin_positions")
+    .select("name")
+    .eq("id", requesterProfile.position_id)
     .maybeSingle();
 
-  if (!permission) {
-    return jsonResponse({ error: "Missing admin management permission" }, 403);
+  const positionName = positionData?.name?.toLowerCase() ?? "";
+  const isSuperAdmin = positionName === "super admin" || positionName === "ceo";
+
+  if (!isSuperAdmin) {
+    const { data: permission } = await supabase
+      .from("position_permissions")
+      .select("is_granted")
+      .eq("position_id", requesterProfile.position_id)
+      .eq("permission_name", "can_manage_admins")
+      .eq("is_granted", true)
+      .maybeSingle();
+
+    if (!permission) {
+      return jsonResponse({ error: "Missing admin management permission" }, 403);
+    }
   }
 
   let payload: {

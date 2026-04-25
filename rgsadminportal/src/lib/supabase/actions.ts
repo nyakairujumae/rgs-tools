@@ -761,14 +761,20 @@ export async function updateAdmin(
 }
 
 export async function deleteAdmin(userId: string): Promise<boolean> {
-  const { error } = await supabase()
-    .from('users')
-    .delete()
-    .eq('id', userId)
+  // Use SECURITY DEFINER RPC to bypass RLS (mirrors update_admin_user pattern)
+  const { error } = await supabase().rpc('delete_admin_user', { p_user_id: userId })
 
   if (error) {
-    console.error('Failed to delete admin:', error)
-    return false
+    console.error('Failed to delete admin via RPC:', error)
+    // Fallback: direct delete
+    const { error: fallbackError } = await supabase()
+      .from('users')
+      .delete()
+      .eq('id', userId)
+    if (fallbackError) {
+      console.error('Fallback delete failed:', fallbackError)
+      return false
+    }
   }
   return true
 }

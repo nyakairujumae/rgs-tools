@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { deleteTechnician, updateTechnician } from '@/lib/supabase/actions'
 import { StatusBadge } from '@/components/shared/status-badge'
+import Link from 'next/link'
 import {
   Search,
   Plus,
@@ -13,6 +14,7 @@ import {
   Phone,
   Pencil,
   Trash2,
+  Wrench,
 } from 'lucide-react'
 import { AddTechnicianDialog } from '@/components/technicians/add-technician-dialog'
 import type { Technician } from '@/lib/types/database'
@@ -136,55 +138,63 @@ export default function TechniciansPage() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map((tech) => (
-          <div key={tech.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold shrink-0">
-                {tech.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{tech.name}</p>
-                <p className="text-xs text-muted-foreground">{tech.department || 'No department'}</p>
-              </div>
-              <StatusBadge status={tech.status} />
-            </div>
-            <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-              {tech.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5" />
-                  <span className="truncate text-xs">{tech.email}</span>
+        {filtered.map((tech) => {
+          const toolCount = toolCountMap[tech.user_id || ''] || toolCountMap[tech.id] || 0
+          return (
+            <Link
+              key={tech.id}
+              href={`/dashboard/technicians/${tech.id}`}
+              className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-sm transition-all block"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold shrink-0">
+                  {tech.name.charAt(0).toUpperCase()}
                 </div>
-              )}
-              {tech.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-xs">{tech.phone}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{tech.name}</p>
+                  <p className="text-xs text-muted-foreground">{tech.department || 'No department'}</p>
                 </div>
-              )}
-            </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">
-                {toolCountMap[tech.user_id || ''] || 0} tools assigned
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setEditTech(tech)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-                  title="Edit"
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(tech)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+                <StatusBadge status={tech.status} />
               </div>
-            </div>
-          </div>
-        ))}
+              <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                {tech.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" />
+                    <span className="truncate text-xs">{tech.email}</span>
+                  </div>
+                )}
+                {tech.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span className="text-xs">{tech.phone}</span>
+                  </div>
+                )}
+              </div>
+              <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Wrench className="w-3 h-3" />
+                  {toolCount} {toolCount === 1 ? 'tool' : 'tools'} assigned
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditTech(tech) }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteConfirm(tech) }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </Link>
+          )
+        })}
       </div>
 
       {filtered.length === 0 && (

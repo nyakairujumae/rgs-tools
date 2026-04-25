@@ -18,6 +18,7 @@ export default function AdminManagementPage() {
   const [editAdmin, setEditAdmin] = useState<User | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<User | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const canManage = hasPermission('can_manage_admins')
 
@@ -54,12 +55,15 @@ export default function AdminManagementPage() {
   const handleDelete = async () => {
     if (!deleteConfirm) return
     setDeleting(true)
+    setDeleteError('')
     const success = await deleteAdmin(deleteConfirm.id)
     if (success) {
       setAdmins((prev) => prev.filter((a) => a.id !== deleteConfirm.id))
+      setDeleteConfirm(null)
+    } else {
+      setDeleteError('Failed to remove admin. Check your permissions or try again.')
     }
     setDeleting(false)
-    setDeleteConfirm(null)
   }
 
   const handleAdminSaved = (admin: User) => {
@@ -220,9 +224,14 @@ export default function AdminManagementPage() {
               Are you sure you want to remove <strong>{deleteConfirm.full_name}</strong>?
               This action cannot be undone.
             </p>
+            {deleteError && (
+              <p className="text-sm text-destructive mt-3 bg-destructive/10 rounded-lg px-3 py-2">
+                {deleteError}
+              </p>
+            )}
             <div className="flex justify-end gap-3 mt-6">
               <button
-                onClick={() => setDeleteConfirm(null)}
+                onClick={() => { setDeleteConfirm(null); setDeleteError('') }}
                 className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors"
               >
                 Cancel
