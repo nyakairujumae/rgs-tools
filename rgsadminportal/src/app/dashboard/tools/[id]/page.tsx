@@ -19,7 +19,11 @@ import {
   Hash,
   Loader2,
   Clock,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
+import { deleteTool as deleteToolAction } from '@/lib/supabase/actions'
+import { EditToolDialog } from '@/components/tools/edit-tool-dialog'
 import type { Tool, ToolHistory } from '@/lib/types/database'
 
 const HISTORY_PREVIEW = 4
@@ -73,6 +77,9 @@ export default function ToolDetailPage() {
   const [assignedToName, setAssignedToName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const fetch = async () => {
@@ -145,7 +152,7 @@ export default function ToolDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{tool.name}</h1>
           <div className="flex items-center gap-3 mt-2">
@@ -153,6 +160,20 @@ export default function ToolDetailPage() {
             <span className="text-sm text-muted-foreground">Condition: {tool.condition}</span>
             <span className="text-sm text-muted-foreground">Type: {tool.tool_type}</span>
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowEdit(true)}
+            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <Pencil className="w-4 h-4" /> Edit
+          </button>
+          <button
+            onClick={() => setDeleteConfirm(true)}
+            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" /> Delete
+          </button>
         </div>
       </div>
 
@@ -203,6 +224,52 @@ export default function ToolDetailPage() {
         {/* History — natural height, scrollable when content grows */}
         <HistoryCard history={history} />
       </div>
+
+      {/* Edit dialog */}
+      {showEdit && (
+        <EditToolDialog
+          tool={tool}
+          open={showEdit}
+          onClose={() => setShowEdit(false)}
+          onSuccess={(updated) => {
+            setTool(updated)
+            setShowEdit(false)
+          }}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-[400px] w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold">Delete Tool</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Are you sure you want to delete <strong>{tool.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="h-9 px-4 rounded-lg border border-input text-sm font-medium hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true)
+                  const ok = await deleteToolAction(tool.id)
+                  setDeleting(false)
+                  if (ok) router.push('/dashboard/tools')
+                }}
+                disabled={deleting}
+                className="h-9 px-4 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image lightbox */}
       {lightbox && tool.image_path && (
