@@ -32,10 +32,12 @@ interface DashboardData {
   recentHistory: ToolHistory[]
 }
 
+let _dashCache: DashboardData | null = null
+
 export default function DashboardPage() {
   const { profile } = useAuth()
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<DashboardData | null>(() => _dashCache)
+  const [loading, setLoading] = useState(() => _dashCache === null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -68,24 +70,21 @@ export default function DashboardPage() {
           safeQuery(supabase.from('tool_history').select('id, action, tool_name, description, timestamp').order('timestamp', { ascending: false }).limit(10)),
         ])
 
-        setData({
+        const next: DashboardData = {
           tools: (tools as any) || [],
           issues: (issues as any) || [],
           approvals: (approvals as any) || [],
           maintenance: (maintenance as any) || [],
           certifications: (certifications as any) || [],
           recentHistory: (recentHistory as any) || [],
-        })
+        }
+        _dashCache = next
+        setData(next)
       } catch (e) {
         console.error('Dashboard fetch error:', e)
-        setData({
-          tools: [],
-          issues: [],
-          approvals: [],
-          maintenance: [],
-          certifications: [],
-          recentHistory: [],
-        })
+        if (!_dashCache) {
+          setData({ tools: [], issues: [], approvals: [], maintenance: [], certifications: [], recentHistory: [] })
+        }
       }
       setLoading(false)
     }

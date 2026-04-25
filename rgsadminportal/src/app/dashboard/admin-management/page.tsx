@@ -9,11 +9,13 @@ import { Loader2, Plus, Pencil, Trash2, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { User, AdminPosition } from '@/lib/types/database'
 
+let _adminCache: { admins: User[]; positions: AdminPosition[] } | null = null
+
 export default function AdminManagementPage() {
   const { hasPermission, isSuperAdmin, loading: authLoading } = useAuth()
-  const [admins, setAdmins] = useState<User[]>([])
-  const [positions, setPositions] = useState<AdminPosition[]>([])
-  const [loading, setLoading] = useState(true)
+  const [admins, setAdmins] = useState<User[]>(() => _adminCache?.admins ?? [])
+  const [positions, setPositions] = useState<AdminPosition[]>(() => _adminCache?.positions ?? [])
+  const [loading, setLoading] = useState(() => _adminCache === null)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editAdmin, setEditAdmin] = useState<User | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<User | null>(null)
@@ -29,6 +31,7 @@ export default function AdminManagementPage() {
         fetchAdmins(),
         fetchAdminPositions(),
       ])
+      _adminCache = { admins: adminsData, positions: positionsData }
       setAdmins(adminsData)
       setPositions(positionsData)
       setLoading(false)

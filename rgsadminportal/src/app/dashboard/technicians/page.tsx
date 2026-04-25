@@ -19,14 +19,16 @@ import {
 import { AddTechnicianDialog } from '@/components/technicians/add-technician-dialog'
 import type { Technician } from '@/lib/types/database'
 
+let _techCache: { technicians: Technician[]; tools: { id: string; assigned_to: string | null }[] } | null = null
+
 export default function TechniciansPage() {
-  const [technicians, setTechnicians] = useState<Technician[]>([])
-  const [tools, setTools] = useState<{ id: string; assigned_to: string | null }[]>([])
+  const [technicians, setTechnicians] = useState<Technician[]>(() => _techCache?.technicians ?? [])
+  const [tools, setTools] = useState<{ id: string; assigned_to: string | null }[]>(() => _techCache?.tools ?? [])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editTech, setEditTech] = useState<Technician | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<Technician | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => _techCache === null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -37,8 +39,11 @@ export default function TechniciansPage() {
         supabase.from('technicians').select('*').order('name'),
         supabase.from('tools').select('id, assigned_to'),
       ])
-      setTechnicians(techData || [])
-      setTools(toolData || [])
+      const techList = techData || []
+      const toolList = toolData || []
+      _techCache = { technicians: techList, tools: toolList }
+      setTechnicians(techList)
+      setTools(toolList)
       setLoading(false)
     }
     fetchData()

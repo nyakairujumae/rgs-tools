@@ -40,10 +40,13 @@ import type { Tool, Technician } from '@/lib/types/database'
 type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'condition' | 'current_value'
 type SortDir = 'asc' | 'desc'
 
+// Module-level cache — persists across navigations, cleared on full reload
+let _toolsCache: { tools: Tool[]; technicians: Technician[] } | null = null
+
 export default function ToolsPage() {
-  const [tools, setTools] = useState<Tool[]>([])
-  const [technicians, setTechnicians] = useState<Technician[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tools, setTools] = useState<Tool[]>(() => _toolsCache?.tools ?? [])
+  const [technicians, setTechnicians] = useState<Technician[]>(() => _toolsCache?.technicians ?? [])
+  const [loading, setLoading] = useState(() => _toolsCache === null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
@@ -67,8 +70,11 @@ export default function ToolsPage() {
         supabase.from('tools').select('*').order('name'),
         supabase.from('technicians').select('*'),
       ])
-      if (toolsRes.data) setTools(toolsRes.data)
-      if (techRes.data) setTechnicians(techRes.data)
+      const toolsData = toolsRes.data ?? _toolsCache?.tools ?? []
+      const techData = techRes.data ?? _toolsCache?.technicians ?? []
+      _toolsCache = { tools: toolsData, technicians: techData }
+      setTools(toolsData)
+      setTechnicians(techData)
       setLoading(false)
     }
     fetchData()

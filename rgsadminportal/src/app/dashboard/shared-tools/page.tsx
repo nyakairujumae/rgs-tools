@@ -37,10 +37,12 @@ import type { Tool, Technician } from '@/lib/types/database'
 type SortField = 'name' | 'category' | 'brand' | 'serial_number' | 'status' | 'condition' | 'current_value'
 type SortDir = 'asc' | 'desc'
 
+let _sharedCache: { tools: Tool[]; technicians: Technician[] } | null = null
+
 export default function SharedToolsPage() {
-  const [tools, setTools] = useState<Tool[]>([])
-  const [technicians, setTechnicians] = useState<Technician[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tools, setTools] = useState<Tool[]>(() => _sharedCache?.tools ?? [])
+  const [technicians, setTechnicians] = useState<Technician[]>(() => _sharedCache?.technicians ?? [])
+  const [loading, setLoading] = useState(() => _sharedCache === null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
@@ -63,8 +65,11 @@ export default function SharedToolsPage() {
         supabase.from('tools').select('*').eq('tool_type', 'shared').order('name'),
         supabase.from('technicians').select('*'),
       ])
-      if (toolsRes.data) setTools(toolsRes.data)
-      if (techRes.data) setTechnicians(techRes.data)
+      const toolsList = toolsRes.data ?? _sharedCache?.tools ?? []
+      const techList = techRes.data ?? _sharedCache?.technicians ?? []
+      _sharedCache = { tools: toolsList, technicians: techList }
+      setTools(toolsList)
+      setTechnicians(techList)
       setLoading(false)
     }
     fetchData()
