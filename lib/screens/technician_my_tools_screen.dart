@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 
 import '../models/tool.dart';
+import '../models/tool_issue.dart';
 import '../providers/auth_provider.dart';
 import '../providers/supabase_tool_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/tool_issue_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_extensions.dart';
 import '../utils/navigation_helper.dart';
@@ -63,6 +65,7 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupabaseToolProvider>().loadTools();
+      context.read<ToolIssueProvider>().loadIssues();
     });
     // Ensure the "NAME" column (with the thumbnail/icon) is visible.
     // Only relevant in list/table mode.
@@ -134,8 +137,8 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Consumer3<SupabaseToolProvider, AuthProvider, ConnectivityProvider>(
-      builder: (context, toolProvider, authProvider, connectivity, _) {
+    return Consumer4<SupabaseToolProvider, AuthProvider, ConnectivityProvider, ToolIssueProvider>(
+      builder: (context, toolProvider, authProvider, connectivity, issueProvider, _) {
         final currentUserId = authProvider.userId;
         final allMyTools = currentUserId == null
             ? <Tool>[]
@@ -143,7 +146,24 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
                 .where((t) => t.assignedTo == currentUserId)
                 .toList();
 
-        final filtered = allMyTools.where((t) {
+        // Find tools with active (non-resolved) issues reported by this user
+        final myOpenIssues = issueProvider.issues
+            .where((i) =>
+                i.reportedByUserId == currentUserId &&
+                !i.isResolved &&
+                !i.isClosed)
+            .toList();
+        final Map<String, ToolIssue> toolIdToIssue = {
+          for (final i in myOpenIssues) i.toolId: i,
+        };
+        final toolIdsUnderReview = toolIdToIssue.keys.toSet();
+
+        final damagedToolsList =
+            allMyTools.where((t) => toolIdsUnderReview.contains(t.id)).toList();
+        final activeTools =
+            allMyTools.where((t) => !toolIdsUnderReview.contains(t.id)).toList();
+
+        final activeFiltered = activeTools.where((t) {
           final matchesSearch = _matchesSearch(t);
           final matchesStatus =
               _selectedStatus == 'All' || t.status == _selectedStatus;
@@ -404,15 +424,39 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
 
                 const SizedBox(height: 10),
 
-                // ── Tools Grid (icon/tile mode) ───────────────────────────
+                // ── Under Review + Active Tools ───────────────────────────
                 Expanded(
                   child: toolProvider.isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : filtered.isEmpty
-                          ? _buildEmpty(colorScheme)
-                          : showList
-                              ? _buildTable(filtered, colorScheme, isDark)
-                              : _buildToolsGrid(context, filtered, colorScheme, isDark),
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (damagedToolsList.isNotEmpty)
+                              _buildUnderReviewSection(
+                                  damagedToolsList, toolIdToIssue, colorScheme, isDark),
+                            Expanded(
+                              child: activeFiltered.isEmpty
+                                  ? (damagedToolsList.isEmpty
+                                      ? _buildEmpty(colorScheme)
+                                      : Center(
+                                          child: Text(
+                                            hasActiveFilter
+                                                ? 'No active tools match your filter'
+                                                : 'All your tools are under review',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: colorScheme.onSurface
+                                                  .withValues(alpha: 0.45),
+                                            ),
+                                          ),
+                                        ))
+                                  : showList
+                                      ? _buildTable(activeFiltered, colorScheme, isDark)
+                                      : _buildToolsGrid(
+                                          context, activeFiltered, colorScheme, isDark),
+                            ),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -837,6 +881,207 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
         ],
       ),
     );
+  }
+
+  // ── Under Review Section ──────────────────────────────────────────────────
+
+  Widget _buildUnderReviewSection(
+    List<Tool> tools,
+    Map<String, ToolIssue> toolIdToIssue,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Color(0xFFFAAD14), size: 15),
+              const SizedBox(width: 6),
+              Text(
+                'Under Review (${tools.length})',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...tools.map((tool) {
+          final issue = toolIdToIssue[tool.id];
+          if (issue == null) return const SizedBox.shrink();
+          return _buildUnderReviewCard(tool, issue, colorScheme, isDark);
+        }),
+        Divider(
+          height: 16,
+          thickness: 0.5,
+          color: colorScheme.onSurface.withValues(alpha: 0.08),
+          indent: 16,
+          endIndent: 16,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnderReviewCard(
+    Tool tool,
+    ToolIssue issue,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final statusColor = _issueStatusColor(issue.status);
+    final typeColor = _issueTypeColor(issue.issueType);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ToolDetailScreen(tool: tool)),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFFFF4D4F).withValues(alpha: 0.06)
+                : const Color(0xFFFF4D4F).withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFFF4D4F).withValues(alpha: 0.18),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    tool.name.isNotEmpty ? tool.name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tool.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        // Issue type
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: typeColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            issue.issueType,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: typeColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // Issue status
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: statusColor, width: 1),
+                          ),
+                          child: Text(
+                            issue.status,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          issue.ageText,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colorScheme.onSurface.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _issueStatusColor(String status) {
+    switch (status) {
+      case 'Open':
+        return const Color(0xFFFF4D4F);
+      case 'In Progress':
+        return const Color(0xFFFAAD14);
+      case 'Resolved':
+        return const Color(0xFF52C41A);
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  Color _issueTypeColor(String type) {
+    switch (type) {
+      case 'Faulty':
+        return Colors.red;
+      case 'Lost':
+        return Colors.orange;
+      case 'Damaged':
+        return Colors.purple;
+      case 'Missing Parts':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _viewToggleBtn({

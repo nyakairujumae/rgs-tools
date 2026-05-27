@@ -353,7 +353,30 @@ export async function unassignTool(
 export async function addTechnician(
   tech: Omit<Technician, 'id' | 'created_at'>
 ): Promise<Technician | null> {
-  const { data, error } = await supabase()
+  const client = supabase()
+  let userId = tech.user_id || null
+
+  if (tech.email?.trim()) {
+    const { data: inviteData, error: inviteError } = await client.functions.invoke(
+      'invite-technician',
+      {
+        body: {
+          email: tech.email.trim(),
+          full_name: tech.name,
+          department: tech.department,
+        },
+      }
+    )
+
+    if (inviteError || !inviteData?.user_id) {
+      console.error('Failed to invite technician:', inviteError ?? 'No user_id returned')
+      return null
+    }
+
+    userId = inviteData.user_id
+  }
+
+  const { data, error } = await client
     .from('technicians')
     .insert({
       name: tech.name,
@@ -364,7 +387,7 @@ export async function addTechnician(
       hire_date: tech.hire_date || null,
       status: tech.status || 'Active',
       profile_picture_url: tech.profile_picture_url || null,
-      user_id: tech.user_id || null,
+      user_id: userId,
     })
     .select()
     .single()

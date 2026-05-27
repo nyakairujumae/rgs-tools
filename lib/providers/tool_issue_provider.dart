@@ -16,7 +16,7 @@ class ToolIssueProvider with ChangeNotifier {
   String? get error => _error;
 
   // Filtered getters
-  List<ToolIssue> get openIssues => _issues.where((issue) => issue.isOpen).toList();
+  List<ToolIssue> get openIssues => _issues.where((issue) => issue.isActive).toList();
   List<ToolIssue> get inProgressIssues => _issues.where((issue) => issue.isInProgress).toList();
   List<ToolIssue> get resolvedIssues => _issues.where((issue) => issue.isResolved).toList();
   List<ToolIssue> get closedIssues => _issues.where((issue) => issue.isClosed).toList();
@@ -215,6 +215,150 @@ class ToolIssueProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+  // ── Lifecycle actions ──────────────────────────────────────────────────────
+
+  Future<void> markSeen(String issueId, String adminName, String adminId) async {
+    try {
+      final now = DateTime.now();
+      final response = await SupabaseService.client
+          .from('tool_issues')
+          .update({'status': 'Seen', 'seen_at': now.toIso8601String(), 'seen_by': adminName})
+          .eq('id', issueId)
+          .select()
+          .single();
+
+      final updated = ToolIssue.fromJson(response);
+      _replaceInList(updated);
+
+      await _logAction(issueId, 'seen', adminId, adminName,
+          'Your issue report has been seen by $adminName.');
+
+      await _notifyTech(updated,
+          title: 'Issue Update',
+          body: '$adminName has seen your report for ${updated.toolName}.',
+          type: 'issue_seen');
+    } catch (e) {
+      Logger.debug('markSeen error: $e');
+    }
+  }
+
+  Future<void> markInReview(String issueId, String adminName, String adminId,
+      {String? messageToTech}) async {
+    try {
+      final response = await SupabaseService.client
+          .from('tool_issues')
+          .update({'status': 'In Review', 'actioned_by_name': adminName})
+          .eq('id', issueId)
+          .select()
+          .single();
+
+      final updated = ToolIssue.fromJson(response);
+      _replaceInList(updated);
+
+      final msg = messageToTech ??
+          "We've started reviewing your issue with the ${updated.toolName}. We'll keep you updated.";
+      await _logAction(issueId, 'in_review', adminId, adminName, msg);
+      await _notifyTech(updated,
+          title: 'Issue In Review', body: msg, type: 'issue_in_review');
+    } catch (e) {
+      Logger.debug('markInReview error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> markRepaired(String issueId, String adminName, String adminId,
+      {String? messageToTech}) async {
+    await _resolveWith(issueId, 'Repaired', adminName, adminId,
+        messageToTech: messageToTech ??
+            "Good news! The tool has been repaired and is ready to use.",
+        type: 'repaired');
+  }
+
+  Future<void> markReplaced(String issueId, String adminName, String adminId,
+      {String? messageToTech}) async {
+    await _resolveWith(issueId, 'Replaced', adminName, adminId,
+        messageToTech: messageToTech ??
+            "The tool has been replaced. Please collect the new one.",
+        type: 'replaced');
+  }
+
+  Future<void> markNoAction(String issueId, String adminName, String adminId,
+      {String? messageToTech}) async {
+    await _resolveWith(issueId, 'No Action', adminName, adminId,
+        messageToTech: messageToTech ??
+            "We've reviewed your report. No action will be taken at this time.",
+        type: 'no_action');
+  }
+
+  Future<void> _resolveWith(
+      String issueId, String resolutionType, String adminName, String adminId,
+      {required String messageToTech, required String type}) async {
+    try {
+      final now = DateTime.now();
+      final response = await SupabaseService.client
+          .from('tool_issues')
+          .update({
+            'status': 'Resolved',
+            'resolution_type': resolutionType,
+            'actioned_by_name': adminName,
+            'resolved_at': now.toIso8601String(),
+          })
+          .eq('id', issueId)
+          .select()
+          .single();
+
+      final updated = ToolIssue.fromJson(response);
+      _replaceInList(updated);
+
+      await _logAction(issueId, type, adminId, adminName, messageToTech);
+      await _notifyTech(updated,
+          title: 'Issue Resolved — $resolutionType',
+          body: messageToTech,
+          type: 'issue_resolved');
+    } catch (e) {
+      Logger.debug('_resolveWith error: $e');
+      rethrow;
+    }
+  }
+
+  void _replaceInList(ToolIssue updated) {
+    final idx = _issues.indexWhere((i) => i.id == updated.id);
+    if (idx != -1) _issues[idx] = updated;
+    notifyListeners();
+  }
+
+  Future<void> _logAction(String issueId, String action, String adminId,
+      String adminName, String? message) async {
+    try {
+      await SupabaseService.client.from('tool_issue_actions').insert({
+        'issue_id': issueId,
+        'action': action,
+        'performed_by_id': adminId,
+        'performed_by_name': adminName,
+        'message_to_tech': message,
+      });
+    } catch (e) {
+      Logger.debug('_logAction error: $e');
+    }
+  }
+
+  Future<void> _notifyTech(ToolIssue issue,
+      {required String title, required String body, required String type}) async {
+    if (issue.reportedByUserId == null) return;
+    try {
+      await PushNotificationService.sendToUser(
+        userId: issue.reportedByUserId!,
+        title: title,
+        body: body,
+        data: {'type': type, 'issue_id': issue.id ?? ''},
+      );
+    } catch (e) {
+      Logger.debug('_notifyTech error: $e');
+    }
+  }
+
+  // ── Legacy helpers (kept for backward compat) ─────────────────────────────
 
   Future<void> assignIssue(String issueId, String assignedTo) async {
     try {

@@ -13,6 +13,7 @@ import '../utils/navigation_helper.dart';
 import '../utils/auth_error_handler.dart';
 import '../widgets/common/offline_skeleton.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/auth_provider.dart';
 
 class ToolIssuesScreen extends StatefulWidget {
   const ToolIssuesScreen({super.key});
@@ -84,9 +85,16 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
             const SizedBox(height: 8),
             _buildFilterPills(),
             Expanded(
-              child: Consumer2<ToolIssueProvider, ConnectivityProvider>(
-                builder: (context, issueProvider, connectivityProvider, child) {
+              child: Consumer3<ToolIssueProvider, ConnectivityProvider, AuthProvider>(
+                builder: (context, issueProvider, connectivityProvider, authProvider, child) {
                   final isOffline = !connectivityProvider.isOnline;
+                  final isAdmin = authProvider.isAdmin;
+                  final currentUserId = authProvider.userId;
+
+                  List<ToolIssue> forUser(List<ToolIssue> all) {
+                    if (isAdmin) return all;
+                    return all.where((i) => i.reportedByUserId == currentUserId).toList();
+                  }
 
                   Widget content;
                   if (issueProvider.isLoading) {
@@ -168,10 +176,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                     content = TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildIssuesList(issueProvider.issues),
-                        _buildIssuesList(issueProvider.openIssues),
-                        _buildIssuesList(issueProvider.criticalIssues),
-                        _buildIssuesList(issueProvider.resolvedIssues),
+                        _buildIssuesList(forUser(issueProvider.issues)),
+                        _buildIssuesList(forUser(issueProvider.openIssues)),
+                        _buildIssuesList(forUser(issueProvider.criticalIssues)),
+                        _buildIssuesList(forUser(issueProvider.resolvedIssues)),
                       ],
                     );
                   }
@@ -466,14 +474,27 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     );
   }
 
-  void _showIssueDetails(ToolIssue issue) {
+  void _showIssueDetails(ToolIssue originalIssue) {
+    final authProvider = context.read<AuthProvider>();
+    final isAdmin = authProvider.isAdmin;
+    final adminName = authProvider.userFullName ?? 'Admin';
+    final adminId = authProvider.userId;
+
+    var issue = originalIssue;
+
+    // Auto-mark Seen when an admin first opens an Open issue
+    if (isAdmin && issue.status == 'Open' && adminId != null) {
+      context.read<ToolIssueProvider>().markSeen(issue.id!, adminName, adminId);
+      issue = issue.copyWith(status: 'Seen', seenAt: DateTime.now(), seenBy: adminName);
+    }
+
+    final techName = issue.reportedBy.split('(').first.trim();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: context.scaffoldBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: Row(
           children: [
             Container(
@@ -482,11 +503,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                 color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.info_outline,
-                color: AppTheme.secondaryColor,
-                size: 20,
-              ),
+              child: Icon(Icons.info_outline, color: AppTheme.secondaryColor, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -512,16 +529,22 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
               _buildDetailRow('Status', issue.status),
               _buildDetailRow('Reported By', issue.reportedBy),
               _buildDetailRow('Reported At', _formatDateTime(issue.reportedAt)),
-              if (issue.assignedTo != null)
-                _buildDetailRow('Assigned To', issue.assignedTo!),
+              if (issue.seenBy != null)
+                _buildDetailRow('Seen By', issue.seenBy!),
+              if (issue.seenAt != null)
+                _buildDetailRow('Seen At', _formatDateTime(issue.seenAt!)),
+              if (issue.resolutionType != null)
+                _buildDetailRow('Resolution', issue.resolutionType!),
+              if (issue.actionedByName != null)
+                _buildDetailRow('Actioned By', issue.actionedByName!),
               if (issue.resolvedAt != null)
                 _buildDetailRow('Resolved At', _formatDateTime(issue.resolvedAt!)),
               if (issue.resolution != null)
-                _buildDetailRow('Resolution', issue.resolution!),
+                _buildDetailRow('Notes', issue.resolution!),
               if (issue.location != null)
                 _buildDetailRow('Location', issue.location!),
               if (issue.estimatedCost != null)
-                _buildDetailRow('Estimated Cost', CurrencyFormatter.formatCurrency(issue.estimatedCost!)),
+                _buildDetailRow('Est. Cost', CurrencyFormatter.formatCurrency(issue.estimatedCost!)),
               const SizedBox(height: 16),
               Text(
                 'Description',
@@ -539,31 +562,234 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
+              // ── Admin action area ──
+              if (isAdmin && adminId != null && (issue.status == 'Seen' || issue.status == 'In Review')) ...[
+                const SizedBox(height: 20),
+                const Divider(height: 1),
+                const SizedBox(height: 16),
+                if (issue.status == 'Seen')
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.rate_review_outlined, size: 18),
+                      label: const Text('Start Review'),
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        _showActionDialog(
+                          issue: issue,
+                          action: 'in_review',
+                          adminName: adminName,
+                          adminId: adminId,
+                          techName: techName,
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF722ED1),
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                if (issue.status == 'In Review') ...[
+                  Text(
+                    'Resolve as:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildResolveButton(
+                          label: 'Repaired',
+                          icon: Icons.build_outlined,
+                          color: const Color(0xFF52C41A),
+                          onTap: () {
+                            Navigator.pop(dialogContext);
+                            _showActionDialog(issue: issue, action: 'repaired', adminName: adminName, adminId: adminId, techName: techName);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildResolveButton(
+                          label: 'Replaced',
+                          icon: Icons.swap_horiz,
+                          color: const Color(0xFF1890FF),
+                          onTap: () {
+                            Navigator.pop(dialogContext);
+                            _showActionDialog(issue: issue, action: 'replaced', adminName: adminName, adminId: adminId, techName: techName);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildResolveButton(
+                          label: 'No Action',
+                          icon: Icons.block,
+                          color: Colors.grey,
+                          onTap: () {
+                            Navigator.pop(dialogContext);
+                            _showActionDialog(issue: issue, action: 'no_action', adminName: adminName, adminId: adminId, techName: techName);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Close'),
           ),
-          if (issue.status == 'Open') FilledButton(
-              onPressed: () { Navigator.pop(context); _showAssignDialog(issue); },
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
-              child: const Text('Assign'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResolveButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return FilledButton(
+      onPressed: onTap,
+      style: FilledButton.styleFrom(
+        backgroundColor: color,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  void _showActionDialog({
+    required ToolIssue issue,
+    required String action,
+    required String adminName,
+    required String adminId,
+    required String techName,
+  }) {
+    String title;
+    String buttonLabel;
+    Color buttonColor;
+    String defaultMsg;
+
+    switch (action) {
+      case 'in_review':
+        title = 'Start Review';
+        buttonLabel = 'Start Review';
+        buttonColor = const Color(0xFF722ED1);
+        defaultMsg = "We've started reviewing your issue with the ${issue.toolName}. We'll keep you updated.";
+        break;
+      case 'repaired':
+        title = 'Mark as Repaired';
+        buttonLabel = 'Confirm Repaired';
+        buttonColor = const Color(0xFF52C41A);
+        defaultMsg = "Good news! The ${issue.toolName} has been repaired and is ready to use.";
+        break;
+      case 'replaced':
+        title = 'Mark as Replaced';
+        buttonLabel = 'Confirm Replaced';
+        buttonColor = const Color(0xFF1890FF);
+        defaultMsg = "The ${issue.toolName} has been replaced. Please collect the new one.";
+        break;
+      case 'no_action':
+        title = 'No Action';
+        buttonLabel = 'Confirm';
+        buttonColor = Colors.grey;
+        defaultMsg = "We've reviewed your report for the ${issue.toolName}. No action will be taken at this time.";
+        break;
+      default:
+        return;
+    }
+
+    final msgController = TextEditingController(text: defaultMsg);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.scaffoldBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Message to $techName:',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
             ),
-          if (issue.status == 'In Progress')
-            FilledButton(
-              onPressed: () { Navigator.pop(context); _showResolveDialog(issue); },
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
-              child: const Text('Resolve'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: msgController,
+              decoration: context.chatGPTInputDecoration.copyWith(
+                hintText: 'Message to technician',
+              ),
+              maxLines: 3,
+              style: const TextStyle(fontSize: 13),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.secondaryColor),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final msg = msgController.text.trim();
+              final provider = context.read<ToolIssueProvider>();
+              switch (action) {
+                case 'in_review':
+                  provider.markInReview(issue.id!, adminName, adminId, messageToTech: msg);
+                  break;
+                case 'repaired':
+                  provider.markRepaired(issue.id!, adminName, adminId, messageToTech: msg);
+                  break;
+                case 'replaced':
+                  provider.markReplaced(issue.id!, adminName, adminId, messageToTech: msg);
+                  break;
+                case 'no_action':
+                  provider.markNoAction(issue.id!, adminName, adminId, messageToTech: msg);
+                  break;
+              }
+              Navigator.pop(dialogContext);
+              AuthErrorHandler.showSuccessSnackBar(context, '$title successful');
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: buttonColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(buttonLabel),
+          ),
         ],
       ),
     );
@@ -589,142 +815,6 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
               value,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAssignDialog(ToolIssue issue) {
-    final assignController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.scaffoldBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.person_add_outlined,
-                color: AppTheme.secondaryColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text('Assign Issue'),
-            ),
-          ],
-        ),
-        content: TextField(
-          controller: assignController,
-          decoration: context.chatGPTInputDecoration.copyWith(
-            labelText: 'Assign to (Admin/Technician)',
-            prefixIcon: const Icon(Icons.person_outline, size: 20),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (assignController.text.trim().isNotEmpty) {
-                context.read<ToolIssueProvider>().assignIssue(
-                  issue.id!,
-                  assignController.text.trim(),
-                );
-                Navigator.pop(context);
-                AuthErrorHandler.showSuccessSnackBar(context, 'Issue assigned successfully');
-              }
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
-            child: const Text('Assign'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showResolveDialog(ToolIssue issue) {
-    final resolutionController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.scaffoldBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.check_circle_outline,
-                color: AppTheme.secondaryColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text('Resolve Issue'),
-            ),
-          ],
-        ),
-        content: TextField(
-          controller: resolutionController,
-          decoration: context.chatGPTInputDecoration.copyWith(
-            labelText: 'Resolution details',
-            prefixIcon: const Icon(Icons.description_outlined, size: 20),
-          ),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.secondaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (resolutionController.text.trim().isNotEmpty) {
-                context.read<ToolIssueProvider>().resolveIssue(
-                  issue.id!,
-                  resolutionController.text.trim(),
-                  issue.assignedTo ?? 'Admin',
-                );
-                Navigator.pop(context);
-                AuthErrorHandler.showSuccessSnackBar(context, 'Issue resolved successfully');
-              }
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.secondaryColor),
-            child: const Text('Resolve'),
           ),
         ],
       ),
@@ -816,7 +906,7 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
         onPressed: () => Navigator.of(context).maybePop(),
       ),
       title: Text(
-        'Tool Issues',
+        context.read<AuthProvider>().isAdmin ? 'Tool Issues' : 'My Reports',
         style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w800,
@@ -979,6 +1069,10 @@ class _ToolIssuesScreenState extends State<ToolIssuesScreen>
     switch (status) {
       case 'Open':
         return const Color(0xFFFF4D4F);
+      case 'Seen':
+        return const Color(0xFF1890FF);
+      case 'In Review':
+        return const Color(0xFF722ED1);
       case 'In Progress':
         return const Color(0xFFFAAD14);
       case 'Resolved':

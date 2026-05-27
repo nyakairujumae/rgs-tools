@@ -16,6 +16,11 @@ class ToolIssue {
   final List<String>? attachments; // Image URLs or file paths
   final String? location; // Where the issue occurred
   final double? estimatedCost; // Cost to fix/replace
+  // Lifecycle fields
+  final DateTime? seenAt;
+  final String? seenBy;
+  final String? resolutionType; // 'Repaired' | 'Replaced' | 'No Action'
+  final String? actionedByName;
 
   ToolIssue({
     this.id,
@@ -35,6 +40,10 @@ class ToolIssue {
     this.attachments,
     this.location,
     this.estimatedCost,
+    this.seenAt,
+    this.seenBy,
+    this.resolutionType,
+    this.actionedByName,
   });
 
   Map<String, dynamic> toJson() {
@@ -74,6 +83,18 @@ class ToolIssue {
     if (estimatedCost != null) {
       json['estimated_cost'] = estimatedCost;
     }
+    if (seenAt != null) {
+      json['seen_at'] = seenAt!.toIso8601String();
+    }
+    if (seenBy != null) {
+      json['seen_by'] = seenBy;
+    }
+    if (resolutionType != null) {
+      json['resolution_type'] = resolutionType;
+    }
+    if (actionedByName != null) {
+      json['actioned_by_name'] = actionedByName;
+    }
 
     // Only include id if it's not null (for updates)
     if (id != null) {
@@ -102,6 +123,10 @@ class ToolIssue {
       attachments: json['attachments']?.cast<String>(),
       location: json['location'],
       estimatedCost: json['estimated_cost']?.toDouble(),
+      seenAt: json['seen_at'] != null ? DateTime.parse(json['seen_at']) : null,
+      seenBy: json['seen_by'],
+      resolutionType: json['resolution_type'],
+      actionedByName: json['actioned_by_name'],
     );
   }
 
@@ -123,6 +148,10 @@ class ToolIssue {
     List<String>? attachments,
     String? location,
     double? estimatedCost,
+    DateTime? seenAt,
+    String? seenBy,
+    String? resolutionType,
+    String? actionedByName,
   }) {
     return ToolIssue(
       id: id ?? this.id,
@@ -142,14 +171,21 @@ class ToolIssue {
       attachments: attachments ?? this.attachments,
       location: location ?? this.location,
       estimatedCost: estimatedCost ?? this.estimatedCost,
+      seenAt: seenAt ?? this.seenAt,
+      seenBy: seenBy ?? this.seenBy,
+      resolutionType: resolutionType ?? this.resolutionType,
+      actionedByName: actionedByName ?? this.actionedByName,
     );
   }
 
   // Helper methods
   bool get isOpen => status == 'Open';
+  bool get isSeen => status == 'Seen';
+  bool get isInReview => status == 'In Review';
   bool get isInProgress => status == 'In Progress';
   bool get isResolved => status == 'Resolved';
   bool get isClosed => status == 'Closed';
+  bool get isActive => isOpen || isSeen || isInReview || isInProgress;
   
   bool get isHighPriority => priority == 'High' || priority == 'Critical';
   bool get isCritical => priority == 'Critical';

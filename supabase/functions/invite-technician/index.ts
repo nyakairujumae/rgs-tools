@@ -85,14 +85,14 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (requesterProfile.role !== "admin" || !requesterProfile.position_id) {
+  if (requesterProfile.role !== "admin") {
     return new Response(
       JSON.stringify({ error: "Not authorized to invite technicians" }),
       { status: 403, headers: { "Content-Type": "application/json" } },
     );
   }
 
-  // All admins can manage technicians.
+  // All admins can manage technicians, regardless of position.
 
   let payload: {
     email?: string;

@@ -216,7 +216,14 @@ class _AddTechnicianScreenState extends State<AddTechnicianScreen> {
 
                     // Department Field
                     Builder(builder: (context) {
-                      const depts = ['Other'];
+                      const depts = [
+                        'HVAC',
+                        'Electrical',
+                        'Plumbing',
+                        'Mechanical',
+                        'Refrigeration',
+                        'Other',
+                      ];
                       // Reset selected value if it's no longer in the list
                       final currentVal = _departmentController.text.isEmpty
                           ? null
