@@ -1,127 +1,219 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CRON_SECRET = Deno.env.get("CRON_SECRET");
 
-// Fallback to the secret hardcoded in SETUP_ENGAGEMENT_NOTIFICATIONS_CRON.sql
-const EXPECTED_SECRET = CRON_SECRET ?? "46d377b2166574d994ffc3862b8fe7e082bfecc13261f4461300fdc9ec94d051";
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
 
-const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    })
-  : null;
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function sendPushToUser(
+async function push(
   userId: string,
   title: string,
   body: string,
   data?: Record<string, string>,
-): Promise<boolean> {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+) {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push-notification`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({ user_id: userId, title, body, data }),
+    await supabase.functions.invoke("send-push-notification", {
+      body: { user_id: userId, title, body, data },
     });
-    return res.ok;
   } catch (e) {
-    console.warn(`⚠️ Push failed for user ${userId}:`, e);
-    return false;
+    console.warn(`push failed for ${userId}:`, e);
   }
 }
 
-Deno.serve(async (req) => {
-  // Only allow POST (from pg_cron via net.http_post)
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+async function getAllAdminIds(): Promise<string[]> {
+  const { data } = await supabase
+    .from("users")
+    .select("id")
+    .eq("role", "admin");
+  return (data ?? []).map((r: { id: string }) => r.id);
+}
 
-  // Validate cron secret
-  const secret = req.headers.get("x-cron-secret");
-  if (!secret || secret !== EXPECTED_SECRET) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+async function pushToAllAdmins(
+  title: string,
+  body: string,
+  data?: Record<string, string>,
+) {
+  const ids = await getAllAdminIds();
+  await Promise.allSettled(ids.map((id) => push(id, title, body, data)));
+}
 
-  if (!supabase) {
-    return new Response(JSON.stringify({ error: "Server not configured" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+// ── Notification jobs ─────────────────────────────────────────────────────────
 
-  // Find active issues not updated in the last 24 hours
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+/** Daily: remind technicians who have no tools assigned to them. */
+async function remindTechsWithNoTools() {
+  const { data: techs } = await supabase
+    .from("users")
+    .select("id")
+    .eq("role", "technician");
 
-  const { data: staleIssues, error } = await supabase
-    .from("tool_issues")
-    .select("id, tool_name, status, reported_by_user_id, updated_at")
-    .in("status", ["Open", "Seen", "In Review", "In Progress"])
-    .lt("updated_at", oneDayAgo)
-    .not("reported_by_user_id", "is", null);
+  if (!techs?.length) return;
 
-  if (error) {
-    console.error("Failed to fetch stale issues:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch issues" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  await Promise.allSettled(
+    techs.map(async (tech: { id: string }) => {
+      const { count } = await supabase
+        .from("tools")
+        .select("id", { count: "exact", head: true })
+        .eq("assigned_to", tech.id);
 
-  if (!staleIssues || staleIssues.length === 0) {
-    console.log("No stale issues found, nothing to notify.");
-    return new Response(
-      JSON.stringify({ message: "No stale issues", notified: 0 }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
-  }
-
-  // Group issues by technician
-  const byTech = new Map<string, typeof staleIssues>();
-  for (const issue of staleIssues) {
-    const uid = issue.reported_by_user_id as string;
-    if (!byTech.has(uid)) byTech.set(uid, []);
-    byTech.get(uid)!.push(issue);
-  }
-
-  let notified = 0;
-  for (const [userId, issues] of byTech.entries()) {
-    const count = issues.length;
-    const title = count === 1 ? "Tool Issue Update" : `${count} Tool Issues Pending`;
-    const body =
-      count === 1
-        ? `Your issue with ${issues[0].tool_name} is still being handled (${issues[0].status}). We're on it.`
-        : `You have ${count} open tool issues still being handled. We're working on them.`;
-
-    const sent = await sendPushToUser(userId, title, body, {
-      type: "engagement_reminder",
-      issue_count: String(count),
-    });
-
-    if (sent) notified++;
-    console.log(`${sent ? "✅" : "❌"} Notified user ${userId} (${count} issue${count > 1 ? "s" : ""})`);
-  }
-
-  console.log(`Engagement run complete — notified ${notified}/${byTech.size} technicians`);
-  return new Response(
-    JSON.stringify({
-      message: "Engagement notifications sent",
-      notified,
-      technicians: byTech.size,
-      total_issues: staleIssues.length,
+      if ((count ?? 0) === 0) {
+        await push(
+          tech.id,
+          "Don't forget your tools 🔧",
+          "Log the tools you're using so your team stays in sync.",
+          { type: "engagement_add_tools" },
+        );
+      }
     }),
-    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+/**
+ * Mon / Wed / Fri: pick a random shared tool that's currently held by someone
+ * and nudge all other technicians that they can request it.
+ */
+async function sharedToolAwarenessNudge() {
+  // Fetch all shared tools that are currently assigned
+  const { data: heldTools } = await supabase
+    .from("tools")
+    .select("id, name, assigned_to")
+    .eq("tool_type", "shared")
+    .not("assigned_to", "is", null);
+
+  if (!heldTools?.length) return;
+
+  // Pick one at random
+  const tool = heldTools[Math.floor(Math.random() * heldTools.length)] as {
+    id: string;
+    name: string;
+    assigned_to: string;
+  };
+
+  // Get the holder's display name
+  const { data: holder } = await supabase
+    .from("users")
+    .select("full_name")
+    .eq("id", tool.assigned_to)
+    .maybeSingle();
+
+  const holderName = holder?.full_name ?? "A colleague";
+
+  // Notify all technicians who are NOT the current holder
+  const { data: techs } = await supabase
+    .from("users")
+    .select("id")
+    .eq("role", "technician")
+    .neq("id", tool.assigned_to);
+
+  if (!techs?.length) return;
+
+  await Promise.allSettled(
+    techs.map((tech: { id: string }) =>
+      push(
+        tech.id,
+        `${holderName} has the ${tool.name}`,
+        "If you need it, you can send a request through the app.",
+        { type: "shared_tool_awareness", tool_id: tool.id },
+      )
+    ),
+  );
+}
+
+/** Daily: remind admins if there are open/in-progress tool issues. */
+async function remindAdminsPendingIssues() {
+  const { count } = await supabase
+    .from("tool_issues")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["Open", "In Progress"]);
+
+  if (!count || count === 0) return;
+
+  const plural = count === 1;
+  await pushToAllAdmins(
+    `${count} tool ${plural ? "issue" : "issues"} need attention`,
+    plural
+      ? "1 open tool issue is waiting for your review."
+      : `${count} open tool issues are waiting for your review.`,
+    { type: "pending_issues_reminder" },
+  );
+}
+
+/** Daily: remind admins if there are pending tool/assignment requests. */
+async function remindAdminsPendingRequests() {
+  const { count } = await supabase
+    .from("approval_workflows")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "Pending");
+
+  if (!count || count === 0) return;
+
+  const plural = count === 1;
+  await pushToAllAdmins(
+    `${count} pending ${plural ? "request" : "requests"}`,
+    plural
+      ? "1 tool request is waiting for your approval."
+      : `${count} tool requests are waiting for your approval.`,
+    { type: "pending_requests_reminder" },
+  );
+}
+
+/** 1st of month: prompt admins to review last month's report. */
+async function remindAdminsMonthlyReport() {
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const monthName = lastMonth.toLocaleString("default", { month: "long" });
+
+  await pushToAllAdmins(
+    "Time for your monthly report 📊",
+    `Review ${monthName}'s tools, issues, and repairs before the month gets away.`,
+    { type: "monthly_report_reminder" },
+  );
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+Deno.serve(async (req) => {
+  // Guard: only allow calls with the correct secret header (set CRON_SECRET in Supabase secrets)
+  if (CRON_SECRET) {
+    const provided = req.headers.get("x-cron-secret");
+    if (provided !== CRON_SECRET) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  const now = new Date();
+  const dayOfMonth = now.getUTCDate();
+  const dayOfWeek = now.getUTCDay(); // 0 = Sun, 1 = Mon, …, 5 = Fri
+
+  const tasks: Promise<void>[] = [];
+
+  // ── Daily jobs ──
+  tasks.push(remindTechsWithNoTools());
+  tasks.push(remindAdminsPendingIssues());
+  tasks.push(remindAdminsPendingRequests());
+
+  // ── Mon / Wed / Fri ──
+  if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
+    tasks.push(sharedToolAwarenessNudge());
+  }
+
+  // ── 1st of every month ──
+  if (dayOfMonth === 1) {
+    tasks.push(remindAdminsMonthlyReport());
+  }
+
+  await Promise.allSettled(tasks);
+
+  return new Response(
+    JSON.stringify({ ok: true, timestamp: now.toISOString() }),
+    { headers: { "Content-Type": "application/json" } },
   );
 });
