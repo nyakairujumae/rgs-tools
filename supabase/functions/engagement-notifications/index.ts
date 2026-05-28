@@ -66,34 +66,24 @@ async function remindTechsToAddTools() {
   );
 }
 
-/** Daily: remind technicians who have shared tools assigned but haven't logged any issues or condition reports for them. */
-async function remindTechsWithUnmarkedSharedTools() {
-  const { data: sharedTools } = await supabase
-    .from("tools")
-    .select("id, name, assigned_to")
-    .eq("tool_type", "shared")
-    .not("assigned_to", "is", null);
+/** Daily: remind all technicians to mark any shared tools they're currently using. */
+async function remindTechsToMarkSharedTools() {
+  const { data: techs } = await supabase
+    .from("users")
+    .select("id")
+    .eq("role", "technician");
 
-  if (!sharedTools?.length) return;
+  if (!techs?.length) return;
 
   await Promise.allSettled(
-    sharedTools.map(async (tool: { id: string; name: string; assigned_to: string }) => {
-      // Check if this tech has any issue reports for this tool
-      const { count } = await supabase
-        .from("tool_issues")
-        .select("id", { count: "exact", head: true })
-        .eq("tool_id", tool.id)
-        .eq("reported_by_user_id", tool.assigned_to);
-
-      if ((count ?? 0) === 0) {
-        await push(
-          tool.assigned_to,
-          `Don't forget to log the ${tool.name}`,
-          `You have the ${tool.name} assigned. Log its condition or any issues so the team knows its status.`,
-          { type: "shared_tool_unlogged", tool_id: tool.id },
-        );
-      }
-    }),
+    techs.map((tech: { id: string }) =>
+      push(
+        tech.id,
+        "Using a shared tool? Mark it 📋",
+        "If you're currently using any shared tools, mark them in the app so your teammates know their availability.",
+        { type: "mark_shared_tool_reminder" },
+      )
+    ),
   );
 }
 
@@ -221,7 +211,7 @@ Deno.serve(async (req) => {
 
   // ── Daily jobs ──
   tasks.push(remindTechsToAddTools());
-  tasks.push(remindTechsWithUnmarkedSharedTools());
+  tasks.push(remindTechsToMarkSharedTools());
   tasks.push(remindAdminsPendingIssues());
   tasks.push(remindAdminsPendingRequests());
 
