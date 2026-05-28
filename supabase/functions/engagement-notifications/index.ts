@@ -45,8 +45,8 @@ async function pushToAllAdmins(
 
 // ── Notification jobs ─────────────────────────────────────────────────────────
 
-/** Daily: remind technicians who have no tools assigned to them. */
-async function remindTechsWithNoTools() {
+/** Daily: remind all technicians to keep their tools logged in the app. */
+async function remindTechsToAddTools() {
   const { data: techs } = await supabase
     .from("users")
     .select("id")
@@ -55,18 +55,42 @@ async function remindTechsWithNoTools() {
   if (!techs?.length) return;
 
   await Promise.allSettled(
-    techs.map(async (tech: { id: string }) => {
+    techs.map((tech: { id: string }) =>
+      push(
+        tech.id,
+        "Keep your tools up to date 🔧",
+        "Make sure all the tools you're using are logged in the app so your team stays in sync.",
+        { type: "engagement_add_tools" },
+      )
+    ),
+  );
+}
+
+/** Daily: remind technicians who have shared tools assigned but haven't logged any issues or condition reports for them. */
+async function remindTechsWithUnmarkedSharedTools() {
+  const { data: sharedTools } = await supabase
+    .from("tools")
+    .select("id, name, assigned_to")
+    .eq("tool_type", "shared")
+    .not("assigned_to", "is", null);
+
+  if (!sharedTools?.length) return;
+
+  await Promise.allSettled(
+    sharedTools.map(async (tool: { id: string; name: string; assigned_to: string }) => {
+      // Check if this tech has any issue reports for this tool
       const { count } = await supabase
-        .from("tools")
+        .from("tool_issues")
         .select("id", { count: "exact", head: true })
-        .eq("assigned_to", tech.id);
+        .eq("tool_id", tool.id)
+        .eq("reported_by_user_id", tool.assigned_to);
 
       if ((count ?? 0) === 0) {
         await push(
-          tech.id,
-          "Don't forget your tools 🔧",
-          "Log the tools you're using so your team stays in sync.",
-          { type: "engagement_add_tools" },
+          tool.assigned_to,
+          `Don't forget to log the ${tool.name}`,
+          `You have the ${tool.name} assigned. Log its condition or any issues so the team knows its status.`,
+          { type: "shared_tool_unlogged", tool_id: tool.id },
         );
       }
     }),
@@ -196,7 +220,8 @@ Deno.serve(async (req) => {
   const tasks: Promise<void>[] = [];
 
   // ── Daily jobs ──
-  tasks.push(remindTechsWithNoTools());
+  tasks.push(remindTechsToAddTools());
+  tasks.push(remindTechsWithUnmarkedSharedTools());
   tasks.push(remindAdminsPendingIssues());
   tasks.push(remindAdminsPendingRequests());
 
