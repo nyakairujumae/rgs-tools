@@ -9,3 +9,13 @@ entrypoint = "./functions/hello-world/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/hello-world/*.html" ]
+
+[functions.engagement-notifications]
+enabled = true
+# pg_cron calls this function server-to-server with only an `x-cron-secret`
+# header (no Supabase JWT). With verify_jwt left at the default (true), the
+# Edge Functions gateway rejects that request with 401 before the function's
+# own CRON_SECRET check ever runs, so the daily pings silently never fire.
+# The function already authenticates the call itself via CRON_SECRET, so it's
+# safe to let the gateway skip JWT verification here.
+verify_jwt = false

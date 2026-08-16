@@ -192,15 +192,16 @@ async function remindAdminsMonthlyReport() {
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  // Guard: only allow calls with the correct secret header (set CRON_SECRET in Supabase secrets)
-  if (CRON_SECRET) {
-    const provided = req.headers.get("x-cron-secret");
-    if (provided !== CRON_SECRET) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  // Guard: only allow calls with the correct secret header (set CRON_SECRET in Supabase secrets).
+  // This function is deployed with verify_jwt = false (pg_cron calls it without a Supabase JWT),
+  // so this check is the only thing protecting it — it must fail closed, not just when a secret
+  // happens to be configured.
+  const provided = req.headers.get("x-cron-secret");
+  if (!CRON_SECRET || provided !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const now = new Date();
