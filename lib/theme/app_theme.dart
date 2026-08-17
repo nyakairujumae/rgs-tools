@@ -1,6 +1,7 @@
   import 'package:flutter/foundation.dart';
   import 'package:flutter/material.dart';
   import 'package:flutter/services.dart';
+  import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized theme configuration for RGS TOOLS
 /// Follows user preferences for white background and black text
@@ -379,6 +380,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor:
           kIsWeb ? webLightScaffoldBackground : scaffoldBackground,
+      fontFamily: GoogleFonts.inter().fontFamily,
       hoverColor: primaryColor.withValues(alpha: 0.08),
       focusColor: primaryColor.withValues(alpha: 0.12),
       splashColor: primaryColor.withValues(alpha: 0.12),
@@ -421,8 +423,8 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
 
-      // Text theme — Tang font, tighter sizes for SaaS density
-      textTheme: const TextTheme(
+      // Text theme — Inter, tighter sizes for SaaS density
+      textTheme: GoogleFonts.interTextTheme(const TextTheme(
         displayLarge:  TextStyle(color: Color(0xFF1A1A1A), fontSize: 28, fontWeight: FontWeight.bold),
         displayMedium: TextStyle(color: Color(0xFF1A1A1A), fontSize: 24, fontWeight: FontWeight.bold),
         displaySmall:  TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.bold),
@@ -438,7 +440,7 @@ class AppTheme {
         labelLarge:    TextStyle(color: Color(0xFF1A1A1A), fontSize: 13, fontWeight: FontWeight.w500),
         labelMedium:   TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 11, fontWeight: FontWeight.w500),
         labelSmall:    TextStyle(color: Color.fromRGBO(0, 0, 0, 0.6), fontSize: 10, fontWeight: FontWeight.w500),
-      ),
+      )),
 
       // Input decoration theme - ChatGPT style (OUTLINED, MODERN, INTERACTIVE)
       inputDecorationTheme: InputDecorationTheme(
@@ -647,25 +649,25 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
 
-      // Text theme — Tang font, tighter sizes for SaaS density
-      fontFamily: 'Tang',
-      textTheme: const TextTheme(
-        displayLarge:  TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 28, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 24, fontWeight: FontWeight.bold),
-        displaySmall:  TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 20, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 18, fontWeight: FontWeight.w600),
-        headlineMedium:TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 16, fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 15, fontWeight: FontWeight.w600),
-        titleLarge:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 14, fontWeight: FontWeight.w600),
-        titleMedium:   TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
-        titleSmall:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 11, fontWeight: FontWeight.w500),
-        bodyLarge:     TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 14),
-        bodyMedium:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13),
-        bodySmall:     TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 11),
-        labelLarge:    TextStyle(fontFamily: 'Tang', color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
-        labelMedium:   TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 11, fontWeight: FontWeight.w500),
-        labelSmall:    TextStyle(fontFamily: 'Tang', color: Color(0xFF8B949E), fontSize: 10, fontWeight: FontWeight.w500),
-      ),
+      // Text theme — Inter, tighter sizes for SaaS density
+      fontFamily: GoogleFonts.inter().fontFamily,
+      textTheme: GoogleFonts.interTextTheme(const TextTheme(
+        displayLarge:  TextStyle(color: Color(0xFFF0F6FC), fontSize: 28, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(color: Color(0xFFF0F6FC), fontSize: 24, fontWeight: FontWeight.bold),
+        displaySmall:  TextStyle(color: Color(0xFFF0F6FC), fontSize: 20, fontWeight: FontWeight.bold),
+        headlineLarge: TextStyle(color: Color(0xFFF0F6FC), fontSize: 18, fontWeight: FontWeight.w600),
+        headlineMedium:TextStyle(color: Color(0xFFF0F6FC), fontSize: 16, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(color: Color(0xFFF0F6FC), fontSize: 15, fontWeight: FontWeight.w600),
+        titleLarge:    TextStyle(color: Color(0xFFF0F6FC), fontSize: 14, fontWeight: FontWeight.w600),
+        titleMedium:   TextStyle(color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
+        titleSmall:    TextStyle(color: Color(0xFFF0F6FC), fontSize: 11, fontWeight: FontWeight.w500),
+        bodyLarge:     TextStyle(color: Color(0xFFF0F6FC), fontSize: 14),
+        bodyMedium:    TextStyle(color: Color(0xFFF0F6FC), fontSize: 13),
+        bodySmall:     TextStyle(color: Color(0xFF8B949E), fontSize: 11),
+        labelLarge:    TextStyle(color: Color(0xFFF0F6FC), fontSize: 13, fontWeight: FontWeight.w500),
+        labelMedium:   TextStyle(color: Color(0xFF8B949E), fontSize: 11, fontWeight: FontWeight.w500),
+        labelSmall:    TextStyle(color: Color(0xFF8B949E), fontSize: 10, fontWeight: FontWeight.w500),
+      )),
 
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(

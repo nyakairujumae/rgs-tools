@@ -681,34 +681,37 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  hasImage
-                      ? (imagePath!.startsWith('http') || kIsWeb)
-                          ? Image.network(
-                              imagePath,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Center(
-                                child: _thumbPlaceholder(colorScheme),
-                              ),
-                            )
-                          : Image.file(
-                              File(imagePath),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Center(
-                                child: _thumbPlaceholder(colorScheme),
-                              ),
-                            )
-                      : Center(child: _thumbPlaceholder(colorScheme)),
-                  Positioned(
-                    left: 6,
-                    bottom: 6,
-                    child: _statusPill(tool.status, isDark),
-                  ),
-                ],
+            child: Hero(
+              tag: 'tool-image-${tool.id}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    hasImage
+                        ? (imagePath!.startsWith('http') || kIsWeb)
+                            ? Image.network(
+                                imagePath,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Center(
+                                  child: _thumbPlaceholder(colorScheme),
+                                ),
+                              )
+                            : Image.file(
+                                File(imagePath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Center(
+                                  child: _thumbPlaceholder(colorScheme),
+                                ),
+                              )
+                        : Center(child: _thumbPlaceholder(colorScheme)),
+                    Positioned(
+                      left: 6,
+                      bottom: 6,
+                      child: _statusPill(tool.status, isDark),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -756,19 +759,22 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
               width: colName,
               child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: hasImage && (imagePath!.startsWith('http') || kIsWeb)
-                          ? Image.network(
-                              imagePath,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  _thumbPlaceholder(colorScheme),
-                            )
-                          : _thumbPlaceholder(colorScheme),
+                  Hero(
+                    tag: 'tool-image-${tool.id}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: hasImage && (imagePath!.startsWith('http') || kIsWeb)
+                            ? Image.network(
+                                imagePath,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _thumbPlaceholder(colorScheme),
+                              )
+                            : _thumbPlaceholder(colorScheme),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -833,21 +839,11 @@ class _TechnicianMyToolsScreenState extends State<TechnicianMyToolsScreen> {
   }
 
   Widget _statusPill(String status, bool isDark) {
-    Color color;
-    switch (status.toLowerCase()) {
-      case 'available':
-        color = const Color(0xFF0FA958);
-        break;
-      case 'in use':
-      case 'assigned':
-        color = const Color(0xFF3B82F6);
-        break;
-      case 'maintenance':
-        color = Colors.orange;
-        break;
-      default:
-        color = Colors.grey;
-    }
+    // Shared with the rest of the app (admin screens, tools list) so a given
+    // status always reads as the same color everywhere — this used to be a
+    // local 4-case switch that silently fell back to grey for Retired,
+    // Lost, Damaged, and Pending Acceptance.
+    final color = AppTheme.statusBadgeBackground(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(

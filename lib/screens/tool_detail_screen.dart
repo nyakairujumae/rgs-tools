@@ -434,21 +434,32 @@ class _ToolDetailScreenState extends State<ToolDetailScreen> with ErrorHandlingM
               controller: _imagePageController,
               itemCount: imageUrls.length,
               onPageChanged: (i) => setState(() => _currentImageIndex = i),
-              itemBuilder: (context, index) => GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => ImageViewerScreen(
-                    imageUrls: imageUrls,
-                    initialIndex: index,
-                    toolName: _currentTool.name,
-                    status: _currentTool.status,
-                    condition: _currentTool.condition,
-                  ),
-                )),
-                child: _buildImageItem(imageUrls[index], colorScheme, isDarkMode),
-              ),
+              itemBuilder: (context, index) {
+                final image = GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => ImageViewerScreen(
+                      imageUrls: imageUrls,
+                      initialIndex: index,
+                      toolName: _currentTool.name,
+                      status: _currentTool.status,
+                      condition: _currentTool.condition,
+                    ),
+                  )),
+                  child: _buildImageItem(imageUrls[index], colorScheme, isDarkMode),
+                );
+                // Only the first page matches the thumbnail the list card
+                // animated from — tag the rest normally so PageView swiping
+                // doesn't fight the Hero flight.
+                return index == 0
+                    ? Hero(tag: 'tool-image-${_currentTool.id}', child: image)
+                    : image;
+              },
             )
           else
-            _buildImagePlaceholder(colorScheme),
+            Hero(
+              tag: 'tool-image-${_currentTool.id}',
+              child: _buildImagePlaceholder(colorScheme),
+            ),
 
           // Top buttons: back + menu
           Positioned(
